@@ -1,0 +1,41 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<feed xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/" xmlns:arxiv="http://arxiv.org/schemas/atom" xmlns="http://www.w3.org/2005/Atom">
+  <id>https://arxiv.org/api/fixture-two</id>
+  <title>arXiv Query: id_list=9999.00001,9999.00002</title>
+  <updated>2026-08-24T00:00:00Z</updated>
+  <opensearch:itemsPerPage>10</opensearch:itemsPerPage>
+  <opensearch:totalResults>2</opensearch:totalResults>
+  <opensearch:startIndex>0</opensearch:startIndex>
+  <entry>
+    <id>http://arxiv.org/abs/9999.00001v1</id>
+    <published>2026-01-01T00:00:00Z</published>
+    <updated>2026-01-01T00:00:00Z</updated>
+    <title>A Deterministic Fixture Paper on Test Adhesion</title>
+    <summary>This fixture paper studies the adhesion of test fixtures to CI pipelines. Version one.</summary>
+    <author>
+      <name>Ada Example</name>
+    </author>
+    <author>
+      <name>Bo Fixture</name>
+    </author>
+    <link href="http://arxiv.org/abs/9999.00001v1" rel="alternate" type="text/html"/>
+    <link href="http://arxiv.org/pdf/9999.00001v1" rel="related" type="application/pdf" title="pdf"/>
+    <arxiv:primary_category term="cs.SE" scheme="http://arxiv.org/schemas/atom"/>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/9999.00002v1</id>
+    <published>2026-01-05T00:00:00Z</published>
+    <updated>2026-01-05T00:00:00Z</updated>
+    <title>A Second Deterministic Fixture Paper on Retry Semantics</title>
+    <summary>This fixture paper studies retry semantics in evidence pools, co-authored with the first fixture paper's lead author.</summary>
+    <author>
+      <name>Ada Example</name>
+    </author>
+    <author>
+      <name>Cy Placeholder</name>
+    </author>
+    <link href="http://arxiv.org/abs/9999.00002v1" rel="alternate" type="text/html"/>
+    <link href="http://arxiv.org/pdf/9999.00002v1" rel="related" type="application/pdf" title="pdf"/>
+    <arxiv:primary_category term="cs.SE" scheme="http://arxiv.org/schemas/atom"/>
+  </entry>
+</feed>

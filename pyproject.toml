@@ -1,0 +1,21 @@
+[project]
+name = "data-acquisition-fabric"
+version = "0.1.0"
+description = "Domain-agnostic acquisition and durability layer around the existing SCOUT evidence-admission contract."
+requires-python = ">=3.10"
+dependencies = []
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+markers = [
+    "network: exercises a real, live external network call (skips cleanly if unreachable).",
+]
+
+[tool.ruff]
+extend-exclude = ["vendor"]
+line-length = 110
+
+[tool.mypy]
+exclude = ["vendor/"]
+ignore_missing_imports = true

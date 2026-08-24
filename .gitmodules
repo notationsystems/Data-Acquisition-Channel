@@ -1,0 +1,3 @@
+[submodule "vendor/scout-retrieval-agent"]
+	path = vendor/scout-retrieval-agent
+	url = https://github.com/notationsystems/scout-retrieval-agent.git

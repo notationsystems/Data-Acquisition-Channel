@@ -1,0 +1,19 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<feed xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/" xmlns:arxiv="http://arxiv.org/schemas/atom" xmlns="http://www.w3.org/2005/Atom">
+  <id>https://arxiv.org/api/fixture-broken</id>
+  <title>arXiv Query: id_list=9999.00003</title>
+  <updated>2026-08-24T00:00:00Z</updated>
+  <opensearch:itemsPerPage>10</opensearch:itemsPerPage>
+  <opensearch:totalResults>1</opensearch:totalResults>
+  <opensearch:startIndex>0</opensearch:startIndex>
+  <entry>
+    <published>2026-01-01T00:00:00Z</published>
+    <updated>2026-01-01T00:00:00Z</updated>
+    <title>A Fixture Entry Deliberately Missing Its Id</title>
+    <summary>This fixture entry has no id element, to prove acquisition failures are surfaced loudly.</summary>
+    <author>
+      <name>Ada Example</name>
+    </author>
+    <arxiv:primary_category term="cs.SE" scheme="http://arxiv.org/schemas/atom"/>
+  </entry>
+</feed>
