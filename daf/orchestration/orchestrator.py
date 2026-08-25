@@ -22,6 +22,15 @@ It also never imports `evidence.admission` and never calls a pool
 mutator (`put_*`) directly -- the ONLY write path is the unmodified
 `scout.pipeline.run_scout` call below. This is the one-door invariant
 carried forward from Phase A/B.
+
+CALLER RESPONSIBILITY -- duplicate detection reflects `pool`'s IN-MEMORY
+state, not the durable store's on-disk state: if `pool` is a freshly
+constructed `DurablePool(store)` in a new process that already has prior
+data on disk, `is_new` will be wrong (everything looks new) even though
+the durable writes themselves stay correctly deduplicated. Any caller
+that might be a fresh process against existing storage -- e.g.
+`daf.catalog.cli` -- must construct the pool via `DurablePool.restore(store)`,
+never the plain constructor, exactly as Phase B's own restart tests do.
 """
 
 from __future__ import annotations

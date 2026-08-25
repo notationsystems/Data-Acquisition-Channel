@@ -30,11 +30,13 @@ class SourceDefinition:
     adapter_id: str
     configuration: Mapping[str, Any] = field(default_factory=dict)
     capabilities: Tuple[str, ...] = ()
+    required_parameters: Tuple[str, ...] = ()
     enabled: bool = True
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "configuration", MappingProxyType(dict(self.configuration)))
         object.__setattr__(self, "capabilities", tuple(self.capabilities))
+        object.__setattr__(self, "required_parameters", tuple(self.required_parameters))
 
 
 class SourceRegistry:
