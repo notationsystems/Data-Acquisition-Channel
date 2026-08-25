@@ -1,0 +1,14 @@
+Description:           SYNTHETIC TEST DATA -- NOT REAL SEC EDGAR CONTENT
+Last Data Received:    Jul 2, 2026 (synthetic fixture)
+Comments:              test-fixture@example.com
+Anonymous FTP:         (not applicable -- synthetic fixture)
+
+
+
+
+Company Name                                                  Form Type   CIK
+      Date Filed  File Name
+-------------------------------------------------------------------------------------------------------------------------------------------------
+SYNTHETIC TEST COMPANY GAMMA                                   S-1              9999990003  20260702    edgar/data/9999990003/0000000000-26-000003.txt
+SYNTHETIC TEST COMPANY BETA                                    8-K/A            9999990002  20260702    edgar/data/9999990002/0000000000-26-000004.txt
+SYNTHETIC TEST COMPANY DELTA                                   424B3            9999990004  20260702    edgar/data/9999990004/0000000000-26-000005.txt

@@ -13,9 +13,11 @@ from pathlib import Path
 from typing import Optional, Tuple
 
 from daf.adapters.arxiv import ArxivSourceAdapter
+from daf.adapters.edgar_daily_index import EdgarDailyIndexSourceAdapter
 from daf.adapters.incremental_dataset import IncrementalDatasetSourceAdapter, locator_for, sequence_of
 from daf.adapters.local_dataset import LocalDatasetSourceAdapter
 from daf.extractors.arxiv import ArxivExtractor
+from daf.extractors.edgar_daily_index import EdgarDailyIndexExtractor
 from daf.extractors.local_dataset import LocalDatasetExtractor
 from daf.orchestration.adapter_registry import AdapterBinding
 from daf.orchestration.request import AcquisitionRequest
@@ -75,4 +77,42 @@ def incremental_dataset_binding() -> AdapterBinding:
         build_adapter=build_adapter,
         build_extractor=LocalDatasetExtractor,
         advance_position=_advance_incremental_position,
+    )
+
+
+def _advance_edgar_position(
+    artifacts: Tuple[AcquiredArtifact, ...], previous_position: Optional[str]
+) -> Optional[str]:
+    """EDGAR daily-index locators ARE the position (a YYYYMMDD date
+    string) -- no adapter-specific decoding needed, unlike
+    `incremental_dataset`'s zero-padded sequence numbers. No trailing
+    safety window (Phase F's late-arrival idiom) is needed here: SEC
+    publishes exactly one immutable file per business day, once -- see
+    docs/DAF_EDGAR_ADAPTER.md's "Checkpoint semantics" section for why
+    this source does not exhibit the late-arrival problem."""
+    if not artifacts:
+        return previous_position
+    max_date = max(artifact.locator for artifact in artifacts)
+    if previous_position is not None:
+        max_date = max(max_date, previous_position)
+    return max_date
+
+
+def edgar_daily_index_binding() -> AdapterBinding:
+    def build_adapter(source: SourceDefinition, request: AcquisitionRequest) -> EdgarDailyIndexSourceAdapter:
+        year = int(request.parameters["year"])
+        quarter = int(request.parameters["quarter"])
+        since = request.parameters.get("since")
+        return EdgarDailyIndexSourceAdapter(
+            year=year,
+            quarter=quarter,
+            retrieved_at=request.requested_at,
+            since_date=str(since) if since is not None else None,
+        )
+
+    return AdapterBinding(
+        adapter_id="edgar-daily-index",
+        build_adapter=build_adapter,
+        build_extractor=EdgarDailyIndexExtractor,
+        advance_position=_advance_edgar_position,
     )

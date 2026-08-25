@@ -1,0 +1,9 @@
+Description:           SYNTHETIC TEST DATA -- NOT REAL SEC EDGAR CONTENT (deliberately malformed)
+Last Data Received:    Jul 1, 2026 (synthetic fixture)
+Comments:              test-fixture@example.com
+
+This fixture deliberately omits the dashed header-separator line real
+EDGAR daily index files always contain, to exercise extraction failure
+handling.
+
+SYNTHETIC TEST COMPANY ALPHA                                   10-K             9999990001  20260701    edgar/data/9999990001/0000000000-26-000001.txt

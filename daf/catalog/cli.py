@@ -8,15 +8,22 @@
     python -m daf.catalog.cli <root> execute-plan <plan_id> <requested_at>
 
 Calls exactly the same Python interfaces (`SourceCatalog`, `PlanCatalog`,
-`validate_plan`, `AcquisitionOrchestrator`) a programmatic caller would
--- this module adds no logic of its own beyond argument parsing and
-printing. `<root>` holds three subdirectories: `sources/`, `plans/`,
-`evidence/` (the durable evidence substrate, per Phase B).
+`validate_plan`, `daf.scheduling.runner.execute_plan`) a programmatic
+caller would -- this module adds no logic of its own beyond argument
+parsing and printing. `<root>` holds four subdirectories: `sources/`,
+`plans/`, `checkpoints/` (Phase E acquisition progress), `evidence/`
+(the durable evidence substrate, per Phase B).
 
 Registering a source or plan is a programmatic action (construct a
 `SourceCatalog`/`PlanCatalog` and call `.register(...)`), not a CLI verb
 -- this mirrors `daf.orchestration.bindings` being the one place concrete
 adapters are wired in, kept out of the generic catalog/orchestrator code.
+
+`execute-plan` goes through `daf.scheduling.runner.execute_plan` (not
+`AcquisitionOrchestrator.run` directly) specifically so an
+incremental-mode plan's checkpoint is actually read and advanced across
+separate CLI invocations -- exactly the "process A acquires, process B
+resumes" pattern Phase E's own tests prove.
 """
 
 from __future__ import annotations
@@ -26,12 +33,13 @@ from pathlib import Path
 
 import daf  # noqa: F401  -- vendored repo onto sys.path
 
+from daf.catalog.checkpoint import CheckpointStore
 from daf.catalog.plan import validate_plan
 from daf.catalog.plan_catalog import PlanCatalog
 from daf.catalog.source_catalog import SourceCatalog
 from daf.orchestration.adapter_registry import AdapterRegistry
-from daf.orchestration.bindings import arxiv_binding, local_dataset_binding
-from daf.orchestration.orchestrator import AcquisitionOrchestrator
+from daf.orchestration.bindings import arxiv_binding, edgar_daily_index_binding, local_dataset_binding
+from daf.scheduling.runner import CheckpointPersistenceError, execute_plan
 from daf.storage.durable_pool import DurablePool
 from daf.storage.filesystem_store import FilesystemEvidenceStore
 
@@ -40,6 +48,7 @@ def _default_adapters() -> AdapterRegistry:
     adapters = AdapterRegistry()
     adapters.register(arxiv_binding())
     adapters.register(local_dataset_binding())
+    adapters.register(edgar_daily_index_binding())
     return adapters
 
 
@@ -86,11 +95,6 @@ def _main() -> None:
     elif command == "execute-plan":
         plan = plans.get(args[0])
         requested_at = args[1]
-        issues = validate_plan(plan, sources, adapters)
-        if issues:
-            for issue in issues:
-                print(f"{issue.code}: {issue.message}")
-            raise SystemExit(1)
 
         # DurablePool.restore (not the plain constructor) so this fresh
         # process's in-memory pool actually reflects what earlier CLI
@@ -98,8 +102,16 @@ def _main() -> None:
         # would only ever see this process's own writes. See
         # docs/DAF_ORCHESTRATION.md's Phase D report for why this matters.
         pool = DurablePool.restore(FilesystemEvidenceStore(root / "evidence"))
-        orchestrator = AcquisitionOrchestrator(sources, adapters, pool)
-        result = orchestrator.run(plan.to_request(requested_at))
+        checkpoints = CheckpointStore(root / "checkpoints")
+
+        try:
+            result = execute_plan(plan, sources, adapters, pool, checkpoints, requested_at=requested_at)
+        except CheckpointPersistenceError as exc:
+            # Acquisition itself succeeded (exc.result) -- only checkpoint
+            # tracking failed. Reported distinctly, per Phase E semantics.
+            print(f"outcome={exc.result.outcome.value}")
+            print(f"checkpoint persistence failed: {exc.cause}")
+            raise SystemExit(1) from exc
 
         print(f"outcome={result.outcome.value}")
         for artifact in result.artifacts:
