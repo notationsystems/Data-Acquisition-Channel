@@ -18,152 +18,42 @@ cannot make it (asserted below at the AST level).
 
 FIXTURE PROVENANCE, kept explicit per Phase T sec.15:
 
-  * REAL DAF ACQUISITION -- `_acquire_measurements` runs the unmodified
-    adapter/extractor/orchestrator/DurablePool path over a
-    graph-declaring dataset, exactly as Phase P established. The
-    acquisition boundary is real.
-  * SYNTHETIC SCIENTIFIC FIXTURE -- the measurement values themselves.
-    No DAF-reachable source is a materials experiment (Phase M's finding,
-    unchanged), so `ExperimentalResult`/`ActionCandidate` semantics are
-    exercised with controlled values rather than fabricated from NOAA or
-    EDGAR. Phase Q's live NOAA path is covered by its own suite; nothing
-    here pretends tide gauges are tensile tests.
+Fixture composition lives in `tests/helpers_state_gap.py`, which also
+records the provenance of each part (real DAF acquisition; synthetic
+scientific values).
 """
 
 from __future__ import annotations
 
 import ast
-import json
 from pathlib import Path
 
 import pytest
 
 from evidence.pool import EvidencePool
-from evidence.types import make_record
 from materials.analysis import MaterialQuestion, analyze
-from materials.campaign import assemble_experimental_campaign
 from materials.candidates import generate_candidates
-from materials.decision import make_criterion
-from materials.design import assemble_experimental_design
 from materials.diagnostics import diagnose_transitions
-from materials.evaluation import evaluate_candidates
 from materials.information import ESTIMATED, NOT_DETERMINABLE
-from materials.iteration import reevaluate_program
-from materials.model_state import EMPTY_MODEL_STATE, predict, update
-from materials.plan import assemble_experiment_plan
-from materials.program import make_material_program_query
-from materials.results import admit_experimental_result, make_experimental_result
-from materials.selection import SelectionPolicy, select_candidates
+from materials.model_state import predict
 from materials.specification import EvidenceRequirement
 from materials.trajectory import make_model_state_trajectory
-from retrieval.engine import DeterministicRetrievalEngine
 
-from daf.catalog.checkpoint import CheckpointStore
-from daf.catalog.plan import AcquisitionPlan
-from daf.orchestration.adapter_registry import AdapterRegistry
-from daf.orchestration.bindings import graph_dataset_binding
-from daf.orchestration.source_registry import SourceDefinition, SourceRegistry
-from daf.scheduling.runner import execute_plan
-from daf.storage.durable_pool import DurablePool
-from daf.storage.filesystem_store import FilesystemEvidenceStore
 from science.information_gap import (
     ABSENT_EVIDENCE,
     UNCERTAIN_STATE,
     InformationGap,
     diagnose_information_gap,
 )
-
-ENGINE = DeterministicRetrievalEngine()
-ALLOW_ALL = SelectionPolicy(
-    allowed_action_classes=None, allow_already_represented_context=True,
-    allow_redundant=True, allow_not_determinable_feasibility=True, max_selected=None,
+from helpers_state_gap import (
+    ENGINE,
+    FORMULATION,
+    REPEAT,
+    acquire_measurements,
+    iteration_for as _iteration,
+    measurement as _measurement,
+    trajectory as _trajectory,
 )
-FORMULATION = "formulation-f1"
-PROCESS = "process-std-190c"
-REPEAT = "measurement:repeat"
-
-
-def _measurement(record_id, value):
-    return {
-        "id": record_id, "property": "tensile_strength", "value": value, "unit": "MPa",
-        "entities": [{"label": FORMULATION, "kind": "formulation"},
-                     {"label": PROCESS, "kind": "process"}],
-        "relations": [{"from": FORMULATION, "to": PROCESS, "type": "tested_during"}],
-    }
-
-
-def _acquire_measurements(root, records, dataset=None):
-    """The real, unmodified DAF acquisition path (Phase P).
-
-    `dataset` may name a shared source file. That matters for identity:
-    Phase S made the dataset path part of the artifact locator, so the
-    Record -- and therefore the Observation, and therefore the Sample's
-    `observation_id` inside a ModelState -- traces back to WHERE the
-    evidence came from. Acquiring the same records from a different path
-    is legitimately different evidence yielding different state ids."""
-    dataset = dataset if dataset is not None else root / "panel.json"
-    dataset.parent.mkdir(parents=True, exist_ok=True)
-    dataset.write_text(json.dumps(records))
-
-    pool = DurablePool(FilesystemEvidenceStore(root / "evidence"))
-    sources = SourceRegistry()
-    sources.register(SourceDefinition(
-        source_id="qc-panel", name="QC panel", domain="materials",
-        adapter_id="graph-dataset", required_parameters=("path",), capabilities=(),
-    ))
-    adapters = AdapterRegistry()
-    adapters.register(graph_dataset_binding())
-    result = execute_plan(
-        AcquisitionPlan(plan_id="qc-plan", source_id="qc-panel", parameters={"path": str(dataset)}),
-        sources, adapters, pool, CheckpointStore(root / "checkpoints"),
-        requested_at="2026-08-25T00:00:00Z",
-    )
-    assert result.outcome.value == "acquired"
-    return pool
-
-
-def _iteration(pool):
-    query = make_material_program_query([FORMULATION], PROCESS, ("tensile_strength",))
-    return reevaluate_program(pool, ENGINE, query, (make_criterion("tensile_strength", ">=", 80),))
-
-
-def _campaign(iteration):
-    candidates = generate_candidates(iteration.specification)
-    candidate = next(c for c in candidates.candidates if c.action_class == REPEAT)
-    campaign = assemble_experimental_campaign(
-        assemble_experimental_design(
-            assemble_experiment_plan(select_candidates(evaluate_candidates(candidates), ALLOW_ALL))
-        )
-    )
-    return candidate, campaign, next(e for e in campaign.entries if e.candidate_id == candidate.id)
-
-
-def _result(pool, campaign, entry, locator, value):
-    document_id = pool.get_record(pool.all_observations()[0].record_ids[0]).document_id
-    record = make_record(document_id=document_id, locator=locator, raw_content=locator)
-    pool.put_record(record)
-    result = make_experimental_result(
-        campaign, entry, content={"property": "tensile_strength", "value": value, "unit": "MPa"},
-        record_id=record.id, extracted_at="2026-08-25T02:00:00Z",
-    )
-    observation, _relationship = admit_experimental_result(pool, result, confidence=1.0)
-    return result, observation
-
-
-def _trajectory(tmp_path, dataset=None):
-    """Acquisition -> analysis -> S0 -> S1 -> S2, returning everything."""
-    pool = _acquire_measurements(
-        tmp_path, [_measurement("ts-001", 78), _measurement("ts-002", 84)], dataset=dataset
-    )
-    iteration = _iteration(pool)
-    candidate, campaign, entry = _campaign(iteration)
-
-    s0 = EMPTY_MODEL_STATE
-    result_1, observation_1 = _result(pool, campaign, entry, "run-1", 76)
-    s1 = update(s0, candidate, result_1, observation_1)
-    result_2, observation_2 = _result(pool, campaign, entry, "run-2", 84)
-    s2 = update(s1, candidate, result_2, observation_2)
-    return pool, iteration, candidate, (s0, s1, s2)
 
 
 # --------------------------------------------------------------------
@@ -387,7 +277,7 @@ def test_a_manually_chosen_acquisition_changes_what_the_state_cannot_resolve(tmp
     # The requirement says "observed tensile_strength evidence bearing on
     # >= 80". A person -- not this layer -- chooses a source that can
     # supply it and runs a real DAF acquisition.
-    extra = _acquire_measurements(
+    extra = acquire_measurements(
         tmp_path / "followup", [_measurement("ts-003", 91), _measurement("ts-004", 88)]
     )
     assert len(extra.all_observations()) == 2, "a real second DAF acquisition"
