@@ -22,6 +22,7 @@ from daf.adapters.noaa_water_level import NoaaWaterLevelSourceAdapter, window_en
 from daf.adapters.usgs_earthquakes import UsgsEarthquakeSourceAdapter
 from daf.extractors.arxiv import ArxivExtractor
 from daf.extractors.edgar_daily_index import EdgarDailyIndexExtractor
+from daf.extractors.graph_dataset import GraphDatasetExtractor
 from daf.extractors.local_dataset import LocalDatasetExtractor
 from daf.extractors.noaa_water_level import NoaaWaterLevelExtractor
 from daf.extractors.usgs_earthquakes import UsgsEarthquakeExtractor
@@ -48,6 +49,27 @@ def local_dataset_binding() -> AdapterBinding:
 
     return AdapterBinding(
         adapter_id="local-dataset", build_adapter=build_adapter, build_extractor=LocalDatasetExtractor
+    )
+
+
+def graph_dataset_binding() -> AdapterBinding:
+    """Same file-of-JSON-records acquisition shape as
+    `local_dataset_binding` -- deliberately the SAME unmodified
+    `LocalDatasetSourceAdapter`, since nothing about acquisition differs.
+    The only difference is the extractor: `GraphDatasetExtractor` reads
+    the trust-graph structure each record declares about itself, so the
+    admitted evidence carries referents/relationships and is therefore
+    reachable by `materials.analysis`/`materials.iteration`. See that
+    extractor's docstring for why no other DAF source does this."""
+
+    def build_adapter(source: SourceDefinition, request: AcquisitionRequest) -> LocalDatasetSourceAdapter:
+        path = Path(str(request.parameters["path"]))
+        return LocalDatasetSourceAdapter(
+            path=path, source_name=source.name, retrieved_at=request.requested_at
+        )
+
+    return AdapterBinding(
+        adapter_id="graph-dataset", build_adapter=build_adapter, build_extractor=GraphDatasetExtractor
     )
 
 
