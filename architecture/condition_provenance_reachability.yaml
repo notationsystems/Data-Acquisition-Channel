@@ -1,0 +1,130 @@
+# Whether any DAF-reachable source provides a genuine measurement
+# condition for the property-admissibility gate
+# (`science.admissibility.no_context_free_property`'s `conditions`
+# requirement) -- and, separately, whether the existing shared
+# representation could carry one if found. Both questions were answered
+# by inspection and by real measurement, not assumed.
+#
+# THIS FILE RECORDS DETERMINATIONS, NOT A SCHEMA -- the same discipline
+# architecture/method_provenance_reachability.yaml and
+# architecture/uncertainty_provenance_reachability.yaml already
+# establish. The result here is neither a clean yes nor a clean no: a
+# genuine condition was found for one source, and a genuine, structural
+# representation gap was found that blocks wiring it. Both are recorded
+# precisely rather than rounded to a single verdict.
+extends: core@1.0.0
+
+verdicts:
+  measurement_condition: "a source field describes circumstances under which a fixed physical quantity was measured, such that a differently-conditioned measurement of the same quantity would legitimately disagree"
+  identity_metadata: "a source field identifies WHICH subject, event, or location is being measured, not a circumstance of measuring it"
+  revision_qc_metadata: "a source field describes review/automation/data-lifecycle status, not the measurement itself"
+  provenance_metadata: "a source field describes how or by what pipeline a value was produced or acquired, not a scientific circumstance of the measurement"
+  not_property_shaped: "the source's Observation.content has no property/value pair at all; the conditions question does not arise"
+  representation_gap: "the field is a genuine measurement condition, but the existing shared representation (a Mapping-valued content key) cannot carry it without breaking an existing, vendored consumer"
+
+# ---------------------------------------------------- source sweep --
+
+sources_inspected:
+  - noaa_water_level_measurements
+  - usgs_earthquakes
+  - edgar_daily_index
+  - arxiv
+  - noaa_water_level_window
+  - local_dataset_generic
+
+not_property_shaped:
+  edgar_daily_index:
+    verdict: not_property_shaped
+    evidence: "content is date_filed/filing_count/form_type_counts/filings -- no property/value pair. Established in architecture/method_provenance_reachability.yaml; unchanged, not reopened."
+  arxiv:
+    verdict: not_property_shaped
+    evidence: "content is arxiv_id/title/summary/published/updated/primary_category -- no property/value pair."
+  noaa_water_level_window:
+    verdict: not_property_shaped
+    evidence: "content is station_id/station_name/reading_count/quality_counts/readings -- a window summary, no scalar property/value pair. Distinct from noaa_water_level_measurements, which this determination is about."
+  local_dataset_generic:
+    verdict: not_property_shaped
+    note: "excluded from the sweep per its own scope: LocalDatasetSourceAdapter/GraphDatasetExtractor pass through whatever a JSON file declares, with no fixed real-world API or production semantics of their own (Phase M's standing finding: no DAF-reachable source is a materials experiment). Not a production source with defined field semantics to classify."
+
+# ------------------------------------------------ candidate inventory --
+
+candidates:
+
+  - source: usgs_earthquakes
+    field: place
+    source_meaning: "a free-text location description of the earthquake epicenter"
+    classification: identity_metadata
+    evidence: "identifies WHICH event occurred where; a differently-located earthquake is a different event, not the same quantity measured under a different circumstance. Unchanged from architecture/method_provenance_reachability.yaml's Phase 31 finding -- reconsidered, not reversed."
+
+  - source: usgs_earthquakes
+    field: origin_time
+    source_meaning: "the UTC instant the earthquake occurred"
+    classification: identity_metadata
+    evidence: "identifies WHICH event, the same way NOAA's measurement_time identifies which instant's water level is being reported rather than a condition of a fixed quantity. Unchanged from Phase 31."
+
+  - source: usgs_earthquakes
+    field: depth_km
+    source_meaning: "the hypocenter depth below the surface"
+    classification: identity_metadata
+    evidence: "reconsidered specifically per this phase's instruction. Depth genuinely affects seismic wave propagation in general geophysics, but no field in this repository's real fixtures or in the extractor documents depth as an input the source itself uses to compute or correct the reported magnitude value -- it is reported as a property of the event, in the same list as latitude/longitude, not documented as a measurement-condition input. Preserved as identity absent new evidence establishing the stronger claim."
+
+  - source: usgs_earthquakes
+    field: status
+    source_meaning: "automatic or reviewed -- whether a human analyst has checked the computed magnitude"
+    classification: revision_qc_metadata
+    evidence: "unchanged from Phase 31: the same category Phase 17 excluded from NOAA's q flag, for the same reason -- a later reviewed revision of an event must stay comparable to its own earlier automatic reading."
+
+  - source: usgs_earthquakes
+    field: magnitude_type
+    source_meaning: "the algorithm/scale used to compute the reported magnitude"
+    classification: provenance_metadata
+    evidence: "already classified as method provenance in architecture/method_provenance_reachability.yaml and wired as such in Phase 31; not reclassified as a condition, which would conflate two distinct dimensions of the same admissibility contract."
+
+  - source: usgs_earthquakes
+    field: network_or_magnitude_source
+    source_meaning: "which seismic network or agency computed the value -- documented as a real USGS GeoJSON field in general, but not present in any fixture this repository actually acquires"
+    classification: not_property_shaped
+    evidence: "absent from every real fixture inspected (tests/fixtures/usgs_*.json contain no net/magSource/nst/gap/dmin/rms field at all). Not classifiable as anything because it is not present in the data this repository's shipped extractor actually receives; recorded so a future phase does not re-discover the same absence from scratch."
+
+  - source: noaa_water_level_measurements
+    field: station_id
+    source_meaning: "the CO-OPS station identifier the reading was taken at"
+    classification: identity_metadata
+    evidence: "identifies WHICH physical location's water level is being reported -- readings from different stations are measurements of different physical quantities (tide height is location-dependent), not the same quantity under different conditions. No prior formal ruling existed for this field; resolved here rather than left ambiguous."
+
+  - source: noaa_water_level_measurements
+    field: measurement_time
+    source_meaning: "the timestamp of the 6-minute interval the reading covers"
+    classification: identity_metadata
+    evidence: "Phase 17's own reasoning, unchanged: water level at 00:00 and at 00:06 are measurements of genuinely different quantities, because tide height varies continuously with time. This identifies WHICH instant's value is being reported, not a condition of measuring one fixed quantity repeatedly."
+
+  - source: noaa_water_level_measurements
+    field: datum
+    source_meaning: "the vertical reference elevation (MLLW, STND, ...) the reported height is measured from"
+    classification: measurement_condition
+    evidence: "the same physical water surface, at the same station and instant, is reported as a DIFFERENT NUMBER under a different datum -- tests/fixtures/noaa_live_8454000_20240115_mllw.json and _stnd.json report 0.136 m and 1.2 m respectively for the identical timestamp at the identical station. This is a genuine measurement condition by the gate's own definition (a circumstance under which the quantity was expressed, not which quantity or which instant). Already stated as such in this repository's own prior work: tests/test_live_scientific_observation.py's test_the_same_window_under_a_different_datum_is_a_different_artifact carries the comment 'datum is a genuine scientific conditioning variable in its own right', written before this phase and independently confirming this determination."
+
+# ------------------------------------------------- conditions contract --
+
+conditions_contract:
+  requirement: "science.admissibility.no_context_free_property requires content['conditions'] to satisfy isinstance(conditions, Mapping) and be non-empty"
+  measured_incompatibility: "materials.analysis._group_by_comparison_context (vendored, never modified) builds tuple(sorted(context.items())) over EVERY content key and uses that tuple as a dict key, which requires every value -- including a conditions value -- to be hashable. A dict satisfying isinstance(x, Mapping) is never hashable in Python's standard type system (dict, MappingProxyType, OrderedDict are all unhashable). Reproduced directly: adding content['conditions'] = {'datum': 'MLLW'} to a real NOAA acquisition and calling materials.analysis.analyze() over it raises TypeError: unhashable type dict, breaking tests/test_live_scientific_observation.py's own pre-existing, already-passing regression tests."
+  scope_of_incompatibility: "general, not NOAA-specific -- any content key whose value is a Mapping breaks _group_by_comparison_context for ANY Observation reachable through materials.analysis (i.e., any Observation with entities/relations declared). Confirmed by reproducing the identical TypeError against a synthetic content mapping unrelated to NOAA."
+
+# ---------------------------------------------------------- findings --
+
+findings:
+
+  usgs_earthquakes:
+    verdict: no_genuine_condition_found
+    result: "every candidate field is identity, revision/QC, or provenance metadata. No field in this repository's real, acquired USGS data describes a circumstance under which the magnitude was measured. MISSING_CONDITIONS is preserved on its own evidence, unchanged from Phase 31."
+    action_taken: none
+
+  noaa_water_level_measurements:
+    verdict: representation_gap
+    result: "datum IS a genuine, well-evidenced measurement condition. It cannot be wired into the existing conditions representation without breaking materials.analysis's real, vendored, already-tested consumption of this exact extractor's output, because that consumer requires every content value to be hashable and the gate requires conditions to be an (inherently unhashable) Mapping."
+    action_taken: none
+    action_taken_reason: "implementing a workaround (e.g. a custom hashable Mapping type) would be inventing a new shared primitive on this phase's own initiative, for a structural incompatibility that affects every future graph-reachable property source, not only NOAA. The brief directs identifying the smallest shared representation gap, not implementing one unless the evidence establishes it belongs in the shared substrate -- that decision is deferred, not made here."
+    reversibility: "the attempted wiring was implemented, measured to break two pre-existing tests, and reverted in the same phase. No trace of it remains in daf/extractors/noaa_water_level_measurements.py."
+
+  overall: "MISSING_CONDITIONS remains a real epistemic boundary of the current acquisition corpus for both examined property-shaped sources -- for USGS because no genuine condition exists in the source data, and for NOAA because a genuine condition exists but the shared representation cannot currently carry it without breaking existing, vendored behavior."

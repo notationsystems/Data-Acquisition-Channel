@@ -16,6 +16,7 @@ output: docs/generated/DOCTRINE.md
 sources:
   - architecture/core.yaml
   - architecture/admission_reachability.yaml
+  - architecture/condition_provenance_reachability.yaml
   - architecture/control_graph.yaml
   - architecture/evidence_class.yaml
   - architecture/execution_record.yaml
