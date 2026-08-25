@@ -36,7 +36,15 @@ CANONICAL_YAML = (
     # canonical architecture too, and their hashes are only reproducible
     # if both parsers agree on them -- so they belong under the same
     # parse and agreement guarantees as everything else here.
-    + sorted(ARCHITECTURE.glob("exchange/*.yaml"))
+    # `canonicalization_fixture.yaml` is excluded deliberately: it is the
+    # serializer's shared agreement fixture, not an architecture artifact,
+    # so it carries no `extends` and is covered by
+    # tests/test_exchange_artifact.py instead.
+    + sorted(
+        path
+        for path in ARCHITECTURE.glob("exchange/*.yaml")
+        if path.name != "canonicalization_fixture.yaml"
+    )
     + sorted(ARCHITECTURE.glob("decisions/*.yaml"))
 )
 

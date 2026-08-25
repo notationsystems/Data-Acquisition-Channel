@@ -54,7 +54,10 @@ n_particles=2`. No error, no dtype check.
 
 ## DAQ capability exchange
 
-`architecture/exchange/daq_capabilities.yaml` — `sha256:cd032f23…57129`
+`architecture/exchange/daq_capabilities.yaml` — `sha256:9961596953ea…f210b3cb`
+
+*(The committed artifact is the concurrent session's — see* **Canonicalization** *below. The
+statuses below are what both independent measurements agreed on.)*
 
 | Modality | Status |
 |---|---|
@@ -90,20 +93,22 @@ Measured details that drive the decision:
 
 ## SCL requirements exchange
 
-`architecture/exchange/scl_requirements.yaml` — `sha256:816ae02f…d5d45`
+`architecture/exchange/scl_requirements.yaml` — `sha256:be15539449f2…95636017`, SCL's authentic
+artifact at `5447df3`, copied byte-identically. SCL is its canonical owner.
 
 | Workload | DAQ availability (measured) |
 |---|---|
-| `fourier_transform_1d` | **satisfied** |
-| `convolution_correlation_1d` | **satisfied** |
-| `least_squares` | NOT satisfied — multivariate absent |
-| `principal_component_analysis` | NOT satisfied — multivariate absent |
-| `kalman_filter` | partially — scalar R exists, covariance absent |
-| `pid_controller` | satisfied for pure computation only |
-| `viterbi` | NOT satisfied — no categorical source |
+| `fourier_transform_1d` | all DAQ-owned requirements **SATISFIED** |
+| `convolution_1d` | satisfied |
+| `least_squares` | unmet: `stable_sample_and_variable_identity` |
+| `pca` | unmet: `stable_sample_and_variable_identity`, `commensurable_units_or_explicit_scaling` |
+| `kalman_filter_linear` | unmet DAQ-side requirements |
+| `pid_controller` | pure computation only |
+| `viterbi` | unmet DAQ-side requirements |
 
-Authored from measured SCL reconnaissance and **mirrored into the DAQ repository** because
-this session holds read-only access to SCL. Its canonical home is SCL; see *Unresolved*.
+Statuses are SCL's own, read from its `blocking_requirements` blocks, not this repository's
+reading of them. The decision record and its test use SCL's exact workload names so the two
+artifacts share one vocabulary.
 
 ## Workload / primitive matrix
 
@@ -131,14 +136,13 @@ linear-algebra cluster and 14 if built first — a 14× sequencing penalty.**
 The rule is: select the highest-leverage workload whose observation requirements are *already*
 satisfied by DAQ. Applying it mechanically:
 
-- `least_squares`, `principal_component_analysis`, `viterbi` — **forbidden**, DAQ marks their
-  entry modality absent.
-- `kalman_filter` — only partially satisfied, and worst-case to sequence first.
+- `least_squares`, `pca`, `viterbi` — **forbidden**, DAQ marks their entry modality absent.
+- `kalman_filter_linear` — only partially satisfied, and worst-case to sequence first.
 - `pid_controller` — satisfied for pure computation, but its distinctive value is actuation,
   and no actuation-authority boundary exists anywhere. Building it would create an implicit
   control plane.
-- `fourier_transform_1d` and `convolution_correlation_1d` — identical observation
-  requirements, both satisfied.
+- `fourier_transform_1d` and `convolution_1d` — identical observation requirements, both
+  satisfied.
 
 FFT wins over convolution on three measured grounds: **generality falsification** (the
 substrate has been exercised by exactly one MD kernel; a transform is orthogonal to it and to
@@ -158,16 +162,46 @@ The reuse-leverage argument (least squares → linear algebra → Kalman → PCA
 3 workloads) is **not rejected — it is unreachable today**, and is recorded in the decision as
 deferred on availability rather than on merit.
 
-## Canonicalization
+## Canonicalization — and a concurrent session
 
-`epistemics/exchange.py` implements the pinned encoding as executable code. All three
-artifacts are deterministic, fixed points of the encoder, and parse identically under this
-repository's dependency-free reader and PyYAML.
+**This phase collided with a concurrent session working the same brief on the same branch**
+(`a0622f4`, "DAF capability artifact, and three determinations it rests on"). The collision was
+resolved by merge, not by force-push, and on the merits rather than by seniority:
 
-That cross-parser check earned its keep immediately: an unquoted `2026-08-25` resolves to
-`datetime.date` under PyYAML and to `str` under the repo reader. Unquoted, the artifact's hash
-would have been **parser-dependent** — exactly what the pinned encoding exists to prevent.
-Found by measurement, fixed in the encoder, locked by a test.
+- **Their `daq_capabilities.yaml` was taken over mine.** The brief's §2.1 requires that both
+  repositories *use the same serializer or verify agreement on a shared fixture*. They vendored
+  SCL's actual `canonical_yaml.py` **byte-identically** and verified both copies produce
+  `sha256:5859ce6e…` for a shared fixture. I had written my own serializer
+  (`epistemics/exchange.py`), which cannot establish cross-repo agreement no matter how correct
+  it is. **My serializer and its test file were deleted** — two serializers would be exactly the
+  second system this project forbids.
+- **`scl_requirements.yaml` was replaced by SCL's authentic bytes**, copied from
+  `Scientific-Compute-Layer-SCL-` at `5447df3`, rather than my mirror. SCL is its canonical owner.
+- **The decision record was regenerated** against both authentic digests:
+  `sha256:9961596953ea…` (capabilities) and `sha256:be15539449f2…` (requirements), using their
+  serializer.
+
+The cross-parser check still earned its keep, on the *shared* serializer: it leaves a bare
+`2026-08-25` unquoted, which PyYAML resolves to `datetime.date` and this repository's reader to
+`str` — a **parser-dependent hash**. Because that file is byte-identical across both repositories
+by agreement, editing it here would break the agreement, so the decision record **avoids the
+shape** instead (the redundant `date` field was dropped; `decision_id` carries the date and is
+not date-shaped) and a test locks it out. The serializer gap is reported, not patched
+unilaterally.
+
+## Independent corroboration of the selection
+
+A concurrent SCL session generalized the operation boundary and implemented
+`fourier_transform_1d` at `e49828b`, **independently selecting the same workload** from the same
+two artifacts. SCL's own requirements artifact marks both DAQ-owned requirements for that
+workload `SATISFIED` — `ordered_scalar_sequence` and `annotating_sample_spacing`, the latter
+explicitly noting that SCL never assumes Δt=1 and that a result computed without spacing is
+bin-indexed and says so, which is exactly the honest outcome this record's `daq_extension: none`
+rests on.
+
+That convergence is **corroboration of the selection, not validation of either side by the
+other** — neither session reviewed the other's work, and the decision record says so. The
+implementation is **cited, not claimed**: it was neither authored nor pushed from this session.
 
 ## Recursive computation and generation depth
 
@@ -242,18 +276,24 @@ migration rules were needed and none were invented.
 | Check | Result |
 |---|---|
 | `tests/test_recursive_lineage_depth.py` | **17 passed** (new) |
-| `tests/test_exchange_canonicalization.py` | **30 passed** (new) |
-| DAF full suite | **759 passed** (712 prior + 47 new) |
+| `tests/test_joint_decision_record.py` | **20 passed** (new) |
+| `tests/test_exchange_artifact.py` | passing (concurrent session's) |
+| DAF full suite | **789 passed** (712 prior + this phase + the concurrent session's) |
 | Vendored SCOUT suite | 1273 passed, unchanged |
 | Submodule | clean |
 | SCL clone | untouched, `git status --porcelain` empty |
 | `mypy .` | 4 pre-existing errors, 0 new |
-| `ruff` (new files) | all checks passed |
 | Doctrine | regenerated, 654/1400 words, zero diff |
 | `git diff --stat -- daf/ science/ boundary/ bridge/ assertion/ vendor/` | **empty** |
 
-No production acquisition code changed. The only code added is `epistemics/exchange.py`, a
-serializer for architecture documents that touches no evidence path.
+No production acquisition code changed in this phase.
+
+Two of my own artifacts were **deleted during the merge** rather than kept:
+`epistemics/exchange.py` and `tests/test_exchange_canonicalization.py`. Keeping a second
+serializer alongside the vendored, cross-repo-agreed one would have been the exact "second
+system" this project forbids, and mine could not establish the agreement the brief requires.
+`tests/test_joint_decision_record.py` carries forward the decision-specific assertions that
+were worth keeping.
 
 ## Bent
 
