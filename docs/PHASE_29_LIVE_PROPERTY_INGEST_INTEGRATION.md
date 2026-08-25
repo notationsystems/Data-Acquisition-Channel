@@ -344,11 +344,22 @@ report, without changing its existing content keys or its `Observation.id` for
 previously-acquired records.** The clearest candidate is `daf/extractors/edgar_daily_index.py`:
 an EDGAR filing's `retrieval_method` already states *how DAF acquired it*
 (`"http:edgar_daily_index_v1"`), and a genuinely analogous, source-supplied fact — which
-SEC form type populated the filing (already present in the raw `.idx` row, currently
-discarded) — could legitimately become a `method`-shaped field without inventing
-anything the source does not report. That would be the first shipped extractor capable
-of producing a property observation this phase's gates could genuinely accept, closing
-the bottleneck named above rather than working around it with another fixture.
+SEC form type populated the filing — could legitimately become a `method`-shaped field
+without inventing anything the source does not report. That would be the first shipped
+extractor capable of producing a property observation this phase's gates could genuinely
+accept, closing the bottleneck named above rather than working around it with another
+fixture.
+
+> **Corrected by Phase 30.** This paragraph claimed the form-type field was "already
+> present in the raw `.idx` row, currently discarded." That is factually wrong, measured
+> directly: `daf/extractors/edgar_daily_index.py` already parses `form_type` per filing
+> and aggregates it into `form_type_counts`; nothing here was ever discarded. Phase 30
+> also determined the field is not scientific method provenance at all — it is an SEC
+> regulatory filing-type classification (10-K, 8-K, S-1, ...) — and, independent of that,
+> that EDGAR's `Observation.content` carries no `property`/`value` pair in the first
+> place, so the whole premise of this paragraph does not hold. See
+> `architecture/method_provenance_reachability.yaml` and
+> `docs/PHASE_30_SOURCE_AUTHENTIC_METHOD_PROVENANCE.md`.
 
 ---
 

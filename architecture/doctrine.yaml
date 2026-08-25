@@ -21,6 +21,7 @@ sources:
   - architecture/execution_record.yaml
   - architecture/property_admissibility.yaml
   - architecture/invariants.yaml
+  - architecture/method_provenance_reachability.yaml
   - architecture/model_binding.yaml
 
 budget:

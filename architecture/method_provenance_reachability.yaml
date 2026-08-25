@@ -1,0 +1,50 @@
+# Whether a shipped extractor's discarded-or-carried source fields
+# constitute genuine method provenance for the property-admissibility
+# gate (`science.admissibility.no_context_free_property`'s `method`
+# requirement) -- determined by inspection and real acquisition, never
+# assumed from a field name.
+#
+# THIS FILE RECORDS DETERMINATIONS, NOT A SCHEMA. Each source gets one
+# verdict, evidenced by the actual field values a real acquisition
+# produced. A verdict of `document_classification` or
+# `contextual_metadata` is not a gap to close by promotion; it is the
+# honest answer.
+extends: core@1.0.0
+
+verdicts:
+  legitimate_method_provenance: "the field names how a measurement, computation, or simulation was performed, and can supply science.admissibility's method requirement without reinterpretation"
+  document_classification: "the field classifies what kind of document was filed or produced, not how any measurement was performed"
+  contextual_metadata: "the field is real acquisition or administrative context, but names neither a method nor a measurement"
+  not_property_shaped: "the source's Observation.content has no property/value pair at all; the method question does not arise because there is no property assertion for a method to attach to"
+
+determinations:
+
+  edgar_daily_index_form_type:
+    field: "filings[].form_type and form_type_counts, daf/extractors/edgar_daily_index.py"
+    correction: "docs/PHASE_29_LIVE_PROPERTY_INGEST_INTEGRATION.md's next-frontier section claimed this field is already present in the raw .idx row but currently discarded. That is factually wrong, measured directly: the extractor already parses form_type per filing and aggregates it into form_type_counts, and both are present in every acquired Observation's content today. Nothing here was ever discarded."
+    real_values_observed:
+      - "10-K"
+      - "8-K"
+      - "8-K/A"
+      - "S-1"
+      - "424B3"
+      - "D"
+    semantic_classification: document_classification
+    classification_evidence: "every observed value is an SEC regulatory filing-type code (17 CFR 240/249): 10-K is an annual report, 8-K a current report of a material event, 8-K/A an amendment to one, S-1 an IPO registration statement, 424B3 a prospectus filed under Rule 424(b)(3), D a Regulation D exempt-offering notice, and 4 a beneficial-ownership change statement. Each classifies which regulatory disclosure form a company filed. None describes how a measurement, computation, or simulation was performed. Promoting the filing type to a measurement method would assert a category error, not a normalization."
+    also_not_property_shaped: "independent of the method question: daf.extractors.edgar_daily_index's Observation.content is date_filed/filing_count/form_type_counts/filings -- a per-day filing-index summary, with no property key at all. Measured directly: assess_pool over a real EDGAR acquisition examines 0 property candidates, and no_context_free_property on the raw content returns MISSING_PROPERTY, MISSING_VALUE and MISSING_UNIT alongside MISSING_METHOD/MISSING_CONDITIONS/MISSING_UNCERTAINTY_KIND. There is no scientific assertion here for a method to qualify, so the question of whether form_type satisfies MISSING_METHOD does not arise -- MISSING_METHOD is one of six simultaneous absences, not the one gap standing between this content and admissibility."
+    conditions: "EDGAR reports no measurement conditions of any kind -- no temperature, instrument, sample, or protocol. MISSING_CONDITIONS is preserved, independent of the method finding above, per its own absence of source support."
+    uncertainty: "EDGAR reports no uncertainty semantics of any kind -- a regulatory filing has no error bar. MISSING_UNCERTAINTY_KIND is preserved. No value from stated/estimated/propagated/absent is assigned, because none is genuinely known; absent specifically was not chosen, since choosing it would assert that the source reported no error, and EDGAR reports no error because it is not a measurement -- a materially different fact than a measurement source that omits one."
+    verdict: document_classification
+    action_taken: none
+    action_taken_reason: "form type is not scientific method and was not forced through the gate. No extractor, adapter, or gate was modified. The rejection the property-admissibility gate would produce if EDGAR content were ever treated as a property candidate remains exactly what Phase 29 measured -- unreachable by this route, not weakened by it."
+
+  usgs_magnitude_type:
+    field: "properties.magType, surfaced as magnitude_type in daf/extractors/usgs_earthquakes.py"
+    real_values_observed:
+      - "mb"
+    semantic_classification: legitimate_method_provenance
+    classification_evidence: "mb, ml, mw, md, mww and similar USGS magnitude-type codes name the specific algorithm or scale used to compute an earthquake's magnitude from seismographic data (body-wave, local/Richter, moment, duration, W-phase moment) -- distinct methods that can and do disagree on the same event. This is categorically different from EDGAR's form_type: it describes how a scientific quantity was derived, not what kind of document was filed."
+    also_not_property_shaped: "not evaluated for admissibility in this phase, and not implemented. daf.extractors.usgs_earthquakes's Observation.content already carries both magnitude (the quantity) and magnitude_type (genuine method provenance) but has no property/unit/conditions/uncertainty_kind keys, and reshaping it into that shape raises its own open question this phase does not answer: whether magnitude has a meaningful unit in the sense quantity_is_typed expects, since Richter-style magnitude scales are logarithmic and conventionally unitless."
+    verdict: legitimate_method_provenance
+    action_taken: none
+    action_taken_reason: "named as the next executable frontier; not implemented here, because this phase's scope is the EDGAR determination and the brief's own governing principle is determination, not acceptance-rate optimization."
