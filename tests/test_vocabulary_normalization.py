@@ -27,7 +27,9 @@ someone explicitly wrote the equivalence down.
 
 from __future__ import annotations
 
+import ast
 import json
+from pathlib import Path
 
 import pytest
 from materials.analysis import MaterialQuestion, analyze
@@ -37,6 +39,7 @@ from boundary.acquisition_intent import make_acquisition_intent
 from bridge.intent_execution import operationalize_intent
 from bridge.source_capability import (
     PROPERTY_NOT_DECLARED,
+    ROLE_NOT_DECLARED,
     SUBJECT_KIND_NOT_DECLARED,
     SourceCapability,
     resolve_sources,
@@ -386,3 +389,251 @@ def test_full_composition_from_alias_requirement_to_acquired_evidence(tmp_path):
 
     # and nothing moved the scientific state
     assert predict(s1, candidate).sample_count == 1
+
+
+# ====================================================================
+# Section 1.13. role is not collateral damage of a property mapping
+# ====================================================================
+
+def test_a_property_mapping_never_changes_the_role():
+    """Section 1.13. Normalizing `UTS -> tensile_strength` must not make
+    an OBSERVED request satisfiable by a PREDICTED-only source, nor the
+    reverse. Role lives in its own dimension and no property mapping
+    touches it."""
+    observed_only = SourceCapability(
+        source_id="lab-uts", properties=("ultimate_tensile_strength",),
+        subject_kinds=("formulation",), roles=("OBSERVED",),
+    )
+    predicted_only = SourceCapability(
+        source_id="lab-uts", properties=("ultimate_tensile_strength",),
+        subject_kinds=("formulation",), roles=("PREDICTED",),
+    )
+
+    observed_request = _intent("UTS", role="OBSERVED")
+    predicted_request = _intent("UTS", role="PREDICTED")
+
+    assert resolve_sources(observed_request, (observed_only,), _registry(), VOCABULARY).candidates
+    assert resolve_sources(predicted_request, (predicted_only,), _registry(), VOCABULARY).candidates
+
+    # crossed, both directions must fail -- the property mapping succeeded
+    # in each case, so ROLE is the only thing rejecting them
+    for request, capability in (
+        (observed_request, predicted_only), (predicted_request, observed_only)
+    ):
+        resolution = resolve_sources(request, (capability,), _registry(), VOCABULARY)
+        assert resolution.candidates == ()
+        assert resolution.mismatches[0].reasons == (ROLE_NOT_DECLARED,)
+
+    # and the matched role is always the requested one, never rewritten
+    candidate = resolve_sources(observed_request, (observed_only,), _registry(), VOCABULARY).candidates[0]
+    assert candidate.matched_role == "OBSERVED"
+    role_match = next(m for m in candidate.term_matches if m.dimension == ROLE)
+    assert (role_match.requested, role_match.canonical, role_match.declared) == (
+        "OBSERVED", "OBSERVED", "OBSERVED"
+    )
+
+
+# ====================================================================
+# Section 1.12. context normalization is narrow, never broadening
+# ====================================================================
+
+def test_normalizing_one_context_key_leaves_the_others_untouched():
+    """Section 1.12. A `test_temperature -> temperature` mapping must not
+    make `temperature_unit`, `datum` or `unit` interchangeable with
+    anything, nor with each other."""
+    capability = SourceCapability(
+        source_id="lab-uts", properties=("ultimate_tensile_strength",),
+        subject_kinds=("formulation",), roles=("OBSERVED",),
+        context_keys=("test_temperature", "temperature_unit"),
+    )
+
+    # the mapped key resolves; the unmapped-but-declared key matches literally
+    resolution = resolve_sources(
+        _intent("UTS", context={"temperature": 25, "temperature_unit": "C"}),
+        (capability,), _registry(), VOCABULARY,
+    )
+    assert [c.source_id for c in resolution.candidates] == ["lab-uts"]
+    context_matches = {
+        m.requested: m for m in resolution.candidates[0].term_matches if m.dimension == CONTEXT_KEY
+    }
+    assert context_matches["temperature"].declared == "test_temperature"
+    assert context_matches["temperature"].via_alias is True
+    assert context_matches["temperature_unit"].declared == "temperature_unit"
+    assert context_matches["temperature_unit"].via_alias is False, "matched without any mapping"
+
+    # keys the source never declared stay rejected, named individually
+    for undeclared in ({"datum": "MLLW"}, {"unit": "MPa"}, {"pressure": 1}):
+        rejected = resolve_sources(
+            _intent("UTS", context=undeclared), (capability,), _registry(), VOCABULARY
+        )
+        assert rejected.candidates == ()
+        assert rejected.mismatches[0].missing_context_keys == tuple(undeclared)
+
+    # and no context mapping exists that could join them
+    for term in ("datum", "unit", "temperature_unit"):
+        assert VOCABULARY.canonical_for(CONTEXT_KEY, term) == term
+
+
+# ====================================================================
+# Section 5. purity, proven structurally
+# ====================================================================
+
+def test_the_vocabulary_module_can_reach_nothing_impure():
+    """Section 5. Normalization must do no I/O, read no clock and use no
+    randomness. Proven at the AST level rather than by observation: the
+    module imports nothing that could."""
+    module_path = Path(__file__).resolve().parent.parent / "bridge" / "vocabulary.py"
+    tree = ast.parse(module_path.read_text())
+
+    imported = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            imported.update(alias.name.split(".")[0] for alias in node.names)
+        elif isinstance(node, ast.ImportFrom) and node.module and node.level == 0:
+            imported.add(node.module.split(".")[0])
+
+    assert imported <= {"__future__", "dataclasses", "typing"}, (
+        f"the normalization layer must stay pure; it imports {sorted(imported)}"
+    )
+    for impure in (
+        "os", "io", "sys", "socket", "random", "time", "datetime", "pathlib",
+        "urllib", "requests", "sqlite3", "subprocess", "secrets", "uuid",
+    ):
+        assert impure not in imported
+
+    # Section 4: it is semantic infrastructure, so it names no layer at all
+    for layer in ("daf", "science", "boundary", "bridge", "materials", "evidence"):
+        assert layer not in imported, f"vocabulary must not depend on {layer}"
+
+
+def test_daf_never_imports_the_normalization_layer():
+    """Section 4's third invariant, stated directly about this module.
+
+    Checked over IMPORTS rather than raw text: several DAF adapters use
+    the word "vocabulary" in prose (`usgs_earthquakes.py` describes the
+    "fixed vocabulary of values this adapter ever substitutes"), and a
+    substring search would report that as a dependency."""
+    daf_root = Path(__file__).resolve().parent.parent / "daf"
+    for module_path in sorted(daf_root.rglob("*.py")):
+        tree = ast.parse(module_path.read_text())
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                names = [alias.name for alias in node.names]
+            elif isinstance(node, ast.ImportFrom) and node.module and node.level == 0:
+                names = [node.module]
+            else:
+                continue
+            for name in names:
+                assert name.split(".")[0] not in {"bridge", "science", "boundary"}, (
+                    f"{module_path.name} imports {name}, reversing the dependency direction"
+                )
+
+
+# ====================================================================
+# Sections 1.9 / 6. identity is empirically unchanged by normalization
+# ====================================================================
+
+def test_normalization_changes_no_acquisition_or_evidence_identity(tmp_path):
+    """Sections 1.9 and 6, measured rather than argued: the SAME dataset
+    acquired through a plan reached WITHOUT a vocabulary and through a
+    plan reached WITH one produces byte-identical identities at every
+    level -- because normalization participates in no content hash."""
+    from daf.storage.durable_pool import DurablePool
+    from daf.storage.filesystem_store import FilesystemEvidenceStore
+
+    shared_dataset = tmp_path / "shared" / "lab.json"
+    shared_dataset.parent.mkdir(parents=True, exist_ok=True)
+    shared_dataset.write_text(json.dumps([measurement("ts-701", 95)]))
+
+    exact_capability = SourceCapability(
+        source_id="lab-uts", properties=("tensile_strength",),
+        subject_kinds=("formulation",), roles=("OBSERVED",),
+    )
+
+    def _acquire(root, intent, capability, vocabulary):
+        sources = _registry()
+        resolution = resolve_sources(intent, (capability,), sources, vocabulary)
+        assert resolution.candidates, "this arm must reach a candidate"
+        selected = sources.get(resolution.candidates[0].source_id)
+        plan = operationalize_intent(
+            intent, selected, plan_id="identity-plan", parameters={"path": str(shared_dataset)}
+        )
+        pool = DurablePool(FilesystemEvidenceStore(root / "evidence"))
+        adapters = AdapterRegistry()
+        adapters.register(graph_dataset_binding())
+        result = execute_plan(
+            plan, sources, adapters, pool, CheckpointStore(root / "ck"),
+            requested_at="2026-08-25T09:00:00Z",
+        )
+        assert result.outcome.value == "acquired"
+        observation = pool.all_observations()[0]
+        record = pool.get_record(observation.record_ids[0])
+        document = pool.get_document(record.document_id)
+        return {
+            "plan_id": plan.plan_id,
+            "source_id": plan.source_id,
+            "artifact_id": {a.artifact_id for a in result.artifacts},
+            "version_id": {a.version_id for a in result.artifacts},
+            "document_id": document.id,
+            "evidence_source_id": document.source_id,
+            "record_id": record.id,
+            "observation_id": observation.id,
+        }
+
+    # arm A: no vocabulary needed -- the source already speaks canonically
+    without = _acquire(tmp_path / "a", _intent("tensile_strength"), exact_capability, EMPTY_VOCABULARY)
+    # arm B: the candidate is only reachable through an explicit mapping
+    with_vocabulary = _acquire(tmp_path / "b", _intent("UTS"), LAB_CAPABILITY, VOCABULARY)
+
+    assert without == with_vocabulary, (
+        "normalization must not participate in acquisition or evidence identity"
+    )
+
+    # AcquisitionRequest semantics are likewise untouched
+    from daf.catalog.plan import AcquisitionPlan
+
+    plan = AcquisitionPlan(plan_id="identity-plan", source_id="lab-uts", parameters={"path": "x"})
+    request = plan.to_request(requested_at="2026-08-25T09:00:00Z")
+    assert (request.source_id, dict(request.parameters), request.requested_at) == (
+        "lab-uts", {"path": "x"}, "2026-08-25T09:00:00Z"
+    )
+
+
+def test_normalization_changes_no_model_state_identity(tmp_path):
+    """Section 1.9's last item, measured: a ModelState built over
+    acquired evidence is identical whether or not a vocabulary was
+    consulted on the way to acquiring it."""
+    _pool, iteration, candidate, (s0, s1, s2) = trajectory(tmp_path)
+    before = (s0.id, s1.id, s2.id)
+
+    gap = diagnose_information_gap(s1, candidate, iteration)
+    intent = intents_for(gap)[0]
+    resolve_sources(intent, (LAB_CAPABILITY,), _registry(), VOCABULARY)
+
+    assert (s0.id, s1.id, s2.id) == before
+    assert predict(s1, candidate).sample_count == 1
+    assert gap.state_id == s1.id
+
+
+# ====================================================================
+# Section 8. semantic normalization is not parameter translation
+# ====================================================================
+
+def test_a_canonical_requirement_never_generates_a_source_flavoured_parameter():
+    """Section 8. Knowing `UTS` and `tensile_strength` are the same
+    concept must not cause a plan to carry either term as an acquisition
+    parameter. Parameter naming comes only from the caller's explicit
+    operational mapping (Phase 21), which this phase did not extend."""
+    sources = _registry()
+    resolution = resolve_sources(_intent("UTS"), (LAB_CAPABILITY,), sources, VOCABULARY)
+    selected = sources.get(resolution.candidates[0].source_id)
+
+    plan = operationalize_intent(
+        _intent("UTS"), selected, plan_id="p", parameters={"path": "/data/lab.json"}
+    )
+    assert dict(plan.parameters) == {"path": "/data/lab.json"}, (
+        "the plan carries exactly what the caller supplied, and nothing derived from the vocabulary"
+    )
+    serialized = json.dumps(dict(plan.parameters))
+    for term in ("UTS", "tensile_strength", "ultimate_tensile_strength", "property"):
+        assert term not in serialized

@@ -169,8 +169,32 @@ bridge   -> boundary + daf             never materials, never science
 daf      -> evidence                   never materials/science/boundary/bridge
 ```
 
-`bridge/vocabulary.py` imports nothing at all beyond the standard library — it
+`bridge/vocabulary.py` imports **nothing beyond `dataclasses` and `typing`** — it
 operates on plain strings, so it introduces no dependency in any direction.
+Asserted at AST level in `test_the_vocabulary_module_can_reach_nothing_impure`,
+which also rules out `os`, `io`, `sys`, `socket`, `random`, `time`, `datetime`,
+`pathlib`, `urllib`, `requests`, `sqlite3`, `subprocess`, `secrets` and `uuid`.
+
+### A note on placement
+
+The module lives in `bridge/`, **not** `science/`. It is semantic infrastructure,
+and §4's three invariants hold for it trivially and are asserted directly — it
+imports no `daf`, introduces no reverse dependency, and no DAF module imports it
+(`test_daf_never_imports_the_normalization_layer`, an AST check over every file in
+`daf/`).
+
+Moving it to `science/` would actively break a standing invariant: its only
+consumer is `bridge.source_capability.resolve_sources`, so `bridge` would then have
+to import `science`, which Phases 21 and 22 assert it never does. Placement was
+resolved from the actual dependency structure, as Phase 22 §16 required, and the
+module sits beside its only consumer. If a future caller needs to canonicalize a
+requirement's terms *before* an intent exists, `boundary/` — importable by every
+layer — would be the right home; nothing needs that today.
+
+That AST check found a real defect in its own first draft: a naive substring search
+for `"vocabulary"` flagged `daf/adapters/usgs_earthquakes.py`, which uses the word
+in prose ("the fixed vocabulary of values this adapter ever substitutes"). The test
+now inspects imports rather than text.
 
 ---
 
@@ -200,9 +224,27 @@ into a valid one, **and** an unrelated term stays rejected.
 
 ---
 
+## 8b. Identity, measured rather than argued
+
+§6 asked for an empirical before/after. The **same dataset** is acquired twice
+through two different routes to the same plan:
+
+| arm | how the candidate was reached |
+|---|---|
+| A | source already speaks canonically; `EMPTY_VOCABULARY` |
+| B | source says `ultimate_tensile_strength`; reachable **only** through the mapping |
+
+Both arms are asserted byte-identical across `plan_id`, `source_id`,
+`artifact_id`, `version_id`, evidence `Source.id`, `Document.id`, `Record.id` and
+`Observation.id`. `AcquisitionRequest` semantics are checked separately, and
+`ModelState` ids are shown unchanged by a resolution call. Normalization
+participates in no content hash anywhere.
+
+---
+
 ## 9. Tests and validation
 
-`tests/test_vocabulary_normalization.py` — 22 tests covering §16 A–J and §17:
+`tests/test_vocabulary_normalization.py` — 29 tests:
 
 | § | Test |
 |---|---|
@@ -223,15 +265,22 @@ into a valid one, **and** an unrelated term stays rejected.
 | 9 | `test_direction_is_one_way` |
 | I, 13 | `test_normalization_changes_no_identity_and_acquires_nothing` |
 | J | `test_full_composition_from_alias_requirement_to_acquired_evidence` |
+| 1.13 | `test_a_property_mapping_never_changes_the_role` |
+| 1.12 | `test_normalizing_one_context_key_leaves_the_others_untouched` |
+| 5 | `test_the_vocabulary_module_can_reach_nothing_impure` |
+| 4 | `test_daf_never_imports_the_normalization_layer` |
+| 1.9, 6 | `test_normalization_changes_no_acquisition_or_evidence_identity` |
+| 1.9 | `test_normalization_changes_no_model_state_identity` |
+| 8 | `test_a_canonical_requirement_never_generates_a_source_flavoured_parameter` |
 
 | Check | Result |
 |---|---|
-| DAF suite | **395 passed** (373 prior + 22 new) |
+| DAF suite | **402 passed** (373 prior + 29 new) |
 | Phase 22 suite | **13 passed, unmodified** — backward compatibility |
 | Vendored SCOUT suite | **1273 passed**, unchanged |
 | Submodule | `git status --short` clean |
 | `mypy daf/ science/ boundary/ bridge/` | Success, 55 source files |
-| `ruff` | 32 findings, all `UP006`/`UP035`/`UP045`/`I001` repo-wide conventions — none genuine |
+| `ruff` | 32 findings, all `UP006`/`UP035`/`UP045`/`I001` repo-wide conventions — none genuine. One `RUF059` was found and fixed |
 | Changed files | `bridge/vocabulary.py` (new), `tests/test_vocabulary_normalization.py` (new), `bridge/source_capability.py` (one optional parameter + `TermMatch`). **Zero changes in `daf/`, `science/`, `boundary/`** |
 
 §21's confirmations: DAF acquisition behaviour unchanged (no file in `daf/`
