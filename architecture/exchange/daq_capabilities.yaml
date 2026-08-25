@@ -102,6 +102,15 @@ execution_record_resolution:
     - seed
     - verification_status
     - computation_identity
+  core_field_constraint_raised:
+    field: operation_id
+    finding: present in both kinds, but NOT meaning the same thing. DAF's operation_id is H(plan_id, source_id, parameters, mode) and deliberately EXCLUDES the adapter, because a coordinate is never an identity. The compute layer's operation identity INCLUDES the backend, so the same mathematics on a different backend is a different operation there.
+    how_it_was_found: by re-reading every core field for kind-specific MEANING rather than kind-specific PRESENCE. It was the only field that failed, and it is the most load-bearing one in the core.
+    if_rejected: operation_id leaves the shared core and moves into both kind blocks, which is the same answer the strict intersection test gives once the constraint is refused
+    proposed_constraint: "the unified record's operation_id is implementation-independent for every kind; the implementation lives in the kind block, where both kinds already carry it (adapter_id/adapter_version, backend/backend_version). This is also the non-redundant reading: with backend already a computation_only field, folding it into operation_id states it twice."
+    scope: constrains the unified RECORD's field only. It says nothing about how the compute layer computes its own internal identities.
+    status: RAISED_FOR_THE_JOINT_DECISION
+    why_it_matters: a consumer reading operation_id from a core-typed record without knowing the kind would conclude that equal operation_id means the same logical request regardless of how it ran -- true for acquisition, false for computation. A silent, kind-dependent misreading of a field the core presents as uniform.
   decided_by: daf
   detail: architecture/execution_record.yaml divergence_resolution
   enforced_now: tests/test_execution_record_divergence.py locks the intersection, the refused merges and the unchanged record, so the decision cannot drift before it is built
@@ -155,6 +164,15 @@ nonscalar_quantity_finding:
     representable: false
     visibility: "silent and late -- ADMITTED by the gate with a stable content_hash, failing only in materials.analysis as TypeError: unhashable type: 'list'"
   summary: multivariate value and structured uncertainty are ONE extension, not two
+  was_the_hole_ever_reached:
+    answer: no -- the repair is forward-only
+    but_unreached_is_not_unreachable: daf/extractors/graph_dataset.py consumes entities/relations as structure and passes EVERY other key into Observation.content unmodified, by design. A source record declaring a covariance would be carried through verbatim, admitted, and content-addressed. The hole is closed today by what sources happen to send, not by any check -- the same extractor and the same mechanism as the Phase 35 verbatim-pass-through finding for `conditions`, in a different field.
+    enforcement: tests/test_nonscalar_quantity_frontier.py::test_no_extractor_emits_a_nonscalar_uncertainty, ::test_no_committed_fixture_carries_a_nonscalar_uncertainty, ::test_but_the_pass_through_extractor_would_carry_one_verbatim
+    measured_basis: exactly one extractor emits `uncertainty` at all (noaa_water_level_measurements.py) and it emits sigma, a scalar parsed by _optional_float. No committed fixture carries a non-scalar uncertainty. So no covariance-bearing Observation has ever been content-addressed, and nothing downstream ever consumed such a hash.
+    why_it_was_asked: a covariance that receives a stable content_hash before dying at the comparison layer has already been TREATED AS IDENTIFIED. Had one ever been referenced, repair would have had to reach backwards as well as forwards.
+  which_half_must_lead:
+    answer: the structured-uncertainty half
+    reason: it is the silent one. Closing the multivariate half first converts the uncertainty failure from a loud gate refusal into a silent late TypeError, so the visible half cannot go first without making the invisible half worse. Ordering within a single extension, not two extensions.
   why_one_extension: relaxing the multivariate type check ON ITS OWN converts the structured-uncertainty failure from a loud gate refusal into a silent late TypeError, because a vector value is a Sequence and meets the same unhashable consumer a covariance meets. Closing the visible half first makes the invisible half worse, so neither can be closed alone.
 owner: daf
 paired_artifact: scl_requirements.yaml, in the compute layer's repository

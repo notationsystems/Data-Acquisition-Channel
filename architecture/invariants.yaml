@@ -87,8 +87,21 @@ invariants:
   - id: generation_depth_bounded
     rule: "derivation from derivation is bounded and the depth is recorded"
     status: vacuously_enforced
+    domain: empty
     enforcement: tests/test_epistemic_boundary.py
     evidence: "DerivedValue identity makes a derivation cycle unconstructible; no generative path exists to bound"
+    # This evidence is TRUE NOW AND SELF-INVALIDATING, which makes it a
+    # different object from an ordinary passing check: a claim with an
+    # expiry condition. The moment a generative path exists, the evidence
+    # above becomes false while the status still reads
+    # `vacuously_enforced` -- and a vacuous status whose justification has
+    # silently gone untrue is worse than a status of `absent`, by this
+    # file's own standard. So the expiry is encoded rather than
+    # remembered.
+    invalidated_by: "the first computed-class record entering the store, or any other generative path by which a derivation can take a derivation as input"
+    guard: tests/test_generation_depth_domain_guard.py
+    guard_behaviour: "asserts the domain is STILL EMPTY, and FAILS when a generative path lands -- so the rule must be written before that path ships rather than after. A note saying 'rewrite before, not after' gets missed; a failing test cannot be."
+    guard_note: "the guard is not the invariant. It does not bound any depth; it refuses to let the invariant stay vacuous once it has stopped being vacuous. See architecture/recursive_depth.yaml."
 
   # ---- Control substrate.
 
