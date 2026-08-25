@@ -1,0 +1,4 @@
+[
+  {"id": "widget-1", "value": 42.5, "unit": "USD"},
+  {"id": "widget-2", "value": 17.0, "unit": "USD"}
+]

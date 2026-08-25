@@ -12,12 +12,25 @@ so a crash mid-write can never leave a half-written file where a reader
 would see it -- `all_*()` only ever globs `*.json`, never the `.tmp`
 staging suffix.
 
-Because ids are content-addressed, writing the SAME id twice is only
-ever legitimate if the payload is identical (that is what "duplicate
-persistence" means here); if an existing file's payload differs from
-what is being written under the same id, that is not a legitimate
-duplicate -- it is on-disk corruption or tampering, and is reported as
-such rather than silently overwritten or silently ignored.
+Because every id is content-addressed via a `make_*` factory, two
+LEGITIMATELY constructed objects that share an id are, by construction,
+guaranteed to share every identity-relevant field -- the only fields
+that can differ are exactly the epistemic/temporal ones identity
+deliberately excludes (e.g. `Document.retrieved_at`). So "the same
+content re-acquired at a different timestamp" and "genuinely conflicting
+content under one id" are NOT the same situation, and must not be
+detected the same way: the former is an ordinary, legitimate duplicate
+(silent no-op); the latter can only arise from on-disk corruption or
+tampering of the file ALREADY on disk, independent of whatever is being
+written now. `_write` therefore does not compare payloads at all on a
+duplicate write -- it re-verifies the EXISTING file's own identity (via
+the category's `*_from_dict`, which recomputes and checks the id, per
+`daf.storage.serialization`) and lets `ArtifactIdentityMismatch`
+propagate if that file was corrupted. This is strictly more correct
+than a payload-equality check, which would either reject legitimate
+re-acquisitions (as an earlier version of this module did) or, if
+weakened to ignore non-identity fields, still not verify the thing that
+actually matters: whether the on-disk bytes are self-consistent.
 """
 
 from __future__ import annotations
@@ -42,14 +55,6 @@ from daf.storage import serialization
 T = TypeVar("T")
 
 
-class ArtifactConflictError(RuntimeError):
-    """Raised when a write would place different content under an id
-    that already exists on disk. Content-addressed identity means this
-    can only happen if the existing file was corrupted or tampered with
-    after being written -- a legitimate re-put of identical content is
-    always a silent no-op, never this error."""
-
-
 class FilesystemEvidenceStore:
     _CATEGORIES = (
         "sources",
@@ -69,23 +74,21 @@ class FilesystemEvidenceStore:
 
     # -- generic write/read machinery, shared by all 8 categories --
 
-    def _write(self, category: str, artifact_id: str, payload: dict) -> None:
+    def _write(self, category: str, artifact_id: str, payload: dict, from_dict: Callable[[dict], object]) -> None:
         directory = self.root / category
         final_path = directory / f"{artifact_id}.json"
-        text = json.dumps(payload, sort_keys=True, indent=2)
 
         if final_path.exists():
-            existing_text = final_path.read_text()
-            if json.loads(existing_text) != json.loads(text):
-                raise ArtifactConflictError(
-                    f"{category}/{artifact_id}.json already exists with different content -- "
-                    "this is only possible via on-disk corruption or tampering, since ids are "
-                    "content-addressed"
-                )
-            return  # legitimate duplicate: identical content already durable, nothing to do
+            # Re-verify the EXISTING file's own identity rather than comparing
+            # it to the incoming payload -- see module docstring for why a
+            # payload-equality comparison would be wrong here. Propagates
+            # serialization.ArtifactIdentityMismatch if the on-disk file was
+            # corrupted or tampered with, independent of this write.
+            from_dict(json.loads(final_path.read_text()))
+            return  # existing file already validly represents this id -- nothing to do
 
         tmp_path = directory / f"{artifact_id}.json.tmp"
-        tmp_path.write_text(text)
+        tmp_path.write_text(json.dumps(payload, sort_keys=True, indent=2))
         tmp_path.replace(final_path)  # atomic on POSIX -- readers never see a partial file
 
     def _read_all(self, category: str) -> Tuple[dict, ...]:
@@ -109,33 +112,51 @@ class FilesystemEvidenceStore:
     # -- put: one per category --
 
     def put_source(self, source: Source) -> None:
-        self._write("sources", source.id, serialization.source_to_dict(source))
+        self._write("sources", source.id, serialization.source_to_dict(source), serialization.source_from_dict)
 
     def put_document(self, document: Document) -> None:
-        self._write("documents", document.id, serialization.document_to_dict(document))
+        self._write(
+            "documents", document.id, serialization.document_to_dict(document), serialization.document_from_dict
+        )
 
     def put_record(self, record: Record) -> None:
-        self._write("records", record.id, serialization.record_to_dict(record))
+        self._write("records", record.id, serialization.record_to_dict(record), serialization.record_from_dict)
 
     def put_observation(self, observation: Observation) -> None:
-        self._write("observations", observation.id, serialization.observation_to_dict(observation))
+        self._write(
+            "observations",
+            observation.id,
+            serialization.observation_to_dict(observation),
+            serialization.observation_from_dict,
+        )
 
     def put_referent(self, referent: Referent) -> None:
-        self._write("referents", referent.id, serialization.referent_to_dict(referent))
+        self._write(
+            "referents", referent.id, serialization.referent_to_dict(referent), serialization.referent_from_dict
+        )
 
     def put_claimed_relationship(self, relationship: ClaimedRelationship) -> None:
         self._write(
             "claimed_relationships",
             relationship.id,
             serialization.claimed_relationship_to_dict(relationship),
+            serialization.claimed_relationship_from_dict,
         )
 
     def put_derived_value(self, derived_value: DerivedValue) -> None:
-        self._write("derived_values", derived_value.id, serialization.derived_value_to_dict(derived_value))
+        self._write(
+            "derived_values",
+            derived_value.id,
+            serialization.derived_value_to_dict(derived_value),
+            serialization.derived_value_from_dict,
+        )
 
     def put_derived_grounding(self, grounding: DerivedGrounding) -> None:
         self._write(
-            "derived_groundings", grounding.id, serialization.derived_grounding_to_dict(grounding)
+            "derived_groundings",
+            grounding.id,
+            serialization.derived_grounding_to_dict(grounding),
+            serialization.derived_grounding_from_dict,
         )
 
     # -- get: one per category, raises KeyError if missing --

@@ -5,7 +5,8 @@ from __future__ import annotations
 import pytest
 from evidence.types import make_document, make_source
 
-from daf.storage.filesystem_store import ArtifactConflictError, FilesystemEvidenceStore
+from daf.storage.filesystem_store import FilesystemEvidenceStore
+from daf.storage.serialization import ArtifactIdentityMismatch
 
 
 def _store(tmp_path):
@@ -49,7 +50,13 @@ def test_duplicate_persistence_of_identical_content_is_a_silent_no_op(tmp_path):
     assert len(store.all_documents()) == 1
 
 
-def test_conflicting_content_under_the_same_id_is_detected(tmp_path):
+def test_corrupted_existing_file_is_detected_on_the_next_write(tmp_path):
+    """A write to an id that already exists on disk re-verifies the
+    EXISTING file's own identity rather than comparing payloads (two
+    legitimately-constructed objects sharing an id can only differ in
+    non-identity fields like retrieved_at -- see module docstring). If
+    the existing file was corrupted/tampered with independent of this
+    write, that is what gets caught."""
     store = _store(tmp_path)
     document = make_document(source_id="s", raw_content="A", retrieval_method="m", retrieved_at="t")
     store.put_document(document)
@@ -60,8 +67,24 @@ def test_conflicting_content_under_the_same_id_is_detected(tmp_path):
     path = store.root / "documents" / f"{document.id}.json"
     path.write_text(path.read_text().replace('"A"', '"TAMPERED"'))
 
-    with pytest.raises(ArtifactConflictError):
+    with pytest.raises(ArtifactIdentityMismatch):
         store.put_document(document)
+
+
+def test_re_persisting_identical_content_at_a_different_acquisition_time_is_not_a_conflict(tmp_path):
+    """The bug this guards against: Document.id excludes `retrieved_at`
+    from its hash, so re-acquiring the SAME content at a later timestamp
+    produces an object with the same id but a different retrieved_at --
+    that must remain a legitimate, silent duplicate, never an error."""
+    store = _store(tmp_path)
+    first = make_document(source_id="s", raw_content="A", retrieval_method="m", retrieved_at="2026-01-01T00:00:00Z")
+    second = make_document(source_id="s", raw_content="A", retrieval_method="m", retrieved_at="2026-02-01T00:00:00Z")
+    assert first.id == second.id  # same identity-relevant content
+
+    store.put_document(first)
+    store.put_document(second)  # must NOT raise
+
+    assert len(store.all_documents()) == 1
 
 
 def test_missing_document_raises_key_error(tmp_path):

@@ -5,6 +5,26 @@
 durable persistence underneath `EvidencePool`, without touching the SCOUT
 Protocols, Evidence types, or admission gate proven in Phase A.
 
+**Addendum (found during Phase C):** the original `_write` implementation
+compared entire persisted JSON payloads on a duplicate write and raised
+`ArtifactConflictError` on any difference. This was a bug: `Document.id`
+(like every other identity in this codebase) deliberately excludes
+epistemic/temporal fields such as `retrieved_at`, so re-acquiring
+identical content at a later timestamp legitimately produces an object
+with the same id but a different `retrieved_at` — a real scenario Phase
+C's repeated-acquisition orchestration surfaced immediately. Since two
+objects constructed via `make_*` can never legitimately share an id while
+differing in identity-relevant fields, a write-time "conflicting content"
+check can never fire for a legitimate reason — only for on-disk
+corruption of the file already present, which is exactly what read-time
+verification already existed to catch. `_write` was corrected to
+re-verify the EXISTING file's own identity (via the category's
+`*_from_dict`) rather than compare payloads; `ArtifactConflictError` was
+removed, and corruption is now reported as `ArtifactIdentityMismatch`
+consistently whether detected via a read or a write. See
+`docs/DAF_ORCHESTRATION.md` and `daf/storage/filesystem_store.py`'s
+module docstring for the full reasoning.
+
 **Architectural boundary this phase locks in:** three deliberately
 separate planes — DAF (durable acquisition), Evidence/Canonical State
 (scientific-state), and a future Rust/zkVM/Morpho/CUDA execution plane.
@@ -183,11 +203,14 @@ Local filesystem, JSON, content-addressed filenames, atomic writes.
 
 ### 4. Artifact persistence semantics
 
-- Duplicate persistence of identical content under the same id: silent
-  no-op (content-addressing makes this always correct).
-- Conflicting content ever found under the same id: raises
-  `ArtifactConflictError` — only reachable via on-disk corruption/
-  tampering, never via legitimate concurrent use of this store's own API.
+- Duplicate persistence of identical content under the same id, OR of
+  the same identity-relevant content with different non-identity
+  metadata (e.g. a later `retrieved_at`): silent no-op (content-addressing
+  makes this always correct — see the Phase C addendum above).
+- The file already on disk for a given id found to be self-inconsistent
+  (corrupted/tampered with, independent of the current write): raises
+  `serialization.ArtifactIdentityMismatch` — never reachable via
+  legitimate use of this store's own API.
 - Missing artifact/version: raises `KeyError`
   (`FilesystemEvidenceStore`) / `ArtifactNotFoundError`
   (`ArtifactStore`, also raised when a version_id exists but under a
