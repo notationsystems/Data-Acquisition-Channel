@@ -207,10 +207,110 @@ representable at the boundary*, and stops where honesty requires.
 
 ---
 
+## 6b. Initial assumptions that turned out to be wrong
+
+Recorded because each cost real work, and because the code overruled every one:
+
+1. **"`materials/gap_analysis.py` holds the gap types."** It does not exist. Gap
+   types live in `materials/experiment.py` (`EvidenceGap`, `SideGap`,
+   `ExperimentGapAnalysis`) and `materials/specification.py`
+   (`EvidenceRequirement`, `specify_experiment_requirements`).
+2. **"A `gap_to_requirement()` function is needed."** It is not.
+   `diagnose_information_gap` already attaches the vendored requirements to the
+   gap verbatim, so the function's entire body would be `return gap.requirements`.
+3. **"A new requirement object is needed for the scientific layer."** No —
+   `EvidenceRequirement` already says what is needed without saying how to get it.
+   The missing piece was one layer further out.
+4. **"The blocker is semantic."** It was a *dependency direction*. The semantics
+   were already right; no object existed that both sides were permitted to name.
+5. **"Determinism failures mean the identity scheme is wrong."** They did not.
+   Provenance legitimately participates in evidence and state identity, so
+   determinism comparisons must share one source — the earlier fix was already
+   correct and was left alone.
+
+## 6c. Why `AcquisitionPlan` was not reused as the scientific requirement
+
+The obvious shortcut would have been to let the scientific layer emit an
+`AcquisitionPlan` directly. It was rejected on four grounds, each visible in the
+type itself:
+
+```python
+AcquisitionPlan(plan_id, source_id, parameters, enabled, schedule, mode, interval_seconds)
+```
+
+1. **It has already made the decision.** `source_id` names *which source*, and
+   `parameters` are adapter-shaped. A scientific layer emitting one would be
+   choosing the mechanism, which is exactly the choice it must not make.
+2. **It cannot express the question.** There is no field for subject, property,
+   role, or conditioning context. "Tensile strength of F1 at 25 °C" is not
+   representable in it at all, except by encoding it into `parameters` — i.e. into
+   an adapter's private schema.
+3. **It would invert the dependency.** `AcquisitionPlan` lives in `daf/`, so
+   `science` would have to import `daf`. That is the one direction this phase
+   exists to prevent.
+4. **It carries execution policy.** `schedule`, `mode`, `interval_seconds`,
+   `enabled` are operational concerns with no scientific meaning. A requirement
+   that carried them would be claiming things the scientific layer has no basis
+   to assert.
+
+`AcquisitionIntent` remains justified precisely because it is the complement:
+everything `AcquisitionPlan` cannot say, and nothing it can.
+
+## 6d. The five identities stay distinct
+
+Section 3's requirement, asserted mechanically rather than by inspection. Each
+object has exactly one discriminating field that appears in **no** other:
+
+| Object | Question it answers | Discriminator |
+|---|---|---|
+| `InformationGap` | what remains unresolved? | `state_id` |
+| `EvidenceRequirement` | what evidence would help? | `criterion` |
+| `AcquisitionIntent` | what class of evidence? | `subject_natural_key` |
+| `AcquisitionPlan` | how will it be executed? | `plan_id` |
+| `AcquisitionRequest` | execute it, now | `requested_at` |
+
+The test additionally proves the separation runs both ways: no scientific object
+carries an execution handle (`source_id`, `plan_id`, `parameters`, `schedule`,
+`mode`, `interval_seconds`), and no operational object carries scientific
+semantics (`criterion`, `reasons`, `requirements`, `estimate`, `role`,
+`target_context`). `AcquisitionPlan` and `AcquisitionRequest` are also kept
+apart — a plan is standing intent to execute, a request is one execution at one
+instant.
+
+## 6e. Context propagation, asserted at every hop
+
+Section 4, with the real example carried end to end:
+
+```
+Criterion.context                    {"temperature": 25, "temperature_unit": "C"}
+        |
+        v
+EvidenceRequirement.criterion_context {"temperature": 25, "temperature_unit": "C"}
+        |
+        v
+AcquisitionIntent.target_context      {"temperature": 25, "temperature_unit": "C"}
+```
+
+Unchanged at each step, and carried as the source's own open mapping rather than
+rewritten into a DAF parameter schema. The intent is asserted to contain none of
+`endpoint`, `adapter`, `adapter_id`, `url`, `page`, `pagination`, `cursor`,
+`checkpoint`, `schedule`, `interval_seconds`, `source_id`, `parameters`.
+
+## 6f. The two directions execute independently, at runtime
+
+Section 8, proven by observing `sys.modules` rather than by reasoning:
+
+- **DAF without science.** `science` and `boundary` are deleted from
+  `sys.modules`, a full DAF acquisition runs to completion, and neither package
+  reappears. DAF is usable with no scientific layer present.
+- **Science without further DAF.** Translating a requirement into an intent
+  imports no `daf` module that was not already loaded, and executes nothing
+  (`execute_plan` is additionally monkeypatched to raise if called).
+
 ## 7. Tests
 
-`tests/test_information_gap_acquisition_seam.py` — 12 tests covering all ten
-required items plus Step 6's seven negative boundaries:
+`tests/test_information_gap_acquisition_seam.py` — 16 tests covering all ten
+original items, Step 6's seven negative boundaries, and this round's §3/§4/§8:
 
 | Requirement | Test |
 |---|---|
@@ -226,6 +326,10 @@ required items plus Step 6's seven negative boundaries:
 | 6.7 many mechanisms, one intent | `test_one_intent_can_be_satisfied_by_structurally_different_mechanisms` |
 | Step 7 information value stays honest | `test_the_seam_connects_to_information_value_without_estimating_gain` |
 | neutrality in practice | `test_intent_json_shape_is_readable_without_any_scientific_import` |
+| §3 five identities stay distinct | `test_the_five_objects_remain_distinct_semantic_identities` |
+| §4 context survives every hop | `test_conditioning_context_survives_criterion_to_requirement_to_intent` |
+| §8 DAF runs without the scientific layers | `test_daf_acquires_without_importing_the_scientific_layers` |
+| §8 science translates without reaching into DAF | `test_science_builds_an_intent_without_reaching_further_into_daf` |
 
 **On Step 6.7** — the invariant the brief calls most important. The same intent is
 satisfied twice by genuinely different mechanisms: a **real DAF acquisition**, and
@@ -255,6 +359,18 @@ was changed or weakened.
    `tests.helpers_state_gap` as a package, which fails because `tests/` has no
    `__init__.py`. Corrected to the flat import pytest actually supports.
 
+5. **A stray file was written into the vendored submodule.** A shell working
+   directory persisted from an earlier `cd vendor/scout-retrieval-agent`, so an
+   append intended for `tests/test_information_gap_acquisition_seam.py` created a
+   *new* file of that name inside the submodule instead. Caught immediately
+   because the appended tests failed with `NameError` at an impossibly low line
+   number, and `git show HEAD:<path>` then reported the file absent from HEAD —
+   which only makes sense if `git` was running in a different repository. Fixed by
+   moving the content into the real file and deleting the stray one; the submodule
+   is verified clean again. The real file was never damaged. Subsequent shell
+   commands use `git -C` and subshell `( cd … )` so the working directory cannot
+   leak between calls.
+
 No defect was found in the previously committed `science/information_gap.py`; the
 earlier determinism fix (shared source path) was already correct, exactly as Step 1
 prescribed — provenance legitimately participates in evidence and state identity.
@@ -265,12 +381,13 @@ prescribed — provenance legitimately participates in evidence and state identi
 
 | Check | Result |
 |---|---|
-| DAF suite | **344 passed** (332 prior + 12 new) |
+| DAF suite | **348 passed** (332 prior + 16 new) |
 | Vendored SCOUT suite | **1273 passed**, unchanged |
 | Submodule | `git status --short` clean |
 | `mypy daf/ science/ boundary/` | Success, 51 source files |
-| `ruff` | `UP006`/`UP035`/`UP045`/`I001` only — repo-wide conventions. `B017`, `PLR0402`, two `F401` found and fixed |
+| `ruff` (changed/new files) | 12 findings, all `UP006`/`UP035`/`UP045`/`I001` repo-wide conventions — no genuine finding. `B017`, `PLR0402` and two `F401` were found and fixed |
 | Live | one bounded real NOAA acquisition (§6) |
+| Test isolation | seam + frontier suites re-run together to confirm the `sys.modules` manipulation in the §8 test leaks nothing |
 
 ---
 

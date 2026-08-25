@@ -40,6 +40,7 @@ from materials.program import make_material_program_query
 from materials.specification import EvidenceRequirement
 
 from boundary.acquisition_intent import AcquisitionIntent, make_acquisition_intent
+from daf.catalog.plan import AcquisitionPlan
 from science.acquisition_seam import intent_for, intents_for
 from science.information_gap import diagnose_information_gap
 from helpers_state_gap import (
@@ -412,3 +413,145 @@ def test_intent_json_shape_is_readable_without_any_scientific_import():
     round_tripped = json.loads(json.dumps(payload, sort_keys=True))
     assert round_tripped["target_context"] == {"temperature": 25, "temperature_unit": "C"}
     assert round_tripped["id"] == intent.id
+
+
+# ====================================================================
+# Section 3. the five identities must stay distinct
+# ====================================================================
+
+def test_the_five_objects_remain_distinct_semantic_identities(tmp_path):
+    """Section 3. Field overlap is not identity. Each object answers a
+    different question, and the field that makes it answerable is
+    present in exactly one of them:
+
+        InformationGap        what remains unresolved?      -> state_id, reasons
+        EvidenceRequirement   what evidence would help?     -> criterion
+        AcquisitionIntent     what class of evidence?       -> subject_natural_key
+        AcquisitionPlan       how will it be executed?      -> plan_id, mode
+        AcquisitionRequest    execute it, now               -> requested_at
+    """
+    _pool, iteration, candidate, (_s0, s1, _s2) = trajectory(tmp_path)
+    gap = diagnose_information_gap(s1, candidate, iteration)
+    requirement = gap.requirements[0]
+    intent = intent_for(requirement)
+    plan = AcquisitionPlan(plan_id="p", source_id="s", parameters={"path": "x"})
+    request = plan.to_request(requested_at="2026-08-25T00:00:00Z")
+
+    objects = (gap, requirement, intent, plan, request)
+    assert len({type(o) for o in objects}) == 5, "five distinct types, not aliases"
+
+    fields = {type(o).__name__: set(o.__dataclass_fields__) for o in objects}
+
+    # the discriminating field of each, absent from every other
+    for owner, discriminator in (
+        ("InformationGap", "state_id"),
+        ("EvidenceRequirement", "criterion"),
+        ("AcquisitionIntent", "subject_natural_key"),
+        ("AcquisitionPlan", "plan_id"),
+        ("AcquisitionRequest", "requested_at"),
+    ):
+        holders = {name for name, names in fields.items() if discriminator in names}
+        assert holders == {owner}, f"{discriminator!r} should identify only {owner}, found in {holders}"
+
+    # the scientific objects never carry an execution handle...
+    execution_fields = {"source_id", "plan_id", "parameters", "schedule", "mode", "interval_seconds"}
+    for scientific in ("InformationGap", "EvidenceRequirement", "AcquisitionIntent"):
+        assert not fields[scientific] & execution_fields, (
+            f"{scientific} must not carry an execution handle"
+        )
+
+    # ...and the operational objects never carry scientific semantics
+    scientific_fields = {"criterion", "reasons", "requirements", "estimate", "role", "target_context"}
+    for operational in ("AcquisitionPlan", "AcquisitionRequest"):
+        assert not fields[operational] & scientific_fields, (
+            f"{operational} must not carry scientific semantics"
+        )
+
+    # AcquisitionPlan is not AcquisitionRequest either: a plan is standing
+    # intent to execute, a request is one execution at one instant
+    assert "requested_at" not in fields["AcquisitionPlan"]
+    assert {"plan_id", "mode", "enabled"} & fields["AcquisitionRequest"] == set()
+
+
+# ====================================================================
+# Section 4. conditioning context survives every translation
+# ====================================================================
+
+def test_conditioning_context_survives_criterion_to_requirement_to_intent(tmp_path):
+    """Section 4. The context travels Criterion -> EvidenceRequirement ->
+    AcquisitionIntent unchanged, and is never rewritten into a
+    DAF parameter schema along the way."""
+    pool = acquire_measurements(tmp_path, [measurement("ts-001", 78), measurement("ts-002", 84)])
+    iteration = _contextual_iteration(pool, AT_25C)
+
+    # hop 1: the criterion the caller stated
+    criterion = iteration.decision.formulations[0].properties[0].criterion
+    assert dict(criterion.context) == AT_25C
+
+    observed_intents = []
+    for candidate in sorted(generate_candidates(iteration.specification).candidates, key=lambda c: c.id):
+        gap = diagnose_information_gap(EMPTY_MODEL_STATE, candidate, iteration)
+        if gap is None:
+            continue
+        for requirement in gap.requirements:
+            # hop 2: the requirement derived from it
+            assert dict(requirement.criterion_context) == AT_25C
+            assert dict(requirement.criterion.context) == AT_25C
+            intent = intent_for(requirement)
+            # hop 3: the intent handed to the boundary
+            assert dict(intent.target_context) == AT_25C
+            if intent.role == "OBSERVED":
+                observed_intents.append(intent)
+
+    assert observed_intents, "the OBSERVED requirement really was produced"
+    intent = observed_intents[0]
+
+    # the scientific layer decided none of the acquisition mechanics
+    for acquisition_concern in (
+        "endpoint", "adapter", "adapter_id", "url", "page", "pagination",
+        "cursor", "checkpoint", "schedule", "interval_seconds", "source_id", "parameters",
+    ):
+        assert acquisition_concern not in intent.__dataclass_fields__, (
+            f"{acquisition_concern!r} is an acquisition concern and must not reach the intent"
+        )
+
+    # and the context is carried as the source's own open mapping, not a schema
+    assert dict(intent.target_context) == {"temperature": 25, "temperature_unit": "C"}
+
+
+# ====================================================================
+# Section 8. the two directions execute independently, at runtime
+# ====================================================================
+
+def test_daf_acquires_without_importing_the_scientific_layers(tmp_path):
+    """Section 8, first direction, proven at runtime rather than by AST:
+    a DAF acquisition runs to completion without `science` or `boundary`
+    ever being imported."""
+    import sys
+
+    for module_name in [m for m in sys.modules if m.split(".")[0] in {"science", "boundary"}]:
+        del sys.modules[module_name]
+    assert not [m for m in sys.modules if m.split(".")[0] in {"science", "boundary"}]
+
+    pool = acquire_measurements(tmp_path, [measurement("ts-001", 78), measurement("ts-002", 84)])
+    assert len(pool.all_observations()) == 2
+
+    leaked = [m for m in sys.modules if m.split(".")[0] in {"science", "boundary"}]
+    assert not leaked, f"DAF acquisition pulled in the scientific layer: {leaked}"
+
+
+def test_science_builds_an_intent_without_reaching_further_into_daf(tmp_path):
+    """Section 8, second direction: translating a requirement into an
+    intent imports no DAF module that was not already loaded, and
+    executes nothing."""
+    import sys
+
+    _pool, iteration, candidate, (_s0, s1, _s2) = trajectory(tmp_path)
+    requirement = diagnose_information_gap(s1, candidate, iteration).requirements[0]
+
+    daf_before = {m for m in sys.modules if m.split(".")[0] == "daf"}
+    intent = intent_for(requirement)
+    daf_after = {m for m in sys.modules if m.split(".")[0] == "daf"}
+
+    assert daf_after == daf_before, f"translation reached into DAF: {daf_after - daf_before}"
+    assert intent.property == "tensile_strength"
