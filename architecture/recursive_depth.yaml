@@ -1,0 +1,64 @@
+# Is `generation_depth_bounded` implemented, and what does the compute
+# layer's proposed depth rule require of this repository?
+#
+# THIS FILE RECORDS A DETERMINATION, NOT A SCHEMA. It changes no
+# invariant's status and adds no checker; both are downstream of a joint
+# decision that has not been made. What it fixes is the ROUTING: which of
+# the two correction modes applies, and whether the correction is a bend.
+extends: core@1.0.0
+
+status: measured_unresolved
+owner: daf
+
+# ------------------------------------------------ the measured answer --
+
+is_it_implemented:
+  answer: false
+  invariant_status: vacuously_enforced
+  recorded_evidence: "DerivedValue identity makes a derivation cycle unconstructible; no generative path exists to bound"
+  measured: "`generation_depth` appears nowhere in daf/, epistemics/, science/, boundary/, bridge/ or assertion/. No depth is computed, carried or recorded anywhere. Every `depth` occurrence in source is USGS earthquake depth_km or unrelated prose."
+  distinct_from_absent: "the invariant is DECLARED and its enforcement test exists; what is empty is its DOMAIN. That is a third state, neither enforced nor absent, and it is why the routing question below has a definite answer."
+
+correction_mode:
+  answer: write_it_correctly_first
+  why: "demonstrate-then-correct requires an existing implementation whose behaviour can be demonstrated and then corrected. There is none. There is nothing to demonstrate, so the only available mode is to author the rule before the first thing it constrains exists."
+  repository_precedent: "this is not a novel posture here. Phase 25 built the model-binding constraint checker 'authored before there is a binding to accommodate -- so the first binding anyone adds is checked by a rule that did not bend around it', and proved it non-vacuous AS A RULE with tests that show it rejecting things, even though it passes vacuously today. The same shape applies exactly."
+
+# ------------------------------------------------- is it a bend? --
+
+bend_analysis:
+  answer: "no -- PROVIDED the rule is authored before the first recursive result exists"
+  rule_unchanged: "the invariant's rule text, 'derivation from derivation is bounded and the depth is recorded', is not weakened, narrowed or qualified by adopting a depth rule. It begins to APPLY. An invariant acquiring a non-empty domain is the opposite of a bend."
+  what_does_change: "the recorded EVIDENCE becomes false. 'no generative path exists to bound' is the current justification for the vacuous status, and a recursive estimator is precisely such a path. So the evidence line must be rewritten and the status moved off vacuously_enforced BEFORE any recursive result is admitted."
+  why_that_matters: "a status of vacuously_enforced whose stated evidence has silently become untrue is worse than a status of absent -- this repository's own stated principle, from the same phase that set these statuses. The failure would not be that the invariant stopped holding; it is that nothing would notice it had started mattering."
+  the_condition_that_would_make_it_a_bend: "authoring the rule AFTER a recursive trajectory already exists. Then the rule's shape would be determined by the thing it is meant to constrain, which is the definition of bending around a binding. This is why the ordering is load-bearing rather than a matter of convenience, and why the correction mode above is not merely the available option but the correct one."
+
+bend_protocol_availability:
+  exists_in_this_repository: false
+  measured: "no bend_protocol artifact, module or reference exists anywhere in this repository. The only occurrences of the word are prose in two phase documents, used in the ordinary sense of a rule not bending around a binding."
+  consequence: "'routes through bend_protocol' is not currently an available action here. Recorded as a measured absence rather than treated as satisfied. If a bend is later required, the protocol itself has to exist first."
+  note: "this determination concludes the correction is NOT a bend, so the absence does not block it. The absence is recorded because it was checked, and because a future correction may not be so lucky."
+
+# --------------------------------- the rule the compute layer proposed --
+#
+# Received as a requirement row in the compute layer's own requirements
+# artifact, with a measured basis, rather than as an instruction. It is
+# recorded here as OFFERED, not as adopted: the compute layer does not own
+# this invariant and did not claim to.
+
+proposed_rule:
+  origin: "scl_requirements.yaml, workloads.kalman_filter_linear.blocking_requirements.recursive_generation_depth"
+  statement: "depth=0 when initialization_provenance=measured AND every input stream is class=measured; depth=prior_depth+1 when initialization_provenance=computed(prior_id)"
+  guard: "if the measurement stream is ITSELF computed, depth inherits from the STREAM rather than from the initialization -- which closes composition, not merely recursion"
+  daf_assessment_of_the_guard: "the guard is the substantive part and it is correct to include. Without it, a chain that alternates computation and re-ingestion would reset to depth 0 at every re-ingestion, so an arbitrarily long derived chain could present as depth 0 while satisfying the letter of the rule. The guard is what makes the invariant bound DERIVATION rather than merely RECURSION, which is what its rule text already says."
+  status: offered_not_adopted
+  why_not_adopted_here_yet: "adopting a rule the other repository authored, verbatim and unexamined, would make it a forwarded instruction -- which is the failure mode the exchange-artifact mechanism exists to avoid. DAF's assessment above is the beginning of accepting or amending it; the decision belongs to the joint decision record, which is not yet written."
+  what_daf_would_still_have_to_supply: "the rule references initialization_provenance and an input stream's evidence class. Neither exists as a field today; evidence classes exist (epistemics.evidence_class) but nothing carries a per-stream class into a computation's inputs. That is DAF-side work and is not costed here."
+
+# ------------------------------------------------------- not claimed --
+
+not_claimed:
+  - "the invariant is now enforced -- it is not; its status is unchanged by this file"
+  - "the proposed rule is adopted, rejected or amended -- it is recorded as offered, with one assessment of its guard"
+  - "a depth checker exists -- none was written, because the rule it would check is not yet agreed"
+  - "the compute layer must implement anything -- this file measures DAF's side of a requirement DAF received"

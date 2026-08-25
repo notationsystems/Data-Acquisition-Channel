@@ -1,0 +1,90 @@
+# Can a quantity be MULTIVARIATE, and can its uncertainty be STRUCTURED?
+#
+# THIS FILE RECORDS A DETERMINATION, NOT A SCHEMA -- the same discipline
+# architecture/condition_representation.yaml and
+# architecture/uncertainty_provenance_reachability.yaml establish. Nothing
+# here changes production behaviour; the gate is unmodified and no
+# validator was added. The measurements are locked in
+# tests/test_nonscalar_quantity_frontier.py.
+extends: core@1.0.0
+
+status: measured_unresolved
+owner: daf
+
+question: "can DAF represent an observation whose value is a vector, or whose uncertainty is a covariance rather than a scalar?"
+why_it_is_asked_now: "these are the two capability rows the compute layer's recursive state-estimation requirement depends on; they decide whether that workload is buildable at all. Raised as measured requirements in the compute layer's own requirements artifact, and measured here against this repository's real gate rather than answered from it."
+
+# ------------------------------------------------------- the answers --
+
+answers:
+  multivariate_value:
+    representable: false
+    failure_layer: admissibility_gate
+    failure_mode: "science.admissibility.quantity_is_typed type-checks `value` with isinstance(value, (int, float)) and refuses anything else as UNTYPED_QUANTITY"
+    measured: "refused identically for a list, a tuple and a per-variable mapping, so the refusal is about non-scalarness and not about one container type"
+    visibility: "LOUD and EARLY -- a named refusal code at the gate; no downstream consumer is ever handed one"
+    honest_absence: true
+
+  structured_uncertainty:
+    representable: false
+    failure_layer: comparison_consumer
+    failure_mode: "quantity_is_typed checks only that `uncertainty` is not None when uncertainty_kind is substantive. It never inspects the value, so a covariance matrix is ADMITTED as a well-typed quantity, receives a real and stable content_hash, and would persist looking entirely healthy. It fails only at comparison time, as TypeError: unhashable type: 'list' in materials.analysis."
+    measured: "no_context_free_property returns admissible=True with reasons=() for a 2x2 covariance; content_hash is stable across calls; _group_by_comparison_context raises"
+    visibility: "SILENT and LATE -- this is the Phase 33 unhashable-container defect one level deeper, in a field nobody had looked at it in"
+    honest_absence: false
+    severity_note: "an unchecked hole is worse than a declared gap. A declared gap is answered by the existing uncertainty_provenance_reachability verdict `unsupported_uncertainty`, which exists precisely to say 'genuine uncertainty semantics the vocabulary cannot represent without a shared, cross-source extension'. Nothing routes a covariance to that verdict today because nothing refuses it."
+
+# --------------------------------------------- one extension, not two --
+#
+# The tempting reading is that these are independent gaps closable
+# independently. They are not, and the reason is measured rather than
+# argued.
+
+coupling:
+  claim: "these are ONE extension, not two"
+  argument: "relaxing the multivariate type check ON ITS OWN converts the structured-uncertainty failure from a loud gate refusal into a silent late TypeError. A vector value is a Sequence, so an admitted vector meets exactly the same unhashable-consumer fate a covariance already meets. Closing the visible half first makes the invisible half worse."
+  consequence: "whatever closes either must close both -- one decision about non-scalar quantities, not two independent ones"
+  enforcement: tests/test_nonscalar_quantity_frontier.py::test_admitting_a_vector_value_alone_would_widen_the_hole
+
+# ------------------------------------------- the constraint surface --
+#
+# Taken from architecture/condition_representation.yaml's own measured
+# consumer inventory, which established it for Mapping-valued entries.
+# A non-scalar quantity must satisfy all three AT ONCE.
+
+constraint_surface:
+  - consumer: evidence.identity.content_hash
+    requirement: "reduces to plain dict/list/str/int/float/bool/None -- json.dumps with no custom encoder"
+    sequence_status: "SATISFIED -- a list and a tuple both serialize"
+  - consumer: materials.analysis._group_by_comparison_context
+    requirement: "every content value natively hashable"
+    sequence_status: "NOT SATISFIED -- a list is unhashable; a tuple is hashable in memory only"
+  - consumer: daf.storage.serialization round trip
+    requirement: "the reconstructed value must be indistinguishable from the constructed one"
+    sequence_status: "NOT SATISFIED -- JSON has ONE sequence type, so a tuple reconstructs as a list and its hashability is silently lost. This is the same same-process-versus-reopen asymmetry Phase 35 measured for Mappings."
+
+existing_precedent:
+  mapping_half: "SOLVED -- daf/storage/frozen_mapping.py FrozenMapping, adopted Phase 34, satisfies all three consumers"
+  sequence_half: "OPEN -- freeze_nested_mappings deliberately does not recurse into lists (locked by tests/test_persistent_condition_lifecycle.py::test_freeze_nested_mappings_does_not_recurse_into_lists). There is no FrozenSequence counterpart anywhere in this repository or its vendored substrate."
+  implication: "the shape of the fix is already known, because the Mapping half was solved once against this identical constraint surface. What does not exist is the Sequence counterpart and, more importantly, the SEMANTIC decisions below."
+
+# --------------------------------------- what a fix must also decide --
+#
+# A representation primitive alone is insufficient -- Phase 34's own
+# conclusion. These are the semantic questions a non-scalar quantity
+# raises, none of which a FrozenSequence answers.
+
+open_semantic_questions:
+  unit_of_a_vector: "does `unit` become per-component, or must components be commensurable? Today `unit` is one string for one scalar."
+  uncertainty_shape_agreement: "a covariance must agree in dimension with its value. Nothing currently relates the two, because with two scalars there was nothing to relate."
+  uncertainty_kind_for_a_matrix: "the four-value vocabulary (stated/estimated/propagated/absent) was defined for a scalar dispersion. Whether `stated` means the same thing for a full covariance is a determination, not a rename."
+  variable_identity: "a vector's components need stable identity, or component order becomes load-bearing in exactly the way row order is not allowed to be for an unordered modality"
+  partial_absence: "one component measured and another not is representable for neither shape today; absent-vs-zero applies per component, not per quantity"
+
+# ------------------------------------------------------- not claimed --
+
+not_claimed:
+  - "a FrozenSequence would close this -- it would close the container half of the constraint surface and none of the semantic questions above"
+  - "the compute layer's requirement is thereby satisfied or rejected -- this file measures DAF's side and makes no selection"
+  - "the covariance hole is exploitable or urgent -- no extractor produces a non-scalar uncertainty today, so the hole is currently unreached. It is recorded because it is unreached BY ACCIDENT, not by a check."
+  - "uncertainty_kind needs a fifth value -- that is one of the open questions, not a conclusion"

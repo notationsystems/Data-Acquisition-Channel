@@ -27,6 +27,8 @@ sources:
   - architecture/invariants.yaml
   - architecture/method_provenance_reachability.yaml
   - architecture/model_binding.yaml
+  - architecture/nonscalar_quantity.yaml
+  - architecture/recursive_depth.yaml
 
 budget:
   max_words: 1400

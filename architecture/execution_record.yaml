@@ -25,6 +25,101 @@ owner: daf
 scope: daf_acquisition_only
 integration_dependency: "canonical for DAF acquisition only. A broader unified substrate that later grows its own execution-record contract should absorb this one, not sit beside it."
 
+# ------------------------------------------------------------------------
+# THE DIVERGENCE, AND ITS RESOLUTION.
+#
+# The compute layer raised, in its own requirements artifact, that the
+# joint integration contract specifies an ExecutionRecord carrying
+# computation-shaped fields (backend, backend_version, hardware, seed,
+# verification_status, computation_identity) while this file already
+# defines a record of the same name whose fields are acquisition-shaped
+# and disjoint from those. Raised correctly and left unresolved there,
+# because this record is owned here.
+#
+# It is resolved here rather than deferred, because a joint decision
+# record bound to both artifacts by hash would otherwise be written
+# against two different contracts that share a name -- a divergence
+# invisible in the hashes and discovered at wiring time.
+# ------------------------------------------------------------------------
+
+divergence_resolution:
+  status: decided
+  decided_by: daf
+  authority: "this repository owns the committed contract, so the shape is DAF's to choose. What the compute layer's record must contain remains the compute layer's to specify."
+
+  shapes_considered:
+    - id: A_discriminated_kind_with_shared_core
+      description: "one ExecutionRecord with an explicit `kind` discriminant; a shared core carrying the INTERSECTION of the two field sets, plus one kind-specific block per kind"
+      verdict: adopted
+      reason: "absorbs rather than sits beside, which is what integration_dependency above already requires. Preserves the two-hash identity discipline unchanged. The discriminant is a value in the payload, so execution_record_from_dict can reconstruct the right kind without a type registry."
+
+    - id: B_abstract_contract_two_concretes
+      description: "an abstract ExecutionRecord contract with AcquisitionExecutionRecord and ComputationExecutionRecord concretes"
+      verdict: rejected
+      reason: "records are persisted as JSON and rebuilt by execution_record_from_dict, so the concrete type must be recoverable FROM THE PAYLOAD -- which requires a discriminant field anyway. B therefore collapses into A at the persistence boundary, with a type hierarchy added on top that buys nothing. Not rejected as wrong; rejected as A with ceremony."
+
+    - id: C_rename
+      description: "rename the compute layer's record to ComputationRecord and leave this one untouched"
+      verdict: rejected
+      reason: "produces exactly the two-records-side-by-side arrangement integration_dependency rules out, and discards real shared structure -- both are execution EVENTS with the same identity-before-outcome problem and the same tamper-evidence requirement. Retained as the fallback if the intersection below is ever found to be empty; it is not."
+      cost_if_reconsidered: "cheapest by far, and zero migration"
+
+  # The shared core is the INTERSECTION -- fields that mean the SAME
+  # thing for both kinds. It is deliberately NOT the union, and
+  # deliberately not a generalization: two fields that are analogous are
+  # not thereby one field. Phase 26's own posture was to reuse existing
+  # vocabulary "rather than coining synonyms for them"; coining a
+  # supertype for two near-synonyms is the same error inverted.
+  shared_core:
+    - id: "execution identity, H(operation_id, runtime_id, started_at)"
+    - operation_id: "a stable content hash of what was asked for. The PAYLOAD differs by kind; the contract -- stable across runs, minted from the request -- does not."
+    - runtime_id: "caller-supplied, never read from the environment behind the caller"
+    - started_at
+    - finished_at
+    - status: "SUCCEEDED or FAILED"
+    - input_fingerprint: "hash of what was asked for"
+    - output_fingerprint: "nullable; null on failure, never a hash of the empty set"
+    - error
+    - parent_execution_id
+    - content_digest: "integrity over every field except id and itself"
+
+  acquisition_only:
+    - plan_id
+    - source_id
+    - adapter_id
+    - adapter_version
+    - outcome
+    - artifact_ids
+    - version_ids
+    - admission_failure_count
+
+  computation_only:
+    - backend
+    - backend_version
+    - hardware
+    - seed
+    - verification_status
+    - computation_identity
+
+  # Merges that were considered and REFUSED, because the shared core is
+  # the intersection and each of these is an analogy rather than an
+  # identity. Recorded so a later phase does not quietly perform one.
+  refused_merges:
+    adapter_version_and_backend_version: "both are 'what code ran, content-addressed', but adapter_version hashes adapter and extractor MODULE SOURCE while a backend version identifies a compiled build. Merging them would change what content_digest covers for existing records in exchange for a word. If a unified implementation_version is ever wanted, it is a deliberate change with its own record, not a side effect of this one."
+    outcome_and_verification_status: "both are kind-specific closed vocabularies. AcquisitionOutcome's values say what happened to an acquisition; a verification status says what was established about a computation. Different questions."
+    output_fingerprint_and_computation_identity: "NOT analogous, and the most important refusal of the three. output_fingerprint hashes the output alone; computation_identity is H(operation_id, input_id, output_id, exit_code) -- a different arity over different material. Placing it in the core would silently redefine output_fingerprint for acquisition records."
+
+  migration_cost:
+    id_unchanged: "H(operation_id, runtime_id, started_at) does not include `kind`, so every existing execution id is preserved"
+    content_digest_changes: "content_digest covers every field except id and itself, so introducing `kind` re-digests every stored record and every persisted record would fail execution_record_from_dict's ExecutionIntegrityMismatch check on load"
+    conclusion: "a real migration, whose cost falls entirely on stored acquisition records and buys nothing until a second kind exists to discriminate"
+
+  implementation_timing:
+    decision: "the SHAPE is fixed now; the schema change is not made now"
+    reason: "no computation kind exists in this repository to discriminate toward, so introducing a one-valued discriminant would break every stored record's integrity check in exchange for no present capability. Fixing the shape before the second kind exists is the point -- it is this repository's own established posture: Phase 25 built the constraint checker 'authored before there is a binding to accommodate, so the first binding anyone adds is checked by a rule that did not bend around it'."
+    what_is_enforced_now: "the intersection above is locked by tests/test_execution_record_divergence.py, so a field cannot be added to the shared core later without meeting the intersection test. Writing the rule before the thing it constrains is the whole mechanism."
+    is_this_a_bend: "no. No invariant's semantic domain changes: execution_recorded, execution_is_not_evidence and execution_identity_is_separate all keep their exact meaning under a discriminated record. This is a schema migration, not a weakening."
+
 implementation:
   record: daf/execution/record.py
   identity: daf/execution/identity.py
