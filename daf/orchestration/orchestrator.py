@@ -146,6 +146,7 @@ class AcquisitionOrchestrator:
                 artifact_id=ArtifactStore.artifact_id(finding.document.source_id, finding.record.locator),
                 version_id=finding.document.id,
                 is_new=finding.document.id not in pre_existing_ids,
+                locator=finding.record.locator,
             )
             for finding in findings
         )

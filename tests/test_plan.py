@@ -104,3 +104,67 @@ def test_multiple_issues_can_be_reported_together():
 
     codes = {issue.code for issue in validate_plan(plan, sources, adapters)}
     assert codes == {"SOURCE_DISABLED", "UNKNOWN_ADAPTER", "PLAN_DISABLED", "MISSING_PARAMETERS"}
+
+
+def test_plan_defaults_are_backward_compatible_with_phase_d():
+    """A plan constructed exactly the way Phase D constructed them (no
+    mode/interval_seconds) must behave identically: mode="snapshot",
+    interval_seconds=None, and no new validation issue is raised."""
+    sources, adapters = _registries()
+    plan = AcquisitionPlan(plan_id="p1", source_id="arxiv-papers", parameters={"arxiv_ids": ["1706.03762"]})
+
+    assert plan.mode == "snapshot"
+    assert plan.interval_seconds is None
+    assert validate_plan(plan, sources, adapters) == ()
+
+
+def test_invalid_mode_is_rejected():
+    sources, adapters = _registries()
+    plan = AcquisitionPlan(
+        plan_id="p1", source_id="arxiv-papers", parameters={"arxiv_ids": ["1"]}, mode="continuous"
+    )
+    codes = {issue.code for issue in validate_plan(plan, sources, adapters)}
+    assert "INVALID_MODE" in codes
+
+
+def test_incremental_mode_is_rejected_when_source_lacks_the_capability():
+    sources, adapters = _registries()  # arxiv-papers has no "incremental" capability
+    plan = AcquisitionPlan(
+        plan_id="p1", source_id="arxiv-papers", parameters={"arxiv_ids": ["1"]}, mode="incremental"
+    )
+    codes = {issue.code for issue in validate_plan(plan, sources, adapters)}
+    assert "INCREMENTAL_NOT_SUPPORTED" in codes
+
+
+def test_incremental_mode_is_rejected_when_binding_has_no_advance_position():
+    sources = SourceRegistry()
+    adapters = AdapterRegistry()
+    sources.register(
+        SourceDefinition(source_id="s", name="S", domain="d", adapter_id="a", capabilities=("incremental",))
+    )
+    adapters.register(
+        AdapterBinding(adapter_id="a", build_adapter=lambda s, r: object(), build_extractor=lambda: object())
+    )
+    plan = AcquisitionPlan(plan_id="p1", source_id="s", parameters={}, mode="incremental")
+
+    codes = {issue.code for issue in validate_plan(plan, sources, adapters)}
+    assert "INCREMENTAL_NOT_SUPPORTED" in codes
+
+
+def test_incremental_mode_is_accepted_when_source_and_binding_both_support_it():
+    sources = SourceRegistry()
+    adapters = AdapterRegistry()
+    sources.register(
+        SourceDefinition(source_id="s", name="S", domain="d", adapter_id="a", capabilities=("incremental",))
+    )
+    adapters.register(
+        AdapterBinding(
+            adapter_id="a",
+            build_adapter=lambda s, r: object(),
+            build_extractor=lambda: object(),
+            advance_position=lambda artifacts, previous: previous,
+        )
+    )
+    plan = AcquisitionPlan(plan_id="p1", source_id="s", parameters={}, mode="incremental")
+
+    assert validate_plan(plan, sources, adapters) == ()

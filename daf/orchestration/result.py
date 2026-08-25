@@ -32,6 +32,12 @@ class AcquiredArtifact:
     artifact_id: str
     version_id: str
     is_new: bool  # False if this exact version already existed before this run
+    # The Record.locator this artifact was acquired under -- adapter-defined
+    # (Phase E). Exists so an incremental-capable AdapterBinding can compute
+    # its own next checkpoint position (e.g. the max sequence number encoded
+    # in locators) without the orchestrator or checkpoint machinery needing
+    # to understand what a locator means for any given source.
+    locator: str
 
 
 @dataclass(frozen=True)
