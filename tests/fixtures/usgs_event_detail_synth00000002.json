@@ -1,0 +1,17 @@
+{
+  "type": "Feature",
+  "id": "synth00000002",
+  "properties": {
+    "mag": 5.3,
+    "place": "SYNTHETIC TEST PLACE BETA",
+    "time": 1700000002000,
+    "updated": 1700000202000,
+    "status": "reviewed",
+    "magType": "mb",
+    "title": "SYNTHETIC TEST DATA -- NOT REAL USGS EARTHQUAKE CONTENT"
+  },
+  "geometry": {
+    "type": "Point",
+    "coordinates": [-101.0002, 11.0002, 22.4]
+  }
+}

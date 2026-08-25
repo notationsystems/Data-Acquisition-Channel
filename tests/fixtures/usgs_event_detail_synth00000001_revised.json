@@ -1,0 +1,17 @@
+{
+  "type": "Feature",
+  "id": "synth00000001",
+  "properties": {
+    "mag": 4.4,
+    "place": "SYNTHETIC TEST PLACE ALPHA",
+    "time": 1700000001000,
+    "updated": 1700000901000,
+    "status": "reviewed",
+    "magType": "mb",
+    "title": "SYNTHETIC TEST DATA -- NOT REAL USGS EARTHQUAKE CONTENT (revised magnitude)"
+  },
+  "geometry": {
+    "type": "Point",
+    "coordinates": [-100.0001, 10.0001, 12.3]
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "type": "FeatureCollection",
+  "metadata": {
+    "generated": 1700000000000,
+    "title": "SYNTHETIC TEST DATA -- NOT REAL USGS EARTHQUAKE CONTENT",
+    "status": 200,
+    "count": 3
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "id": "synth00000001",
+      "properties": {
+        "mag": 4.1,
+        "place": "SYNTHETIC TEST PLACE ALPHA",
+        "time": 1700000001000,
+        "updated": 1700000101000,
+        "status": "reviewed",
+        "magType": "mb"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "synth00000002",
+      "properties": {
+        "mag": 5.3,
+        "place": "SYNTHETIC TEST PLACE BETA",
+        "time": 1700000002000,
+        "updated": 1700000202000,
+        "status": "reviewed",
+        "magType": "mb"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "synth00000003",
+      "properties": {
+        "mag": 3.8,
+        "place": "SYNTHETIC TEST PLACE GAMMA",
+        "time": 1700000003000,
+        "updated": 1700000303000,
+        "status": "automatic",
+        "magType": "ml"
+      }
+    }
+  ]
+}

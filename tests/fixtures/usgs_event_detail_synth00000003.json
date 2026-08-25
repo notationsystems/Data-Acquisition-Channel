@@ -1,0 +1,17 @@
+{
+  "type": "Feature",
+  "id": "synth00000003",
+  "properties": {
+    "mag": 3.8,
+    "place": "SYNTHETIC TEST PLACE GAMMA",
+    "time": 1700000003000,
+    "updated": 1700000303000,
+    "status": "automatic",
+    "magType": "ml",
+    "title": "SYNTHETIC TEST DATA -- NOT REAL USGS EARTHQUAKE CONTENT"
+  },
+  "geometry": {
+    "type": "Point",
+    "coordinates": [-102.0003, 12.0003, 8.1]
+  }
+}

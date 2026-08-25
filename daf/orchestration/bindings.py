@@ -9,6 +9,8 @@ one function here, never touching the orchestrator.
 
 from __future__ import annotations
 
+import datetime
+import json
 from pathlib import Path
 from typing import Optional, Tuple
 
@@ -16,9 +18,11 @@ from daf.adapters.arxiv import ArxivSourceAdapter
 from daf.adapters.edgar_daily_index import EdgarDailyIndexSourceAdapter
 from daf.adapters.incremental_dataset import IncrementalDatasetSourceAdapter, locator_for, sequence_of
 from daf.adapters.local_dataset import LocalDatasetSourceAdapter
+from daf.adapters.usgs_earthquakes import UsgsEarthquakeSourceAdapter
 from daf.extractors.arxiv import ArxivExtractor
 from daf.extractors.edgar_daily_index import EdgarDailyIndexExtractor
 from daf.extractors.local_dataset import LocalDatasetExtractor
+from daf.extractors.usgs_earthquakes import UsgsEarthquakeExtractor
 from daf.orchestration.adapter_registry import AdapterBinding
 from daf.orchestration.request import AcquisitionRequest
 from daf.orchestration.result import AcquiredArtifact
@@ -115,4 +119,52 @@ def edgar_daily_index_binding() -> AdapterBinding:
         build_adapter=build_adapter,
         build_extractor=EdgarDailyIndexExtractor,
         advance_position=_advance_edgar_position,
+    )
+
+
+def _iso8601_from_epoch_ms(epoch_ms: int) -> str:
+    dt = datetime.datetime.fromtimestamp(epoch_ms / 1000, tz=datetime.timezone.utc)
+    return dt.strftime("%Y-%m-%dT%H:%M:%S.") + f"{dt.microsecond // 1000:03d}Z"
+
+
+def _advance_usgs_position(
+    artifacts: Tuple[AcquiredArtifact, ...], previous_position: Optional[str]
+) -> Optional[str]:
+    """USGS's incremental cursor is a "last revised" timestamp -- NOT the
+    locator (a stable event id, unchanged across revisions). Unlike
+    EDGAR/incremental_dataset, this value only exists inside each
+    artifact's own raw content, never in its locator, which is exactly
+    why Phase H added `AcquiredArtifact.raw_content` (see
+    daf.orchestration.result and daf.orchestration.adapter_registry).
+    Parses `properties.updated` (epoch milliseconds) from each acquired
+    event's raw GeoJSON, converts to the same ISO-8601 string shape the
+    adapter's own `updated_after` query parameter expects, and advances
+    to the maximum revision time seen -- the same "never regress, fold
+    in the previous position" shape as `_advance_edgar_position`, just
+    reading content instead of locator."""
+    if not artifacts:
+        return previous_position
+    max_updated_ms = max(json.loads(artifact.raw_content)["properties"]["updated"] for artifact in artifacts)
+    max_position = _iso8601_from_epoch_ms(max_updated_ms)
+    if previous_position is not None:
+        max_position = max(max_position, previous_position)
+    return max_position
+
+
+def usgs_earthquakes_binding() -> AdapterBinding:
+    def build_adapter(source: SourceDefinition, request: AcquisitionRequest) -> UsgsEarthquakeSourceAdapter:
+        since = request.parameters.get("since")
+        return UsgsEarthquakeSourceAdapter(
+            start_time=str(request.parameters["starttime"]),
+            end_time=str(request.parameters["endtime"]),
+            min_magnitude=float(request.parameters["minmagnitude"]),
+            retrieved_at=request.requested_at,
+            updated_after=str(since) if since is not None else None,
+        )
+
+    return AdapterBinding(
+        adapter_id="usgs-earthquakes",
+        build_adapter=build_adapter,
+        build_extractor=UsgsEarthquakeExtractor,
+        advance_position=_advance_usgs_position,
     )

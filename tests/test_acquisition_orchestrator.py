@@ -98,6 +98,29 @@ def test_successful_orchestration_for_local_dataset_source(tmp_path):
     assert len(pool.all_observations()) == 2
 
 
+def test_acquired_artifact_exposes_raw_content_generically(tmp_path):
+    """Phase H: AcquiredArtifact.raw_content is populated for EVERY
+    adapter, not just the one (USGS) that motivated adding it -- proving
+    the orchestrator plumbs it through generically rather than as a
+    source-specific special case."""
+    import json
+
+    sources, adapters, orchestrator, pool = _fresh(tmp_path)
+    sources.register(
+        SourceDefinition(
+            source_id="widget-prices", name="widget-dataset", domain="public-dataset", adapter_id="local-dataset"
+        )
+    )
+
+    result = orchestrator.run(_dataset_request("local_dataset_sample.json"))
+
+    raw_contents = {a.raw_content for a in result.artifacts}
+    assert raw_contents == {
+        json.dumps({"id": "widget-1", "value": 42.5, "unit": "USD"}, sort_keys=True),
+        json.dumps({"id": "widget-2", "value": 17.0, "unit": "USD"}, sort_keys=True),
+    }
+
+
 def test_two_different_adapters_through_the_same_orchestrator(tmp_path):
     sources, adapters, orchestrator, pool = _fresh(tmp_path)
     sources.register(

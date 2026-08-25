@@ -38,7 +38,12 @@ from daf.catalog.plan import validate_plan
 from daf.catalog.plan_catalog import PlanCatalog
 from daf.catalog.source_catalog import SourceCatalog
 from daf.orchestration.adapter_registry import AdapterRegistry
-from daf.orchestration.bindings import arxiv_binding, edgar_daily_index_binding, local_dataset_binding
+from daf.orchestration.bindings import (
+    arxiv_binding,
+    edgar_daily_index_binding,
+    local_dataset_binding,
+    usgs_earthquakes_binding,
+)
 from daf.scheduling.runner import CheckpointPersistenceError, execute_plan
 from daf.storage.durable_pool import DurablePool
 from daf.storage.filesystem_store import FilesystemEvidenceStore
@@ -49,6 +54,7 @@ def _default_adapters() -> AdapterRegistry:
     adapters.register(arxiv_binding())
     adapters.register(local_dataset_binding())
     adapters.register(edgar_daily_index_binding())
+    adapters.register(usgs_earthquakes_binding())
     return adapters
 
 

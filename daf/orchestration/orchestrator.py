@@ -147,6 +147,7 @@ class AcquisitionOrchestrator:
                 version_id=finding.document.id,
                 is_new=finding.document.id not in pre_existing_ids,
                 locator=finding.record.locator,
+                raw_content=finding.record.raw_content,
             )
             for finding in findings
         )

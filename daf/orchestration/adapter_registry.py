@@ -10,12 +10,22 @@ contract, it only names how to construct one.
 `advance_position` (Phase E, optional, default `None`) is how a binding
 declares it supports incremental/checkpointed acquisition: given the
 `AcquiredArtifact`s from one execution and the PREVIOUS checkpoint
-position, it returns the new position -- purely by inspecting
+position, it returns the new position -- typically by inspecting
 `AcquiredArtifact.locator` (adapter-defined, e.g. a zero-padded sequence
-number), never by reaching into evidence content. Left `None` for
+number or a date string that IS the cursor value). Left `None` for
 snapshot-only adapters (`daf.adapters.arxiv`, `daf.adapters.local_dataset`)
 -- `daf.catalog.plan.validate_plan` rejects a plan that requests
 `mode="incremental"` against a binding with no `advance_position`.
+
+SEC EDGAR's date-string locator happens to BE its own cursor value, and
+so does `incremental_dataset`'s zero-padded sequence number -- but Phase H
+found a real source (USGS's earthquake catalog) where identity and cursor
+value genuinely diverge: a stable event id (locator, never changes across
+revisions) versus a last-revised timestamp that only that event's own
+content carries. For exactly that case, `advance_position` may instead
+parse `AcquiredArtifact.raw_content` (Phase H) -- still never reaching
+into `EvidencePool` or any admitted evidence type, just the same raw
+bytes the adapter itself already produced.
 """
 
 from __future__ import annotations

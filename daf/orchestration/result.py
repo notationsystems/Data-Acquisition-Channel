@@ -38,6 +38,16 @@ class AcquiredArtifact:
     # in locators) without the orchestrator or checkpoint machinery needing
     # to understand what a locator means for any given source.
     locator: str
+    # The Record.raw_content this artifact was acquired from (Phase H).
+    # Exists for the case Phase E's `locator`-only design did not anticipate:
+    # a source whose stable identity (locator) and incremental cursor value
+    # are two DIFFERENT things -- e.g. an event id (identity, never changes)
+    # versus a last-revised timestamp buried in that event's own content
+    # (the actual checkpoint cursor, which only content, not locator,
+    # carries). An AdapterBinding whose `advance_position` cannot compute
+    # the next position from `locator` alone may parse this field itself;
+    # the orchestrator and checkpoint machinery still never interpret it.
+    raw_content: str
 
 
 @dataclass(frozen=True)
