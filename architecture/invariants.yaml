@@ -1,0 +1,273 @@
+# The invariant set, with its ACTUAL enforcement status in this
+# repository. Every status below was established by inspection or by a
+# test that runs; none is aspirational.
+#
+# STATUS VOCABULARY -- the distinctions are load-bearing:
+#   enforced               a test fails today if the invariant is broken
+#   vacuously_enforced     the check runs and passes because the thing it
+#                          constrains does not exist here yet; it fails
+#                          the moment one appears
+#   partially_enforced     a mechanism exists but nothing compels callers
+#   represented_unenforced the concept is represented in data; no check
+#   blocked                not implementable without inventing repository
+#                          state; the blocker is named
+#   absent                 neither represented nor enforced
+extends: core@1.0.0
+
+invariants:
+
+  # ---- Epistemic write path. The highest priority set: these close
+  # ---- paths that become expensive to repair after records exist.
+
+  - id: class_assigned_at_ingest
+    rule: "every evidence object's class is fixed in the same call that admits it, and there is no reclassification path"
+    status: enforced
+    implementation: epistemics/evidence_class.py, daf/storage/classified_pool.py
+    enforcement: tests/test_epistemic_boundary.py
+    mechanisms:
+      - "frozen dataclass and ClassRegister.assign refuse a differing second class"
+      - "class participates in content_hash, so in-place edit re-hashes and is refused on load"
+      - "append-only store means a wholesale rewrite leaves two assignments, caught at restore"
+    limitation: "detects alteration, not an adversary with delete access to the store"
+    failure_mode: fail_closed
+
+  - id: proposals_are_not_evidence
+    rule: "no derived state, model proposal, optimizer output or agent interpretation writes itself into evidence or canonical state"
+    status: enforced
+    implementation: epistemics/evidence_class.py, architecture/control_graph.yaml
+    enforcement: tests/test_epistemic_boundary.py
+    mechanisms:
+      - "AST: only scout/pipeline.py and materials/results.py call a pool mutator; science, bridge, boundary, epistemics call none"
+      - "class: derived_value and derived_grounding may only be computed or derived, never measured or asserted"
+      - "graph: derived_state has exactly one exit, and it is acquisition"
+    failure_mode: fail_closed
+
+  - id: provenance_total
+    rule: "every evidence object traces to a Source through content-addressed ids"
+    status: enforced
+    implementation: vendor evidence/types.py identity chain
+    enforcement: tests/test_epistemic_boundary.py
+    note: "already true before this phase; measured here on real acquired NOAA and graph-dataset evidence rather than argued"
+
+  - id: core_schema_closed
+    rule: "a canonical state may not carry a field the active schema does not declare"
+    status: enforced
+    implementation: vendor core/canonical/validation.py
+    enforcement: vendor/scout-retrieval-agent/tests/test_canonical.py
+    evidence: "UNKNOWN_FIELD error code at core/canonical/validation.py:65"
+    note: "already enforced by the core; this phase verified it rather than reimplementing it"
+
+  - id: metric_before_optimization
+    rule: "no optimizer runs against a metric the system cannot compute"
+    status: enforced
+    implementation: vendor materials/value.py
+    enforcement: tests/test_epistemic_boundary.py
+    evidence: "expected_information_gain is the literal NOT_DETERMINABLE at materials/value.py:229; no optimizer exists"
+
+  - id: prediction_carries_uncertainty
+    rule: "a numeric value carries unit, uncertainty and uncertainty_kind; absent is an explicit kind"
+    status: partially_enforced
+    implementation: science/admissibility.py
+    enforcement: tests/test_addendum_invariants.py
+    gap: "the validators exist and are pure; nothing in the acquisition path is compelled to call them, because ingest is the vendored run_scout"
+
+  - id: training_admissibility_declared
+    rule: "which evidence classes may train a model is declared, not assumed"
+    status: represented_unenforced
+    implementation: "architecture/evidence_class.yaml class_admissibility, epistemics ClassRegister.admissible_for_training"
+    enforcement: tests/test_epistemic_boundary.py
+    note: "no training exists in this repository; the declaration is enforced, its consumption cannot be"
+
+  - id: no_circular_training
+    rule: "model output never becomes training input for the model that produced it"
+    status: vacuously_enforced
+    enforcement: tests/test_epistemic_boundary.py
+    evidence: "no training loop, no model fitting and no gradient step exists in daf, science, boundary, bridge or epistemics"
+
+  - id: generation_depth_bounded
+    rule: "derivation from derivation is bounded and the depth is recorded"
+    status: vacuously_enforced
+    enforcement: tests/test_epistemic_boundary.py
+    evidence: "DerivedValue identity makes a derivation cycle unconstructible; no generative path exists to bound"
+
+  # ---- Control substrate.
+
+  - id: acquisition_first_control_loop
+    rule: "the substrate is a loop entered at acquisition, not a stack entered at evidence"
+    status: enforced
+    implementation: epistemics/control_graph.py, architecture/control_graph.yaml
+    enforcement: tests/test_epistemic_boundary.py
+
+  - id: return_edge_is_exclusive
+    rule: "derived state re-enters the substrate only through acquisition"
+    status: enforced
+    implementation: epistemics/control_graph.py
+    enforcement: tests/test_epistemic_boundary.py
+
+  - id: execution_recorded
+    rule: "every execution is recorded even when it cannot be re-run"
+    status: absent
+    gap: "no execution-record type exists anywhere in this repository; grep for ExecutionRecord returns nothing"
+
+  # ---- Doctrine generation.
+
+  - id: doctrine_source_is_canonical
+    rule: "architectural state lives in architecture/*.yaml; doctrine is a projection of it"
+    status: enforced
+    implementation: epistemics/doctrine.py
+    enforcement: tests/test_doctrine_generation.py
+
+  - id: doctrine_regeneration_is_deterministic
+    rule: "generating twice from the same canonical sources produces byte-identical doctrine"
+    status: enforced
+    enforcement: tests/test_doctrine_generation.py
+
+  - id: generated_doctrine_matches_source
+    rule: "the committed generated doctrine equals what regeneration produces; a non-zero diff fails closed"
+    status: enforced
+    enforcement: tests/test_doctrine_generation.py
+
+  - id: manual_generated_doctrine_changes_fail
+    rule: "editing generated doctrine by hand is not an accepted workflow and is detected"
+    status: enforced
+    enforcement: tests/test_doctrine_generation.py
+
+  - id: doctrine_budget_enforced
+    rule: "generated doctrine exceeding its committed budget fails closed and the overflow is named"
+    status: enforced
+    implementation: epistemics/doctrine.py
+    enforcement: tests/test_doctrine_generation.py
+
+  - id: no_vendor_in_doctrine
+    rule: "vendor names, model identifiers and provider-specific syntax never appear in doctrine"
+    status: enforced
+    implementation: epistemics/doctrine.py
+    enforcement: tests/test_doctrine_generation.py
+    note: "non-vacuous: doctrine exists and is linted; it happens also to be true that no vendor name appears anywhere in the repository"
+
+  # ---- Model binding. Every one of these is blocked by the same fact.
+
+  - id: cross_vendor_validation
+    rule: "the accepting binding's vendor differs from every proposing binding's vendor"
+    status: vacuously_enforced
+    implementation: epistemics/model_binding.py
+    enforcement: tests/test_doctrine_generation.py
+    evidence: "architecture/model_binding.yaml declares bindings {}"
+
+  - id: no_self_validation
+    rule: "a binding may not validate a proposal it authored"
+    status: vacuously_enforced
+    implementation: epistemics/model_binding.py
+    enforcement: tests/test_doctrine_generation.py
+
+  - id: builder_check_lineage_recorded
+    rule: "every enforcement validator records its authoring binding; shared vendor with the constrained lineage requires an explicit review record"
+    status: vacuously_enforced
+    implementation: epistemics/model_binding.py
+    enforcement: tests/test_doctrine_generation.py
+    unresolved: "whether that review record must itself be cross-vendor"
+
+  - id: pin_accepted
+    rule: "the pinned model identifier is accepted and available at startup"
+    status: blocked
+    blocked_by: "no model binding is instantiated in this repository"
+
+  - id: behavioral_canary
+    rule: "fixed fixtures at temperature zero, scored on structured fields against a committed noise floor and threshold"
+    status: blocked
+    blocked_by: "no model binding is instantiated in this repository"
+    explicitly_not_implemented_as: "comparing a requested model string with an echoed response, which verifies nothing about served weights"
+
+  - id: attested_snapshot_identity
+    rule: "the served weights are attestable"
+    status: blocked
+    blocked_by: "no vendor exposes an attestable snapshot digest, and no open-weights binding is instantiated"
+
+  - id: agent_concurrence_is_not_corroboration
+    rule: "two agents agreeing is not two pieces of evidence"
+    status: vacuously_enforced
+    enforcement: tests/test_epistemic_boundary.py
+    evidence: "no agent execution exists; corroboration in this repository is always two Records"
+
+  # ---- Chemistry vertical. Deferred by the synchronization prompt's own
+  # ---- ordering: the generator path lands before domain expansion.
+
+  - id: quantity_is_typed
+    rule: "every numeric value carries unit, uncertainty and uncertainty_kind"
+    status: partially_enforced
+    implementation: science/admissibility.py
+    enforcement: tests/test_addendum_invariants.py
+    gap: "not wired into any admission path"
+
+  - id: no_context_free_property
+    rule: "a property value is inadmissible without method, conditions and a typed quantity"
+    status: partially_enforced
+    implementation: science/admissibility.py
+    enforcement: tests/test_addendum_invariants.py
+    gap: "not wired into any admission path"
+
+  - id: identity_policy_declared
+    rule: "substance-level merge requires an explicit resolution policy on both records"
+    status: absent
+    gap: "no chemistry representation exists in this repository at all"
+
+  - id: no_point_identity_for_distributions
+    rule: "distribution-kind entities identified only by a structure string are inadmissible"
+    status: absent
+    gap: "no chemistry representation exists in this repository at all"
+
+  - id: computed_fully_specified
+    rule: "computed evidence missing its domain method block is inadmissible for canonical assertion"
+    status: absent
+    gap: "no chemistry representation exists in this repository at all"
+
+  - id: applicability_domain_declared
+    rule: "a prediction outside its declared applicability domain is flagged and inadmissible"
+    status: absent
+    gap: "no chemistry representation exists in this repository at all"
+
+# §9 append-only and retraction. Recorded as a gap, deliberately NOT built.
+retraction:
+  status: absent
+  detail: "FilesystemEvidenceStore is append-only and content-addressed and has no delete method; no tombstone, supersession or retraction path exists for any evidence type"
+  consequence: "a source compelling removal would require deleting content-addressed blobs that materials ModelState Sample.observation_id still references, orphaning scientific state"
+  probe: "architecture/_probes/generality.yaml revocable_record"
+  not_built_because: "the synchronization prompt directs recording the gap, not building the retraction system"
+
+# §22 migration. INSPECTED: no EvidencePool records are committed to this
+# repository; every pool is constructed per-run against a temporary root.
+migration:
+  legacy_class: unclassified
+  committed_records_in_repository: 0
+  inspected_on: "2026-08-25"
+  rules:
+    - unclassified records remain readable and retrievable
+    - unclassified records are inadmissible for canonical assertion
+    - unclassified records are inadmissible for model training
+    - classification produces a new record with provenance
+    - legacy records are never mutated
+    - unclassified count is a reported metric
+  forbidden:
+    - a bypass flag admitting unclassified records
+    - bulk auto-classification by inference
+  note: "any pool persisted before this phase has zero class assignments on disk and is therefore wholly unclassified by construction, which is the correct answer rather than a migration to run"
+
+# §23 rejection policy. Represented; the quarantine store is NOT built.
+rejection_policy:
+  status: represented_unenforced
+  existing_mechanism: "scout.pipeline.ScoutAdmissionFailure already retains stage and errors for every refused admission and is returned to the caller rather than discarded"
+  gap: "there is no quarantine store: a failure is reported, not retained in a queryable, repairable form"
+  no_force_path: true
+  no_force_path_evidence: "no bypass argument exists on any admit_* or put_* in this repository"
+
+unresolved:
+  - id: multi_writer.write_conflict
+    detail: "merge policy for concurrent canonical assertions"
+  - id: builder_check_lineage
+    detail: "whether enforcement-code review must itself be cross-vendor"
+  - id: attested_snapshot_identity
+    detail: "unavailable for hosted bindings; no binding exists here to attest"
+  - id: capabilities_5_to_9
+    detail: "acceptance criteria still required before self-optimization"
+  - id: retraction_semantics
+    detail: "no path removes an admitted Observation without orphaning scientific state"

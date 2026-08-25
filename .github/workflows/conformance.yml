@@ -1,0 +1,44 @@
+# The conformance gate.
+#
+# The regeneration diff is the part that cannot be checked by reading:
+# doctrine is a projection of `architecture/*.yaml`, and the only way to
+# know it has not drifted is to regenerate and compare. That check runs
+# as a test (`tests/test_doctrine_generation.py`), so it also runs for
+# anyone who runs the suite locally; this workflow makes it automatic.
+#
+# The repository had no CI before this. Nothing here is a new source of
+# truth -- every command below is one a contributor already runs.
+name: conformance
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  conformance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install checkers
+        run: python -m pip install --upgrade pytest mypy ruff
+
+      - name: Doctrine regenerates identically
+        run: |
+          python -c "import epistemics.doctrine as d; d.write()"
+          git diff --exit-code -- docs/generated/
+
+      - name: Vendored substrate is unmodified
+        run: git -C vendor/scout-retrieval-agent diff --exit-code
+
+      - name: Tests
+        run: python -m pytest -q
+
+      - name: Types
+        run: python -m mypy daf/ science/ boundary/ bridge/ epistemics/

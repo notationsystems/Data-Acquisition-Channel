@@ -1,0 +1,81 @@
+# The substrate control loop, bound to transitions rather than to layer
+# boxes. This is the ordering the synchronization prompts correct: the
+# substrate is a loop whose entry is acquisition, not a linear stack
+# whose entry is evidence.
+#
+# The return edge from derived_state is mandatory AND exclusive: derived
+# state re-enters only through acquisition. Every forbidden edge below is
+# a write path that would let an interpretation become its own evidence.
+extends: core@1.0.0
+
+stages:
+  - id: acquisition
+    note: "daf/ -- adapters, orchestrator, catalog"
+  - id: evidence
+    note: "class assigned at ingest, immutable"
+  - id: observation
+    note: "interpretation under a declared, versioned method"
+  - id: trust
+    note: "typed, versioned function -- evidence/trust_graph.py, a derived read-only view"
+  - id: canonical_state
+    note: "defeasible -- core/canonical/"
+  - id: retrieval_execution
+    note: "retrieval/ -- engine, query, epistemic"
+  - id: validation
+    note: "evidence/admission.py and core/canonical/validation.py"
+  - id: derived_state
+    note: "materials/ model state, science/ diagnosis, evidence.types.DerivedValue"
+
+transitions:
+  - from: acquisition
+    to: evidence
+    via: scout.pipeline.run_scout
+    enforced_by: test_evidence_is_written_only_by_the_acquisition_path
+  - from: evidence
+    to: observation
+    via: evidence.admission.admit_observation
+    enforced_by: test_observation_carries_its_extraction_method
+  - from: observation
+    to: trust
+    via: evidence.trust_graph.build_trust_graph
+    enforced_by: test_trust_is_a_derived_view_not_a_store
+  - from: trust
+    to: canonical_state
+    via: core.canonical.validation
+    enforced_by: test_canonical_state_is_reached_only_through_validation
+  - from: canonical_state
+    to: retrieval_execution
+    via: retrieval.engine
+    enforced_by: test_control_graph_is_a_single_cycle
+  - from: retrieval_execution
+    to: validation
+    via: evidence.admission
+    enforced_by: test_control_graph_is_a_single_cycle
+  - from: validation
+    to: derived_state
+    via: materials.results
+    enforced_by: test_control_graph_is_a_single_cycle
+  - from: derived_state
+    to: acquisition
+    via: boundary.acquisition_intent
+    enforced_by: test_the_return_edge_is_the_only_way_out_of_derived_state
+    mandatory: true
+    exclusive: true
+
+forbidden_transitions:
+  - from: derived_state
+    to: evidence
+    reason: "an interpretation would become its own evidence"
+    enforced_by: test_derived_state_cannot_write_evidence_directly
+  - from: derived_state
+    to: canonical_state
+    reason: "a proposal would assert itself"
+    enforced_by: test_derived_state_cannot_write_evidence_directly
+  - from: retrieval_execution
+    to: evidence
+    reason: "retrieval output is not an observation"
+    enforced_by: test_no_interpretive_layer_can_write_evidence
+  - from: validation
+    to: evidence
+    reason: "validation status is not an evidence class"
+    enforced_by: test_validated_is_a_status_not_a_class

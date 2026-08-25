@@ -1,0 +1,46 @@
+# Doctrine generation configuration.
+#
+# Doctrine is a PROJECTION of the canonical artifacts listed below. It is
+# authoritative for nothing. Editing docs/generated/DOCTRINE.md by hand is
+# not an accepted workflow and is detected by regeneration diff.
+#
+# THE BUDGET IS AN ENFORCEMENT CONSTRAINT, NOT AN ASPIRATION. Doctrine
+# grows monotonically if every incident becomes another paragraph. When
+# generated doctrine exceeds the budget the generator fails closed and
+# names the overflowing section, so the answer is to move the content to
+# where it belongs rather than to raise the number.
+extends: core@1.0.0
+
+output: docs/generated/DOCTRINE.md
+
+sources:
+  - architecture/core.yaml
+  - architecture/control_graph.yaml
+  - architecture/evidence_class.yaml
+  - architecture/invariants.yaml
+  - architecture/model_binding.yaml
+
+budget:
+  max_words: 1400
+  rationale: "role behaviour only. Structure belongs in schemas, machine-enforced constraints in invariants, execution configuration in bindings and adapters, domain structure in vertical contracts."
+
+routing:
+  structural_information: schemas
+  machine_enforced_constraints: invariants and enforcement code
+  execution_configuration: bindings and adapters
+  domain_structure: vertical contracts
+  role_behaviour: doctrine
+
+# Tokens that must never appear in generated doctrine. Held HERE, in
+# enforcement configuration, precisely because they may not appear in the
+# projection this configuration governs.
+forbidden_tokens:
+  - anthropic
+  - openai
+  - mistral
+  - gemini
+  - claude
+  - gpt-4
+  - llama
+  - api_key
+  - temperature=

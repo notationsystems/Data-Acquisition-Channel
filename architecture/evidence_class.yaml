@@ -1,0 +1,112 @@
+# Evidence-class terminology lock.
+#
+# The presentation/query vocabulary maps onto the four ingest classes. It
+# does not compete with them. Two normative vocabularies with overlapping
+# terms and different cardinality is the drift this file exists to close.
+#
+# WHAT THIS REPOSITORY ACTUALLY HAD BEFORE THIS PHASE (inspected): no
+# class field on any evidence type, and a de facto two-class split in
+# `evidence/types.py` -- Observation (admitted from a Record) versus
+# DerivedValue (produced by computation). The class is now carried in a
+# separate content-addressed record, `epistemics.evidence_class`, because
+# adding a field to Observation would mean modifying the vendored
+# submodule, which this repository never does.
+extends: core@1.0.0
+
+ingest_classes:
+  - asserted
+  - computed
+  - derived
+  - measured
+
+# The migration state of §22. NOT an ingest class: it is the absence of
+# one. Every evidence object admitted before this phase, and every object
+# from a source with no declared class, is unclassified.
+migration_state: unclassified
+
+existing_representation:
+  measured: evidence.types.Observation
+  asserted: evidence.types.Observation
+  computed: evidence.types.DerivedValue
+  derived: evidence.types.DerivedValue
+  note: "Observation carries no class field. measured and asserted are not distinguishable at the vendored type level; the class is carried beside the object by epistemics.evidence_class.EvidenceClassAssignment."
+
+vocabulary_map:
+  reported: asserted
+  observed: measured
+  measured: measured
+  computed: computed
+  simulated: computed
+  inferred: derived
+  predicted: computed
+  hypothesized: derived
+  manufactured: measured
+
+# Conditions the map carries that a plain alias table cannot express.
+# These are admissibility conditions, not normalization; they are checked
+# in science/admissibility.py, never by the vocabulary lookup itself.
+conditions:
+  observed:
+    requires: declared_observation_method
+  predicted:
+    requires: calibrated_uncertainty
+  hypothesized:
+    admissible_for_canonical_assertion: false
+  manufactured:
+    admissibility_class: singular_observation
+
+# `validated` reads as a class and is actually a status on a claim.
+# Keeping it in the class vocabulary would invite exactly the promotion
+# path `class_assigned_at_ingest` forbids, so it is excluded from
+# vocabulary_map and named here instead.
+statuses_not_classes:
+  - validated
+
+admissibility_classes:
+  reproducible_on_demand:
+    - synthesis
+    - characterization
+    - simulation
+  singular_observation:
+    - pilot or plant batch
+    - scale-up run
+    - consumed or degraded sample
+
+# Class admissibility. `derived` and `computed` evidence is admissible for
+# canonical assertion only through the acquisition return edge, never by
+# direct write -- see architecture/control_graph.yaml.
+class_admissibility:
+  measured:
+    canonical_assertion: true
+    model_training: true
+  asserted:
+    canonical_assertion: true
+    model_training: true
+  computed:
+    canonical_assertion: true
+    model_training: false
+  derived:
+    canonical_assertion: true
+    model_training: false
+  unclassified:
+    canonical_assertion: false
+    model_training: false
+
+contradiction_discriminators:
+  - identity policy
+  - purity
+  - batch or lot
+  - solvent
+  - concentration
+  - temperature
+  - pressure
+  - atmosphere
+  - rate
+  - thermal history
+  - instrument
+  - method
+  - calibration
+  - sample preparation
+  - laboratory
+  - statistical treatment
+  - reported versus corrected values

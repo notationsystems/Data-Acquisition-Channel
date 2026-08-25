@@ -1,0 +1,52 @@
+# Generality probe. STATUS IS LOAD-BEARING: paper_only.
+#
+# This file is a falsification probe, not a configuration. No ingest path
+# reads it, no extension tree references it, and no code imports it --
+# asserted by tests/test_addendum_invariants.py. Giving it an
+# implementation would destroy its purpose, which is to describe
+# observation properties the substrate has never been tested against.
+extends: core@1.0.0
+
+purpose: falsify substrate generality
+status: paper_only
+
+observation_properties:
+  - non_reproducible
+  - revocable_record
+  - cohort_identity
+  - uncontrolled_conditions
+
+gate: re-run whenever a core invariant changes
+
+criterion:
+  pass: "zero core invariants require modification; qualification via per-vertical admissibility classes is permitted"
+  fail: "any core invariant requires modification to admit these properties"
+  on_fail: "the invariant was domain-specific and was misfiled as core"
+
+# Probe result against THIS repository, recorded 2026-08-25.
+# Run by inspection, not by execution -- the probe is paper_only.
+result:
+  non_reproducible:
+    verdict: ALREADY_QUALIFIED
+    detail: "NOAA CO-OPS revises preliminary readings into verified ones for the same timestamp, and no DAF-reachable source is a re-runnable materials experiment. The repository already treats re-runnability as a per-source property rather than a substrate guarantee: artifact identity is stable across revisions while version identity changes. No core invariant required modification."
+  revocable_record:
+    verdict: UNTESTED
+    detail: "Nothing in this repository can remove an admitted Observation. FilesystemEvidenceStore is append-only and content-addressed, and no tombstone or retraction path exists. A source compelling removal would today require deleting content-addressed blobs that materials ModelState Sample.observation_id still references, orphaning scientific state. This is the probe's clearest live finding and is recorded as a gap in architecture/invariants.yaml retraction."
+  cohort_identity:
+    verdict: UNTESTED
+    detail: "Referent(natural_key, kind) identifies an object. Every subject in the repository is a formulation, a station, a paper or an event -- never a population. Distribution identity for polymers, formulations and batches is the same observation arriving from the domain side."
+  uncontrolled_conditions:
+    verdict: ALREADY_QUALIFIED
+    detail: "NOAA conditions (datum, units) are REQUESTED, not set -- the tide is not controlled. The repository already handles this correctly by treating them as conditioning context rather than experimental parameters, which is why the artifact locator carries them. No core invariant required modification."
+
+# The probe's own verdict on the generality claim.
+outcome:
+  core_invariants_modified: 0
+  qualified:
+    - non_reproducible
+    - uncontrolled_conditions
+  bent: []
+  untested:
+    - revocable_record
+    - cohort_identity
+  verdict: "PASS with two properties untested. Zero core invariants required modification, so the generality claim survives -- but two of the four properties have never been exercised by any source in this repository, so the probe has not been run against them so much as found no way to run them."

@@ -1,0 +1,94 @@
+# Model bindings for this repository.
+#
+# INSPECTED RESULT: THERE ARE NONE. This is a measured fact, not an
+# omission. `grep -rniE "anthropic|openai|mistral|api_key|completion"`
+# over daf/, science/, boundary/, bridge/, epistemics/ and tests/ returns
+# nothing; `pyproject.toml` declares `dependencies = []`; no HTTP client
+# for any model vendor is imported anywhere; and the only network egress
+# in the repository is the NOAA/USGS/arXiv/EDGAR/Wikidata acquisition
+# adapters, which fetch scientific data, not model inference.
+#
+# The synchronization prompt supplies a four-role binding table with
+# `<pinned-id>` placeholders and instructs: "Do not invent snapshot
+# identifiers. Inspect the actual deployment and populate real values."
+# The real value is the empty set. The roles and the constraints on them
+# are recorded so the shape is ready; the bindings are left empty because
+# populating them would be inventing repository state.
+extends: core@1.0.0
+
+status: no_model_binding_instantiated
+inspected_on: "2026-08-25"
+
+roles:
+  builder:
+    semantics: implementation and building
+    lineage: proposing
+  scout:
+    semantics: discovery and proposal
+    lineage: proposing
+  resolver:
+    semantics: semantic resolution and proposal
+    lineage: proposing
+  validator:
+    semantics: acceptance and rejection
+    lineage: accepting
+
+bindings: {}
+
+# Constraints that hold whenever a binding IS instantiated. They are
+# enforced by `epistemics.model_binding.check_bindings`, which today
+# passes vacuously and will fail the moment a binding violates one.
+constraints:
+  cross_vendor_validation: "the validator binding vendor must differ from every proposing binding vendor"
+  no_self_validation: "a binding may not validate a proposal authored by itself"
+  no_vendor_in_doctrine: "vendor names and model identifiers appear here and in adapters, never in generated doctrine"
+  builder_check_lineage_recorded: "every enforcement validator records its authoring binding; a validator authored by a binding sharing a vendor with the lineage it constrains requires an explicit review record"
+
+# Independence caveat, kept with the constraint it qualifies.
+independence_caveat: "different vendors are not thereby statistically independent; the constraint is a boundary requirement, not an independence claim"
+
+snapshot_verification:
+  pin_accepted:
+    status: not_implementable
+    blocked_by: no_binding_instantiated
+    detects:
+      - deprecation
+      - revocation
+      - typo
+      - misconfiguration
+    limitation: "does not detect served-weight substitution behind a stable identifier"
+  behavioral_canary:
+    status: not_implementable
+    blocked_by: no_binding_instantiated
+    requires:
+      - fixtures stored in-repo
+      - labels stored in-repo
+      - noise floor committed
+      - threshold committed
+      - canary rerun on deployment
+    limitation: "hosted inference is not bit-deterministic; drift below the noise floor is undetectable by construction"
+    explicitly_not: "a comparison of a requested model string with an echoed response, which verifies nothing about served weights"
+  attested_identity:
+    status: unavailable
+    revisit_when:
+      - vendor exposes an attestable snapshot digest
+      - an open-weights binding is instantiated
+
+# §10 agent-execution retention. No agent execution occurs in this
+# repository, so no record is captured and none is fabricated. The
+# required field set is recorded so that the first execution path built
+# has a contract to satisfy rather than a blank page.
+execution_retention:
+  status: no_agent_execution_in_repository
+  required_fields:
+    - binding identity
+    - vendor or model snapshot identity where available
+    - adapter version
+    - doctrine identity or hash
+    - effective prompt
+    - input fingerprint
+    - raw output
+    - output fingerprint
+    - execution timestamp
+    - execution lineage
+  distinction: "auditability is not future computational re-executability"
