@@ -5,6 +5,7 @@ real USGS Earthquake Catalog content."""
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pytest
@@ -39,6 +40,11 @@ def test_extract_projects_every_documented_field():
     assert content["longitude"] == -100.0001
     assert content["latitude"] == 10.0001
     assert content["depth_km"] == 12.3
+    # Phase 31: property-admissibility keys, additive.
+    assert content["property"] == "earthquake_magnitude"
+    assert content["value"] == content["magnitude"]
+    assert content["unit"] == "dimensionless"
+    assert content["method"] == content["magnitude_type"]
 
 
 def test_extract_of_a_revised_event_reflects_the_revised_content():
@@ -68,3 +74,25 @@ def test_extract_raises_when_a_required_field_is_missing():
 
     with pytest.raises(UsgsEarthquakeExtractionError):
         UsgsEarthquakeExtractor().extract(record)
+
+
+def test_a_missing_magtype_produces_no_method_rather_than_a_default():
+    """The honesty check: a real event lacking a magnitude-type field
+    must not silently receive one. `method` is None, exactly like
+    `magnitude_type`, so `no_context_free_property` still refuses it for
+    MISSING_METHOD -- see tests/test_usgs_property_admission_integration.py
+    for that gate-level assertion. This is the extractor-level half: the
+    content itself carries no fabricated value."""
+    raw_content = json.dumps(
+        {
+            "type": "Feature",
+            "id": "synth-no-magtype",
+            "properties": {"mag": 3.0, "time": 1, "updated": 2, "place": "p"},
+            "geometry": {"type": "Point", "coordinates": [0.0, 0.0, 1.0]},
+        }
+    )
+    record = make_record(document_id="doc-1", locator="synth-no-magtype", raw_content=raw_content)
+
+    content = UsgsEarthquakeExtractor().extract(record)[0].content
+    assert content["magnitude_type"] is None
+    assert content["method"] is None

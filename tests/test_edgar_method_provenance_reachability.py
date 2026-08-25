@@ -324,14 +324,19 @@ def test_phase_27_28_29_metrics_are_unaffected_by_this_determination(tmp_path):
 # ------------------------------------------------- the next-frontier candidate
 
 
-def test_the_usgs_candidate_is_recorded_but_not_implemented():
-    """The next executable frontier is named, evidenced, and explicitly
-    NOT built in this phase -- matching this repository's established
-    one-frontier-per-phase discipline."""
+def test_the_usgs_candidate_was_named_here_and_implemented_in_phase_31():
+    """This phase named the next executable frontier without building it
+    -- matching this repository's established one-frontier-per-phase
+    discipline -- and Phase 31 subsequently implemented it. Both facts
+    are asserted here: the verdict this phase reached still holds, and
+    the extractor Phase 31 changed still carries the exact field this
+    phase's reconnaissance identified as genuine method provenance.
+    See tests/test_usgs_property_admission_integration.py for Phase 31's
+    own, much larger lock on that implementation."""
     usgs = DETERMINATIONS["usgs_magnitude_type"]
     assert usgs["verdict"] == "legitimate_method_provenance"
-    assert usgs["action_taken"] == "none"
+    assert usgs["action_taken"] != "none", "Phase 31 implemented this candidate"
 
     extractor_source = (REPO_ROOT / "daf" / "extractors" / "usgs_earthquakes.py").read_text()
-    assert '"magnitude_type": properties.get("magType")' in extractor_source
-    assert '"method"' not in extractor_source, "USGS content was not reshaped by this phase"
+    assert '"magnitude_type": magnitude_type' in extractor_source
+    assert '"method": magnitude_type' in extractor_source

@@ -42,9 +42,23 @@ determinations:
     field: "properties.magType, surfaced as magnitude_type in daf/extractors/usgs_earthquakes.py"
     real_values_observed:
       - "mb"
+      - "ml"
     semantic_classification: legitimate_method_provenance
     classification_evidence: "mb, ml, mw, md, mww and similar USGS magnitude-type codes name the specific algorithm or scale used to compute an earthquake's magnitude from seismographic data (body-wave, local/Richter, moment, duration, W-phase moment) -- distinct methods that can and do disagree on the same event. This is categorically different from EDGAR's form_type: it describes how a scientific quantity was derived, not what kind of document was filed."
-    also_not_property_shaped: "not evaluated for admissibility in this phase, and not implemented. daf.extractors.usgs_earthquakes's Observation.content already carries both magnitude (the quantity) and magnitude_type (genuine method provenance) but has no property/unit/conditions/uncertainty_kind keys, and reshaping it into that shape raises its own open question this phase does not answer: whether magnitude has a meaningful unit in the sense quantity_is_typed expects, since Richter-style magnitude scales are logarithmic and conventionally unitless."
     verdict: legitimate_method_provenance
-    action_taken: none
-    action_taken_reason: "named as the next executable frontier; not implemented here, because this phase's scope is the EDGAR determination and the brief's own governing principle is determination, not acceptance-rate optimization."
+    quantity_contract: "science.admissibility.quantity_is_typed requires content['unit'] to be any truthy value; it performs no semantic or dimensional validation of what that value is. This is measured from the function's own source, not inferred from its name or docstring: `if not content.get('unit'): reasons.append(MISSING_UNIT)` is the entire check."
+    unit_decision: "dimensionless -- the true physical fact about a seismic-magnitude scale, which is logarithmic and carries no physical dimension by international convention (SI recognises the symbol 1 for dimensionless quantities). Not a placeholder invented to pass the gate, and not the magnitude-type code itself: Mw is never written into unit, because a scale identifier is method provenance, not a unit of measurement -- USGS's own data model already separates the two (mag vs magType), and no source in this repository has ever used unit to mean anything other than a genuine physical unit (NOAA: m/ft; the Phase 29 accepted fixture: MPa)."
+    method_decision: "the verbatim magType value (e.g. mb), carried through unmodified. USGS already separates WHICH NUMBER from HOW IT WAS COMPUTED; method needed no reinterpretation to represent that split, only a second key pointing at the same string already present as magnitude_type."
+    conditions_decision: "deliberately not supplied. place/origin_time/depth_km identify WHICH EVENT this is (identity), not a measurement condition a second reading of the same quantity could vary by. status (automatic/reviewed) is revision/QC metadata -- the same category Phase 17 excluded from NOAA content (q) for the same reason: a later reviewed revision of an event must stay comparable to its own earlier automatic reading. No real conditioning field exists in this repository's USGS acquisition. MISSING_CONDITIONS is preserved on its own evidence."
+    uncertainty_decision: "deliberately not supplied. No fixture or documented field in this repository's USGS acquisition carries a magnitude error or confidence value. MISSING_UNCERTAINTY_KIND is preserved; absent was not assigned, since that would assert the source explicitly reported no error rather than the true fact that no error data was available to this acquisition at all."
+    action_taken: "additive extension of daf/extractors/usgs_earthquakes.py: property/value/unit/method keys added alongside every existing key, none removed or renamed"
+    action_taken_reason: "method and quantity/unit are both legitimately representable by the existing contract without invention; conditions and uncertainty are not, and are preserved as genuine rejections rather than fabricated to raise the acceptance rate"
+    identity_impact: "Observation.content changed, so Observation.id for USGS acquisitions differs from every prior phase. Disclosed, not concealed: no EvidencePool records are committed anywhere in this repository (architecture/invariants.yaml migration: 0), and USGS observations have always emitted entities=(), relations=(), so no existing retrieval.engine/materials.analysis comparison-context behavior (the concern that stopped a similar change to NOAA in Phase 29) exists for this source to disturb."
+    real_acquisition_result:
+      candidates_examined: 3
+      accepted: 0
+      refused: 3
+      reasons:
+        - MISSING_CONDITIONS
+        - MISSING_UNCERTAINTY_KIND
+      note: "method and unit resolved correctly and do not appear in the refusal reasons; the observation remains genuinely inadmissible for the two dimensions the source cannot supply"
