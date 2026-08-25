@@ -1,0 +1,127 @@
+# The DAF execution-record contract.
+#
+# STRUCTURAL INFORMATION, so it lives here rather than in doctrine --
+# architecture/doctrine.yaml's own routing rule sends structure to
+# schemas and keeps doctrine to role behaviour. This file is listed as a
+# doctrine SOURCE, so the generated projection's source digest covers it,
+# but its field table is deliberately not projected into prose.
+#
+# OWNERSHIP (Phase 26 reconnaissance). Case B: an identity substrate
+# already existed and no execution-event record did.
+#   reused:   evidence.identity.content_hash -- the same primitive every
+#             other id in this repository uses
+#   reused:   the field vocabulary of core.canonical.version.ProvenanceInfo
+#             and morpho.provenance.ProvenanceRecord (source, timestamp),
+#             rather than coining synonyms for them
+#   not found: any record of an EXECUTION EVENT anywhere in the repository
+#             or the vendored substrate. evidence/provenance.py is
+#             DerivedValue ancestry traversal; ProvenanceInfo describes a
+#             canonical Version; ProvenanceRecord describes a Morpho
+#             compilation. None describes an acquisition run.
+extends: core@1.0.0
+
+status: implemented
+owner: daf
+scope: daf_acquisition_only
+integration_dependency: "canonical for DAF acquisition only. A broader unified substrate that later grows its own execution-record contract should absorb this one, not sit beside it."
+
+implementation:
+  record: daf/execution/record.py
+  identity: daf/execution/identity.py
+  quarantine: daf/execution/quarantine.py
+  store: daf/execution/store.py
+  seam: daf/execution/recorded.py
+  enforcement: tests/test_execution_record.py
+
+# Two hashes, with deliberately different semantics.
+identity:
+  execution_id:
+    payload:
+      - operation_id
+      - runtime_id
+      - started_at
+    minted: before the run begins
+    stable_across_runs: false
+    rationale: "two runs are two events; an id that depended on the outcome could not exist before the outcome did"
+  content_digest:
+    payload: every field except id and content_digest
+    minted: when the run ends
+    rationale: "the identity hash deliberately excludes the outcome, so integrity over the outcome needs its own digest"
+  operation_id:
+    payload:
+      - plan_id
+      - source_id
+      - parameters
+      - mode
+    stable_across_runs: true
+
+fields:
+  id: execution identity
+  operation_id: acquisition identity
+  runtime_id: "python version, platform, hostname, process id -- caller-supplied, never read from the environment behind the caller"
+  started_at: caller-supplied ISO-8601
+  finished_at: caller-supplied ISO-8601, nullable
+  plan_id: coordinate, never an identity
+  source_id: coordinate, never an identity
+  adapter_id: "nullable -- null means no adapter ran, which is a fact rather than missing data"
+  adapter_version: "nullable -- content hash of the adapter and extractor module source, derived from the code that runs rather than a hand-maintained string"
+  status: SUCCEEDED or FAILED
+  outcome: the AcquisitionOutcome value
+  input_fingerprint: "hash of what was asked for; identical across a run and a retry of the same request"
+  output_fingerprint: "nullable -- null on failure. Never a hash of the empty set: a run that produced nothing and a run whose output was empty are different facts"
+  artifact_ids: sorted
+  version_ids: sorted
+  admission_failure_count: integer
+  error: nullable
+  parent_execution_id: "nullable -- the previous execution of the same operation"
+
+# Fields deliberately NOT present, and why.
+excluded_fields:
+  model_binding: no model execution occurs in this repository
+  snapshot_identity: no model binding is instantiated
+  gpu_or_accelerator: acquisition is I/O and parsing; there is no compute kernel to describe
+  domain_method_block: no chemistry or simulation representation exists
+  wall_clock: "timestamps are caller-supplied, matching RawDocument.retrieved_at and AcquisitionRequest.requested_at"
+
+# Which acquisition events produce a record. Measured against the actual
+# failure semantics of daf/scheduling/runner.py and the orchestrator.
+event_coverage:
+  plan_validation_failure: recorded
+  unknown_source: recorded
+  unknown_adapter: recorded
+  adapter_failure: recorded
+  malformed_source: recorded
+  extraction_failure: recorded
+  persistence_failure: recorded
+  successful_acquisition: recorded
+  duplicate_acquisition: recorded
+  admission_rejection: "recorded, plus one quarantine record per refused admission"
+  checkpoint_persistence_failure: "recorded as SUCCEEDED with the checkpoint error named, then the original exception is re-raised"
+
+quarantine:
+  record: daf/execution/quarantine.py
+  identity:
+    - execution_id
+    - stage
+    - errors
+  references: execution_id
+  is_not: the execution record
+  retained: true
+  repairable: false
+  gap: "retention and linkage exist; repair-and-re-ingest does not. What a repaired record looks like, and who may resubmit it, stays open."
+  no_force_path: true
+
+separation:
+  rule: "artifact identity, artifact version identity, acquisition identity, execution identity, observation identity and evidence identity are six distinct identities"
+  execution_record_may: reference them
+  execution_record_may_not: redefine them
+  enforcement: tests/test_execution_record.py
+
+not_evidence:
+  rule: "an execution record is metadata about an operation and is never measured, asserted, computed or derived evidence"
+  mechanisms:
+    - stored outside FilesystemEvidenceStore, in its own directory
+    - never enters EvidencePool.fingerprint()
+    - no evidence class is ever assigned to an execution id
+    - nothing in daf/execution/ calls a pool mutator or an admission gate
+  enforcement: tests/test_execution_record.py

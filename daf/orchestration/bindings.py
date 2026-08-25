@@ -10,9 +10,12 @@ one function here, never touching the orchestrator.
 from __future__ import annotations
 
 import datetime
+import inspect
 import json
 from pathlib import Path
 from typing import Optional, Tuple
+
+from evidence.identity import content_hash
 
 from daf.adapters.arxiv import ArxivSourceAdapter
 from daf.adapters.edgar_daily_index import EdgarDailyIndexSourceAdapter
@@ -33,12 +36,36 @@ from daf.orchestration.result import AcquiredArtifact
 from daf.orchestration.source_registry import SourceDefinition
 
 
+def _code_version(*types: type) -> str:
+    """The adapter version, DERIVED from the code that will run rather
+    than declared as a string someone must remember to bump.
+
+    Hashing the adapter's and extractor's own module source means the
+    version changes exactly when the acquisition behaviour can change,
+    and is identical on two machines running the same checkout -- which
+    is what makes it usable in an execution record. Nothing is invented:
+    if a binding declares no version, `AdapterBinding.version` stays
+    `None` and the execution record says so explicitly."""
+    sources = {}
+    for t in types:
+        path = inspect.getsourcefile(t)
+        if path is None:
+            raise ValueError(f"{t!r} has no Python source file; its version cannot be derived")
+        sources[t.__module__] = Path(path).read_text()
+    return content_hash(sources)
+
+
 def arxiv_binding() -> AdapterBinding:
     def build_adapter(source: SourceDefinition, request: AcquisitionRequest) -> ArxivSourceAdapter:
         arxiv_ids = tuple(request.parameters["arxiv_ids"])
         return ArxivSourceAdapter(arxiv_ids=arxiv_ids, retrieved_at=request.requested_at)
 
-    return AdapterBinding(adapter_id="arxiv", build_adapter=build_adapter, build_extractor=ArxivExtractor)
+    return AdapterBinding(
+        adapter_id="arxiv",
+        build_adapter=build_adapter,
+        build_extractor=ArxivExtractor,
+        version=_code_version(ArxivSourceAdapter, ArxivExtractor),
+    )
 
 
 def local_dataset_binding() -> AdapterBinding:
@@ -49,7 +76,10 @@ def local_dataset_binding() -> AdapterBinding:
         )
 
     return AdapterBinding(
-        adapter_id="local-dataset", build_adapter=build_adapter, build_extractor=LocalDatasetExtractor
+        adapter_id="local-dataset",
+        build_adapter=build_adapter,
+        build_extractor=LocalDatasetExtractor,
+        version=_code_version(LocalDatasetSourceAdapter, LocalDatasetExtractor),
     )
 
 
@@ -70,7 +100,10 @@ def graph_dataset_binding() -> AdapterBinding:
         )
 
     return AdapterBinding(
-        adapter_id="graph-dataset", build_adapter=build_adapter, build_extractor=GraphDatasetExtractor
+        adapter_id="graph-dataset",
+        build_adapter=build_adapter,
+        build_extractor=GraphDatasetExtractor,
+        version=_code_version(LocalDatasetSourceAdapter, GraphDatasetExtractor),
     )
 
 
@@ -106,6 +139,7 @@ def incremental_dataset_binding() -> AdapterBinding:
         build_adapter=build_adapter,
         build_extractor=LocalDatasetExtractor,
         advance_position=_advance_incremental_position,
+        version=_code_version(IncrementalDatasetSourceAdapter, LocalDatasetExtractor),
     )
 
 
@@ -144,6 +178,7 @@ def edgar_daily_index_binding() -> AdapterBinding:
         build_adapter=build_adapter,
         build_extractor=EdgarDailyIndexExtractor,
         advance_position=_advance_edgar_position,
+        version=_code_version(EdgarDailyIndexSourceAdapter, EdgarDailyIndexExtractor),
     )
 
 
@@ -192,6 +227,7 @@ def usgs_earthquakes_binding() -> AdapterBinding:
         build_adapter=build_adapter,
         build_extractor=UsgsEarthquakeExtractor,
         advance_position=_advance_usgs_position,
+        version=_code_version(UsgsEarthquakeSourceAdapter, UsgsEarthquakeExtractor),
     )
 
 
@@ -232,6 +268,7 @@ def noaa_water_level_binding() -> AdapterBinding:
         build_adapter=build_adapter,
         build_extractor=NoaaWaterLevelExtractor,
         advance_position=_advance_noaa_position,
+        version=_code_version(NoaaWaterLevelSourceAdapter, NoaaWaterLevelExtractor),
     )
 
 
@@ -302,4 +339,5 @@ def noaa_water_level_measurement_binding(
         build_adapter=build_adapter,
         build_extractor=build_extractor,
         advance_position=_advance_noaa_position,
+        version=_code_version(NoaaWaterLevelSourceAdapter, NoaaWaterLevelMeasurementExtractor),
     )

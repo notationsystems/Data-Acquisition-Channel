@@ -54,6 +54,13 @@ class AdapterBinding:
     build_adapter: BuildAdapter
     build_extractor: BuildExtractor
     advance_position: Optional[AdvancePosition] = None
+    # WHICH CODE this binding runs, for execution records (Phase 26 §6).
+    # Additive and defaulted, so every pre-existing construction site and
+    # every externally-registered binding is unaffected -- an undeclared
+    # version is recorded as `None`, never guessed at. `daf.orchestration.
+    # bindings` derives real values from the adapter/extractor source
+    # rather than hand-maintaining a version string that would drift.
+    version: Optional[str] = None
 
 
 class AdapterRegistry:

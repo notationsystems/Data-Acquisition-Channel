@@ -106,8 +106,36 @@ invariants:
 
   - id: execution_recorded
     rule: "every execution is recorded even when it cannot be re-run"
-    status: absent
-    gap: "no execution-record type exists anywhere in this repository; grep for ExecutionRecord returns nothing"
+    status: enforced
+    implementation: daf/execution/
+    enforcement: tests/test_execution_record.py
+    contract: architecture/execution_record.yaml
+    scope: daf_acquisition_only
+    note: "Phase 26. Every acquisition outcome produces a record, including runs that fail before an adapter is resolved"
+
+  - id: execution_is_not_evidence
+    rule: "an execution record describes an operation and is never admitted as evidence of any class"
+    status: enforced
+    implementation: daf/execution/store.py
+    enforcement: tests/test_execution_record.py
+    mechanisms:
+      - "stored outside FilesystemEvidenceStore, so EvidencePool.fingerprint() is unchanged by recording a run"
+      - "no evidence class is ever assigned to an execution id"
+      - "AST: nothing in daf/execution/ calls a pool mutator or an admission gate"
+
+  - id: execution_identity_is_separate
+    rule: "execution identity is distinct from operation, artifact, version, observation and evidence identity, and execution metadata never reaches artifact identity"
+    status: enforced
+    implementation: daf/execution/identity.py
+    enforcement: tests/test_execution_record.py
+    note: "measured: two runs in different runtimes at different times produce different execution ids and byte-identical artifact and version ids"
+
+  - id: failed_execution_retained
+    rule: "an execution that begins and fails stays auditable, with no manufactured output fingerprint"
+    status: enforced
+    implementation: daf/execution/recorded.py
+    enforcement: tests/test_execution_record.py
+    note: "the execution id is minted before the run starts, so a plan that fails validation still has one"
 
   # ---- Doctrine generation.
 
@@ -254,9 +282,13 @@ migration:
 
 # §23 rejection policy. Represented; the quarantine store is NOT built.
 rejection_policy:
-  status: represented_unenforced
-  existing_mechanism: "scout.pipeline.ScoutAdmissionFailure already retains stage and errors for every refused admission and is returned to the caller rather than discarded"
-  gap: "there is no quarantine store: a failure is reported, not retained in a queryable, repairable form"
+  status: partially_enforced
+  existing_mechanism: "scout.pipeline.ScoutAdmissionFailure retains stage and errors for every refused admission and is returned to the caller"
+  implementation: daf/execution/quarantine.py, daf/execution/store.py
+  enforcement: tests/test_execution_record.py
+  closed_in_phase_26: "rejections are now RETAINED in a durable, queryable, tamper-evident store, each linked to the execution that produced it"
+  gap: "repair-and-re-ingest does not exist. What a repaired record looks like, and who may resubmit it, remains open."
+  rejection_rate_per_invariant: "not computed; admission errors carry codes but no per-run rate is aggregated"
   no_force_path: true
   no_force_path_evidence: "no bypass argument exists on any admit_* or put_* in this repository"
 

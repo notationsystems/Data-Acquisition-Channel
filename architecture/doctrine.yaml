@@ -17,6 +17,7 @@ sources:
   - architecture/core.yaml
   - architecture/control_graph.yaml
   - architecture/evidence_class.yaml
+  - architecture/execution_record.yaml
   - architecture/invariants.yaml
   - architecture/model_binding.yaml
 
