@@ -1,0 +1,165 @@
+artifact: daq_capabilities
+canonicalization:
+  anchors_aliases: forbidden
+  encoding: UTF-8, LF line endings, single trailing newline
+  floats: shortest round-trip repr; no trailing zeros; no exponent unless |x| < 1e-4 or >= 1e16
+  hash: sha256 over the serialized bytes
+  implementation: epistemics/exchange.py
+  keys: sorted lexicographically at every level
+  reference_format: sha256:<hex>
+  serialization: YAML 1.2, block style only
+  strings: double-quoted only where required by the spec
+conditions:
+  consumers_verified:
+    - acquisition
+    - identity hashing
+    - persistence
+    - process restart
+    - hydration
+    - downstream analysis
+    - serialization
+    - comparison grouping
+  known_gap: the representation is imposed at the READ boundary plus NOAA's extractor by hand; graph_dataset still constructs a plain unhashable dict, which breaks analysis in-process and is repaired only by a restart. Recorded in architecture/condition_lifecycle.yaml.
+  representation: daf/storage/frozen_mapping.py FrozenMapping (immutable, hashable dict subclass)
+  verdict: all eight verified; two OS processes produce byte-identical output on 19 keys
+extends: core@1.0.0
+identity:
+  class_emitted: measured
+  daq_never_emits: computed
+  derived_computation_identity: owned by SCL, absent from DAQ
+  execution_identity: owned by STE, absent from DAQ
+  note: 240 per-reading Observations share ONE artifact_id/version_id because they derive from one Document/Record -- acquisition identity and observation identity are correctly distinct.
+  separated:
+    - source identity
+    - artifact identity
+    - artifact version identity
+    - acquisition execution identity
+    - scientific observation identity
+    - content identity
+modalities:
+  - discarded_fields: []
+    extractor_limitations: []
+    measured_admissibility: "no shipped extractor currently passes no_context_free_property in full: NOAA refuses with MISSING_METHOD, USGS with MISSING_CONDITIONS+MISSING_UNCERTAINTY_KIND. The scalar MODALITY is fully supported; the refusals are per-source data absences, not representation limits."
+    modality: scalar
+    preserved_fields:
+      - value (numeric, parsed to float)
+      - unit
+      - property
+      - conditions (FrozenMapping, NOAA only)
+      - uncertainty + uncertainty_kind (NOAA only)
+      - method (USGS only)
+      - observation identity (content_hash over record_ids+extraction_method+content)
+      - provenance chain record_ids -> Record.locator -> Document -> Source, plus ExecutionRecord
+    real_sources:
+      - noaa_water_level_measurements + tests/fixtures/noaa_live_8454000_20240115_mllw.json
+      - usgs_earthquakes + tests/fixtures/usgs_event_detail_synth0000000{1,2,3}.json
+      - graph_dataset + tests/fixtures/graph_dataset_structure_only.json
+    representation_limitations: []
+    source_limitations:
+      - NOAA states no per-reading method; USGS fixtures state no uncertainty
+    status: supported
+  - discarded_fields: []
+    extractor_limitations: []
+    modality: vector
+    preserved_fields:
+      - a list of numbers under any content key is carried verbatim, hashes deterministically (order- and length-sensitive), and survives the full persistence round trip -- measured through a real graph_dataset acquisition and a fresh-pool reopen
+    real_sources: []
+    representation_limitations:
+      - science.admissibility.quantity_is_typed requires isinstance(value, (int, float)), so a list-valued quantity is refused UNTYPED_QUANTITY -- measured
+      - materials.analysis._as_float asserts a numeric content value, so a list under 'value' raises AssertionError in the real vendored consumer
+      - "a list under any NON-value content key passes no_context_free_property but raises TypeError: unhashable type: 'list' in _group_by_comparison_context -- admissible yet unanalysable, the exact bite"
+      - no element identity, no element units, no per-element uncertainty exist
+    source_limitations:
+      - no shipped source emits a vector-valued quantity; there is no fixture for one
+    status: partial
+  - discarded_fields:
+      - timezone -- daf/adapters/noaa_water_level.py hardcodes time_zone=gmt into the request URL but no extractor carries it into content. DAQ knows the time base and drops it. This is an asymmetry with 'unit', which is equally request-determined and IS threaded through the binding.
+      - QC flag vector 'f' and revision flag 'q' -- deliberately excluded and documented (retained in the durable raw artifact)
+    extractor_limitations:
+      - "the window carrier never parses numbers: every element of its readings list is a string, and it is neither property-shaped nor graph-reachable (0 referents, 0 relationships) -- measured"
+      - the per-reading carrier emits 240 independent Observations with no series object
+    modality: time_series
+    preserved_fields:
+      - "sample values (per-reading carrier: parsed floats)"
+      - timestamps (measurement_time, string 'YYYY-MM-DD HH:MM', minute resolution)
+      - units
+      - per-sample uncertainty (sigma -> uncertainty/uncertainty_kind=stated)
+      - conditions (FrozenMapping datum)
+      - station identity, datum
+      - full provenance and observation identity per sample
+    real_sources:
+      - noaa_water_level_measurements (per-reading) and noaa_water_level (window), both over tests/fixtures/noaa_live_8454000_20240115_mllw.json -- two incompatible carriers of the same 240 real 6-minute readings
+    representation_limitations:
+      - "NO series identity: nothing declares that the 240 Observations form one series. Membership is derivable by grouping on (station_id, property, datum) but is never asserted"
+      - NO sampling interval or frequency field exists anywhere in the representation
+      - "ordering is NOT represented: pool.all_observations() returns content-hash order, not chronological. Ordering is RECOVERABLE (lexicographic sort of measurement_time equals chronological for this fixed-width format) but is not a guarantee the representation makes"
+      - "no missing-sample semantics: a gap is simply an absent Observation, indistinguishable from a sample never acquired"
+    source_limitations:
+      - CO-OPS states no sampling interval and no sampling frequency; spacing is implicit in the timestamps only
+      - CO-OPS states no per-reading method or instrument
+    status: partial
+  - discarded_fields: []
+    extractor_limitations: []
+    modality: multivariate_time_series
+    preserved_fields: []
+    real_sources: []
+    representation_limitations:
+      - no mechanism distinguishes 'these three numbers are a 3-vector of one quantity' from 'these are temperature, pressure and strain' -- variable identity does not exist alongside values
+      - no missing-value semantics for a sample lacking one variable
+    source_limitations:
+      - only product=water_level exists anywhere in the repository; no fixture contains a second co-timestamped variable. sigma is that one variable's uncertainty, not a second channel
+    status: absent
+  - discarded_fields: []
+    extractor_limitations: []
+    modality: spatial_field
+    preserved_fields:
+      - usgs_earthquakes carries longitude/latitude/depth_km as three float keys -- one point-located scalar per event, not a field
+    real_sources: []
+    representation_limitations:
+      - a 2-D nested list is carried and persists, but is refused UNTYPED_QUANTITY and has no axis, extent, or coordinate-system representation
+    source_limitations:
+      - no grid, mesh or raster fixture exists
+    status: absent
+  - discarded_fields: []
+    extractor_limitations: []
+    modality: spectrum
+    preserved_fields: []
+    real_sources: []
+    representation_limitations:
+      - "would reduce to the vector case: paired axis lists, refused UNTYPED_QUANTITY"
+    source_limitations:
+      - zero hits for spectrum/spectra/wavelength across daf/, science/, tests/fixtures/ and architecture/ -- no source, no fixture, no extractor
+    status: absent
+  - discarded_fields: []
+    extractor_limitations: []
+    modality: trajectory
+    preserved_fields: []
+    real_sources: []
+    representation_limitations: []
+    source_limitations:
+      - no positional-time-series fixture. USGS gives one immutable point per event; NOAA one fixed station. materials/trajectory.py in the vendored substrate is ModelStateTrajectory -- an ordered sequence of model states over evidence, not a moving object's path
+    status: absent
+note: Measured facts, not an extension proposal. Every status below was produced by running real shipped extractors over committed fixtures through the real acquisition pipeline (execute_plan_recorded -> run_scout -> ClassifiedPool -> FilesystemEvidenceStore) and the real vendored consumers, never inferred from documentation.
+persistence:
+  committed_records_in_repository: 0
+  greenfield: true
+  migration_required: none -- enforced by tests/test_epistemic_boundary.py
+  round_trip: identity-preserving and idempotent; verified across a real two-OS-process restart
+phase: joint DAQ/SCL Phase 2 -- requirement/capability exchange
+re_entry:
+  measured: no shipped adapter or extractor produces a DerivedValue; ClassifiedPool forces class 'derived' for DerivedValue/DerivedGrounding and make_class_assignment refuses measured/asserted for those kinds. The only evidence write path is run_scout, AST-asserted.
+  scl_output_as_daq_observation: forbidden
+status: measured_facts_only
+uncertainty:
+  absent_is_explicit: true
+  covariance_bearing: absent. A nested list under 'uncertainty' is carried and hashes, but quantity_is_typed performs no structural check on the uncertainty value, so a covariance matrix would be accepted WITHOUT VALIDATION rather than represented -- and any non-value content key holding a list breaks comparison grouping. Recorded as an architectural gap, not forced into the scalar field.
+  per_element_on_a_vector: absent -- no vector modality exists to attach it to
+  per_sample_on_a_series: supported only in the sense that each of the 240 independent Observations carries its own scalar uncertainty. There is no series-level uncertainty object.
+  real_source_providing_non_scalar_uncertainty: none measured
+  scalar: supported -- measured on 240 real NOAA readings (sigma, uncertainty_kind=stated)
+  usgs_note: the committed USGS fixtures contain no magError/rms/nst/gap fields at all, so USGS's MISSING_UNCERTAINTY_KIND is a genuine source absence in the acquired corpus, not a DAQ discard
+  vocabulary:
+    - stated
+    - estimated
+    - propagated
+    - absent

@@ -29,7 +29,16 @@ from epistemics.model_binding import Binding, BindingViolation, check_bindings, 
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 ARCHITECTURE = REPO_ROOT / "architecture"
-CANONICAL_YAML = sorted(ARCHITECTURE.glob("*.yaml")) + sorted(ARCHITECTURE.glob("_probes/*.yaml"))
+CANONICAL_YAML = (
+    sorted(ARCHITECTURE.glob("*.yaml"))
+    + sorted(ARCHITECTURE.glob("_probes/*.yaml"))
+    # The Phase-2 exchange artifacts and the joint decision record are
+    # canonical architecture too, and their hashes are only reproducible
+    # if both parsers agree on them -- so they belong under the same
+    # parse and agreement guarantees as everything else here.
+    + sorted(ARCHITECTURE.glob("exchange/*.yaml"))
+    + sorted(ARCHITECTURE.glob("decisions/*.yaml"))
+)
 
 
 # --- the canonical sources parse, and mean what PyYAML says they mean ---

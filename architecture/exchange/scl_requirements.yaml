@@ -1,0 +1,197 @@
+access_admissibility:
+  computed_without_execution_record: inadmissible for canonical assertion
+  measured: SCL has no notion of a DAQ ScientificObservation today -- zero references to observation, acquisition or evidence in python/scl/. The DAQ->SCL edge does not exist yet in either direction.
+  standalone_execution: permitted
+  standalone_output_class: computed
+  ste_wrapped: eligible for the existing execution-recorded pathway
+artifact: scl_requirements
+canonicalization:
+  anchors_aliases: forbidden
+  encoding: UTF-8, LF line endings, single trailing newline
+  floats: shortest round-trip repr; no trailing zeros; no exponent unless |x| < 1e-4 or >= 1e16
+  hash: sha256 over the serialized bytes
+  implementation: epistemics/exchange.py
+  keys: sorted lexicographically at every level
+  reference_format: sha256:<hex>
+  serialization: YAML 1.2, block style only
+  strings: double-quoted only where required by the spec
+extends: core@1.0.0
+phase: joint DAQ/SCL Phase 2 -- requirement/capability exchange
+provenance_note: Authored from measured reconnaissance of notationsystems/Scientific-Compute-Layer-SCL- at commit edfc2dc, mirrored into the DAQ repository because this session holds READ-ONLY access to SCL and cannot commit there. The canonical home for this artifact is the SCL repository; this copy exists so the joint decision record can bind to a concrete hash. If SCL later commits its own copy, the bytes must be identical or the decision record must be reissued.
+q_is_not_a_daq_concern: In a Kalman filter R is measurement-side and may derive from DAQ; Q is an asserted process-noise assumption owned by the modeller. DAQ must never be asked to supply Q, must not be extended to accommodate it, and Q must be recorded as an asserted model parameter inside computation identity.
+recursive_computation_requirement:
+  applies_to:
+    - kalman_filter
+    - pid_controller
+  measured_state: no such fields exist in SCL today (zero grep hits for depth, lineage, stream, recursion). The generation-depth invariant lives in DAQ, not SCL -- see the DAQ capability artifact and architecture/invariants.yaml.
+  requirement: a recursive computation must carry stream_identity, window_or_horizon and initialization_provenance, where initialization_provenance is either 'measured' or 'computed(<prior_id>)'. Recursion count must not become evidence lineage depth.
+status: measured_facts_only
+substrate_baseline_measured:
+  backend_abstraction: "LJ-typed, not operation-generic: compute_lj_pairwise(...) -> LJResult at native/include/scl/backend.hpp:56"
+  commit: edfc2dc
+  configuration_size: hard-fixed at exactly 24 bytes, LJ-validated (epsilon/sigma/cutoff)
+  cuda_state: never compiled and never run; native/backends/cuda/lj_pairwise_cuda.cu says so in its own header comment. No nvcc, no nvidia-smi, no /dev/nvidia*, no GPU PCI device on this host. backend=cuda returns exit_code 12.
+  dispatch: a single string equality at native/src/main.cpp:190; no registry, no table
+  dtype_field: absent
+  envelope_fields:
+    - operation
+    - backend
+    - configuration_hex
+    - input_hex
+  existing_operations:
+    - lj_pairwise_energy_forces
+  host_libraries_measured: no BLAS, LAPACK, FFTW, MKL, OpenBLAS, GSL, cuFFT, cuBLAS or cuSOLVER present
+  input_constraint: length must be a multiple of 24 bytes; decoded unconditionally as N x Vec3
+  linked_numerical_libraries: []
+  process_boundary_cost: median 2.342 ms per round trip against 277-305 ns of native compute -- an overhead ratio of about 7700x, ceiling ~427 calls/s
+  python_numerical_libraries: numpy and scipy both absent
+  shape_field: absent
+  silent_misinterpretation: "a payload whose byte count happens to be a multiple of 24 is accepted and reinterpreted as particles with no error -- measured: a 3x3 float64 matrix (72 B) returns completed with n_particles=3, and a 3-element complex128 array (48 B) returns completed with n_particles=2"
+  test_state: 32 passed, 31 skipped (22 skips need an STE checkout, 9 need nvcc); native unit tests 50/50
+  transcendental_functions_in_native_code: none; the only cmath symbol used is std::isfinite
+  union_primitive_coverage: 28 primitives required across the seven candidate workloads; 1 present; 3.6%
+  wire_format: JSON envelope with hex-encoded little-endian float64 payloads
+universal_gate:
+  note: no candidate workload is reachable without these three. They are the currently hardcoded surface at native/src/main.cpp:84-89, main.cpp:98-103 and native/src/lj_pairwise.cpp:70.
+  primitives:
+    - W1 variable-length 1-D float64 array on the wire, with an explicit shape
+    - W4 generic (non-24-byte, non-LJ-validated) configuration block
+    - R1 a callable reduction, rather than a sum inlined into the LJ kernel
+  workloads_unblocked_by_the_gate_alone: 0
+workloads:
+  - computational_parameters:
+      - input_kind (real|complex)
+      - spectrum_convention (one_sided|two_sided)
+      - direction
+      - normalization
+      - precision
+      - sample_spacing when supplied
+    daq_availability_measured: satisfied -- values, ordering, units and provenance are all present on the real NOAA series; sample spacing is not stated by the source, so the honest output is a bin-index axis, not a frequency axis
+    minimum_observation_fields:
+      - values
+      - ordering
+      - units
+      - provenance
+      - sample_spacing (only if a physical frequency axis is required)
+    modality: time_series (scalar, uniformly or non-uniformly sampled)
+    model_parameters_asserted_not_from_daq: []
+    structured_data_requirements:
+      - a variable-length 1-D array on the wire
+      - complex output representation
+    workload: fourier_transform_1d
+  - computational_parameters:
+      - mode (full|same|valid)
+      - padding convention
+      - precision
+    daq_availability_measured: satisfied -- identical observation requirements to fourier_transform_1d
+    minimum_observation_fields:
+      - values
+      - ordering
+      - units
+      - provenance
+    modality: time_series (scalar)
+    model_parameters_asserted_not_from_daq:
+      - kernel (asserted, not measured)
+    structured_data_requirements:
+      - a variable-length 1-D array on the wire
+    workload: convolution_correlation_1d
+  - computational_parameters:
+      - solver (qr|cholesky|svd|normal_equations)
+      - precision
+      - rank tolerance
+    daq_availability_measured: NOT satisfied -- DAQ marks multivariate_time_series absent and has no variable identity alongside values; forbidden by the joint decision rule
+    minimum_observation_fields:
+      - response values
+      - predictor values
+      - sample identity
+      - variable identity
+      - units where scientifically relevant
+      - missing-value semantics
+      - uncertainty (only if weighted fitting is required)
+    modality: multivariate dataset
+    model_parameters_asserted_not_from_daq:
+      - weighting scheme
+      - regularization if any
+    structured_data_requirements:
+      - a 2-D matrix on the wire with an explicit shape
+      - a numerically stable solve
+    workload: least_squares
+  - computational_parameters:
+      - decomposition (svd|symmetric_eigen)
+      - precision
+    daq_availability_measured: NOT satisfied -- same absent multivariate modality as least_squares
+    minimum_observation_fields:
+      - multivariate dataset
+      - variable identity
+      - sample identity
+      - missing-value semantics
+    modality: multivariate dataset
+    model_parameters_asserted_not_from_daq:
+      - centering and scaling choices
+      - component count
+    structured_data_requirements:
+      - a 2-D matrix on the wire
+      - a symmetric eigendecomposition or SVD
+    workload: principal_component_analysis
+  - computational_parameters:
+      - precision
+      - covariance form
+      - numerical conditioning strategy
+    daq_availability_measured: PARTIALLY satisfied -- a scalar R per sample IS available on the real NOAA series, but DAQ marks covariance-bearing uncertainty absent, so any multivariate R would have to be fabricated. Also the most expensive workload to build first (14 of 15 primitives missing).
+    minimum_observation_fields:
+      - measurement stream
+      - timestamps
+      - measurement uncertainty R if measurement-derived
+      - measurement identity
+      - ordering
+      - units
+      - initialization provenance
+    modality: time_series, scalar or multivariate
+    model_parameters_asserted_not_from_daq:
+      - F
+      - H
+      - Q
+      - x0
+      - P0
+    structured_data_requirements:
+      - matrices on the wire
+      - a stable solve
+      - positive-semidefinite covariance maintenance
+    workload: kalman_filter
+  - computational_parameters:
+      - discrete integration rule
+      - discrete differentiation rule
+      - sample time
+      - precision
+    daq_availability_measured: "satisfied for the PURE COMPUTATION case only. Physical actuation is out of scope: no actuation-authority boundary exists in any of the three repositories."
+    minimum_observation_fields:
+      - process variable values
+      - ordering
+      - timestamps
+      - units
+    modality: time_series (scalar)
+    model_parameters_asserted_not_from_daq:
+      - setpoint
+      - gains Kp/Ki/Kd
+      - anti-windup policy
+    structured_data_requirements:
+      - stateful feedback across calls
+    workload: pid_controller
+  - computational_parameters:
+      - precision
+      - log-domain or linear-domain arithmetic
+      - tie-breaking rule
+    daq_availability_measured: NOT satisfied -- no DAQ source produces a categorical or discretized emission sequence
+    minimum_observation_fields:
+      - observation sequence
+      - ordering
+      - categorical or discretized emission values
+    modality: categorical sequence
+    model_parameters_asserted_not_from_daq:
+      - transition matrix
+      - emission matrix
+      - initial state distribution
+    structured_data_requirements:
+      - a dynamic-programming table
+      - argmax with backtracking pointers
+    workload: viterbi

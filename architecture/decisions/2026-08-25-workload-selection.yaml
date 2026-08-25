@@ -1,0 +1,56 @@
+binding_rule: neither repository commits implementation of the selected frontier until this record exists. The two hashes above bind this decision to the exact measured artifacts that produced it, so it cannot be reconstructed from agent recollection. If either artifact changes, this record must be reissued rather than edited.
+capabilities_artifact: architecture/exchange/daq_capabilities.yaml
+capabilities_artifact_hash: sha256:cd032f23c462e27a010f8dd6b2ffe53188e4a32fd8a5c240cb3a0af185457129
+daq_extension: none
+date: "2026-08-25"
+decision_id: 2026-08-25-workload-selection
+extends: core@1.0.0
+identity_requirements:
+  - "input_kind: real | complex"
+  - "spectrum_convention: one_sided | two_sided"
+  - direction
+  - normalization
+  - precision
+  - sample_spacing, when supplied
+implementation_status:
+  daq_side: complete -- no DAQ change is required by this decision
+  scl_blocker: this session holds READ-ONLY access to notationsystems/Scientific-Compute-Layer-SCL-. A push-access attachment was requested and denied, so the selected workload cannot be committed to SCL from here. The decision record is complete and binding; the implementation awaits push access to that repository.
+  scl_side: BLOCKED
+naming: the operation is fourier_transform_1d. FFT is an implementation strategy, not the mathematical operation, and must not be the operation name.
+rationale:
+  - "The joint rule is: select the highest-leverage workload whose observation requirements are ALREADY satisfied by DAQ. Applying it to the two measured artifacts leaves exactly two admissible candidates and one winner."
+  - "Eliminated by the rule itself, not by preference: least_squares and principal_component_analysis both require a multivariate dataset with variable identity, which the capability artifact marks ABSENT -- selecting either is forbidden. viterbi requires a categorical emission sequence, also absent. kalman_filter is only PARTIALLY satisfied (a scalar R exists per sample, but covariance-bearing uncertainty is absent) and is additionally the most expensive workload to build first, at 14 of 15 primitives missing; the measured arithmetic shows Kalman costs 1 primitive if built after the linear-algebra cluster and 14 if built first, so sequencing it early would be a 14x error. pid_controller is satisfied for pure computation, but its only distinctive value is actuation, and no actuation-authority boundary exists in any of the three repositories -- building it would create an implicit control plane."
+  - That leaves fourier_transform_1d and convolution_correlation_1d, which have IDENTICAL observation requirements (values, ordering, units, provenance) and are both satisfied by the real NOAA series today. Convolution is cheaper -- 6 primitives against 11.
+  - "fourier_transform_1d is selected over convolution on three measured grounds. (1) Generality falsification: the substrate has been exercised by exactly one kernel (Lennard-Jones pairwise), and a transform is orthogonal to both that kernel and to the linear-algebra family, so it tests whether the substrate generalises across computational families rather than deepening a single one; convolution shares the reduction shape of the existing kernel and would falsify less. (2) Independent validation quality: a transform admits analytic oracles that depend on no second implementation -- impulse to flat spectrum, DC concentration, pure tone to expected bins, Parseval, inverse reconstruction -- whereas convolution's natural oracle is another convolution, which the brief forbids as a sole oracle. (3) Contract generality: fourier_transform_1d forces the parameter identity model to carry input_kind, spectrum_convention, direction, normalization, precision and sample_spacing, semantics that cannot be hidden in backend defaults; convolution exercises far fewer."
+  - daq_extension is none because the workload needs nothing DAQ lacks. Sample spacing is not stated by CO-OPS, and the correct consequence is a bin-index axis rather than a fabricated frequency axis -- an honest output, not a gap. Extending DAQ to carry a Delta t the source never provided would be fabrication, and extending it for any other modality would be representation work with no named consuming workload, which the joint rule forbids.
+requirements_artifact: architecture/exchange/scl_requirements.yaml
+requirements_artifact_hash: sha256:816ae02fd072297af69aeee63823c47c652d3a4370efb770c619b229701d5d45
+scope:
+  build:
+    - fourier_transform_1d
+    - only the primitives it demonstrably requires
+  do_not_build:
+    - least_squares
+    - principal_component_analysis
+    - kalman_filter
+    - pid_controller
+    - viterbi
+    - convolution_correlation_1d
+  note: "the universal gate is not a separate decision: fourier_transform_1d cannot cross the current protocol boundary at all without it, because input is decoded unconditionally as N x 24-byte particles and configuration is hard-fixed at 24 LJ-validated bytes."
+  universal_gate_required_first:
+    - W1 variable-length 1-D float64 array on the wire with an explicit shape
+    - W4 generic configuration block
+    - R1 a callable reduction
+status: decided
+tradeoff_recorded:
+  generality_falsification_argument: a substrate validated only through one MD kernel has not demonstrated that it generalises. A transform is deliberately orthogonal and carries independent analytic validation.
+  resolution: the reuse argument is not rejected; it is unreachable today. Among reachable candidates the generality argument decides, and it selects fourier_transform_1d over convolution_correlation_1d.
+  reuse_leverage_argument: "least_squares -> linear algebra -> Kalman -> PCA is the strongest primitive-reuse chain: 17 primitives buy 3 workloads (0.176 wl/prim) against 0.091 for least_squares alone. This argument LOSES here only because DAQ marks its entry modality absent -- it is deferred on availability, not on merit, and remains the strongest candidate the moment a multivariate source exists."
+validation_requirements:
+  - impulse input yields a flat magnitude spectrum
+  - constant/DC input concentrates in the zero bin
+  - a pure sinusoid at a bin-centre frequency yields energy in the expected bins
+  - Parseval relation holds between time and frequency domains
+  - inverse transform reconstructs the input within tolerance
+  - no separately written transform implementation may be the sole oracle
+workload: fourier_transform_1d

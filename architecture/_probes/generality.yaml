@@ -16,6 +16,19 @@ observation_properties:
   - cohort_identity
   - uncontrolled_conditions
 
+# PROBE LIMITATION, FOUND 2026-08-25 AND RECORDED RATHER THAN QUIETLY
+# FIXED. Every property above is a property of an OBSERVATION. The probe
+# therefore cannot falsify anything about COMPUTATION, and it demonstrably
+# failed to: `generation_depth_bounded` claims "derivation from derivation
+# is bounded and the depth is recorded", and the probe never asked whether
+# a recursive estimator -- thousands of filter iterations over one
+# measurement stream -- would be read as thousands of lineage levels.
+# `recursive_computation` is added as a COMPUTATION property rather than
+# appended to the list above, because appending it there would have been a
+# category error: it is not a property any source's observations can have.
+computation_properties:
+  - recursive_computation
+
 gate: re-run whenever a core invariant changes
 
 criterion:
@@ -35,6 +48,11 @@ result:
   cohort_identity:
     verdict: UNTESTED
     detail: "Referent(natural_key, kind) identifies an object. Every subject in the repository is a formulation, a station, a paper or an event -- never a population. Distribution identity for polymers, formulations and batches is the same observation arriving from the domain side."
+  recursive_computation:
+    verdict: FAIL
+    detail: "the probe's clearest finding, and the first time it has returned FAIL. `generation_depth_bounded` (architecture/invariants.yaml) states that derivation-from-derivation is bounded and that the depth is recorded. MEASURED, both clauses are false of the code: no module in this repository or its vendored substrate defines any depth/generation/lineage symbol; `DerivedValue`'s fields are exactly (id, derived_from, method, content, confidence, derived_at) with no depth; the invariant declares no bound value; and `evidence.provenance.ancestry_of` returns a flat set union that discards the level at which each node was reached. The invariant's own evidence line argues only that a derivation CYCLE is unconstructible, which is true -- but acyclicity is not boundedness, and an unbounded acyclic chain is exactly what a recursive estimator produces. The correct semantic domain is evidence lineage, not computation iteration: repeated filter iterations over one measurement stream are one lineage step, not N. A recursive computation must instead carry stream_identity, window_or_horizon and initialization_provenance (measured | computed(prior_id))."
+    on_fail_applied: "the invariant was not domain-specific and misfiled -- it was declared and never implemented. Its status is corrected from vacuously_enforced to represented_unenforced, and its evidence line is corrected to state what is actually true, rather than the invariant being weakened to accommodate recursion."
+
   uncontrolled_conditions:
     verdict: ALREADY_QUALIFIED
     detail: "NOAA conditions (datum, units) are REQUESTED, not set -- the tide is not controlled. The repository already handles this correctly by treating them as conditioning context rather than experimental parameters, which is why the artifact locator carries them. No core invariant required modification."
@@ -49,4 +67,7 @@ outcome:
   untested:
     - revocable_record
     - cohort_identity
+  failed:
+    - recursive_computation
+  verdict_superseded_2026_08_25: "the verdict below was recorded when the probe enumerated observation properties only. It is left verbatim rather than rewritten. It is superseded by the recursive_computation FAIL above, which is a correction to the VERIFICATION SUBSTRATE -- the probe's own coverage -- not a change to any core invariant. core_invariants_modified remains 0: generation_depth_bounded's status and evidence are corrected to match measured reality, which is a truthfulness repair, not a semantic weakening."
   verdict: "PASS with two properties untested. Zero core invariants required modification, so the generality claim survives -- but two of the four properties have never been exercised by any source in this repository, so the probe has not been run against them so much as found no way to run them."
