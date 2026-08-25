@@ -1,0 +1,96 @@
+# The property/quantity-typing admissibility boundary, wired against real
+# acquired evidence for the first time.
+#
+# NAMING CORRECTION. The synchronization prompt that requested this phase
+# assumes gate names `assert_property_context` and `assert_quantity_type`.
+# Those names do not exist in this repository. The actual functions,
+# committed in Phase 25, are `science.admissibility.no_context_free_property`
+# and `science.admissibility.quantity_is_typed`. They are used here under
+# their real names; nothing was renamed to match the assumed ones.
+extends: core@1.0.0
+
+status: wired_to_real_acquisition
+gates:
+  no_context_free_property: science/admissibility.py
+  quantity_is_typed: science/admissibility.py
+wiring: assertion/property_admissibility.py
+enforcement: tests/test_property_admission_integration.py
+
+# Ownership, decided the same way Phase 25 decided epistemics/'s placement.
+# `daf` never imports `science`; `science` never imports `daf` -- both
+# AST-verified since before this phase. Neither module can apply the
+# other's output to the other's input. `assertion/` is a NEW package added
+# ABOVE both, analogous to how `epistemics/` was added BELOW both to close
+# `class_assigned_at_ingest`. It is the one package permitted to import
+# both `daf` and `science`; nothing else may import it.
+layering:
+  assertion_imports:
+    - daf
+    - science
+  forbidden_importers_of_assertion:
+    - daf
+    - science
+    - boundary
+    - bridge
+    - epistemics
+
+# The gate is applied to CONTENT ONLY, unchanged, never reshaped. A
+# "property candidate" is a filter (does Observation.content contain a
+# `property` key), never a transformation -- no key is added, renamed, or
+# invented on the way into the gate.
+candidate_definition: "an admitted Observation whose content mapping contains the key 'property'"
+
+# Real acquisition, measured -- not assumed.
+measured_reachability:
+  noaa_water_level_measurements:
+    binding: noaa-water-level-measurements
+    real_recorded_bytes: true
+    candidates_examined: 240
+    accepted: 0
+    refused: 240
+    reasons:
+      - MISSING_CONDITIONS
+      - MISSING_METHOD
+      - MISSING_UNCERTAINTY_KIND
+    note: "every real NOAA reading is inadmissible for canonical assertion under the unmodified gate. The extractor was not changed to fabricate a method NOAA does not report, or to reshape its existing datum/station_id/measurement_time fields into a conditions mapping -- doing either would either invent source metadata or change a shipped extractor's Observation.content, and therefore its Observation.id, for every existing caller. This is measured, honest inadmissibility, not a defect to route around."
+  graph_dataset:
+    binding: graph-dataset
+    real_recorded_bytes: false
+    note: "no real, network-reachable source in this repository emits method/conditions/uncertainty_kind (Phase M's standing finding, unchanged: no DAF-reachable source is a materials experiment). The one demonstrated ACCEPTED case therefore uses a test-authored property declaration acquired through the real, unmodified Scout/DAF mechanism (LocalDatasetSourceAdapter -> GraphDatasetExtractor -> run_scout -> ClassifiedPool) -- the same acquisition-real/measurement-synthetic standard every materials-campaign test in this repository has used since Phase M. It is not claimed to be measurement-real."
+    candidates_examined: 1
+    accepted: 1
+    refused: 0
+
+# Refusal retention, reusing existing types without modifying them.
+quarantine:
+  reuses:
+    - daf.execution.quarantine.QuarantineRecord
+    - daf.execution.quarantine.make_quarantine_record
+    - daf.execution.store.QuarantineStore
+  stage: canonical_assertion
+  store_location: "<execution-root>/canonical_assertion_quarantine/quarantine/ -- a directory QuarantineStore itself never knows the name of; this module simply never points it at the acquisition run's own root"
+  separate_from_scout_admission_quarantine: true
+  reason: "a canonical-assertion refusal is not a ScoutAdmissionFailure -- the Observation is genuinely admitted. Writing it into the same store as run_scout refusals would make daf.execution.metrics.rejection_metrics's admission_failure_count cross-check fail for every execution this module touches."
+  enforcement_status: partially_enforced
+  enforcement_status_unchanged: true
+  note: "this phase adds a second reachable refusal surface to the existing Quarantine TYPE. It closes no missing enforcement requirement (repair-and-re-ingest still does not exist), so the classification is not upgraded."
+
+# The metric this module produces. Deliberately NOT added to
+# daf/execution/metrics.py: that module's TERMINAL_STAGES/PARTIAL_STAGES
+# are drift-guarded against scout/pipeline.py's own six admission stages
+# and measure ACQUISITION attempts (records). A property-admissibility
+# refusal measures a DIFFERENT unit -- property candidates within
+# observations already accepted by acquisition -- so it is reported
+# alongside, never merged into, the Phase 27/28 rejection rate.
+metrics:
+  unit: property_candidate
+  distinct_from: daf.execution.metrics.rejection_metrics
+  denominator: candidates_examined
+  absence_semantics: "a rate is None when candidates_examined is 0, never a fabricated zero"
+
+# What this phase does not claim.
+not_claimed:
+  - "a prediction/computed value became measured evidence -- no prediction path exists in this repository (Phase 26 measured this: no vendor, no model, no training)"
+  - "a substance identity policy was chosen -- no chemistry representation exists in this repository (Phase 25: identity_policy_declared is absent); neither exercised source is a chemical substance"
+  - "the accepted observation entered core.canonical state -- no code path in this repository feeds evidence.pool output into core.canonical.validation; this remains the next integration boundary, not built here"
+  - "SCL or STE consumed this evidence -- neither was touched; no existing contract offers them this evidence today"
