@@ -42,17 +42,50 @@ class IncrementalDatasetFetchError(RuntimeError):
 
 
 def locator_for(sequence: int) -> str:
+    """The CHECKPOINT POSITION format -- a bare, zero-padded sequence
+    number, carrying no dataset identity. This is what
+    `incremental_dataset_binding`'s `advance_position` returns and what
+    comes back as `request.parameters["since"]`.
+
+    Phase S: deliberately NOT the document locator any more. Through
+    Phase F this one function served as both, which conflated "where
+    should acquisition resume" with "which external object is this" --
+    the two questions Phase R established must stay separate. See
+    `document_locator_for`."""
     return str(sequence).zfill(_SEQUENCE_WIDTH)
 
 
-def sequence_of(locator: str) -> int:
-    """Inverse of `locator_for` -- used by
+def document_locator_for(path: Path, sequence: int) -> str:
+    """The LOGICAL ARTIFACT locator -- `"{path}#{padded sequence}"`.
+
+    Phase S fixed a reproduced collision: `artifact_id` is
+    `H({source_id, locator})`, and a bare sequence number made record 7
+    of one dataset file indistinguishable from record 7 of a completely
+    different one acquired under the same registered source. Their
+    contents differ, so the second acquisition read as a REVISION of the
+    first rather than as a different object.
+
+    `path` is the request parameter that determines the payload, so it
+    belongs in the artifact's name -- exactly the rule
+    `daf.adapters.local_dataset` (`"{path}#{id}"`) already followed, and
+    exactly the dimension `daf.adapters.noaa_water_level` was missing.
+    The sequence stays LAST so `sequence_of` can recover the cursor from
+    either shape."""
+    return f"{path}#{locator_for(sequence)}"
+
+
+def sequence_of(value: str) -> int:
+    """Recovers the numeric sequence from EITHER a checkpoint position
+    (`"000000000007"`) or a document locator
+    (`"/data/stream.json#000000000007"`) -- used by
     daf.orchestration.bindings.incremental_dataset_binding's
-    advance_position to recover the numeric sequence from an
-    AcquiredArtifact.locator. Adapter-specific by design: nothing outside
-    this module and its binding needs to know a locator encodes a
-    sequence number at all."""
-    return int(locator)
+    advance_position, which sees both. Reading the last `#`-separated
+    component mirrors NOAA's `window_end_of` (`rsplit(":", 1)[-1]`):
+    a cursor may be embedded in a locator, but it is always recoverable
+    without knowing what precedes it. Adapter-specific by design:
+    nothing outside this module and its binding needs to know a locator
+    encodes a sequence number at all."""
+    return int(value.rsplit("#", 1)[-1])
 
 
 @dataclass(frozen=True)
@@ -89,7 +122,7 @@ class IncrementalDatasetSourceAdapter:
                     source_name=self.source_name,
                     source_kind="incremental-dataset",
                     content=json.dumps(record, sort_keys=True),
-                    locator=locator_for(sequence),
+                    locator=document_locator_for(self.path, sequence),
                     retrieval_method="file:incremental_json_v1",
                     retrieved_at=self.retrieved_at,
                 )

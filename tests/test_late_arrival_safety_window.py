@@ -45,6 +45,23 @@ FIXTURES = Path(__file__).parent / "fixtures"
 SAFETY_WINDOW = 3
 
 
+def _growing_dataset(tmp_path):
+    """One dataset file that GROWS, which is what a real incremental
+    source is. Phase S made the dataset path part of the artifact
+    locator, so simulating growth with two DIFFERENT fixture paths would
+    now (correctly) describe two different datasets -- and record 5 would
+    be two distinct records, hence two Observations. Copying each fixture
+    over a single path keeps this test about what it is actually about:
+    late-arriving sequences and cursor behaviour."""
+    dataset = tmp_path / "readings.json"
+
+    def grow_to(fixture_name):
+        dataset.write_text((FIXTURES / fixture_name).read_text())
+        return dataset
+
+    return dataset, grow_to
+
+
 def _safety_window_advance_position(
     artifacts: Tuple[AcquiredArtifact, ...], previous_position: Optional[str]
 ) -> Optional[str]:
@@ -93,18 +110,23 @@ def _setup(adapter_id: str, binding: AdapterBinding, tmp_path: Path):
 def test_naive_advance_position_permanently_loses_late_arriving_records(tmp_path):
     sources, adapters, pool, checkpoints = _setup("incremental-dataset", incremental_dataset_binding(), tmp_path)
 
+    dataset, grow_to = _growing_dataset(tmp_path)
+    grow_to("late_arrival_initial.json")
     initial_plan = AcquisitionPlan(
         plan_id="readings-plan", source_id="readings",
-        parameters={"path": str(FIXTURES / "late_arrival_initial.json")}, mode="incremental",
+        parameters={"path": str(dataset)}, mode="incremental",
     )
     first = execute_plan(initial_plan, sources, adapters, pool, checkpoints, requested_at="2026-08-24T00:00:00Z")
-    assert {a.locator for a in first.artifacts} == {"000000000001", "000000000002", "000000000005"}
+    # Phase S: the locator now carries the dataset path, so assert on the
+    # sequences it still yields -- which is what this test is actually about.
+    assert {sequence_of(a.locator) for a in first.artifacts} == {1, 2, 5}
     assert checkpoints.get("readings-plan").position == "000000000005"  # naive: jumps straight to the max
 
     # Sequences 3 and 4 arrive late.
+    grow_to("late_arrival_extended.json")
     grown_plan = AcquisitionPlan(
         plan_id="readings-plan", source_id="readings",
-        parameters={"path": str(FIXTURES / "late_arrival_extended.json")}, mode="incremental",
+        parameters={"path": str(dataset)}, mode="incremental",
     )
     second = execute_plan(grown_plan, sources, adapters, pool, checkpoints, requested_at="2026-08-25T00:00:00Z")
 
@@ -119,28 +141,33 @@ def test_safety_window_advance_position_captures_late_arriving_records(tmp_path)
         "incremental-dataset-safety-window", _safety_window_binding(), tmp_path
     )
 
+    dataset, grow_to = _growing_dataset(tmp_path)
+    grow_to("late_arrival_initial.json")
     initial_plan = AcquisitionPlan(
         plan_id="readings-plan", source_id="readings",
-        parameters={"path": str(FIXTURES / "late_arrival_initial.json")}, mode="incremental",
+        parameters={"path": str(dataset)}, mode="incremental",
     )
     first = execute_plan(initial_plan, sources, adapters, pool, checkpoints, requested_at="2026-08-24T00:00:00Z")
-    assert {a.locator for a in first.artifacts} == {"000000000001", "000000000002", "000000000005"}
+    # Phase S: the locator now carries the dataset path, so assert on the
+    # sequences it still yields -- which is what this test is actually about.
+    assert {sequence_of(a.locator) for a in first.artifacts} == {1, 2, 5}
     # SAFETY_WINDOW=3 behind the max (5) -- position lags deliberately.
     assert checkpoints.get("readings-plan").position == "000000000002"
 
+    grow_to("late_arrival_extended.json")
     grown_plan = AcquisitionPlan(
         plan_id="readings-plan", source_id="readings",
-        parameters={"path": str(FIXTURES / "late_arrival_extended.json")}, mode="incremental",
+        parameters={"path": str(dataset)}, mode="incremental",
     )
     second = execute_plan(grown_plan, sources, adapters, pool, checkpoints, requested_at="2026-08-25T00:00:00Z")
 
     # since_sequence=2 -- re-fetches 3, 4, 5: the late arrivals are NEW,
     # and the already-seen 5 comes back as an ordinary, safe duplicate.
     assert second.outcome == AcquisitionOutcome.ACQUIRED
-    locators_by_newness = {a.locator: a.is_new for a in second.artifacts}
-    assert locators_by_newness == {
-        "000000000003": True,
-        "000000000004": True,
-        "000000000005": False,  # already durably persisted -- not re-admitted, not duplicated
+    newness_by_sequence = {sequence_of(a.locator): a.is_new for a in second.artifacts}
+    assert newness_by_sequence == {
+        3: True,
+        4: True,
+        5: False,  # already durably persisted -- not re-admitted, not duplicated
     }
     assert len(pool.all_observations()) == 5  # all five records now present, none lost, none duplicated
