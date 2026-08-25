@@ -96,3 +96,62 @@ def test_list_versions_orders_by_retrieved_at_then_id(tmp_path):
 
     artifact_id = ArtifactStore.artifact_id("arXiv", "loc-1")
     assert artifact_store.list_versions(artifact_id) == (doc_earlier.id, doc_later.id)
+
+
+# -- Phase K: indexed queries and their algorithmic-complexity proof --
+
+
+def test_find_by_content_hash_locates_identical_content_under_different_locators(tmp_path):
+    artifact_store = ArtifactStore(_store(tmp_path))
+    doc_a, rec_a = _doc_and_record("source-1", "loc-a", "shared bytes")
+    doc_b, rec_b = _doc_and_record("source-2", "loc-b", "shared bytes")  # identical content, different everything else
+    artifact_store.put(doc_a, rec_a)
+    artifact_store.put(doc_b, rec_b)
+
+    matches = artifact_store.find_by_content_hash(artifact_store.content_hash_of(doc_a))
+
+    assert set(matches) == {doc_a.id, doc_b.id}
+
+
+def test_list_source_artifacts_returns_only_that_sources_artifacts(tmp_path):
+    artifact_store = ArtifactStore(_store(tmp_path))
+    doc_1, rec_1 = _doc_and_record("source-1", "loc-1", "content-1")
+    doc_2, rec_2 = _doc_and_record("source-1", "loc-2", "content-2")
+    doc_3, rec_3 = _doc_and_record("source-2", "loc-1", "content-3")  # same locator, DIFFERENT source
+    artifact_store.put(doc_1, rec_1)
+    artifact_store.put(doc_2, rec_2)
+    artifact_store.put(doc_3, rec_3)
+
+    artifacts = artifact_store.list_source_artifacts("source-1")
+
+    assert set(artifacts) == {
+        ArtifactStore.artifact_id("source-1", "loc-1"),
+        ArtifactStore.artifact_id("source-1", "loc-2"),
+    }
+
+
+def test_list_versions_and_get_never_full_scan_the_store(tmp_path):
+    """Phase J's own complaint, demonstrated directly for ArtifactStore:
+    with a non-trivial number of unrelated artifacts already persisted,
+    `list_versions`/`get` (via `_locator_for`) must answer using the
+    index alone -- never by calling `all_documents()`/`all_records()`,
+    proven by making those raise if called, not by timing anything."""
+    store = _store(tmp_path)
+    artifact_store = ArtifactStore(store)
+    for i in range(50):
+        document, record = _doc_and_record("source-1", f"loc-{i}", f"content-{i}")
+        artifact_store.put(document, record)
+
+    target_document, target_record = _doc_and_record("source-1", "loc-target", "target content")
+    target_artifact_id = artifact_store.put(target_document, target_record)
+
+    def _forbidden(*args, **kwargs):
+        raise AssertionError("a full-scan method was called -- list_versions/get must stay indexed")
+
+    store.all_documents = _forbidden  # type: ignore[method-assign]
+    store.all_records = _forbidden  # type: ignore[method-assign]
+
+    assert artifact_store.list_versions(target_artifact_id) == (target_document.id,)
+    assert artifact_store.get(target_artifact_id, target_document.id) == target_document
+    assert artifact_store.find_by_content_hash(artifact_store.content_hash_of(target_document)) == (target_document.id,)
+    assert artifact_store.list_source_artifacts("source-1") != ()

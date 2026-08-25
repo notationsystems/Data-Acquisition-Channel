@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import pytest
+from evidence.identity import content_hash
 from evidence.types import make_document, make_source
 
+from daf.storage.blob_store import BlobCorruptionError
 from daf.storage.filesystem_store import FilesystemEvidenceStore
 from daf.storage.serialization import ArtifactIdentityMismatch
 
@@ -50,22 +52,50 @@ def test_duplicate_persistence_of_identical_content_is_a_silent_no_op(tmp_path):
     assert len(store.all_documents()) == 1
 
 
-def test_corrupted_existing_file_is_detected_on_the_next_write(tmp_path):
+def test_corrupted_blob_is_detected_on_the_next_write(tmp_path):
     """A write to an id that already exists on disk re-verifies the
     EXISTING file's own identity rather than comparing payloads (two
     legitimately-constructed objects sharing an id can only differ in
     non-identity fields like retrieved_at -- see module docstring). If
     the existing file was corrupted/tampered with independent of this
-    write, that is what gets caught."""
+    write, that is what gets caught.
+
+    Phase K: raw content lives in the BlobStore, not inlined in
+    documents/{id}.json (see that module's own docstring) -- so
+    tampering the raw content itself now happens at the blob layer,
+    where BlobStore's OWN corruption check (defense in depth -- see its
+    module docstring) catches it FIRST, before the higher-level Document
+    re-verification even gets a chance: the blob no longer matches its
+    own filename hash, independent of anything Document-shaped."""
     store = _store(tmp_path)
     document = make_document(source_id="s", raw_content="A", retrieval_method="m", retrieved_at="t")
     store.put_document(document)
 
-    # Simulate on-disk tampering: rewrite the persisted content without
-    # changing its filename/id. Content-addressing makes this impossible
-    # via this store's own API -- only direct disk manipulation can do it.
+    # Simulate on-disk tampering of the raw content itself: rewrite the
+    # persisted blob without changing its filename/hash. Content-addressing
+    # makes this impossible via this store's own API -- only direct disk
+    # manipulation can do it.
+    blob_path = store.blobs.root / f"{content_hash('A')}.blob"
+    blob_path.write_text(blob_path.read_text().replace("A", "TAMPERED"))
+
+    with pytest.raises(BlobCorruptionError):
+        store.put_document(document)
+
+
+def test_corrupted_metadata_content_hash_is_detected_on_the_next_write(tmp_path):
+    """The other half of Phase K's corruption surface: the metadata
+    JSON's own `content_hash` reference, tampered to point at a
+    different (still-valid) blob. The re-verification path still
+    catches this -- `make_document` re-derives the id from whatever
+    raw_content the tampered hash resolves to, which no longer matches
+    the id this file is stored under."""
+    store = _store(tmp_path)
+    document = make_document(source_id="s", raw_content="A", retrieval_method="m", retrieved_at="t")
+    store.put_document(document)
+    store.blobs.put(content_hash("TAMPERED"), "TAMPERED")  # a second, legitimately-stored blob
+
     path = store.root / "documents" / f"{document.id}.json"
-    path.write_text(path.read_text().replace('"A"', '"TAMPERED"'))
+    path.write_text(path.read_text().replace(content_hash("A"), content_hash("TAMPERED")))
 
     with pytest.raises(ArtifactIdentityMismatch):
         store.put_document(document)

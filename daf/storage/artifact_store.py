@@ -48,6 +48,7 @@ from evidence.identity import content_hash
 from evidence.types import Document, Record
 
 from daf.storage.filesystem_store import FilesystemEvidenceStore
+from daf.storage.identity import compute_artifact_id
 
 
 class ArtifactNotFoundError(KeyError):
@@ -76,7 +77,7 @@ class ArtifactStore:
 
     @staticmethod
     def artifact_id(source_id: str, locator: str) -> str:
-        return content_hash({"source_id": source_id, "locator": locator})
+        return compute_artifact_id(source_id, locator)
 
     @staticmethod
     def content_hash_of(document: Document) -> str:
@@ -104,23 +105,36 @@ class ArtifactStore:
         """All Document ids (version_ids) sharing this artifact_id,
         ordered by (retrieved_at, id) -- deterministic and, since
         `retrieved_at` is always caller-supplied rather than wall-clock,
-        reproducible acquisition-order, not directory-listing order."""
-        matches = []
-        for document in self._store.all_documents():
-            locator = self._locator_for(document)
-            if locator is not None and self.artifact_id(document.source_id, locator) == artifact_id:
-                matches.append(document)
-        matches.sort(key=lambda d: (d.retrieved_at, d.id))
-        return tuple(document.id for document in matches)
+        reproducible acquisition-order, not directory-listing order.
+
+        Phase K: an indexed query (`MetadataIndex.list_versions`)
+        against `self._store.index`, replacing the full scan over every
+        persisted Document/Record this method used through Phase J. The
+        ordering and the returned ids are identical to the prior
+        implementation -- only the algorithmic cost changed, from
+        O(every stored document + record) to an indexed lookup."""
+        return self._store.index.list_versions(artifact_id)
+
+    def find_by_content_hash(self, content_hash_value: str) -> Tuple[str, ...]:
+        """Document ids (version_ids) whose raw content hashes to
+        `content_hash_value`, ordered by (retrieved_at, id) -- e.g. "has
+        this exact content ever appeared under a different locator"
+        (Phase J section 6's dedup-auditing pattern). New in Phase K:
+        no full-scan equivalent existed before this."""
+        return self._store.index.find_by_content_hash(content_hash_value)
+
+    def list_source_artifacts(self, source_id: str) -> Tuple[str, ...]:
+        """Distinct artifact_ids ever acquired from `source_id`, ordered
+        by first-observed retrieved_at (Phase J section 6's operator-
+        inspection pattern). New in Phase K: no full-scan equivalent
+        existed before this."""
+        return self._store.index.list_source_artifacts(source_id)
 
     def _locator_for(self, document: Document) -> Optional[str]:
         """A Document has no locator of its own -- only a Record does.
-        This resolves it by scanning persisted Records for one whose
-        `document_id` references this Document, exactly the relationship
-        `scout.pipeline.run_scout` establishes at admission time. Returns
-        None if no Record exists yet for this Document (not expected in
-        normal operation, since `put()` always persists both together)."""
-        for record in self._store.all_records():
-            if record.document_id == document.id:
-                return record.locator
-        return None
+        Phase K: an indexed lookup (`MetadataIndex.locator_for_document`)
+        replacing the full scan over every persisted Record this method
+        used through Phase J. Returns None if no Record exists yet for
+        this Document (not expected in normal operation, since `put()`
+        always persists both together)."""
+        return self._store.index.locator_for_document(document.id)
