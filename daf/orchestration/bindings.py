@@ -18,13 +18,14 @@ from daf.adapters.arxiv import ArxivSourceAdapter
 from daf.adapters.edgar_daily_index import EdgarDailyIndexSourceAdapter
 from daf.adapters.incremental_dataset import IncrementalDatasetSourceAdapter, locator_for, sequence_of
 from daf.adapters.local_dataset import LocalDatasetSourceAdapter
-from daf.adapters.noaa_water_level import NoaaWaterLevelSourceAdapter, window_end_of
+from daf.adapters.noaa_water_level import Fetcher, NoaaWaterLevelSourceAdapter, window_end_of
 from daf.adapters.usgs_earthquakes import UsgsEarthquakeSourceAdapter
 from daf.extractors.arxiv import ArxivExtractor
 from daf.extractors.edgar_daily_index import EdgarDailyIndexExtractor
 from daf.extractors.graph_dataset import GraphDatasetExtractor
 from daf.extractors.local_dataset import LocalDatasetExtractor
 from daf.extractors.noaa_water_level import NoaaWaterLevelExtractor
+from daf.extractors.noaa_water_level_measurements import NoaaWaterLevelMeasurementExtractor
 from daf.extractors.usgs_earthquakes import UsgsEarthquakeExtractor
 from daf.orchestration.adapter_registry import AdapterBinding
 from daf.orchestration.request import AcquisitionRequest
@@ -229,5 +230,78 @@ def noaa_water_level_binding() -> AdapterBinding:
         adapter_id="noaa-water-level",
         build_adapter=build_adapter,
         build_extractor=NoaaWaterLevelExtractor,
+        advance_position=_advance_noaa_position,
+    )
+
+
+def noaa_water_level_measurement_binding(
+    *, datum: str = "MLLW", units: str = "metric", fetch_bytes: Optional[Fetcher] = None
+) -> AdapterBinding:
+    """The same unmodified `NoaaWaterLevelSourceAdapter` as
+    `noaa_water_level_binding`, paired instead with the per-measurement,
+    graph-declaring extractor so acquired readings reach
+    `materials.analysis`. Both bindings are kept: the window-shaped one
+    answers "what did this window contain", this one "what individual
+    measurements were made".
+
+    `datum`/`units` are accepted HERE, once, and handed to BOTH the
+    adapter (which puts them in the request URL) and the extractor (which
+    records them as scientific context). The response body echoes
+    neither, so this is the only place the two can be kept consistent --
+    `BuildExtractor` is a zero-argument factory and cannot read the
+    request itself. Passing them separately to each would allow an
+    adapter/extractor disagreement that no test could easily catch: every
+    value silently labelled with a datum it was not measured against.
+
+    `fetch_bytes` is the adapter's OWN existing injection point, surfaced
+    here so a caller can replay a recorded real response instead of
+    hitting the live service; omitted, the adapter's live HTTP default is
+    used unchanged.
+
+    CALLER CONSTRAINT (a real hazard, measured -- see
+    docs/PHASE_17_LIVE_SCIENTIFIC_OBSERVATION.md sec."Locator collision"):
+    `NoaaWaterLevelSourceAdapter`'s locator is
+    `station:product:start:end` and does NOT include datum or units,
+    while `ArtifactStore.artifact_id` keys on `(source_id, locator)`.
+    Acquiring the same station/product/window under two different datums
+    therefore produces two genuinely different scientific payloads under
+    ONE artifact identity, where the second looks like a REVISION of the
+    first rather than a different quantity. Registering distinct
+    `SourceDefinition.source_id`s per datum/units keeps them apart. This
+    binding does not change the shared adapter's locator format, because
+    that format is also the checkpoint cursor parsed by
+    `daf.adapters.noaa_water_level.window_end_of`."""
+
+    def build_adapter(source: SourceDefinition, request: AcquisitionRequest) -> NoaaWaterLevelSourceAdapter:
+        since = request.parameters.get("since")
+        station = str(request.parameters["station"])
+        product = str(request.parameters["product"])
+        start_date = str(request.parameters["start_date"])
+        end_date = str(request.parameters["end_date"])
+        since_window_end = str(since) if since is not None else None
+
+        # Written out twice rather than assembled as **kwargs so mypy
+        # actually checks the call: the adapter's `fetch_bytes` default is
+        # its live HTTP fetcher, which must stay in place when none is
+        # injected -- passing None would disable acquisition entirely.
+        if fetch_bytes is None:
+            return NoaaWaterLevelSourceAdapter(
+                station=station, product=product, start_date=start_date, end_date=end_date,
+                retrieved_at=request.requested_at, since_window_end=since_window_end,
+                datum=datum, units=units,
+            )
+        return NoaaWaterLevelSourceAdapter(
+            station=station, product=product, start_date=start_date, end_date=end_date,
+            retrieved_at=request.requested_at, since_window_end=since_window_end,
+            datum=datum, units=units, fetch_bytes=fetch_bytes,
+        )
+
+    def build_extractor() -> NoaaWaterLevelMeasurementExtractor:
+        return NoaaWaterLevelMeasurementExtractor(datum=datum, units=units)
+
+    return AdapterBinding(
+        adapter_id="noaa-water-level-measurements",
+        build_adapter=build_adapter,
+        build_extractor=build_extractor,
         advance_position=_advance_noaa_position,
     )

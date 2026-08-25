@@ -1,0 +1,203 @@
+"""Per-measurement, graph-declaring extractor for NOAA CO-OPS water
+level -- the first DAF extractor to carry a REAL external scientific
+measurement all the way to `materials.analysis`.
+
+RELATIONSHIP TO THE EXISTING NOAA EXTRACTOR. `daf.extractors.noaa_water_level`
+already parses this exact response, but produces ONE Observation per
+WINDOW whose content holds a `readings` list. Phase M measured the
+consequence: `materials.model_state.update`/`materials.analysis` read a
+scalar `content["value"]`, and a window-shaped observation has none, so
+that extractor's output stops at the evidence boundary. Both extractors
+are correct for different questions and both are kept: the window one
+answers "what did this acquisition window contain", this one answers
+"what individual measurements were made". Neither is a replacement for
+the other, and this module does not modify it.
+
+FIELD CLASSIFICATION (Phase 17 sec.3), decided by reading a real
+response rather than the API docs alone. A real reading is
+`{"t": "2024-01-15 00:00", "v": "0.136", "s": "0.006",
+  "f": "0,0,0,0", "q": "v"}`:
+
+  SCIENTIFIC CONTENT
+    v  -> `value`, parsed to float. NOAA returns numeric strings;
+          `materials.analysis._as_float` ASSERTS a numeric type rather
+          than coercing, so parsing here is required, and it is faithful
+          parsing of a numeric literal, not interpretation.
+    s  -> `sigma`, the standard deviation of the 1-second samples behind
+          the reading. Genuinely scientific, kept.
+
+  SCIENTIFIC CONTEXT (conditioning variables -- what would have to match
+  for two readings to be measurements OF THE SAME THING)
+    t         -> `measurement_time`. See the note below; this is the
+                 single most consequential classification in the module.
+    datum     -> `datum`. A water level is meaningless without one; MLLW
+                 and STND readings are not comparable quantities.
+    units     -> `unit`. Supplied as the request's own parameter.
+    station   -> `station_id`, so readings from different stations are
+                 never silently pooled.
+
+  SOURCE IDENTITY / GRAPH STRUCTURE (never content)
+    metadata.id/name/lat/lon -> the station referent.
+
+  ACQUISITION METADATA (never content)
+    f (QC flag vector), the request URL, the window bounds, `product`,
+    `application`, `time_zone`, `format`.
+
+  REVISION METADATA (never content)
+    q -> "p" (preliminary) or "v" (verified). Deliberately EXCLUDED from
+         content, and that exclusion is load-bearing: NOAA revises
+         preliminary readings into verified ones for the SAME timestamp.
+         Were `q` part of content it would become part of the comparison
+         context, and a preliminary reading and its own later verified
+         correction would land in DIFFERENT comparison groups -- so the
+         architecture could never see that they disagree. Excluding it
+         means they share a context and a genuine conflict is reported,
+         which is the scientifically correct outcome. The flag is not
+         lost: it remains in the durably stored raw artifact.
+
+WHY `measurement_time` IS CONTENT, THOUGH IT MAKES EVERY READING
+INCOMPARABLE. Phase 16 removed the acquisition locator `id` from content
+because a field unique to each record makes every observation its own
+single-member comparison group, so nothing is ever comparable. `t` is
+also unique per reading and has exactly that mechanical effect -- but the
+opposite classification is correct here, and the difference is the whole
+point of the Phase 16 invariant. `id` was an ACQUISITION identifier: two
+records with different ids could still be measurements of the same
+quantity, so letting it split the context was a defect. `t` is a
+SCIENTIFIC conditioning variable: a water level at 00:00 and one at 00:06
+are measurements of genuinely DIFFERENT quantities, and reporting them as
+disagreeing measurements of one quantity would be a misrepresentation of
+the physics. The resulting `INCOMPARABLE` status is therefore the correct
+answer, not a defect -- a tide gauge series is not a set of repeated
+measurements. See docs/PHASE_17_LIVE_SCIENTIFIC_OBSERVATION.md for the
+full argument and for what this implies about the analysis layer's
+applicability to time series.
+
+GRAPH DECLARATION (sec.5), deliberately minimal. Two entities the source
+itself establishes -- the station (`metadata.id`, explicitly identified
+in every response) and the vertical datum every value in the response is
+referenced to -- joined by one relation, `referenced_to`. Because each
+relation carries its own `observation_id`, that relation asserts exactly
+"this water-level observation, taken at this station, is referenced to
+this datum", which is precisely what the CO-OPS API establishes and
+nothing more. Richer structures were considered and rejected as
+fabrication: no sensor entity (the response never identifies a sensor),
+no location entity (lat/lon describe the station, and inventing a
+`located_at` place referent would assert a spatial ontology the source
+does not supply), and no relation between successive readings (the source
+asserts no such link). One relation per reading is also the minimum for
+reachability -- `retrieval.engine` reaches observations only through
+relationships, so an entity-only declaration would leave the evidence
+admitted but invisible to analysis.
+"""
+
+from __future__ import annotations
+
+import json
+from dataclasses import dataclass
+from typing import Any, Dict, List, Mapping, Optional, Tuple
+
+from evidence.types import Record
+from scout.interface import ExtractedEntity, ExtractedRelation, ExtractionCandidate
+
+PROPERTY = "water_level"
+STATION_KIND = "monitoring_station"
+DATUM_KIND = "vertical_datum"
+REFERENCED_TO = "referenced_to"
+
+# NOAA's `units` request parameter -> the symbol the returned values carry.
+# The response body does NOT echo the unit, so it can only come from what
+# was requested; the binding therefore parameterises adapter and extractor
+# together so the two can never disagree.
+UNIT_SYMBOLS = {"metric": "m", "english": "ft"}
+
+
+class NoaaMeasurementExtractionError(ValueError):
+    """Raised when a Record's raw_content is not a parseable NOAA CO-OPS
+    water-level response, or a reading is missing `t`/`v`, or a value is
+    not a parseable number."""
+
+
+def _float(value: Any, field: str, record_id: str) -> float:
+    try:
+        return float(value)
+    except (TypeError, ValueError) as exc:
+        raise NoaaMeasurementExtractionError(
+            f"record {record_id!r} has a non-numeric {field!r}: {value!r}"
+        ) from exc
+
+
+def _optional_float(value: Any, field: str, record_id: str) -> Optional[float]:
+    if value is None or value == "":
+        return None
+    return _float(value, field, record_id)
+
+
+@dataclass(frozen=True)
+class NoaaWaterLevelMeasurementExtractor:
+    """`datum`/`units` are the request parameters the paired adapter
+    actually sent -- not defaults invented here. See the module docstring
+    for why the response cannot supply them."""
+
+    datum: str
+    units: str
+
+    def _unit_symbol(self) -> str:
+        try:
+            return UNIT_SYMBOLS[self.units]
+        except KeyError:
+            raise NoaaMeasurementExtractionError(
+                f"unknown NOAA units {self.units!r}; expected one of {sorted(UNIT_SYMBOLS)}"
+            ) from None
+
+    def extract(self, record: Record) -> Tuple[ExtractionCandidate, ...]:
+        try:
+            payload = json.loads(record.raw_content)
+        except json.JSONDecodeError as exc:
+            raise NoaaMeasurementExtractionError(f"record {record.id!r} is not valid JSON") from exc
+        if not isinstance(payload, dict) or "metadata" not in payload or "data" not in payload:
+            raise NoaaMeasurementExtractionError(
+                f"record {record.id!r} is missing the required 'metadata'/'data' top-level keys"
+            )
+
+        metadata: Mapping[str, Any] = payload["metadata"]
+        station_id = metadata.get("id")
+        if not isinstance(station_id, str) or not station_id:
+            raise NoaaMeasurementExtractionError(
+                f"record {record.id!r} has no usable station id in metadata: {metadata!r}"
+            )
+
+        unit_symbol = self._unit_symbol()
+        entities = (
+            ExtractedEntity(label=station_id, kind=STATION_KIND),
+            ExtractedEntity(label=self.datum, kind=DATUM_KIND),
+        )
+        relations = (
+            ExtractedRelation(from_label=station_id, to_label=self.datum, type=REFERENCED_TO),
+        )
+
+        candidates: List[ExtractionCandidate] = []
+        for row in payload["data"]:
+            if not isinstance(row, dict) or "t" not in row or "v" not in row:
+                raise NoaaMeasurementExtractionError(
+                    f"record {record.id!r} has a reading missing 't'/'v': {row!r}"
+                )
+            content: Dict[str, Any] = {
+                "property": PROPERTY,
+                "value": _float(row["v"], "v", record.id),
+                "unit": unit_symbol,
+                "datum": self.datum,
+                "station_id": station_id,
+                "measurement_time": row["t"],
+            }
+            sigma = _optional_float(row.get("s"), "s", record.id)
+            if sigma is not None:
+                content["sigma"] = sigma
+
+            candidates.append(
+                ExtractionCandidate(
+                    content=content, entities=entities, relations=relations,
+                    extraction_method="json:noaa_water_level_measurement_v1", confidence=1.0,
+                )
+            )
+        return tuple(candidates)
