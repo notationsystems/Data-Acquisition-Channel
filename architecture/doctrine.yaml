@@ -17,6 +17,7 @@ sources:
   - architecture/core.yaml
   - architecture/admission_reachability.yaml
   - architecture/condition_provenance_reachability.yaml
+  - architecture/condition_lifecycle.yaml
   - architecture/condition_representation.yaml
   - architecture/control_graph.yaml
   - architecture/evidence_class.yaml

@@ -48,7 +48,7 @@ consumers:
     requirement: "reconstruct Observation/DerivedValue from JSON-parsed payload"
     vendored: false
     modified: true
-    note: "json.loads has no extension point installed anywhere in this codebase, so without a read-side change, ANY custom Mapping-shaped content value reconstructs as a plain, unhashable dict on every load -- see hydration_measurement below for why this is not a rare path. freeze_nested_mappings (daf/storage/frozen_mapping.py) is now applied to `content` on load, recursively wrapping any dict-valued entry as FrozenMapping. A no-op for every content shape shipped before this phase (measured: no extractor has ever produced a dict-valued content entry)."
+    note: "json.loads has no extension point installed anywhere in this codebase, so without a read-side change, ANY custom Mapping-shaped content value reconstructs as a plain, unhashable dict on every load -- see hydration_measurement below for why this is not a rare path. freeze_nested_mappings (daf/storage/frozen_mapping.py) is now applied to `content` on load, recursively wrapping any dict-valued entry as FrozenMapping. A no-op for every content shape shipped before this phase (measured: no extractor has ever produced a dict-valued content entry). CORRECTED IN PHASE 35 -- that parenthetical is FALSE: daf.extractors.edgar_daily_index has always emitted form_type_counts, and daf.extractors.noaa_water_level quality_counts, both dicts, so freeze_nested_mappings DOES change their hydrated content type. The impact is nil (both emit entities=(), relations=() so neither is reachable through materials.analysis, and Observation.id is unchanged either way) but the claim was wrong. See architecture/condition_lifecycle.yaml gaps.phase_34_no_op_claim_incorrect."
 
   - name: daf.storage.durable_pool.DurablePool / daf.storage.classified_pool.ClassifiedPool
     requirement: "none directly -- but its lazy-hydration behaviour determines WHEN observation_from_dict's read-side fix actually matters"
@@ -133,6 +133,7 @@ implementation:
       change: "observation_from_dict and derived_value_from_dict reconstruct content via freeze_nested_mappings instead of passing payload['content'] straight through"
     - path: daf/extractors/noaa_water_level_measurements.py
       change: "conditions=FrozenMapping({'datum': self.datum}) added to every reading's content, replacing the Phase 33 reverted plain-dict attempt"
+  corrected_in_phase_35: "this phase's changes are accurate as recorded, but the CLOSURE they imply is not. Phase 35 measured that freeze_nested_mappings is applied at only the READ boundary, while the write boundary was fixed for NOAA alone, by hand, inside its extractor -- so daf.extractors.graph_dataset still constructs a plain, unhashable dict for a declared conditions object, which breaks materials.analysis in-process and is repaired only by a restart. The representation is closed for NOAA, not for the substrate. See architecture/condition_lifecycle.yaml."
   not_changed:
     - "materials.analysis (vendored) -- not modified; already accepts any natively hashable content value"
     - "evidence.identity / evidence.types (vendored) -- not modified; already accepts any dict-subclass content value"

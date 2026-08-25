@@ -1,0 +1,254 @@
+# Whether the Phase 34 condition representation stays correct across the
+# COMPLETE durable scientific lifecycle -- acquisition, persistence,
+# process termination, reopen, hydration, admissibility, analysis.
+#
+# THIS FILE RECORDS MEASUREMENTS AND A CLOSURE VERDICT, NOT A SCHEMA --
+# the same discipline architecture/condition_representation.yaml and
+# architecture/condition_provenance_reachability.yaml already establish.
+#
+# The verdict is deliberately SPLIT. NOAA's lifecycle is closed. The
+# substrate's is not, and saying "conditions work now" without that
+# split would be the exact overstatement this sequence of phases has
+# repeatedly corrected in its own prior records.
+extends: core@1.0.0
+
+question: "does the Phase 34 representation remain correct when real scientific observations travel through acquisition, persistence, reopening, admissibility, analysis, and subsequent process execution?"
+prior_finding: "architecture/condition_representation.yaml (Phase 34) -- FrozenMapping satisfies Mapping + native hashability + JSON round-trip, and daf/storage/serialization.py reconstructs it on load."
+
+closure:
+  noaa: closed
+  substrate: not_closed
+  rationale: "all six invariants (semantic validity, immutable representation, deterministic identity, durable serialization, process-restart reconstruction, downstream compatibility) hold for daf.extractors.noaa_water_level_measurements, verified through two genuinely separate OS processes. They do NOT hold uniformly for the substrate, because Phase 34 imposed the representation at only one of the two boundaries where a Mapping value enters an Observation -- see gaps.write_side_asymmetry."
+
+# --------------------------------------------------- lifecycle trace --
+#
+# The representation actually observed at each boundary of a real NOAA
+# acquisition. Measured by monkeypatching each boundary in a scratch
+# harness and by reading the on-disk bytes directly -- never inferred.
+
+lifecycle_trace:
+  - boundary: extraction_candidate_construction
+    location: daf/extractors/noaa_water_level_measurements.py
+    representation: FrozenMapping
+  - boundary: run_scout_make_observation
+    location: vendor/scout-retrieval-agent/scout/pipeline.py
+    representation: FrozenMapping
+    note: "content arrives as a plain dict whose 'conditions' VALUE is a FrozenMapping; make_observation wraps the outer dict in MappingProxyType"
+  - boundary: observation_in_memory
+    location: evidence/types.py Observation.content
+    representation: FrozenMapping
+    note: "outer container is mappingproxy; the conditions value is unchanged"
+  - boundary: durable_write_bytes
+    location: daf/storage/filesystem_store.py
+    representation: plain_json_object
+    note: "the FrozenMapping type is NOT encoded on disk. This is deliberate: the representation is a layer above the bytes, so persistence depends on no Python type surviving. observation_to_dict does dict(observation.content), a shallow copy, and json.dumps serializes the nested FrozenMapping as an ordinary object."
+  - boundary: process_termination
+    location: n/a
+    representation: none
+    note: "nothing survives but the bytes -- the entire point of the restart test"
+  - boundary: durable_read_single
+    location: daf/storage/filesystem_store.py get_observation
+    representation: FrozenMapping
+    note: "re-imposed by freeze_nested_mappings in daf/storage/serialization.py observation_from_dict"
+  - boundary: durable_read_bulk
+    location: daf/storage/filesystem_store.py all_observations
+    representation: FrozenMapping
+  - boundary: hydration
+    location: daf/storage/durable_pool.py _replay_into
+    representation: FrozenMapping
+  - boundary: property_admissibility
+    location: science/admissibility.py no_context_free_property
+    representation: FrozenMapping
+    note: "verdict is ('MISSING_METHOD',) for all 240 real readings, before and after restart"
+  - boundary: comparison_context
+    location: vendor/scout-retrieval-agent/materials/analysis.py _comparison_context
+    representation: FrozenMapping
+  - boundary: analysis
+    location: vendor/scout-retrieval-agent/materials/analysis.py analyze
+    representation: FrozenMapping
+    note: "240 observed, 240 singleton comparison groups, no disagreement -- identical before and after restart"
+
+# ------------------------------------------- the hydration asymmetry --
+#
+# The measurement that explains why a read-side-only fix is not
+# sufficient, and why the gap below stayed invisible.
+
+hydration_asymmetry:
+  mechanism: "scout.pipeline.run_scout calls build_trust_graph(pool) at the START of every acquisition, which calls pool.all_referents() -- a DurablePool full-corpus method that triggers _ensure_hydrated(). For a brand-new empty store this hydrates an EMPTY corpus and permanently sets _hydrated=True BEFORE the first put_observation."
+  measured_consequence: "daf.storage.serialization.observation_from_dict is called ZERO times during a complete real acquisition -- measured by counting calls through a wrapper. A same-process acquire-then-analyze therefore hands materials.analysis the extractor's own in-memory objects and never reconstructs anything."
+  implication: "the read-side fix (Phase 34) protects the reopened-store path and ONLY that path. Whatever representation the extractor constructs is what the same-process consumer sees, unmediated. Any extractor that constructs a plain dict is therefore broken in-process and repaired only by a restart -- which is gaps.write_side_asymmetry."
+
+# ------------------------------------------------- process restart --
+
+process_restart:
+  harness: tests/helpers_phase35_restart.py
+  method: "two separate python3 interpreter invocations sharing nothing but an on-disk storage directory; process A acquires from a committed fixture (no network) and process B reopens, hydrates, assesses admissibility and runs the real vendored materials.analysis.analyze"
+  result: byte_identical
+  keys_compared:
+    - observation_count
+    - first_observation_id
+    - all_observation_ids_digest
+    - content_fingerprint
+    - content_keys
+    - conditions_type
+    - conditions_items
+    - conditions_is_mapping
+    - conditions_hashable
+    - conditions_immutable
+    - pool_fingerprint
+    - analysis_observed_count
+    - analysis_group_count
+    - analysis_group_datums
+    - analysis_disagreement
+    - admissibility_examined
+    - admissibility_accepted
+    - admissibility_refused
+    - admissibility_by_code
+  deliberately_not_compared:
+    - native_hash
+  native_hash_rationale: "Python randomizes string hashing per interpreter (PYTHONHASHSEED), so hash(FrozenMapping({'datum': 'MLLW'})) differs between processes -- measured directly across three interpreters, while content_hash was identical in all three. This is CORRECT, not a defect: the only consumer of the native hash (materials.analysis._group_by_comparison_context) uses it as a dict key within one process and never persists or compares it. The invariant that must survive a restart is that hashing SUCCEEDS and that content_hash is stable -- not the hash VALUE. A test asserting a stable native hash across processes would assert something Python does not promise and this architecture does not need."
+
+# --------------------------------------------------------- identity --
+
+identity:
+  measured_on: "all 240 real NOAA observations, not a sample"
+  observation_id: unchanged
+  content_fingerprint: unchanged
+  pool_fingerprint: unchanged
+  condition_equality: preserved
+  condition_hashability: preserved
+  condition_hash_value: process_local_by_design
+  round_trip_idempotent: "round-tripping twice is identical to round-tripping once -- verified, which is what makes repeated reopen/rewrite cycles safe"
+
+# ------------------------------------------------ extractor inventory --
+#
+# Phase 35 section 7: inventory, DO NOT MODIFY. Every row measured by
+# running the real extractor against a committed fixture and inspecting
+# the actual ExtractionCandidate -- not read off a docstring.
+
+extractor_inventory:
+  - extractor: arxiv
+    property_shaped: false
+    graph_reachable: true
+    dict_valued_content: []
+    list_valued_content: []
+    condition_risk: none
+    note: "graph-reachable (3 entities, 2 relations) but carries no Mapping-valued content at all"
+  - extractor: edgar_daily_index
+    property_shaped: false
+    graph_reachable: false
+    dict_valued_content:
+      - form_type_counts
+    list_valued_content:
+      - filings
+    condition_risk: latent_unreachable
+    note: "has ALWAYS emitted a dict-valued content entry -- see gaps.phase_34_no_op_claim_incorrect. Unreachable through materials.analysis (entities=(), relations=()), so the hydration-time type change is harmless in practice."
+  - extractor: graph_dataset
+    property_shaped: source_declared
+    graph_reachable: true
+    dict_valued_content: source_declared
+    list_valued_content: source_declared
+    condition_risk: active
+    note: "THE gap. Passes every non-structural key through verbatim by design, so a source record declaring a conditions object produces a plain, unhashable dict. Graph-reachable whenever the record declares a relation."
+  - extractor: local_dataset
+    property_shaped: source_declared
+    graph_reachable: false
+    dict_valued_content: source_declared
+    list_valued_content: source_declared
+    condition_risk: latent_unreachable
+    note: "same verbatim pass-through as graph_dataset, but emits entities=(), relations=() so nothing it produces reaches materials.analysis"
+  - extractor: noaa_water_level
+    property_shaped: false
+    graph_reachable: false
+    dict_valued_content:
+      - quality_counts
+    list_valued_content:
+      - readings
+    condition_risk: latent_unreachable
+    note: "the window-shaped extractor; also has always emitted a dict-valued content entry"
+  - extractor: noaa_water_level_measurements
+    property_shaped: true
+    graph_reachable: true
+    dict_valued_content:
+      - conditions
+    list_valued_content: []
+    condition_risk: none
+    note: "the one extractor that is property-shaped AND graph-reachable AND carries a Mapping-valued content entry -- and it correctly constructs a FrozenMapping"
+  - extractor: usgs_earthquakes
+    property_shaped: true
+    graph_reachable: false
+    dict_valued_content: []
+    list_valued_content: []
+    condition_risk: none
+    note: "property-shaped but emits entities=(), relations=(); its MISSING_CONDITIONS is a data absence, unaffected by any representation choice"
+
+# ------------------------------------------------------------- gaps --
+#
+# All four are RECORDED, NOT FIXED. Phase 35 section 7 says the
+# extractors are to be inventoried, not modified; section 9 says no
+# conflict policy is to be invented; section 15 forbids unnecessary
+# expansion. Each is locked by a characterization test so it cannot
+# change silently.
+
+gaps:
+  - id: write_side_asymmetry
+    severity: latent_active
+    summary: "Phase 34 imposed the representation at only the READ boundary (daf/storage/serialization.py) plus NOAA's own extractor by hand. daf.extractors.graph_dataset still constructs a plain dict for a declared conditions object."
+    measured: "a graph_dataset record declaring both conditions and a relation raises TypeError: unhashable type: 'dict' from materials.analysis.analyze IN THE SAME PROCESS, and SUCCEEDS with a FrozenMapping after a reopen -- the exact mirror of the Phase 34 bug."
+    why_latent: "it requires conditions AND a relation together. The shipped ADMISSIBLE_RECORD in tests/test_property_admission_integration.py declares conditions but relations=[], and retrieval.engine reaches an Observation only through a ClaimedRelationship, so no shipped test or production path triggers it."
+    locked_by: tests/test_persistent_condition_lifecycle.py::test_the_write_side_gap_is_the_exact_mirror_of_the_phase_34_bug
+    action_taken: recorded_not_fixed
+    action_taken_reason: "fixing it inside graph_dataset would be per-source patching of exactly the kind architecture/condition_representation.yaml deliberately avoided. The honest fix is a single generic choke point where DAF extractor output becomes Observation content -- a design decision requiring its own measurement, which section 7's 'do not modify them yet' explicitly defers."
+
+  - id: list_valued_conditions
+    severity: latent
+    summary: "a list-valued condition passes the admissibility gate and computes a stable Observation.id, but breaks the real consumer."
+    measured: "FrozenMapping({'a': [1,2,3]}) is ADMISSIBLE and hashes into a valid Observation.id, but _group_by_comparison_context raises TypeError: unhashable type: 'list'. freeze_nested_mappings does not recurse into lists, so a list of dicts also stays plain."
+    locked_by: tests/test_persistent_condition_lifecycle.py::test_degenerate_condition_values_behave_as_measured
+    action_taken: recorded_not_fixed
+    action_taken_reason: "no real source produces a list-valued condition today (measured across every shipped extractor), and deciding whether a list is even a legitimate condition value is a semantic question about the condition contract, not a representation bug to patch."
+
+  - id: vacuous_condition_values
+    severity: open_question
+    summary: "conditions whose VALUES are None or the empty string are admissible."
+    measured: "no_context_free_property(FrozenMapping({'datum': None})) is admissible; so is {'datum': ''}. The gate requires conditions to be a non-empty Mapping and never inspects the values."
+    locked_by: tests/test_persistent_condition_lifecycle.py::test_degenerate_condition_values_behave_as_measured
+    action_taken: recorded_not_fixed
+    action_taken_reason: "adding value-level validation would change science/admissibility.py, a gate this sequence of phases has never modified to accommodate a source. Whether a null condition value is vacuous or a legitimate 'declared absent' is a semantic question the substrate does not currently answer -- recorded as an unresolved architectural question rather than settled by fiat."
+
+  - id: phase_34_no_op_claim_incorrect
+    severity: documentation
+    summary: "architecture/condition_representation.yaml claimed no extractor had ever produced a dict-valued content entry. That is false."
+    measured: "daf.extractors.edgar_daily_index emits form_type_counts (a dict) and daf.extractors.noaa_water_level emits quality_counts (a dict), both since long before Phase 34. freeze_nested_mappings therefore DOES change their hydrated content type from dict to FrozenMapping."
+    impact: "nil in practice -- both emit entities=(), relations=() so neither is reachable through materials.analysis, and Observation.id is unchanged either way. The claim was still wrong."
+    locked_by: tests/test_persistent_condition_lifecycle.py::test_two_shipped_extractors_already_emitted_dict_valued_content
+    action_taken: recorded_not_fixed
+    action_taken_reason: "the incorrect sentence is corrected in place in architecture/condition_representation.yaml via corrected_in_phase_35, following this repository's established practice of annotating rather than rewriting a prior phase's record."
+
+# ------------------------------------------------ conflict semantics --
+
+conflict_semantics:
+  duplicate_keys: not_representable
+  duplicate_keys_note: "a Python dict cannot hold two values under one key, so 'duplicate condition keys' is not expressible in this representation and needs no policy"
+  conflicting_values_across_observations: "materials.analysis already has a mechanism -- two Observations whose comparison contexts are EQUAL but whose values differ land in one group and are reported as a Disagreement. Two Observations whose conditions differ land in DIFFERENT groups and are never compared. This is existing, unmodified behaviour, verified for the multi-condition case."
+  conflicting_values_within_one_condition_mapping: unresolved
+  unresolved_note: "no substrate mechanism defines what it would mean for a single conditions mapping to be internally inconsistent, and none was invented here. Recorded as an open architectural question per section 9."
+
+# --------------------------------------------------- evidence boundary --
+
+evidence_boundary:
+  frozen_mapping_imports:
+    - typing
+    - __future__
+  frozen_mapping_writes_evidence: false
+  analysis_writes_evidence: false
+  admissibility_writes_evidence: false
+  measured: "analysing and assessing a real 240-observation NOAA pool leaves pool.fingerprint() and the observation count byte-identical. daf/storage/frozen_mapping.py imports only typing/__future__ by AST analysis and contains no reference to EvidencePool, put_observation, or run_scout."
+  quarantine_does_not_carry_conditions: "a QuarantineRecord's fields are exactly id/execution_id/stage/errors. The refused Observation's content -- and therefore the FrozenMapping -- is never persisted into quarantine, so the Phase 34 class of round-trip bug cannot arise on that path. Verified by substring probe across all 240 records."
+
+not_claimed:
+  - "the condition representation is architecturally closed for the substrate -- it is closed for NOAA only; see closure and gaps.write_side_asymmetry"
+  - "MISSING_METHOD is resolved for NOAA -- it is not, and was not attempted"
+  - "USGS gained or lost any dimension -- re-verified unchanged, before and after restart"
+  - "any extractor was modified -- none was; section 7 explicitly defers that"
+  - "a condition ontology, conflict policy, or value-level validation was introduced -- none was"
