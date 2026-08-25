@@ -123,12 +123,18 @@ def test_real_measurements_are_admitted_with_the_declared_trust_graph(tmp_path):
 
 def test_observation_content_carries_only_scientific_fields(tmp_path):
     """Section 3's classification, enforced: acquisition metadata,
-    revision metadata and source identity are all kept out of content."""
+    revision metadata and source identity are all kept out of content.
+
+    `uncertainty`/`uncertainty_kind` were added in Phase 32, sigma-
+    conditional -- present exactly when the source itself reports `s`,
+    see tests/test_noaa_uncertainty_provenance.py for that determination
+    in full; this test only re-locks the complete field set."""
     pool, _ = _acquire(tmp_path)
     observation = pool.all_observations()[0]
 
     assert set(observation.content) == {
-        "property", "value", "unit", "datum", "station_id", "measurement_time", "sigma"
+        "property", "value", "unit", "datum", "station_id", "measurement_time", "sigma",
+        "uncertainty", "uncertainty_kind",
     }
     for excluded in ("q", "f", "s", "t", "v", "name", "lat", "lon", "product", "time_zone"):
         assert excluded not in observation.content

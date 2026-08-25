@@ -1,0 +1,59 @@
+# Whether a source-authentic numeric field constitutes genuine
+# uncertainty for the property-admissibility gate
+# (`science.admissibility.quantity_is_typed`'s `uncertainty`/
+# `uncertainty_kind` requirement) -- determined by real source semantics,
+# never inferred from a field name.
+#
+# THIS FILE RECORDS DETERMINATIONS, NOT A SCHEMA -- the same discipline
+# architecture/method_provenance_reachability.yaml already establishes
+# for method provenance. A verdict of `insufficient_semantics` or
+# `not_uncertainty` is not a gap to close by promotion; it is the honest
+# answer.
+extends: core@1.0.0
+
+verdicts:
+  supported_uncertainty: "the source directly states a dispersion/error statistic about the reported value, with a defined statistical meaning that maps onto one of the four declared uncertainty_kind values without reinterpretation"
+  unsupported_uncertainty: "the source has genuine uncertainty semantics, but the existing uncertainty_kind vocabulary cannot represent them without a shared, cross-source extension"
+  insufficient_semantics: "a numeric field exists but its statistical meaning is not established by the source well enough to choose any uncertainty_kind honestly"
+  not_uncertainty: "the field is quality-control or administrative metadata, not a statement about the dispersion or error of the reported value"
+
+determinations:
+
+  noaa_water_level_sigma:
+    field: "row['s'], surfaced as sigma in daf/extractors/noaa_water_level_measurements.py"
+    source_semantics: "CO-OPS 6-minute water-level products are computed by averaging the underlying 1-second (or comparable high-frequency) samples collected within that interval. s is the standard deviation of exactly those samples -- a dispersion statistic about the samples the reported value was computed from, reported by the source directly alongside that value. Established by this extractor's own Phase 17 investigation of real CO-OPS responses, not inferred from the field name."
+    real_presence: "present on all 240 readings in tests/fixtures/noaa_live_8454000_20240115_mllw.json -- measured, not assumed. Optional per the extractor's own _optional_float guard: a reading genuinely lacking s receives neither uncertainty nor uncertainty_kind."
+    uncertainty_kind_decision: "stated -- the source itself supplies the number, so it is neither DAF's estimate (estimated), a combination of other uncertainties (propagated), nor a declaration of no error (absent, which would assert the opposite of what s says)."
+    value_decision: "uncertainty is sigma unmodified -- the identical number, no transformation. A standard deviation of a quantity is expressed in that quantity's own unit; this is a property of what a standard deviation is, not a convention invented for this determination, so no separate unit field for uncertainty is required by, or added to, the existing contract."
+    verdict: supported_uncertainty
+    action_taken: "additive extension of daf/extractors/noaa_water_level_measurements.py: uncertainty/uncertainty_kind keys added, conditional on sigma's presence, alongside every existing key including sigma itself"
+    action_taken_reason: "the source establishes a specific, well-defined statistical meaning for this field, and the existing four-value uncertainty_kind vocabulary already has an honest home for it (stated) without inventing a fifth value or reinterpreting one of the existing four"
+    conditions_left_independent: "MISSING_CONDITIONS is untouched by this phase and remains a separate, unresolved finding, per its own absence of source support (Phase 29): datum/station_id/measurement_time are context, not a nested conditions mapping, and reshaping them was and remains out of this phase's scope"
+    method_left_independent: "MISSING_METHOD is untouched by this phase and remains unresolved: CO-OPS does not report, per reading, which sensor or algorithm produced a value, and inventing one was rejected in Phase 29 for this same extractor"
+    identity_impact: "Observation.content changed for every reading that carries s, so Observation.id for those NOAA acquisitions differs from every prior phase. Disclosed, not concealed. Verified NOT to affect materials.analysis's established INCOMPARABLE finding for NOAA tide-series data: _comparison_context already included the per-reading-varying sigma key before this phase, and measurement_time alone already made every reading its own singleton comparison group; the addition changes an already-maximally-fragmented context, not its outcome. Confirmed by running tests/test_live_scientific_observation.py's own INCOMPARABLE regression test against the changed extractor."
+    real_acquisition_result:
+      candidates_examined: 240
+      accepted: 0
+      refused: 240
+      reasons:
+        - MISSING_CONDITIONS
+        - MISSING_METHOD
+      note: "uncertainty resolved correctly and does not appear in the refusal reasons for any of the 240 real readings; the observation remains genuinely inadmissible for the two dimensions this phase did not attempt to resolve"
+
+cross_source_summary:
+  usgs_magnitude_type:
+    resolved_this_phase: []
+    resolved_prior_phase:
+      - method
+      - quantity_unit
+    remaining:
+      - conditions
+      - uncertainty
+  noaa_water_level_sigma:
+    resolved_this_phase:
+      - uncertainty
+    resolved_prior_phase: []
+    remaining:
+      - conditions
+      - method
+  note: "two structurally different sources, two different single-dimension resolutions, in two different phases -- neither domain was assumed to share the other's uncertainty or method semantics, and neither resolution touched the other source's extractor"

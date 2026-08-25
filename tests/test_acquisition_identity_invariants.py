@@ -445,7 +445,8 @@ def test_scientific_identity_is_independent_of_acquisition_identity(tmp_path):
     for observation in pool.all_observations():
         assert "locator" not in observation.content
         assert set(observation.content) == {
-            "property", "value", "unit", "datum", "station_id", "measurement_time", "sigma"
+            "property", "value", "unit", "datum", "station_id", "measurement_time", "sigma",
+            "uncertainty", "uncertainty_kind",
         }
 
     answer = analyze(

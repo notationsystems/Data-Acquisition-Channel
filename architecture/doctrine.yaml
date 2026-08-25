@@ -20,6 +20,7 @@ sources:
   - architecture/evidence_class.yaml
   - architecture/execution_record.yaml
   - architecture/property_admissibility.yaml
+  - architecture/uncertainty_provenance_reachability.yaml
   - architecture/invariants.yaml
   - architecture/method_provenance_reachability.yaml
   - architecture/model_binding.yaml

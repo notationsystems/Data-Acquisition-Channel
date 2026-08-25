@@ -89,6 +89,51 @@ asserts no such link). One relation per reading is also the minimum for
 reachability -- `retrieval.engine` reaches observations only through
 relationships, so an entity-only declaration would leave the evidence
 admitted but invisible to analysis.
+
+PHASE 32 -- `uncertainty`/`uncertainty_kind`, ADDITIVE, SIGMA-CONDITIONAL.
+Added only for a reading that actually carries `s`, exactly mirroring
+the existing `if sigma is not None` guard -- a reading NOAA does not
+report `s` for gets neither key, and remains genuinely
+`MISSING_UNCERTAINTY_KIND`, never defaulted.
+
+SOURCE SEMANTICS, established by real reconnaissance (this module's own
+Phase 17 investigation), not inferred from the field name `sigma`: CO-OPS
+6-minute water-level products are computed by averaging the underlying
+1-second (or comparable high-frequency) samples collected within that
+interval, and `s` is the standard deviation of exactly those samples --
+a dispersion statistic about the samples the reported value was computed
+from, directly reported by the source alongside that value. This is
+`uncertainty_kind = "stated"`: the source itself supplies the number, so
+it is neither DAF's estimate, a propagated combination of other
+uncertainties, nor an explicit declaration of no error (`"absent"` would
+assert the opposite of what `s` says). `uncertainty` is `sigma` itself,
+unmodified -- same value, same unit as `value` (a standard deviation of a
+quantity is expressed in that quantity's own unit; this is a property of
+what a standard deviation IS, not a claim invented for this module).
+
+WHAT THIS DOES NOT RESOLVE. `method` is untouched and still absent: CO-OPS
+does not report, per reading, which sensor or algorithm produced a value
+-- inventing "tide gauge" would be exactly the fabrication Phase 29
+already rejected for this same extractor. `conditions` is untouched for
+the same reason Phase 29 left it untouched: reshaping `datum`/`station_id`/
+`measurement_time` into a nested `conditions` mapping is a materially
+different, larger content-shape decision than adding two new keys, and
+this phase's scope is uncertainty alone -- solving it must not be allowed
+to silently solve, or appear to solve, either of the other two.
+
+IDENTITY AND COMPARABILITY, MEASURED, NOT ASSUMED. Adding `uncertainty`/
+`uncertainty_kind` changes `Observation.content`, and therefore
+`Observation.id`, for every reading that carries `s` -- disclosed, not
+concealed (see docs/PHASE_32_NOAA_UNCERTAINTY_PROVENANCE.md). Unlike
+Phase 29's decision not to touch this same extractor, this addition does
+NOT touch `datum`/`station_id`/`measurement_time` -- the keys Phase 17's
+own INCOMPARABLE finding rests on -- and cannot change that finding:
+`materials.analysis._comparison_context` already treated the (per-reading
+varying) `sigma` key as part of every reading's comparison context before
+this phase, via `measurement_time` alone every reading was already its
+own singleton group, and adding two more keys to an already-maximally-
+fragmented context changes nothing about whether any two readings compare
+-- verified against the real test suite, not merely reasoned about.
 """
 
 from __future__ import annotations
@@ -110,6 +155,12 @@ REFERENCED_TO = "referenced_to"
 # was requested; the binding therefore parameterises adapter and extractor
 # together so the two can never disagree.
 UNIT_SYMBOLS = {"metric": "m", "english": "ft"}
+
+# `sigma` is a standard deviation the source states directly -- not DAF's
+# estimate, not a propagated combination, and not a declaration of no
+# error. See the module docstring's "PHASE 32" section for why this is
+# the one uncertainty_kind that is true here, and no other.
+SIGMA_UNCERTAINTY_KIND = "stated"
 
 
 class NoaaMeasurementExtractionError(ValueError):
@@ -193,6 +244,12 @@ class NoaaWaterLevelMeasurementExtractor:
             sigma = _optional_float(row.get("s"), "s", record.id)
             if sigma is not None:
                 content["sigma"] = sigma
+                # Same value, same unit as `value` -- a standard
+                # deviation is expressed in the quantity's own unit.
+                # Never added when the source omits `s`: that reading
+                # stays genuinely MISSING_UNCERTAINTY_KIND.
+                content["uncertainty"] = sigma
+                content["uncertainty_kind"] = SIGMA_UNCERTAINTY_KIND
 
             candidates.append(
                 ExtractionCandidate(
