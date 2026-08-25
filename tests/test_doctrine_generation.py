@@ -29,7 +29,24 @@ from epistemics.model_binding import Binding, BindingViolation, check_bindings, 
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 ARCHITECTURE = REPO_ROOT / "architecture"
-CANONICAL_YAML = sorted(ARCHITECTURE.glob("*.yaml")) + sorted(ARCHITECTURE.glob("_probes/*.yaml"))
+CANONICAL_YAML = (
+    sorted(ARCHITECTURE.glob("*.yaml"))
+    + sorted(ARCHITECTURE.glob("_probes/*.yaml"))
+    # The Phase-2 exchange artifacts and the joint decision record are
+    # canonical architecture too, and their hashes are only reproducible
+    # if both parsers agree on them -- so they belong under the same
+    # parse and agreement guarantees as everything else here.
+    # `canonicalization_fixture.yaml` is excluded deliberately: it is the
+    # serializer's shared agreement fixture, not an architecture artifact,
+    # so it carries no `extends` and is covered by
+    # tests/test_exchange_artifact.py instead.
+    + sorted(
+        path
+        for path in ARCHITECTURE.glob("exchange/*.yaml")
+        if path.name != "canonicalization_fixture.yaml"
+    )
+    + sorted(ARCHITECTURE.glob("decisions/*.yaml"))
+)
 
 
 # --- the canonical sources parse, and mean what PyYAML says they mean ---

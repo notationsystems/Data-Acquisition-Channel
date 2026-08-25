@@ -86,22 +86,11 @@ invariants:
 
   - id: generation_depth_bounded
     rule: "derivation from derivation is bounded and the depth is recorded"
-    status: vacuously_enforced
-    domain: empty
-    enforcement: tests/test_epistemic_boundary.py
-    evidence: "DerivedValue identity makes a derivation cycle unconstructible; no generative path exists to bound"
-    # This evidence is TRUE NOW AND SELF-INVALIDATING, which makes it a
-    # different object from an ordinary passing check: a claim with an
-    # expiry condition. The moment a generative path exists, the evidence
-    # above becomes false while the status still reads
-    # `vacuously_enforced` -- and a vacuous status whose justification has
-    # silently gone untrue is worse than a status of `absent`, by this
-    # file's own standard. So the expiry is encoded rather than
-    # remembered.
-    invalidated_by: "the first computed-class record entering the store, or any other generative path by which a derivation can take a derivation as input"
-    guard: tests/test_generation_depth_domain_guard.py
-    guard_behaviour: "asserts the domain is STILL EMPTY, and FAILS when a generative path lands -- so the rule must be written before that path ships rather than after. A note saying 'rewrite before, not after' gets missed; a failing test cannot be."
-    guard_note: "the guard is not the invariant. It does not bound any depth; it refuses to let the invariant stay vacuous once it has stopped being vacuous. See architecture/recursive_depth.yaml."
+    status: represented_unenforced
+    enforcement: tests/test_recursive_lineage_depth.py
+    evidence: "CORRECTED 2026-08-25 by architecture/_probes/generality.yaml's recursive_computation FAIL. The previous evidence line -- 'DerivedValue identity makes a derivation cycle unconstructible; no generative path exists to bound' -- was true in its first clause and did not support the rule. Acyclicity is not boundedness. MEASURED: no depth/generation/lineage symbol is defined anywhere in this repository or its vendored substrate; DerivedValue's fields are exactly (id, derived_from, method, content, confidence, derived_at), with no depth; this invariant declares no bound value; and evidence.provenance.ancestry_of returns a flat set union that discards the level at which each node was reached. So neither clause of the rule is implemented: nothing is bounded and no depth is recorded. The rule is retained UNCHANGED and its status corrected downward, because the rule is right and the claim to enforce it was wrong. What is enforced today is only the narrower fact the tests can establish: no derivation-from-derivation chain is constructible through any shipped path, so the unbounded case cannot yet arise here."
+    corrected_semantic_domain: "depth is EVIDENCE LINEAGE depth, never computation iteration count. A recursive estimator running N iterations over one measurement stream is one lineage step, not N. A recursive computation must carry stream_identity, window_or_horizon and initialization_provenance (measured | computed(prior_id)); where initialization derives from a computed prior, lineage depth inherits from that prior."
+    owner_of_the_recursive_case: "SCL owns computation identity and STE owns execution identity; DAQ owns only the evidence-lineage semantics stated here. See architecture/decisions/2026-08-25-workload-selection.yaml -- the selected workload (fourier_transform_1d) is NOT recursive, so no recursive computation exists to bound today."
 
   # ---- Control substrate.
 

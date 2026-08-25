@@ -1,0 +1,67 @@
+binding_rule: neither repository commits implementation of the selected frontier until this record exists. The two hashes above bind this decision to the exact measured artifacts that produced it, so it cannot be reconstructed from agent recollection. If either artifact changes, this record must be reissued rather than edited.
+capabilities_artifact: architecture/exchange/daq_capabilities.yaml
+capabilities_artifact_hash: sha256:6e38c9cc6dd1ca6b17e355984260f94f9b92e54f1cd096aa0b60688c2781b8fd
+daq_extension: none
+decision_id: 2026-08-25-workload-selection
+extends: core@1.0.0
+identity_requirements:
+  - "input_kind: real | complex"
+  - "spectrum_convention: one_sided | two_sided"
+  - direction
+  - normalization
+  - precision
+  - sample_spacing, when supplied
+implementation_status:
+  daq_side: complete -- no DAQ change is required by this decision
+  scl_blocker: a concurrent SCL session generalized the operation boundary and implemented fourier_transform_1d at commit e49828b, independently selecting the same workload this record selects from the same two exchange artifacts. This session holds READ-ONLY access to that repository, so the implementation was neither authored nor pushed from here; it is cited, not claimed. The convergence is corroboration of the selection, not evidence that either side validated the other.
+  scl_side: ALREADY IMPLEMENTED INDEPENDENTLY
+naming: the operation is fourier_transform_1d. FFT is an implementation strategy, not the mathematical operation, and must not be the operation name.
+rationale:
+  - "The joint rule is: select the highest-leverage workload whose observation requirements are ALREADY satisfied by DAQ. Applying it to the two measured artifacts leaves exactly two admissible candidates and one winner."
+  - "Eliminated by the rule itself, not by preference: least_squares and principal_component_analysis both require a multivariate dataset with variable identity, which the capability artifact marks ABSENT -- selecting either is forbidden. viterbi requires a categorical emission sequence, also absent. kalman_filter is only PARTIALLY satisfied (a scalar R exists per sample, but covariance-bearing uncertainty is absent) and is additionally the most expensive workload to build first, at 14 of 15 primitives missing; the measured arithmetic shows Kalman costs 1 primitive if built after the linear-algebra cluster and 14 if built first, so sequencing it early would be a 14x error. pid_controller is satisfied for pure computation, but its only distinctive value is actuation, and no actuation-authority boundary exists in any of the three repositories -- building it would create an implicit control plane."
+  - That leaves fourier_transform_1d and convolution_correlation_1d, which have IDENTICAL observation requirements (values, ordering, units, provenance) and are both satisfied by the real NOAA series today. Convolution is cheaper -- 6 primitives against 11.
+  - "fourier_transform_1d is selected over convolution on three measured grounds. (1) Generality falsification: the substrate has been exercised by exactly one kernel (Lennard-Jones pairwise), and a transform is orthogonal to both that kernel and to the linear-algebra family, so it tests whether the substrate generalises across computational families rather than deepening a single one; convolution shares the reduction shape of the existing kernel and would falsify less. (2) Independent validation quality: a transform admits analytic oracles that depend on no second implementation -- impulse to flat spectrum, DC concentration, pure tone to expected bins, Parseval, inverse reconstruction -- whereas convolution's natural oracle is another convolution, which the brief forbids as a sole oracle. (3) Contract generality: fourier_transform_1d forces the parameter identity model to carry input_kind, spectrum_convention, direction, normalization, precision and sample_spacing, semantics that cannot be hidden in backend defaults; convolution exercises far fewer."
+  - daq_extension is none because the workload needs nothing DAQ lacks. Sample spacing is not stated by CO-OPS, and the correct consequence is a bin-index axis rather than a fabricated frequency axis -- an honest output, not a gap. Extending DAQ to carry a Delta t the source never provided would be fabrication, and extending it for any other modality would be representation work with no named consuming workload, which the joint rule forbids.
+reissue:
+  did_the_decision_move: false
+  open_question_this_record_does_not_answer: the added coupling finding -- that multivariate value and structured uncertainty are ONE extension, and that closing the visible half first degrades the silent half -- is an argument about HOW a non-scalar extension would have to be built, not about whether to build one now. This record's rule admits only workloads DAQ ALREADY satisfies, which excludes every extension by construction. A decision to build an extension paired with a named consuming workload would be a DIFFERENT decision under a DIFFERENT rule, and would need its own record; it is not made here and this record does not foreclose it.
+  previous_capabilities_artifact_hash: sha256:9961596953ea67b3b65ca00082be38695c64770f1718e5d6d35fb693f210b3cb
+  reason: the capability artifact gained measured content after this record was first issued, so its recorded hash no longer bound to the bytes on disk -- caught by test_the_recorded_hashes_bind_to_the_bytes_on_disk, which is the guarantee this record exists to provide. Reissued rather than edited, per binding_rule.
+  what_changed_in_the_artifact:
+    - "forensic result: no covariance-bearing observation has ever been content-addressed, so a structured-uncertainty repair is forward-only -- but daf/extractors/graph_dataset.py would carry one through verbatim, so the hole is unreached rather than unreachable"
+    - "operation_id core-field constraint raised for the joint decision: the two execution-record kinds disagree about whether the implementation is part of operation identity"
+    - which half of the non-scalar extension must lead, and why
+  why_not: none of the added content bears on the selection rule. This record eliminated kalman_filter on the measured ground that covariance-bearing uncertainty is ABSENT; the added forensics REINFORCE that premise rather than disturb it -- absent, and additionally admitted without check. The multivariate modality is still absent, so least_squares/pca/viterbi remain eliminated by the rule, and fourier_transform_1d's requirements are still satisfied by the real NOAA series.
+requirements_artifact: architecture/exchange/scl_requirements.yaml
+requirements_artifact_hash: sha256:be15539449f21f03f5cdbf57b04add8e15c0c574f02a93f9b668c51b95636017
+requirements_artifact_origin: notationsystems/Scientific-Compute-Layer-SCL- architecture/exchange/scl_requirements.yaml at 5447df3, copied byte-identically; SCL is its canonical owner
+scope:
+  build:
+    - fourier_transform_1d
+    - only the primitives it demonstrably requires
+  do_not_build:
+    - convolution_1d
+    - kalman_filter_linear
+    - least_squares
+    - pca
+    - pid_controller
+    - viterbi
+  note: "the universal gate is not a separate decision: fourier_transform_1d cannot cross the current protocol boundary at all without it, because input is decoded unconditionally as N x 24-byte particles and configuration is hard-fixed at 24 LJ-validated bytes."
+  universal_gate_required_first:
+    - W1 variable-length 1-D float64 array on the wire with an explicit shape
+    - W4 generic configuration block
+    - R1 a callable reduction
+serializer_note: a bare ISO date is NOT used as a value anywhere in this record. The vendored canonical_yaml.py leaves 2026-08-25 unquoted, which PyYAML resolves to datetime.date while this repository's own reader returns str -- so such a value would have a parser-dependent hash. The serializer is byte-identical across both repositories by agreement and must not be edited on one side, so the field was removed instead. decision_id carries the date and is not date-shaped. Recorded as a measured gap in the shared serializer.
+status: decided
+tradeoff_recorded:
+  generality_falsification_argument: a substrate validated only through one MD kernel has not demonstrated that it generalises. A transform is deliberately orthogonal and carries independent analytic validation.
+  resolution: the reuse argument is not rejected; it is unreachable today. Among reachable candidates the generality argument decides, and it selects fourier_transform_1d over convolution_correlation_1d.
+  reuse_leverage_argument: "least_squares -> linear algebra -> Kalman -> PCA is the strongest primitive-reuse chain: 17 primitives buy 3 workloads (0.176 wl/prim) against 0.091 for least_squares alone. This argument LOSES here only because DAQ marks its entry modality absent -- it is deferred on availability, not on merit, and remains the strongest candidate the moment a multivariate source exists."
+validation_requirements:
+  - impulse input yields a flat magnitude spectrum
+  - constant/DC input concentrates in the zero bin
+  - a pure sinusoid at a bin-centre frequency yields energy in the expected bins
+  - Parseval relation holds between time and frequency domains
+  - inverse transform reconstructs the input within tolerance
+  - no separately written transform implementation may be the sole oracle
+workload: fourier_transform_1d

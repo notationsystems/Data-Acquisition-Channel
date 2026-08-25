@@ -10,6 +10,25 @@ extends: core@1.0.0
 status: measured_unresolved
 owner: daf
 
+# APPLIED 2026-08-25, in the same phase, by the joint-decision half of this
+# work. This file concluded that the correction mode is
+# write_it_correctly_first and that applying it is NOT a bend provided it
+# happens before the first recursive result exists. That is now done:
+#   * generation_depth_bounded's status moved vacuously_enforced ->
+#     represented_unenforced (an existing vocabulary value, not a new one);
+#   * its evidence line, which this file correctly identified as about to
+#     become false, was rewritten to state what is measurably true;
+#   * the rule TEXT is unchanged, so nothing was weakened;
+#   * architecture/_probes/generality.yaml gained a computation_properties
+#     list and returned its first FAIL for recursive_computation;
+#   * tests/test_recursive_lineage_depth.py enforces it.
+# The `invariant_status: vacuously_enforced` recorded below was accurate
+# when measured and is left verbatim rather than edited. The ordering this
+# file called load-bearing held: the selected workload
+# (fourier_transform_1d) is not recursive, so no recursive trajectory
+# existed for the rule to bend around.
+applied_correction: "see architecture/invariants.yaml generation_depth_bounded and tests/test_recursive_lineage_depth.py"
+
 # ------------------------------------------------ the measured answer --
 
 is_it_implemented:
