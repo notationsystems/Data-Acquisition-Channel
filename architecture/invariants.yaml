@@ -130,6 +130,25 @@ invariants:
     enforcement: tests/test_execution_record.py
     note: "measured: two runs in different runtimes at different times produce different execution ids and byte-identical artifact and version ids"
 
+  - id: rejection_rate_is_a_metric
+    rule: "the rejection rate per invariant is computed per ingest run, over admission attempts only"
+    status: enforced
+    implementation: daf/execution/metrics.py
+    enforcement: tests/test_ingest_metrics.py
+    measured: "a run of four dataset records produced 3 accepted, 1 terminal refusal and 1 partial refusal; the terminal rate is 0.25 while refusals-over-refusals-plus-accepted would report 0.40"
+    accounting:
+      terminal_stages: "document, extraction, observation, record -- the candidate did not enter; these form the denominator"
+      partial_stages: "referent, relationship -- the observation entered anyway; counted, never folded into the rate"
+    absence: "a run that attempted nothing has no rejection rate, not a rate of zero"
+    derived_view: "no identity, never persisted, recomputable from records already on disk"
+
+  - id: unclassified_backlog_is_a_metric
+    rule: "the unclassified count is reported per evidence category, from the durable store"
+    status: enforced
+    implementation: daf/execution/metrics.py
+    enforcement: tests/test_ingest_metrics.py
+    note: "counted from disk rather than from an in-memory pool, so a corpus persisted before class_assigned_at_ingest existed is reported as wholly unclassified"
+
   - id: failed_execution_retained
     rule: "an execution that begins and fails stays auditable, with no manufactured output fingerprint"
     status: enforced
@@ -288,7 +307,9 @@ rejection_policy:
   enforcement: tests/test_execution_record.py
   closed_in_phase_26: "rejections are now RETAINED in a durable, queryable, tamper-evident store, each linked to the execution that produced it"
   gap: "repair-and-re-ingest does not exist. What a repaired record looks like, and who may resubmit it, remains open."
-  rejection_rate_per_invariant: "not computed; admission errors carry codes but no per-run rate is aggregated"
+  measurement_gap: "only four of the six refusal stages are reachable from any DAF source, so four of the rates are structurally always zero rather than measured"
+  rejection_rate_per_invariant: "computed per run by daf/execution/metrics.py, per (stage, code), over admission attempts only"
+  closed_in_phase_27: "rejection rate per invariant and the unclassified backlog are reported together as one ingest report"
   no_force_path: true
   no_force_path_evidence: "no bypass argument exists on any admit_* or put_* in this repository"
 
@@ -303,3 +324,7 @@ unresolved:
     detail: "acceptance criteria still required before self-optimization"
   - id: retraction_semantics
     detail: "no path removes an admitted Observation without orphaning scientific state"
+  - id: quarantine_repair
+    detail: "refusals are retained and counted; what a repaired record looks like, and who may resubmit it, is open"
+  - id: unreachable_refusal_stages
+    detail: "document, record, observation and referent refusals cannot be produced by any DAF source, so their rates are structurally zero rather than measured"

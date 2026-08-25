@@ -108,6 +108,7 @@ quarantine:
   is_not: the execution record
   retained: true
   repairable: false
+  metrics: daf/execution/metrics.py
   gap: "retention and linkage exist; repair-and-re-ingest does not. What a repaired record looks like, and who may resubmit it, stays open."
   no_force_path: true
 

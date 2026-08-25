@@ -344,6 +344,17 @@ class FilesystemEvidenceStore:
     #    deliberately does not cover (see this module's own docstring
     #    and daf/storage/metadata_index.py's) --
 
+    @classmethod
+    def categories(cls) -> Tuple[str, ...]:
+        """The persisted evidence categories.
+
+        Public because another module legitimately needs to enumerate
+        them: the unclassified-backlog metric
+        (`daf/execution/metrics.py`) must cover every category the store
+        actually has, and keeping a second copy of this list is how the
+        two would silently drift apart when a ninth category appears."""
+        return cls._CATEGORIES
+
     def all_ids_by_filename(self, category: str) -> Tuple[str, ...]:
         directory = self.root / category
         return tuple(sorted(path.stem for path in directory.glob("*.json")))
