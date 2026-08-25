@@ -1,0 +1,15 @@
+[
+  {
+    "id": "structure-only-1",
+    "entities": [{"label": "formulation-f1", "kind": "formulation"}],
+    "relations": []
+  },
+  {
+    "id": "measured-1",
+    "property": "tensile_strength",
+    "value": 78.0,
+    "unit": "MPa",
+    "entities": [{"label": "formulation-f1", "kind": "formulation"}],
+    "relations": []
+  }
+]

@@ -142,6 +142,14 @@ invariants:
     absence: "a run that attempted nothing has no rejection rate, not a rate of zero"
     derived_view: "no identity, never persisted, recomputable from records already on disk"
 
+  - id: refusal_reachability_declared
+    rule: "every refusal code the pipeline can emit carries a declared reachability verdict, and a rate of zero is evidence about source quality only for a code whose verdict is REACHABLE"
+    status: enforced
+    implementation: architecture/admission_reachability.yaml
+    enforcement: tests/test_admission_reachability.py
+    rationale: "a zero rate means two different things -- the gate was reached and did not fire, or no acquisition path can reach it. Without the verdict the metric reads as clean data when it is silent."
+    drift_guard: "the declared code set is checked against the codes the vendored admission gates and pipeline actually emit, so a new upstream code cannot go silently unclassified"
+
   - id: unclassified_backlog_is_a_metric
     rule: "the unclassified count is reported per evidence category, from the durable store"
     status: enforced
@@ -307,7 +315,7 @@ rejection_policy:
   enforcement: tests/test_execution_record.py
   closed_in_phase_26: "rejections are now RETAINED in a durable, queryable, tamper-evident store, each linked to the execution that produced it"
   gap: "repair-and-re-ingest does not exist. What a repaired record looks like, and who may resubmit it, remains open."
-  measurement_gap: "only four of the six refusal stages are reachable from any DAF source, so four of the rates are structurally always zero rather than measured"
+  measurement_gap: "measured in Phase 28: of 15 refusal codes, 2 are reachable from a shipped binding and exercised, 7 are structurally unreachable through the vendored pipeline, 4 are adapter-unreachable and 2 are extractor-defect-only. See architecture/admission_reachability.yaml."
   rejection_rate_per_invariant: "computed per run by daf/execution/metrics.py, per (stage, code), over admission attempts only"
   closed_in_phase_27: "rejection rate per invariant and the unclassified backlog are reported together as one ingest report"
   no_force_path: true
@@ -327,4 +335,4 @@ unresolved:
   - id: quarantine_repair
     detail: "refusals are retained and counted; what a repaired record looks like, and who may resubmit it, is open"
   - id: unreachable_refusal_stages
-    detail: "document, record, observation and referent refusals cannot be produced by any DAF source, so their rates are structurally zero rather than measured"
+    detail: "11 of 15 refusal codes cannot be produced by any shipped binding. 7 are structurally unreachable through the unmodified vendored pipeline and can never be exercised; the other 4 would become reachable only if an adapter or extractor changed. Corrected and measured in Phase 28 -- the earlier statement of this item named the wrong stages."

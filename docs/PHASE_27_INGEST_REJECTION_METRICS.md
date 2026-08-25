@@ -211,6 +211,22 @@ zero rather than measured, and the report cannot currently tell the difference b
 `architecture/invariants.yaml` as `unreachable_refusal_stages` rather than left to look
 like clean data.
 
+> **Corrected by Phase 28.** Two claims in the paragraph above are wrong, and were
+> disproved by tracing the adapters and then executing them:
+>
+> * **`document` is reachable**, not unreachable — the EDGAR and USGS adapters decode a
+>   fetched body straight into `RawDocument.content` with no emptiness check, so a
+>   zero-length HTTP 200 body reaches `admit_document`. `observation` is reachable too,
+>   through a graph-dataset record that declares only structural keys.
+> * **The two stages called "reachable" here are not**, from any shipped binding. Both
+>   were reached only by extractors written for these tests. Every shipped extractor
+>   hardcodes a non-`model:` method with `confidence=1.0`, and every relation-emitting
+>   extractor validates its endpoints before emitting.
+>
+> The count of gates exercised by *real* acquisition was therefore **zero** at the end of
+> Phase 27, not two. See `architecture/admission_reachability.yaml` and
+> `docs/PHASE_28_ADMISSION_GATE_REACHABILITY.md`.
+
 **Next executable frontier.** **Make the four unreachable admission gates reachable, by
 building the one adapter path that can fail them.** The most concrete is `record`:
 `admit_record` refuses `EMPTY_CONTENT` and `UNKNOWN_DOCUMENT`, and no current adapter

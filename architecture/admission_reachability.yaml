@@ -1,0 +1,141 @@
+# Which admission gates a REAL DAF acquisition can actually reach.
+#
+# WHY THIS IS ARCHITECTURAL RATHER THAN A TEST DETAIL. The rejection
+# metric (daf/execution/metrics.py) reports a rate per (stage, code). A
+# rate of zero means two completely different things depending on this
+# matrix: "this gate is reached and never fires" versus "no acquisition
+# path can reach this gate at all". Without the matrix the metric reads
+# as clean data when it is actually silent. Phase 27 shipped a claim
+# about this and the claim was WRONG -- see `corrections` below -- which
+# is precisely why it belongs in canonical architecture with a test
+# keeping it honest, rather than in prose.
+extends: core@1.0.0
+
+# Verdicts. The distinction the whole phase turns on:
+#   code exists  !=  acquisition can reach it  !=  real acquisition has exercised it
+verdicts:
+  REACHABLE: "a shipped AdapterBinding, given real source bytes, makes run_scout emit this refusal"
+  STRUCTURALLY_UNREACHABLE: "run_scout itself makes it impossible -- an earlier gate consumes the same condition, or the pipeline establishes the precondition immediately before the check"
+  ADAPTER_UNREACHABLE: "the gate could fire in principle, but no shipped adapter or extractor can construct the condition from any input"
+  EXTRACTOR_DEFECT_ONLY: "only a bug in extractor code could produce it, never source data"
+
+method: "each verdict was traced through the vendored pipeline and admission gates, adversarially re-checked, and every REACHABLE verdict was then executed end to end through the real acquisition path"
+
+stages:
+
+  document:
+    kind: terminal
+    gate: evidence/admission.py::admit_document
+    codes:
+      - code: EMPTY_CONTENT
+        verdict: REACHABLE
+        binding: edgar-daily-index
+        also_reachable_via: usgs-earthquakes
+        source_condition: "the directory listing names a file and the server returns a zero-length 200 body; neither adapter checks the fetched bytes for emptiness before wrapping them in a RawDocument"
+        fixture: tests/fixtures/edgar_daily_index_synthetic_20260701_empty.idx
+        exercised: true
+        exercised_by: tests/test_admission_reachability.py
+      - code: UNKNOWN_SOURCE
+        verdict: STRUCTURALLY_UNREACHABLE
+        blocked_by: "scout/pipeline.py calls pool.put_source(source) unconditionally, on the same source.id the Document is then built with, immediately before admit_document"
+
+  record:
+    kind: terminal
+    gate: evidence/admission.py::admit_record
+    codes:
+      - code: EMPTY_CONTENT
+        verdict: STRUCTURALLY_UNREACHABLE
+        blocked_by: "scout/pipeline.py builds BOTH the Document and the Record with raw_content=raw_doc.content -- the same string. admit_document tests it first and `continue`s, so the record gate never sees an empty one."
+        note: "this was Phase 28's named target. It is not a missing fixture: it cannot be reached without modifying the vendored pipeline, which this repository never does."
+      - code: UNKNOWN_DOCUMENT
+        verdict: STRUCTURALLY_UNREACHABLE
+        blocked_by: "pool.put_document(document) executes immediately before make_record(document_id=document.id, ...)"
+
+  extraction:
+    kind: terminal
+    gate: "scout/pipeline.py, inline -- not in admission.py"
+    codes:
+      - code: MISSING_MODEL_CONFIDENCE
+        verdict: ADAPTER_UNREACHABLE
+        blocked_by: "all seven shipped extractors hardcode a non-model extraction_method and confidence=1.0, so the `extraction_method.startswith('model:') and confidence is None` guard cannot fire"
+        exercised: false
+        exercised_only_by: "a bespoke extractor written for tests/test_execution_record.py and tests/test_ingest_metrics.py"
+        correction: "Phase 26 and Phase 27 reported this stage as reachable. That was true of the pipeline and false of every shipped binding."
+        becomes_reachable_when: "the first model-backed extractor is written -- which is exactly the case the guard exists to catch"
+
+  observation:
+    kind: terminal
+    gate: evidence/admission.py::admit_observation
+    codes:
+      - code: EMPTY_CONTENT
+        verdict: REACHABLE
+        binding: graph-dataset
+        source_condition: "a dataset record declaring only structural keys (id, entities, relations). GraphDatasetExtractor consumes all three as structure, leaving Observation.content empty, while the raw JSON string is non-empty so the document and record gates both pass."
+        fixture: tests/fixtures/graph_dataset_structure_only.json
+        exercised: true
+        exercised_by: tests/test_admission_reachability.py
+      - code: NO_RECORD_IDS
+        verdict: STRUCTURALLY_UNREACHABLE
+        blocked_by: "scout/pipeline.py always passes record_ids=(record.id,)"
+      - code: UNKNOWN_RECORD
+        verdict: STRUCTURALLY_UNREACHABLE
+        blocked_by: "pool.put_record(record) executes immediately before the extraction loop"
+      - code: NO_EXTRACTION_METHOD
+        verdict: EXTRACTOR_DEFECT_ONLY
+        blocked_by: "every shipped extractor supplies a hardcoded non-empty extraction_method literal; only an extractor bug could blank it"
+
+  referent:
+    kind: partial
+    gate: evidence/admission.py::admit_referent
+    codes:
+      - code: EMPTY_NATURAL_KEY
+        verdict: ADAPTER_UNREACHABLE
+        blocked_by: "GraphDatasetExtractor is the only extractor reading entity labels from source data, and _require_str raises GraphDatasetExtractionError on an empty one before any candidate is produced; the other relation-emitting extractors use validated or hardcoded labels"
+      - code: EMPTY_KIND
+        verdict: ADAPTER_UNREACHABLE
+        blocked_by: "same _require_str guard, applied to the entity kind"
+
+  relationship:
+    kind: partial
+    gate: "evidence/admission.py::admit_claimed_relationship, plus an inline UNKNOWN_LABEL check in scout/pipeline.py"
+    codes:
+      - code: UNKNOWN_LABEL
+        verdict: ADAPTER_UNREACHABLE
+        blocked_by: "GraphDatasetExtractor validates every relation endpoint against its own declared entity labels and raises before emitting; arXiv and the NOAA measurement extractor build endpoints from the same non-empty strings they just emitted as entities"
+        exercised: false
+        exercised_only_by: "a bespoke extractor written for tests/test_ingest_metrics.py"
+        correction: "Phase 27 reported this stage as reachable. That was true of the pipeline and false of every shipped binding."
+      - code: EMPTY_TYPE
+        verdict: EXTRACTOR_DEFECT_ONLY
+        blocked_by: "the only source-driven relation type is forced non-empty by GraphDatasetExtractor's _require_str; the other two relation-emitting extractors use hardcoded literals"
+      - code: UNKNOWN_REFERENT
+        verdict: STRUCTURALLY_UNREACHABLE
+        blocked_by: "pool.put_referent runs before a label can enter label_to_referent_id, so both endpoints are in the pool by the time the gate runs"
+      - code: UNKNOWN_OBSERVATION
+        verdict: STRUCTURALLY_UNREACHABLE
+        blocked_by: "pool.put_observation runs unconditionally before the relation loop, on the same observation whose id the relationship carries"
+
+# What the metric may and may not conclude from a zero rate.
+metric_interpretation:
+  zero_rate_when_reachable: "the gate is reached by acquisition and did not fire. A real measurement."
+  zero_rate_when_unreachable: "no acquisition path can reach the gate. NOT a measurement; the metric is silent, not clean."
+  rule: "a rate of zero is only evidence about source quality for a code whose verdict is REACHABLE"
+
+corrections:
+  - phase: 27
+    claim: "the document stage is unreachable from any DAF source"
+    actual: "REACHABLE via edgar-daily-index and usgs-earthquakes on a zero-length response body"
+    found_by: "tracing the adapters' decode-and-wrap path, then executing it"
+  - phase: 27
+    claim: "two refusal stages are currently reachable (extraction, relationship)"
+    actual: "both are reachable only through extractors written for the tests. No shipped binding can produce either."
+    consequence: "the count of gates exercised by REAL acquisition was zero before this phase, not two"
+
+summary:
+  codes_total: 15
+  reachable: 2
+  structurally_unreachable: 7
+  adapter_unreachable: 4
+  extractor_defect_only: 2
+  exercised_by_real_acquisition: 2
+  terminal_stages_reachable: "document, observation -- 2 of 4. record is structurally unreachable; extraction awaits the first model-backed extractor."
