@@ -1,0 +1,58 @@
+artifact: canonicalization_defect
+blast_radius_if_applied:
+  - architecture/exchange/daq_capabilities.yaml -- re-emitted, new digest
+  - architecture/exchange/scl_requirements.yaml -- owned upstream, re-emitted there, new digest
+  - architecture/exchange/canonicalization_fixture.yaml and its .sha256 -- the agreement fixture itself changes
+  - any proposal or decision record carrying either digest -- must be reissued, never edited in place
+corrected_rule:
+  forbidden_scalars:
+    - "`.inf`"
+    - "`.nan`"
+    - sexagesimal
+    - "`0o`"
+    - "`0x`"
+    - yes/no/on/off
+  scalars: implicit typing is forbidden -- every scalar is emitted with an explicit resolved type. Strings are double-quoted ALWAYS (not 'only where required'); numbers and booleans are emitted in canonical form and never as bare words that could resolve otherwise.
+  timestamps: ISO-8601 strings, double-quoted, never native date/datetime
+  verification: round-trip through two independent parsers must yield identical TYPED STRUCTURES, not merely identical bytes. This is a required step of Phase 2, not an optional check.
+extends: core@1.0.0
+fix_is_verified:
+  conclusion: "'strings always double-quoted' closes the entire measured class in one rule, including all six current divergences"
+  divergences_after: 0
+  method: all 23 scalars re-emitted with strings unconditionally double-quoted, re-read by both parsers, compared as typed values
+interim_mitigation: until the coordinated change lands, no artifact authored here uses any scalar shape from the divergence list. tests/test_joint_decision_record.py enforces the date case directly, and tests/test_canonicalization_defect.py enforces the full class against every committed exchange and proposal artifact by comparing TYPED structures across both parsers.
+measured_failure_class:
+  already_safe_by_accident: yes/no/on/off, null, ~, 007, +5, 1_000, 1.2, True and the empty string are already quoted by the current emitter's numeric-and-reserved-word checks. That they pass is incidental to those checks, not evidence that the class is closed -- 0o777 passes only because PyYAML's 1.1 resolver does not recognise the 0o form, and a 1.1-era emitter on the other side would resolve yes/no/on/off to bool.
+  divergences:
+    - emitted_bare: true
+      pyyaml: datetime.date
+      repo_reader: str
+      scalar: "`2026-08-25`"
+    - emitted_bare: true
+      pyyaml: datetime.datetime
+      repo_reader: str
+      scalar: "`2026-08-25T12:00:00Z`"
+    - emitted_bare: true
+      pyyaml: int 5400 (sexagesimal)
+      repo_reader: str
+      scalar: "`1:30:00`"
+    - emitted_bare: true
+      pyyaml: int 31
+      repo_reader: str
+      scalar: "`0x1F`"
+    - emitted_bare: true
+      pyyaml: float inf
+      repo_reader: str
+      scalar: "`.inf`"
+    - emitted_bare: true
+      pyyaml: float nan
+      repo_reader: str
+      scalar: "`.nan`"
+  method: each scalar emitted through the shared architecture/exchange/canonical_yaml.py, then read back with BOTH parsers -- epistemics/_yaml.py (this repository's dependency-free reader) and PyYAML -- and compared as TYPED VALUES, not as bytes
+  note_on_examples: example scalars below are backtick-wrapped so that this document, which is ABOUT implicit-typing divergence, does not itself exhibit it under the very serializer it describes.
+  scalars_tested: 20
+  scalars_that_diverge: 6
+owner: joint -- the serializer is byte-identical in both repositories by agreement
+status: measured_open_requires_coordination
+summary: "The pinned encoding's scalar rule is wrong, and the ISO-date divergence reported earlier is one instance of a class rather than the defect. YAML implicit type resolution means two conformant parsers can disagree on a scalar's TYPE while agreeing on the bytes -- so a byte-identical artifact can still hash-bind a different typed structure on each side. The original rule, 'strings double-quoted only where required by the spec', is the error. It should be: strings ALWAYS double-quoted."
+why_not_patched_here: architecture/exchange/canonical_yaml.py is byte-identical to the compute layer's copy BY AGREEMENT, and that agreement is what makes either artifact's hash mean anything. Editing it on one side would break the agreement and silently re-hash every artifact already committed against it -- including architecture/exchange/daq_capabilities.yaml and the compute layer's own requirements artifact. The change must land in both repositories together, and every artifact and every hash reference must be reissued in the same coordinated step.

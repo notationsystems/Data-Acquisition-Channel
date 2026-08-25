@@ -1,14 +1,20 @@
-"""The joint DAQ/SCL decision record.
+"""DAQ's workload proposal -- deliberately NOT the joint decision record.
 
-`architecture/decisions/2026-08-25-workload-selection.yaml` owns the
-workload selection and any paired DAQ extension. Its whole value is that
-it cannot be reconstructed from an agent's recollection: it carries the
-SHA-256 of the exact two exchange artifacts it was made from.
+A joint decision is a two-party act. This repository has write access to
+itself and READ-ONLY access to the compute layer, so a decision record
+authored here would be one party writing both sides -- which destroys the
+one property such a record exists to provide. What is committed here is
+DAQ's half: its capability measurement, its reading of the compute
+layer's PUBLISHED requirements, and a recommendation with rationale.
+
+The proposal still carries both artifact digests, so whoever writes the
+decision can verify them against their origin repositories rather than
+against this account of them.
 
 The canonicalization itself is tested by `tests/test_exchange_artifact.py`
 against the vendored `architecture/exchange/canonical_yaml.py`, which is
 byte-identical to the compute layer's copy by agreement. This file tests
-the DECISION -- that it binds to real bytes and obeys the joint rule it
+the PROPOSAL -- that it binds to real bytes and obeys the joint rule it
 claims to follow.
 """
 
@@ -26,7 +32,7 @@ from epistemics._yaml import loads
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 EXCHANGE = REPO_ROOT / "architecture" / "exchange"
-DECISION_PATH = REPO_ROOT / "architecture" / "decisions" / "2026-08-25-workload-selection.yaml"
+PROPOSAL_PATH = REPO_ROOT / "architecture" / "proposals" / "2026-08-25-daq-workload-proposal.yaml"
 
 CAPABILITIES = EXCHANGE / "daq_capabilities.yaml"
 REQUIREMENTS = EXCHANGE / "scl_requirements.yaml"
@@ -34,7 +40,7 @@ REQUIREMENTS = EXCHANGE / "scl_requirements.yaml"
 sys.path.insert(0, str(EXCHANGE))
 from canonical_yaml import canonical_dump
 
-DECISION = loads(DECISION_PATH.read_text())
+PROPOSAL = loads(PROPOSAL_PATH.read_text())
 
 
 def _digest(path):
@@ -45,9 +51,9 @@ def _digest(path):
 
 
 def test_the_recorded_hashes_bind_to_the_bytes_on_disk():
-    """The single guarantee the record exists to provide."""
-    assert DECISION["capabilities_artifact_hash"] == _digest(CAPABILITIES)
-    assert DECISION["requirements_artifact_hash"] == _digest(REQUIREMENTS)
+    """The guarantee the proposal carries forward to whoever writes the decision."""
+    assert PROPOSAL["capabilities_artifact_hash"] == _digest(CAPABILITIES)
+    assert PROPOSAL["requirements_artifact_hash"] == _digest(REQUIREMENTS)
 
 
 def test_both_artifacts_carry_a_committed_sidecar_digest_that_agrees():
@@ -58,14 +64,14 @@ def test_both_artifacts_carry_a_committed_sidecar_digest_that_agrees():
 
 
 def test_the_record_is_a_fixed_point_of_the_shared_serializer():
-    assert canonical_dump(DECISION) == DECISION_PATH.read_text()
+    assert canonical_dump(PROPOSAL) == PROPOSAL_PATH.read_text()
 
 
 def test_the_record_parses_identically_under_both_parsers():
     """A parser-dependent record would have a parser-dependent hash. This
     is the check that caught a bare ISO date resolving to `datetime.date`
     under PyYAML and `str` under this repository's reader."""
-    text = DECISION_PATH.read_text()
+    text = PROPOSAL_PATH.read_text()
     assert loads(text) == yaml.safe_load(text)
 
 
@@ -85,7 +91,7 @@ def test_no_bare_iso_date_is_used_as_a_value():
         elif isinstance(node, str):
             yield node
 
-    for value in walk(DECISION):
+    for value in walk(PROPOSAL):
         parts = value.split("-")
         assert not (len(parts) == 3 and all(p.isdigit() for p in parts) and len(parts[0]) == 4), (
             f"{value!r} is a bare ISO date and would hash differently under the two parsers"
@@ -95,15 +101,35 @@ def test_no_bare_iso_date_is_used_as_a_value():
 # --------------------------------------------------------- the decision
 
 
-def test_exactly_one_workload_and_one_extension_are_named():
-    assert DECISION["workload"] == "fourier_transform_1d"
-    assert DECISION["daq_extension"] == "none"
+def test_exactly_one_workload_and_one_extension_are_recommended():
+    assert PROPOSAL["recommended_workload"] == "fourier_transform_1d"
+    assert PROPOSAL["recommended_daq_extension"] == "none"
+
+
+def test_it_is_a_proposal_and_says_so():
+    """The correction this file exists to lock: one party with read-only
+    access to the other must not author a two-party decision."""
+    assert PROPOSAL["status"] == "proposed"
+    authority = " ".join(PROPOSAL["authority"]).lower()
+    assert "not the joint decision" in authority
+    assert "read-only" in authority
+    assert "what_would_make_this_a_decision" in PROPOSAL
+
+
+def test_the_requirements_artifact_is_declared_a_read_only_mirror():
+    """It is the compute layer's measured claim about itself. Written
+    from here it would be DAQ's account of it instead."""
+    authority = " ".join(PROPOSAL["requirements_artifact_authority"]).lower()
+    assert "read-only mirror" in authority
+    assert "not regenerated in this repository" in authority.replace("was not", "not")
+    assert PROPOSAL["requirements_artifact_hash"] == PROPOSAL["requirements_artifact_upstream_sha256"], (
+        "the mirror must hash to the digest recorded in the ORIGIN repository"
+    )
 
 
 def test_the_operation_is_not_named_fft():
-    """FFT is an implementation strategy, not the mathematical
-    operation."""
-    assert "fft" not in DECISION["workload"].lower()
+    """FFT is an implementation strategy, not the mathematical operation."""
+    assert "fft" not in PROPOSAL["recommended_workload"].lower()
 
 
 def test_the_selected_workload_is_one_daq_actually_satisfies():
@@ -111,7 +137,7 @@ def test_the_selected_workload_is_one_daq_actually_satisfies():
     whose observation requirements DAQ marks absent."""
     requirements = loads(REQUIREMENTS.read_text())
     workloads = requirements["workloads"]
-    selected = DECISION["workload"]
+    selected = PROPOSAL["recommended_workload"]
     assert selected in workloads, f"{selected!r} is absent from the requirements artifact"
 
     blocking = workloads[selected]["blocking_requirements"]
@@ -130,8 +156,8 @@ def test_every_workload_with_an_unmet_daq_requirement_is_excluded_from_the_build
     """The other half of the rule, checked against SCL's own artifact
     rather than against this repository's reading of it."""
     requirements = loads(REQUIREMENTS.read_text())
-    do_not_build = set(DECISION["scope"]["do_not_build"])
-    selected = DECISION["workload"]
+    do_not_build = set(PROPOSAL["scope"]["do_not_build"])
+    selected = PROPOSAL["recommended_workload"]
 
     for name, entry in requirements["workloads"].items():
         unmet = [
@@ -153,19 +179,19 @@ def test_every_workload_with_an_unmet_daq_requirement_is_excluded_from_the_build
 def test_an_extension_would_have_to_name_its_consuming_workload():
     """`none` is the only value that needs no pairing; the joint rule
     forbids representation work without a named consumer."""
-    if DECISION["daq_extension"] != "none":
-        assert DECISION["workload"], "an extension must be paired with the workload that consumes it"
+    if PROPOSAL["recommended_daq_extension"] != "none":
+        assert PROPOSAL["recommended_workload"], "an extension must be paired with the workload that consumes it"
 
 
 def test_the_tradeoff_is_recorded_not_only_the_winner():
-    tradeoff = DECISION["tradeoff_recorded"]
+    tradeoff = PROPOSAL["tradeoff_recorded"]
     assert "reuse_leverage_argument" in tradeoff
     assert "generality_falsification_argument" in tradeoff
     assert "resolution" in tradeoff
 
 
 def test_the_unselected_workloads_are_explicitly_excluded():
-    do_not_build = set(DECISION["scope"]["do_not_build"])
+    do_not_build = set(PROPOSAL["scope"]["do_not_build"])
     for excluded in ("least_squares", "pca", "kalman_filter_linear", "viterbi"):
         assert excluded in do_not_build
 
@@ -175,19 +201,19 @@ def test_the_scl_implementation_is_cited_not_claimed():
     independently. That is corroboration of the selection, and this
     session neither authored nor pushed it -- the record must say so
     rather than absorbing the credit."""
-    status = DECISION["implementation_status"]
+    status = PROPOSAL["implementation_status"]
     blob = " ".join(str(v) for v in status.values()).lower()
     assert "read-only" in blob
     assert "cited, not claimed" in blob
 
 
 @pytest.mark.parametrize("field", [
-    "workload", "daq_extension", "rationale",
+    "recommended_workload", "recommended_daq_extension", "rationale",
     "requirements_artifact_hash", "capabilities_artifact_hash", "extends",
 ])
 def test_every_required_field_is_present(field):
-    assert field in DECISION and DECISION[field] not in (None, "", [])
+    assert field in PROPOSAL and PROPOSAL[field] not in (None, "", [])
 
 
 def test_it_declares_the_core_version():
-    assert DECISION["extends"] == "core@1.0.0"
+    assert PROPOSAL["extends"] == "core@1.0.0"

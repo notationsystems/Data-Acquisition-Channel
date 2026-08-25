@@ -3,10 +3,17 @@
 *(Continues from `ca3d0aa`. Coordinated DAQ/SCL phase, run as the brief's three stages:
 parallel reconnaissance → requirement/capability exchange → one joint decision.)*
 
-**Joint decision: build `fourier_transform_1d`; `daq_extension: none`.**
+**DAQ's proposal: build `fourier_transform_1d`; `daq_extension: none`.**
 
-Recorded in `architecture/decisions/2026-08-25-workload-selection.yaml`, bound by SHA-256 to
-the exact two exchange artifacts that produced it.
+Recorded in `architecture/proposals/2026-08-25-daq-workload-proposal.yaml`, carrying the
+SHA-256 of both exchange artifacts.
+
+**This is deliberately a proposal, not the joint decision.** A joint decision is a two-party
+act, and this session has write access to DAQ and read-only access to SCL — so a decision
+record authored here would be one party writing both sides, destroying the exact property such
+a record exists to provide. The decision belongs where both digests can be verified against
+their origin repositories. DAQ's half is committed: its capability measurement, its reading of
+SCL's *published* requirements, and a recommendation with rationale.
 
 **DAQ's contribution to that decision is gate A** — the current representation is sufficient
 for the selected workload. No DAQ representation change was made, and none is required.
@@ -24,33 +31,35 @@ prior work or to the repository's verification substrate:
 
 ---
 
-## SCL substrate reconnaissance
+## SCL substrate reconnaissance — and a stale-checkout correction
 
-SCL exists as a separate repository (`notationsystems/Scientific-Compute-Layer-SCL-`, commit
-`edfc2dc`), measured read-only. Its one scientific kernel is Lennard-Jones pairwise.
+**The reconnaissance measured `edfc2dc`, which is three commits stale.** SCL has since done
+Phase 1 recon and its exchange artifact (`0bb3e66`), generalized the operation boundary and
+implemented `fourier_transform_1d` (`e49828b`), and stated the operation contract (`5447df3`).
+Re-measured at `5447df3`, most of the headline numbers I reported are wrong:
 
-| Measured fact | Value |
+| Claim as reported | Measured at `5447df3` |
 |---|---|
-| Operations | exactly one: `lj_pairwise_energy_forces` |
-| Dispatch | a single string equality at `native/src/main.cpp:190` — no registry, no table |
-| Wire format | JSON envelope, hex-encoded little-endian float64 |
-| Shape field | **absent** |
-| Dtype field | **absent** |
-| Configuration | hard-fixed at exactly 24 bytes, LJ-validated (ε/σ/cutoff) |
-| Input constraint | length ≡ 0 mod 24, decoded unconditionally as N×Vec3 |
-| Backend abstraction | LJ-typed: `compute_lj_pairwise(...) → LJResult` |
-| Transcendental functions in native code | **none** — the only cmath symbol is `std::isfinite` |
-| BLAS / LAPACK / FFTW / cuFFT / cuBLAS / cuSOLVER | none linked, none present on the host |
-| numpy / scipy | both absent |
-| CUDA | never compiled, never run (the `.cu` file says so itself); no nvcc, no GPU |
-| Tests | 32 passed, 31 skipped (22 need an STE checkout, 9 need nvcc); native 50/50 |
-| Process-boundary cost | ~2.34 ms per round trip against ~290 ns of compute — **≈7700× overhead** |
-| Union primitive coverage | **1 of 28 required primitives = 3.6%** |
+| one operation, `lj_pairwise_energy_forces` | **two** — a real `operation_registry.cpp` table also carries `fourier_transform_1d` |
+| dispatch is a single string equality | **a registry table** with `find_operation(name)` |
+| complex arithmetic MISSING | **present** — `fourier.cpp` uses `std::complex<double>` |
+| transform MISSING | **present** — `fourier.cpp`, `op_fourier.cpp`, `fourier.hpp` |
+| 63 tests collected, 32 passed | **204 collected** |
+| **1 of 28 primitives = 3.6%** | **wrong as of current SCL** |
+| "every workload blocked at the protocol boundary" | **wrong** — the boundary was generalized in `e49828b` |
 
-The sharpest measured hazard: a payload whose byte count happens to be a multiple of 24 is
-accepted and **silently reinterpreted as particles**. A 3×3 float64 matrix (72 B) returns
-`completed, n_particles=3`; a 3-element complex128 array (48 B) returns `completed,
-n_particles=2`. No error, no dtype check.
+SCL reports Fourier built and validated 40/40 with 203 tests passing. **I did not verify those
+numbers**: SCL's native build needs `nlohmann_json`, which is not installed on this host (a
+recon agent vendored it into scratch to build at all), so its suite errors here at the build
+fixture. 204-collected is measured; the pass counts are SCL's own and are cited, not confirmed.
+
+**What survives the correction, and why the recommendation is unaffected:** the primitive
+matrix measured *primitive absence at `edfc2dc`*, which is a narrower claim than "workload
+runnable" — and the workload it scored as most-unblocked-by-DAQ-availability is precisely the
+one SCL then built. The leverage *arithmetic* (Kalman's 14× sequencing penalty, the
+linear-algebra cluster's shared cost) is about relative ordering among unbuilt workloads and is
+not disturbed by Fourier existing. But the report should not have carried `3.6%` and
+"every workload blocked" as current facts, and they are withdrawn here.
 
 ## DAQ capability exchange
 
@@ -93,8 +102,17 @@ Measured details that drive the decision:
 
 ## SCL requirements exchange
 
-`architecture/exchange/scl_requirements.yaml` — `sha256:be15539449f2…95636017`, SCL's authentic
-artifact at `5447df3`, copied byte-identically. SCL is its canonical owner.
+`architecture/exchange/scl_requirements.yaml` — `sha256:be15539449f2…95636017`
+
+**A read-only mirror, and marked as one.** The origin is SCL's own artifact at `5447df3`; the
+copy here is byte-identical to those committed bytes and was **not regenerated in this
+repository**. Verified: the mirrored bytes hash to the digest in the *origin* repository's own
+`.sha256` sidecar — no divergence exists.
+
+Regenerating it here would have made it *DAQ's account of SCL's requirements* rather than SCL's
+measured claim about itself, and the proposal's hash would then bind a copy whose provenance is
+a different repo than the one it describes. That is the same failure as an agent validating its
+own output through a second file it also wrote.
 
 | Workload | DAQ availability (measured) |
 |---|---|
@@ -110,7 +128,10 @@ Statuses are SCL's own, read from its `blocking_requirements` blocks, not this r
 reading of them. The decision record and its test use SCL's exact workload names so the two
 artifacts share one vocabulary.
 
-## Workload / primitive matrix
+## Workload / primitive matrix (measured at `edfc2dc`, superseded for Fourier)
+
+*(Fourier's row is historical: it describes the substrate before `e49828b`. The rest still
+describes unbuilt workloads.)*
 
 | Workload | Required | Hard-missing | Needs new code |
 |---|---|---|---|
@@ -129,7 +150,7 @@ nothing is reachable without it.
 Ordering result worth recording: **Kalman costs 1 additional primitive if built after the
 linear-algebra cluster and 14 if built first — a 14× sequencing penalty.**
 
-## Joint decision
+## The recommendation
 
 **`fourier_transform_1d`, `daq_extension: none`.**
 
@@ -162,32 +183,52 @@ The reuse-leverage argument (least squares → linear algebra → Kalman → PCA
 3 workloads) is **not rejected — it is unreachable today**, and is recorded in the decision as
 deferred on availability rather than on merit.
 
-## Canonicalization — and a concurrent session
+## Canonicalization — the defect is a class, not a date bug
 
-**This phase collided with a concurrent session working the same brief on the same branch**
-(`a0622f4`, "DAF capability artifact, and three determinations it rests on"). The collision was
-resolved by merge, not by force-push, and on the merits rather than by seniority:
+My earlier report called this an ISO-date divergence. That was too narrow, and the actual
+defect is the spec's scalar rule. YAML implicit type resolution lets two conformant parsers
+agree on the bytes and disagree on the **type** — so a byte-identical artifact can hash-bind a
+different typed structure on each side, which is exactly what pinning was meant to prevent.
 
-- **Their `daq_capabilities.yaml` was taken over mine.** The brief's §2.1 requires that both
-  repositories *use the same serializer or verify agreement on a shared fixture*. They vendored
-  SCL's actual `canonical_yaml.py` **byte-identically** and verified both copies produce
-  `sha256:5859ce6e…` for a shared fixture. I had written my own serializer
-  (`epistemics/exchange.py`), which cannot establish cross-repo agreement no matter how correct
-  it is. **My serializer and its test file were deleted** — two serializers would be exactly the
-  second system this project forbids.
-- **`scl_requirements.yaml` was replaced by SCL's authentic bytes**, copied from
-  `Scientific-Compute-Layer-SCL-` at `5447df3`, rather than my mirror. SCL is its canonical owner.
-- **The decision record was regenerated** against both authentic digests:
-  `sha256:9961596953ea…` (capabilities) and `sha256:be15539449f2…` (requirements), using their
-  serializer.
+Measured against the shared serializer, **6 of 20 scalars diverge**, not one:
 
-The cross-parser check still earned its keep, on the *shared* serializer: it leaves a bare
-`2026-08-25` unquoted, which PyYAML resolves to `datetime.date` and this repository's reader to
-`str` — a **parser-dependent hash**. Because that file is byte-identical across both repositories
-by agreement, editing it here would break the agreement, so the decision record **avoids the
-shape** instead (the redundant `date` field was dropped; `decision_id` carries the date and is
-not date-shaped) and a test locks it out. The serializer gap is reported, not patched
-unilaterally.
+| Scalar | This repo's reader | PyYAML |
+|---|---|---|
+| `2026-08-25` | `str` | `datetime.date` |
+| `2026-08-25T12:00:00Z` | `str` | `datetime.datetime` |
+| `1:30:00` | `str` | `int 5400` (sexagesimal) |
+| `0x1F` | `str` | `int 31` |
+| `.inf` | `str` | `float inf` |
+| `.nan` | `str` | `float nan` |
+
+`yes`/`no`/`on`/`off`, `null`, `~`, `007`, `1_000` pass **incidentally** — caught by the
+emitter's numeric-and-reserved-word checks, not by a rule closing the class. `0o777` passes
+only because PyYAML's 1.1 resolver doesn't recognise the `0o` form.
+
+The corrected rule — **strings always double-quoted**, not "only where required" — was measured
+to close **all 23** tested scalars, every current divergence included. And the two-parser check
+is promoted from something I happened to do into a required step, compared on **typed
+structures rather than bytes**, because byte comparison cannot see this class at all.
+
+**The shared serializer was not patched.** `architecture/exchange/canonical_yaml.py` is
+byte-identical to SCL's copy *by agreement*, and that agreement is what makes any hash
+meaningful. Editing it on one side would break the agreement and silently re-hash every
+artifact already committed against it — both exchange artifacts, the agreement fixture itself,
+and every digest reference. Recorded in `architecture/canonicalization_defect.yaml` with its
+blast radius; the fix must land in both repositories in one coordinated reissue.
+
+Interim mitigation is enforced, not promised: `tests/test_canonicalization_defect.py` locks the
+exact class, proves the prescribed fix closes it, and checks every hash-bearing artifact both
+for cross-parser *typed* agreement and for absence of any diverging scalar shape.
+
+## The concurrent session
+
+This phase also collided with a concurrent session on the same branch (`a0622f4`). Resolved by
+merge, on the merits: **their `daq_capabilities.yaml` was taken over mine** because they
+vendored SCL's actual `canonical_yaml.py` byte-identically and verified fixture agreement,
+which is what §2.1 requires and which a self-authored serializer cannot establish. **My
+serializer and its test were deleted** — two serializers would be the second system this
+project forbids.
 
 ## Independent corroboration of the selection
 
@@ -275,25 +316,18 @@ migration rules were needed and none were invented.
 
 | Check | Result |
 |---|---|
+| `tests/test_canonicalization_defect.py` | **35 passed** (new) |
+| `tests/test_daq_workload_proposal.py` | **22 passed** (new) |
 | `tests/test_recursive_lineage_depth.py` | **17 passed** (new) |
-| `tests/test_joint_decision_record.py` | **20 passed** (new) |
-| `tests/test_exchange_artifact.py` | passing (concurrent session's) |
-| DAF full suite | **789 passed** (712 prior + this phase + the concurrent session's) |
+| DAF full suite | **826 passed** |
 | Vendored SCOUT suite | 1273 passed, unchanged |
 | Submodule | clean |
 | SCL clone | untouched, `git status --porcelain` empty |
 | `mypy .` | 4 pre-existing errors, 0 new |
-| Doctrine | regenerated, 654/1400 words, zero diff |
+| Doctrine | regenerated, zero diff |
 | `git diff --stat -- daf/ science/ boundary/ bridge/ assertion/ vendor/` | **empty** |
 
 No production acquisition code changed in this phase.
-
-Two of my own artifacts were **deleted during the merge** rather than kept:
-`epistemics/exchange.py` and `tests/test_exchange_canonicalization.py`. Keeping a second
-serializer alongside the vendored, cross-repo-agreed one would have been the exact "second
-system" this project forbids, and mine could not establish the agreement the brief requires.
-`tests/test_joint_decision_record.py` carries forward the decision-specific assertions that
-were worth keeping.
 
 ## Bent
 
@@ -316,26 +350,29 @@ remains `paper_only`.
 
 ## Unresolved
 
-- **SCL implementation is BLOCKED.** This session holds read-only access to
-  `notationsystems/Scientific-Compute-Layer-SCL-`; a push attachment was requested and
-  denied. `fourier_transform_1d` cannot be committed there from here, and
-  `architecture/exchange/scl_requirements.yaml` could only be mirrored into DAQ rather than
-  committed to its canonical home.
+- **The canonicalization defect is open and needs coordination.** The corrected rule is
+  measured and recorded; applying it re-hashes both exchange artifacts, the agreement fixture,
+  and every digest reference, so it must land in both repositories as one reissue.
+- **The joint decision is not written.** DAQ's proposal is committed; the decision needs an
+  author who can verify both digests against their origin repositories.
+- **SCL implementation access.** Push to `Scientific-Compute-Layer-SCL-` was denied, so SCL's
+  Fourier work could only be read and cited, never verified by building it here (`nlohmann_json`
+  is absent on this host).
 - **17 invariants name an enforcement file that never mentions them** — locked, not fixed.
 - **The write-side condition asymmetry** (Phase 35's `graph_dataset` gap) — unchanged.
-- **NOAA timezone discard** — measured this phase, not fixed: it needs a named consuming
-  workload, and `fourier_transform_1d` does not require it (a uniform offset does not change
-  a spectrum).
+- **NOAA timezone discard** — measured, not fixed: no named consuming workload requires it, and
+  a uniform offset does not change a spectrum.
 - Carried unchanged: `quarantine_repair`, `retraction_semantics`, `multi_writer.write_conflict`,
   `builder_check_lineage`, `attested_snapshot_identity`, `capabilities_5_to_9`, PID actuation
   authority.
 
 ## Next executable frontier
 
-**Implement `fourier_transform_1d` in SCL, behind the universal gate** — a variable-length
-1-D float64 array on the wire with an explicit shape, a generic configuration block, and a
-callable reduction — validated against analytic properties only (impulse, DC, pure tone,
-Parseval, reconstruction), with `input_kind`, `spectrum_convention`, `direction`,
-`normalization`, `precision` and `sample_spacing` in the parameter identity model, and with a
-bin-index axis because CO-OPS states no Δt. **This requires push access to the SCL
-repository**, which this session does not have.
+**Land the corrected §2.1 canonicalization rule in both repositories as one coordinated
+reissue** — strings always double-quoted, implicit typing forbidden, two-parser *typed*
+agreement as a required verification step — then re-emit both exchange artifacts, the agreement
+fixture, and every digest reference together, and write the joint decision record against the
+reissued digests where both can be verified against their origin repositories. This is a single
+change with a known blast radius, recorded in `architecture/canonicalization_defect.yaml`, and
+everything downstream of the exchange is blocked behind it: a proposal carrying digests that
+are about to change cannot become a decision until they have.

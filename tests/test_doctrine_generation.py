@@ -45,7 +45,7 @@ CANONICAL_YAML = (
         for path in ARCHITECTURE.glob("exchange/*.yaml")
         if path.name != "canonicalization_fixture.yaml"
     )
-    + sorted(ARCHITECTURE.glob("decisions/*.yaml"))
+    + sorted(ARCHITECTURE.glob("proposals/*.yaml"))
 )
 
 
