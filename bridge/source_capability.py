@@ -1,6 +1,6 @@
-"""`resolve_sources(intent, capabilities, sources) -> CandidateSource[]`
--- which registered sources could *potentially* satisfy a scientific
-requirement.
+"""`resolve_sources(intent, capabilities, sources, vocabulary) ->
+CandidateSource[]` -- which registered sources could *potentially*
+satisfy a scientific requirement.
 
 WHAT THE AUDIT FOUND, before any of this was written:
 
@@ -52,6 +52,15 @@ UNKNOWN IS NOT COMPATIBLE. A source with no `SourceCapability`, or one
 declaring nothing, matches nothing. That is the deliberate default: a
 source must EARN eligibility by declaring, never inherit it by silence.
 
+NORMALIZATION (Phase 23). `vocabulary` canonicalizes both the intent's
+terms and the source's declared terms before comparison, so a source
+that calls a concept `ultimate_tensile_strength` can answer a
+requirement phrased as `UTS` -- but only where someone explicitly
+declared that equivalence. It defaults to `EMPTY_VOCABULARY`, which maps
+nothing, so omitting it reproduces exact-string matching precisely. The
+source's own wording is preserved on every `TermMatch`, never
+overwritten.
+
 NO RANKING. `CandidateSource` carries the reasons a source matched and
 no score. Ordering candidates by presumed usefulness would be expected
 information gain by another name, which remains `NOT_DETERMINABLE`.
@@ -65,6 +74,14 @@ from dataclasses import dataclass
 from typing import Iterable, Mapping, Optional, Tuple
 
 from boundary.acquisition_intent import AcquisitionIntent
+from bridge.vocabulary import (
+    CONTEXT_KEY,
+    EMPTY_VOCABULARY,
+    PROPERTY,
+    ROLE,
+    SUBJECT_KIND,
+    Vocabulary,
+)
 from daf.orchestration.source_registry import SourceDefinition, SourceNotFoundError, SourceRegistry
 
 # Reasons a source did not match. Reported rather than silently dropped,
@@ -112,9 +129,38 @@ class SourceCapability:
 
 
 @dataclass(frozen=True)
+class TermMatch:
+    """Why one dimension matched, in all three vocabularies at once
+    (Phase 23 sec.5/sec.10):
+
+        requested   what the intent asked for, verbatim
+        canonical   what an explicit vocabulary mapping turned it into
+                    (equal to `requested` when nothing declares it)
+        declared    what the SOURCE called it, verbatim -- never
+                    overwritten, so "what did the source call this?" and
+                    "what concept did the catalog map it to?" remain
+                    separately answerable
+
+    `via_alias` records whether an explicit mapping was actually used on
+    either side, so a match by declared alias is distinguishable from a
+    match that needed no vocabulary at all."""
+
+    dimension: str
+    requested: str
+    canonical: str
+    declared: str
+    via_alias: bool
+
+
+@dataclass(frozen=True)
 class CandidateSource:
     """One source that could potentially satisfy the intent, with the
-    reasons it matched. No score: see the module docstring."""
+    reasons it matched. No score: see the module docstring.
+
+    `matched_*` carry the CANONICAL terms; `term_matches` carries the
+    full per-dimension explanation including the source's own wording.
+    The flat fields are surfaced alongside the embedded object for the
+    same ergonomic-access reason every `materials/` layer already does."""
 
     source_id: str
     intent_id: str
@@ -122,9 +168,11 @@ class CandidateSource:
     matched_subject_kind: str
     matched_role: str
     matched_context_keys: Tuple[str, ...]
+    term_matches: Tuple[TermMatch, ...] = ()
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "matched_context_keys", tuple(self.matched_context_keys))
+        object.__setattr__(self, "term_matches", tuple(self.term_matches))
 
 
 @dataclass(frozen=True)
@@ -162,28 +210,63 @@ def _lookup(sources: SourceRegistry, source_id: str) -> Optional[SourceDefinitio
         return None
 
 
+def _match_term(vocabulary, dimension, requested, declared_terms):
+    """One dimension's comparison, performed on CANONICAL forms.
+
+    Both sides are canonicalized independently, so a match can arise from
+    an alias on the requirement side, on the source side, or on neither.
+    The declared term reported back is the SOURCE's own wording -- the
+    one whose canonical form matched -- never the canonical form itself."""
+    canonical_request = vocabulary.canonical_for(dimension, requested)
+    for declared in declared_terms:
+        if vocabulary.canonical_for(dimension, declared) == canonical_request:
+            return TermMatch(
+                dimension=dimension, requested=requested, canonical=canonical_request,
+                declared=declared,
+                via_alias=(
+                    vocabulary.declares(dimension, requested)
+                    or vocabulary.declares(dimension, declared)
+                ),
+            )
+    return None
+
+
 def _evaluate(
-    intent: AcquisitionIntent, capability: SourceCapability, source: Optional[SourceDefinition]
+    intent: AcquisitionIntent,
+    capability: SourceCapability,
+    source: Optional[SourceDefinition],
+    vocabulary: Vocabulary,
 ) -> Tuple[Optional[CandidateSource], Optional[CapabilityMismatch]]:
     reasons = []
     missing_context: Tuple[str, ...] = ()
+    term_matches = []
 
     if source is None:
         reasons.append(NOT_REGISTERED)
     elif not source.enabled:
         reasons.append(DISABLED)
 
-    if intent.property not in capability.properties:
-        reasons.append(PROPERTY_NOT_DECLARED)
-    if intent.subject_kind not in capability.subject_kinds:
-        reasons.append(SUBJECT_KIND_NOT_DECLARED)
-    if intent.role not in capability.roles:
-        reasons.append(ROLE_NOT_DECLARED)
+    for dimension, requested, declared_terms, failure in (
+        (PROPERTY, intent.property, capability.properties, PROPERTY_NOT_DECLARED),
+        (SUBJECT_KIND, intent.subject_kind, capability.subject_kinds, SUBJECT_KIND_NOT_DECLARED),
+        (ROLE, intent.role, capability.roles, ROLE_NOT_DECLARED),
+    ):
+        match = _match_term(vocabulary, dimension, requested, declared_terms)
+        if match is None:
+            reasons.append(failure)
+        else:
+            term_matches.append(match)
 
-    undeclared = tuple(sorted(set(intent.target_context) - set(capability.context_keys)))
+    undeclared = []
+    for context_key in sorted(intent.target_context):
+        match = _match_term(vocabulary, CONTEXT_KEY, context_key, capability.context_keys)
+        if match is None:
+            undeclared.append(context_key)
+        else:
+            term_matches.append(match)
     if undeclared:
         reasons.append(CONTEXT_KEYS_NOT_DECLARED)
-        missing_context = undeclared
+        missing_context = tuple(undeclared)
 
     if reasons:
         return None, CapabilityMismatch(
@@ -191,14 +274,18 @@ def _evaluate(
             reasons=tuple(sorted(reasons)), missing_context_keys=missing_context,
         )
 
+    by_dimension = {match.dimension: match for match in term_matches}
     return (
         CandidateSource(
             source_id=capability.source_id,
             intent_id=intent.id,
-            matched_property=intent.property,
-            matched_subject_kind=intent.subject_kind,
-            matched_role=intent.role,
-            matched_context_keys=tuple(sorted(intent.target_context)),
+            matched_property=by_dimension[PROPERTY].canonical,
+            matched_subject_kind=by_dimension[SUBJECT_KIND].canonical,
+            matched_role=by_dimension[ROLE].canonical,
+            matched_context_keys=tuple(
+                match.canonical for match in term_matches if match.dimension == CONTEXT_KEY
+            ),
+            term_matches=tuple(term_matches),
         ),
         None,
     )
@@ -208,6 +295,7 @@ def resolve_sources(
     intent: AcquisitionIntent,
     capabilities: Iterable[SourceCapability],
     sources: SourceRegistry,
+    vocabulary: Vocabulary = EMPTY_VOCABULARY,
 ) -> SourceResolution:
     """Deterministic, side-effect-free, read-only. Performs no network
     access, touches no `EvidencePool`, calls no adapter, executes no
@@ -219,12 +307,20 @@ def resolve_sources(
     `SourceCapability` entry is not considered at all -- silence is not a
     declaration.
 
+    `vocabulary` (Phase 23) canonicalizes both the intent's terms and the
+    source's declared terms BEFORE comparison. It defaults to
+    `EMPTY_VOCABULARY`, which canonicalizes nothing -- so without one this
+    function behaves exactly as it did before that layer existed, and no
+    existing match changes.
+
     Candidates and mismatches are both returned, each in `source_id`
     order, so that "nothing matched" can be explained."""
     candidates = []
     mismatches = []
     for capability in sorted(capabilities, key=lambda c: c.source_id):
-        candidate, mismatch = _evaluate(intent, capability, _lookup(sources, capability.source_id))
+        candidate, mismatch = _evaluate(
+            intent, capability, _lookup(sources, capability.source_id), vocabulary
+        )
         if candidate is not None:
             candidates.append(candidate)
         if mismatch is not None:
