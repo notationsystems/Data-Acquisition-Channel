@@ -195,13 +195,16 @@ def test_the_context_gate_rejects_every_real_noaa_reading(tmp_path):
     """The measured result this phase is built on. All 240 real,
     recorded NOAA readings fail identically -- deterministic, and for
     the same reason every time: the shipped extractor supplies no
-    method and no conditions mapping.
+    method.
 
     Phase 32 resolved MISSING_UNCERTAINTY_KIND (sigma is a source-stated
     standard deviation, wired as uncertainty/uncertainty_kind) without
     touching method or conditions -- see
     tests/test_noaa_uncertainty_provenance.py for that determination in
-    full; this test only re-locks the resulting rejection set."""
+    full. Phase 34 later resolved MISSING_CONDITIONS separately (a
+    FrozenMapping representation, not a source-semantics finding -- see
+    tests/test_hashable_condition_representation.py); this test only
+    re-locks the resulting rejection set."""
     recorded, pool = _noaa_pool_and_execution(tmp_path)
     report = assess_pool(pool, recorded.execution.id, canonical_assertion_quarantine_store(tmp_path))
 
@@ -209,7 +212,6 @@ def test_the_context_gate_rejects_every_real_noaa_reading(tmp_path):
     assert report.accepted == 0
     assert report.refused == 240
     assert report.by_code == {
-        "MISSING_CONDITIONS": 240,
         "MISSING_METHOD": 240,
     }
     assert report.rejection_rate == 1.0

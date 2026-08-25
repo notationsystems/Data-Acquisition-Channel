@@ -10,6 +10,16 @@ identity, and any on-disk corruption or tampering is caught on read
 rather than trusted.
 
 No new identity scheme is introduced anywhere in this module.
+
+PHASE 34 -- `observation_from_dict`/`derived_value_from_dict` reconstruct
+`content` through `freeze_nested_mappings` (`daf/storage/frozen_mapping.py`)
+rather than passing `payload["content"]` straight through. This is a
+no-op for every content shape shipped before this phase (none has a
+dict-valued content entry), and exists so a `FrozenMapping`-valued entry
+(e.g. `conditions`) an extractor constructs survives a disk round trip as
+itself, not as the plain, unhashable `dict` `json.loads` would otherwise
+produce -- see `frozen_mapping.py`'s own docstring for the measured
+reason this is required on the read side, not just the write side.
 """
 
 from __future__ import annotations
@@ -34,6 +44,8 @@ from evidence.types import (
     make_referent,
     make_source,
 )
+
+from daf.storage.frozen_mapping import freeze_nested_mappings
 
 
 class ArtifactIdentityMismatch(RuntimeError):
@@ -117,7 +129,7 @@ def observation_from_dict(payload: Dict[str, Any]) -> Observation:
     reconstructed = make_observation(
         record_ids=tuple(payload["record_ids"]),
         extraction_method=payload["extraction_method"],
-        content=payload["content"],
+        content=freeze_nested_mappings(payload["content"]),
         confidence=payload["confidence"],
         extracted_at=payload["extracted_at"],
     )
@@ -173,7 +185,7 @@ def derived_value_from_dict(payload: Dict[str, Any]) -> DerivedValue:
     reconstructed = make_derived_value(
         derived_from=payload["derived_from"],
         method=payload["method"],
-        content=payload["content"],
+        content=freeze_nested_mappings(payload["content"]),
         confidence=payload["confidence"],
         derived_at=payload["derived_at"],
     )

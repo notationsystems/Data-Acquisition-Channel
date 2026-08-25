@@ -36,9 +36,9 @@ determinations:
       accepted: 0
       refused: 240
       reasons:
-        - MISSING_CONDITIONS
         - MISSING_METHOD
-      note: "uncertainty resolved correctly and does not appear in the refusal reasons for any of the 240 real readings; the observation remains genuinely inadmissible for the two dimensions this phase did not attempt to resolve"
+      note: "uncertainty resolved correctly and does not appear in the refusal reasons for any of the 240 real readings; the observation remains genuinely inadmissible for method, the one dimension no phase has yet resolved. MISSING_CONDITIONS appeared here through Phase 33 -- see corrected_in_phase_34."
+    corrected_in_phase_34: "MISSING_CONDITIONS is resolved as of Phase 34 -- datum is a genuine measurement condition (Phase 33) carried as conditions=FrozenMapping(datum=...), a representation chosen because a plain dict broke materials.analysis's own native-hashability requirement (architecture/condition_representation.yaml). MISSING_METHOD remains exactly as recorded here; only the conditions dimension changed. conditions_left_independent above describes this phase's own scope and is left as originally recorded."
 
 cross_source_summary:
   usgs_magnitude_type:
@@ -56,4 +56,4 @@ cross_source_summary:
     remaining:
       - conditions
       - method
-  note: "two structurally different sources, two different single-dimension resolutions, in two different phases -- neither domain was assumed to share the other's uncertainty or method semantics, and neither resolution touched the other source's extractor"
+  note: "two structurally different sources, two different single-dimension resolutions, in two different phases -- neither domain was assumed to share the other's uncertainty or method semantics, and neither resolution touched the other source's extractor. noaa_water_level_sigma's own 'remaining: conditions' reflects this phase's scope at the time it ran -- see determinations.noaa_water_level_sigma.corrected_in_phase_34: conditions was resolved two phases later, by a representation change, not by this phase or this source gaining new semantics."

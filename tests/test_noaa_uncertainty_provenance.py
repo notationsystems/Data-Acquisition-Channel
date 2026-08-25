@@ -201,11 +201,20 @@ def test_a_reading_lacking_sigma_remains_genuinely_missing_uncertainty():
 
 
 def test_conditions_remain_independently_rejected(tmp_path):
+    """CORRECTED IN PHASE 34: at the time this test was written,
+    `conditions` was independently rejected alongside `method` -- this
+    phase's own determination, unaffected by Phase 34. Phase 34 later
+    resolved `conditions` (a `FrozenMapping` of `datum`, wired for a
+    different reason entirely -- see
+    tests/test_hashable_condition_representation.py), so `conditions` is
+    now present and MISSING_CONDITIONS no longer appears. `method`
+    remains genuinely unresolved -- see
+    test_method_remains_independently_rejected, unchanged."""
     _, pool = _acquire_noaa(tmp_path)
     for o in pool.all_observations():
-        assert "conditions" not in o.content
+        assert "conditions" in o.content
         verdict = no_context_free_property(o.content)
-        assert "MISSING_CONDITIONS" in verdict.reasons
+        assert "MISSING_CONDITIONS" not in verdict.reasons
 
 
 def test_method_remains_independently_rejected(tmp_path):
@@ -217,13 +226,19 @@ def test_method_remains_independently_rejected(tmp_path):
 
 
 def test_uncertainty_resolution_did_not_silently_resolve_the_other_two(tmp_path):
-    """§7's exact distinction, checked in one place: resolved + two
-    unresolved, never conflated with fully resolved or fully unresolved."""
+    """§7's exact distinction, checked in one place: this phase resolved
+    uncertainty alone, leaving conditions and method independently
+    rejected -- true when this test was written. CORRECTED IN PHASE 34:
+    conditions was later, separately resolved (see
+    test_conditions_remain_independently_rejected, above), so the live
+    rejection set is now MISSING_METHOD alone; method remains the one
+    dimension no phase has resolved."""
     _, pool = _acquire_noaa(tmp_path)
     verdict = no_context_free_property(pool.all_observations()[0].content)
 
     assert not verdict.admissible
-    assert set(verdict.reasons) == {"MISSING_CONDITIONS", "MISSING_METHOD"}
+    assert set(verdict.reasons) == {"MISSING_METHOD"}
+    assert "MISSING_CONDITIONS" not in verdict.reasons
     assert "MISSING_UNCERTAINTY_KIND" not in verdict.reasons
     assert "MISSING_UNIT" not in verdict.reasons
     assert "MISSING_PROPERTY" not in verdict.reasons
@@ -328,7 +343,7 @@ def test_observation_identity_changed_and_is_disclosed(tmp_path):
         if key not in ("uncertainty", "uncertainty_kind")
     }
     assert set(old_shape_content) == {
-        "property", "value", "unit", "datum", "station_id", "measurement_time", "sigma"
+        "property", "value", "unit", "datum", "station_id", "measurement_time", "sigma", "conditions"
     }
 
     old_shape_observation = make_observation(

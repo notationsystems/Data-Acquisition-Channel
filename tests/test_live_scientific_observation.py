@@ -128,13 +128,17 @@ def test_observation_content_carries_only_scientific_fields(tmp_path):
     `uncertainty`/`uncertainty_kind` were added in Phase 32, sigma-
     conditional -- present exactly when the source itself reports `s`,
     see tests/test_noaa_uncertainty_provenance.py for that determination
-    in full; this test only re-locks the complete field set."""
+    in full. `conditions` was added in Phase 34, a `FrozenMapping` of
+    `datum` alone -- see tests/test_condition_provenance_reachability.py
+    and tests/test_hashable_condition_representation.py for that
+    determination in full; this test only re-locks the complete field
+    set."""
     pool, _ = _acquire(tmp_path)
     observation = pool.all_observations()[0]
 
     assert set(observation.content) == {
         "property", "value", "unit", "datum", "station_id", "measurement_time", "sigma",
-        "uncertainty", "uncertainty_kind",
+        "uncertainty", "uncertainty_kind", "conditions",
     }
     for excluded in ("q", "f", "s", "t", "v", "name", "lat", "lon", "product", "time_zone"):
         assert excluded not in observation.content

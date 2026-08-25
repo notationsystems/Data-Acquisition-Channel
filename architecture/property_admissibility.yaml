@@ -49,10 +49,10 @@ measured_reachability:
     accepted: 0
     refused: 240
     reasons:
-      - MISSING_CONDITIONS
       - MISSING_METHOD
-    note: "every real NOAA reading is inadmissible for canonical assertion under the unmodified gate. The extractor was not changed to fabricate a method NOAA does not report, or to reshape its existing datum/station_id/measurement_time fields into a conditions mapping -- doing either would either invent source metadata or change a shipped extractor's Observation.content, and therefore its Observation.id, for every existing caller. This is measured, honest inadmissibility, not a defect to route around."
+    note: "every real NOAA reading is inadmissible for canonical assertion under the unmodified gate. The extractor was not changed to fabricate a method NOAA does not report -- doing so would invent source metadata the source itself never supplies. This is measured, honest inadmissibility, not a defect to route around. MISSING_CONDITIONS appeared here through Phase 33 -- see corrected_in_phase_34."
     corrected_in_phase_32: "MISSING_UNCERTAINTY_KIND is resolved as of Phase 32 -- sigma is a source-stated standard deviation and is now carried as uncertainty/uncertainty_kind. See architecture/uncertainty_provenance_reachability.yaml. MISSING_CONDITIONS and MISSING_METHOD remain exactly as recorded here; only the uncertainty dimension changed."
+    corrected_in_phase_34: "MISSING_CONDITIONS is resolved as of Phase 34 -- datum is a genuine measurement condition (Phase 33) carried as conditions=FrozenMapping(datum=...), the smallest representation that is simultaneously a Mapping, natively hashable, and JSON-round-trip-stable (a plain dict satisfies the first but breaks materials.analysis's own native-hashability requirement; see architecture/condition_representation.yaml). MISSING_METHOD remains exactly as recorded here; only the conditions dimension changed."
   graph_dataset:
     binding: graph-dataset
     real_recorded_bytes: false

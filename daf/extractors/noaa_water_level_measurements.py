@@ -114,12 +114,26 @@ what a standard deviation IS, not a claim invented for this module).
 WHAT THIS DOES NOT RESOLVE. `method` is untouched and still absent: CO-OPS
 does not report, per reading, which sensor or algorithm produced a value
 -- inventing "tide gauge" would be exactly the fabrication Phase 29
-already rejected for this same extractor. `conditions` is untouched for
-the same reason Phase 29 left it untouched: reshaping `datum`/`station_id`/
-`measurement_time` into a nested `conditions` mapping is a materially
-different, larger content-shape decision than adding two new keys, and
-this phase's scope is uncertainty alone -- solving it must not be allowed
-to silently solve, or appear to solve, either of the other two.
+already rejected for this same extractor. This reading remains genuinely
+MISSING_METHOD -- Phase 34 (below) resolves `conditions` alone, and
+resolving one dimension must not be allowed to silently resolve, or
+appear to resolve, another the source itself never supplies.
+
+PHASE 34 -- `conditions`, ADDITIVE, THE REPRESENTATION RESOLVED. Phase 33
+found `datum` a genuine measurement condition (an MLLW reading and an
+STND reading of the same water surface are different numbers) but found
+that wiring `conditions = {"datum": self.datum}` -- a plain `dict` --
+broke `materials.analysis._group_by_comparison_context`, which requires
+every content value to be natively hashable. Phase 34 measured the
+complete constraint surface (no existing primitive in this repository or
+its vendored substrate is simultaneously a `Mapping`, natively hashable,
+and JSON-round-trip-stable) and built the smallest representation that
+is: `daf.storage.frozen_mapping.FrozenMapping`, an immutable `dict`
+subclass. `conditions` is therefore `FrozenMapping({"datum": self.datum})`,
+not a plain dict -- everything else about this reading (`datum` at its
+own top-level key, `station_id`, `measurement_time`) is unchanged. See
+`docs/PHASE_34_HASHABLE_CONDITION_REPRESENTATION.md` for the measurement
+this rests on.
 
 IDENTITY AND COMPARABILITY, MEASURED, NOT ASSUMED. Adding `uncertainty`/
 `uncertainty_kind` changes `Observation.content`, and therefore
@@ -134,6 +148,19 @@ this phase, via `measurement_time` alone every reading was already its
 own singleton group, and adding two more keys to an already-maximally-
 fragmented context changes nothing about whether any two readings compare
 -- verified against the real test suite, not merely reasoned about.
+
+Phase 34's `conditions` key changes `Observation.id` again, for every
+reading, the same way `sigma`/`uncertainty`/`uncertainty_kind` did --
+disclosed here for the same reason. It does not change comparability
+either, for the same measured reason: `measurement_time` already made
+every reading its own singleton comparison group before this key
+existed; one more key added to an already-singleton context changes
+nothing about whether any two readings compare. `Observation.id` itself
+is UNCHANGED by `FrozenMapping` vs. a plain dict of the same items --
+`evidence.identity.content_hash` serializes both to identical canonical
+JSON bytes, measured directly -- so this key's contribution to identity
+is exactly what `conditions = {"datum": self.datum}` would have
+contributed, had the plain-dict form not broken `materials.analysis`.
 """
 
 from __future__ import annotations
@@ -144,6 +171,8 @@ from typing import Any, Dict, List, Mapping, Optional, Tuple
 
 from evidence.types import Record
 from scout.interface import ExtractedEntity, ExtractedRelation, ExtractionCandidate
+
+from daf.storage.frozen_mapping import FrozenMapping
 
 PROPERTY = "water_level"
 STATION_KIND = "monitoring_station"
@@ -240,6 +269,7 @@ class NoaaWaterLevelMeasurementExtractor:
                 "datum": self.datum,
                 "station_id": station_id,
                 "measurement_time": row["t"],
+                "conditions": FrozenMapping({"datum": self.datum}),
             }
             sigma = _optional_float(row.get("s"), "s", record.id)
             if sigma is not None:

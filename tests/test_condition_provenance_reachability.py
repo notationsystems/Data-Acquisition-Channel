@@ -2,10 +2,12 @@
 condition -- and, separately, whether the existing shared representation
 could carry one if found.
 
-Two independent findings, neither a clean accept:
+Two independent findings, neither a clean accept AT THE TIME THIS PHASE
+RAN:
 
     USGS earthquakes    no genuine condition exists in the real,
-                        acquired source data at all.
+                        acquired source data at all. Still true; no
+                        later phase touched this.
 
     NOAA water level    a genuine condition (datum) DOES exist, but
                         wiring it through the existing conditions
@@ -15,9 +17,18 @@ Two independent findings, neither a clean accept:
                         which requires every content value to be
                         hashable.
 
-MISSING_CONDITIONS is preserved for both sources, honestly, for two
-different and precisely evidenced reasons. Nothing here fabricates a
-condition, and nothing here weakens either gate.
+RESOLVED IN PHASE 34, for NOAA alone: `daf.storage.frozen_mapping.
+FrozenMapping` is a Mapping-valued, natively hashable, JSON-round-trip-
+stable representation, and NOAA's `conditions` now uses it. USGS is
+unaffected -- it has no genuine condition to carry, representation or
+not. See tests/test_hashable_condition_representation.py and
+architecture/condition_representation.yaml for that determination in
+full; the tests below that assert MISSING_CONDITIONS/no-conditions-key
+for NOAA were updated in place, with a note, rather than left to assert
+something no longer true.
+
+Nothing here fabricates a condition, and nothing here weakens either
+gate.
 """
 
 from __future__ import annotations
@@ -323,38 +334,69 @@ def test_the_incompatibility_is_general_not_noaa_specific(tmp_path):
 
 def test_no_extractor_declares_a_conditions_key():
     """§20: no source-specific condition schema, no fabricated condition,
-    anywhere in the shipped extractors."""
+    anywhere in the shipped extractors.
+
+    CORRECTED IN PHASE 34: NOAA is now the one exception, and it is
+    exactly that -- an exception, not a reopening of §20. Phase 33 found
+    `datum` a genuine measurement condition; Phase 34 found a
+    representation that could carry it (`daf.storage.frozen_mapping.
+    FrozenMapping`, a generic, shared, non-NOAA-specific type) without
+    breaking materials.analysis. Every OTHER extractor still declares
+    none, and NOAA's own declaration uses the shared representation, not
+    a bespoke `NOAAConditions`-shaped schema."""
+    noaa_path = REPO_ROOT / "daf" / "extractors" / "noaa_water_level_measurements.py"
     for path in sorted((REPO_ROOT / "daf" / "extractors").glob("*.py")):
+        if path == noaa_path:
+            continue
         assert '"conditions"' not in path.read_text(), f"{path.name} declares conditions"
+    noaa_source = noaa_path.read_text()
+    assert '"conditions"' in noaa_source
+    assert "FrozenMapping" in noaa_source, "NOAA's conditions must use the shared representation"
+    assert "NOAAConditions" not in noaa_source, "no source-specific condition schema was created"
 
 
 def test_the_noaa_extractor_was_left_exactly_as_phase_32_produced_it():
-    """The attempted wiring left no trace: the extractor's content shape
-    is exactly Phase 32's, no more, no fewer keys."""
+    """The Phase 33 attempted wiring left no trace: at that time, the
+    extractor's content shape was exactly Phase 32's, no more, no fewer
+    keys.
+
+    CORRECTED IN PHASE 34: this is no longer the live extractor's shape
+    -- Phase 34 legitimately added `conditions` (a hashable, immutable
+    `FrozenMapping`, not the plain dict Phase 33 reverted). This test now
+    locks the Phase 34 shape; see
+    tests/test_hashable_condition_representation.py for the
+    determination that justifies the addition."""
     from evidence.types import make_record
 
     from daf.extractors.noaa_water_level_measurements import NoaaWaterLevelMeasurementExtractor
+    from daf.storage.frozen_mapping import FrozenMapping
 
     content = NoaaWaterLevelMeasurementExtractor(datum="MLLW", units="metric").extract(
         make_record(document_id="d", locator="l", raw_content=MLLW_BYTES.decode())
     )[0].content
     assert set(content) == {
         "property", "value", "unit", "datum", "station_id", "measurement_time",
-        "sigma", "uncertainty", "uncertainty_kind",
+        "sigma", "uncertainty", "uncertainty_kind", "conditions",
     }
+    assert isinstance(content["conditions"], FrozenMapping)
+    assert dict(content["conditions"]) == {"datum": "MLLW"}
 
 
 # ---------------------------------------- real acquisition, unchanged --
 
 
 def test_real_noaa_acquisition_is_unchanged_from_phase_32(tmp_path):
+    """CORRECTED IN PHASE 34: MISSING_CONDITIONS no longer appears --
+    resolved by this phase's representation change, not by any new
+    source semantics. MISSING_METHOD, the dimension no phase has
+    resolved, is unchanged."""
     recorded, pool = _acquire_noaa(tmp_path, MLLW_BYTES, "MLLW")
     report = assess_pool(pool, recorded.execution.id, canonical_assertion_quarantine_store(tmp_path))
 
     assert report.candidates_examined == 240
     assert report.accepted == 0
     assert report.refused == 240
-    assert report.by_code == {"MISSING_CONDITIONS": 240, "MISSING_METHOD": 240}
+    assert report.by_code == {"MISSING_METHOD": 240}
 
 
 def test_real_usgs_acquisition_is_unchanged_from_phase_31(tmp_path):

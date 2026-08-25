@@ -1,0 +1,170 @@
+# The hashable, immutable, Mapping-shaped representation chosen for
+# `content['conditions']` (and, symmetrically, any other Mapping-valued
+# content entry), and the complete constraint surface that ruled out
+# every simpler alternative.
+#
+# THIS FILE RECORDS A DETERMINATION, NOT A SCHEMA -- the same discipline
+# architecture/condition_provenance_reachability.yaml already establishes.
+extends: core@1.0.0
+
+# ---------------------------------------------------- the question --
+
+question: "what is the smallest hashable, immutable, deterministic, serializable representation of scientific conditions that satisfies ALL existing consumers without weakening ANY verified invariant?"
+prior_finding: "architecture/condition_provenance_reachability.yaml (Phase 33) -- datum IS a genuine NOAA measurement condition, but conditions=dict(...) breaks materials.analysis._group_by_comparison_context, which requires every content value to be natively hashable."
+
+# --------------------------------------------- consumer inventory --
+
+consumers:
+  - name: science.admissibility.no_context_free_property
+    requirement: "content['conditions'] must satisfy isinstance(conditions, Mapping) and be non-empty"
+    vendored: false
+    modified: false
+    note: "a dict subclass already satisfies isinstance(x, Mapping); no change needed or made"
+
+  - name: materials.analysis._group_by_comparison_context
+    requirement: "tuple(sorted(context.items(), key=lambda kv: kv[0])) is used as a dict key, so every content value -- including conditions -- must be natively hashable (hash())"
+    vendored: true
+    modified: false
+    note: "a plain dict is never hashable; measured directly (Phase 33) to raise TypeError: unhashable type: 'dict'"
+
+  - name: evidence.identity.content_hash
+    requirement: "payload must reduce to plain dict/list/str/int/float/bool/None -- it calls json.dumps with no custom encoder"
+    vendored: true
+    modified: false
+    note: "measured directly: a collections.abc.Mapping implementation that is NOT also a dict subclass raises TypeError: Object of type ... is not JSON serializable at Observation/DerivedValue construction time, before materials.analysis is ever reached. A dict subclass serializes exactly like a plain dict of the same items, so Observation.id/DerivedValue.id are unchanged by the representation choice -- measured, not assumed (identical id for a plain-dict and a FrozenMapping conditions value built from the same items)."
+
+  - name: evidence.types.make_observation / make_derived_value
+    requirement: "the same content_hash contract, applied at construction time"
+    vendored: true
+    modified: false
+
+  - name: daf.storage.serialization.observation_to_dict / derived_value_to_dict
+    requirement: "none beyond content_hash's -- `dict(observation.content)` is a shallow copy, and a dict-subclass value serializes via json.dumps exactly like a plain dict"
+    vendored: false
+    modified: false
+    note: "the write side needed no change; only the read side did (below)"
+
+  - name: daf.storage.serialization.observation_from_dict / derived_value_from_dict
+    requirement: "reconstruct Observation/DerivedValue from JSON-parsed payload"
+    vendored: false
+    modified: true
+    note: "json.loads has no extension point installed anywhere in this codebase, so without a read-side change, ANY custom Mapping-shaped content value reconstructs as a plain, unhashable dict on every load -- see hydration_measurement below for why this is not a rare path. freeze_nested_mappings (daf/storage/frozen_mapping.py) is now applied to `content` on load, recursively wrapping any dict-valued entry as FrozenMapping. A no-op for every content shape shipped before this phase (measured: no extractor has ever produced a dict-valued content entry)."
+
+  - name: daf.storage.durable_pool.DurablePool / daf.storage.classified_pool.ClassifiedPool
+    requirement: "none directly -- but its lazy-hydration behaviour determines WHEN observation_from_dict's read-side fix actually matters"
+    vendored: false
+    modified: false
+
+  - name: daf.extractors.noaa_water_level_measurements.NoaaWaterLevelMeasurementExtractor
+    requirement: "constructs the conditions value in the first place"
+    vendored: false
+    modified: true
+    note: "conditions=FrozenMapping({'datum': self.datum}) replaces the reverted (Phase 33) conditions=dict(...) attempt. No other extractor was touched; none declares a conditions key."
+
+# ------------------------------------- the hydration measurement --
+#
+# Why the read side (observation_from_dict) needed to change, not just
+# the extractor -- the single most consequential measurement this phase
+# made, because a hashable wrapper type ALONE, with no read-side
+# counterpart, appears to work in one call order and silently breaks in
+# another, which is exactly the kind of "convenient but not real"
+# outcome the brief warned against.
+
+hydration_measurement:
+  mechanism: "scout.pipeline.run_scout (vendored) calls build_trust_graph(pool) at the START of every acquisition, which calls pool.all_referents()/pool.all_claimed_relationships() -- both DurablePool full-corpus methods that trigger _ensure_hydrated() the FIRST time either is called on a given pool instance."
+  same_process_case: "for a brand-new, empty FilesystemEvidenceStore, this first call hydrates an EMPTY corpus, permanently setting DurablePool._hydrated=True before any object is ever put. Every subsequent put_observation in that SAME pool instance stores the ORIGINAL in-memory Python object (via EvidencePool.put_observation's plain dict assignment); _ensure_hydrated never runs again in that process, so materials.analysis.analyze() (via pool.get_observation) sees the original object, never a JSON-reconstructed one. Measured directly: a same-process acquire-then-analyze call sequence never round-trips its own conditions value through JSON at all, REGARDLESS of representation."
+  second_process_case: "DurablePool.restore/load_pool -- this project's own documented 'process restart' / 'reopen an existing store' path -- constructs a FRESH, unhydrated pool over an ALREADY non-empty store. That pool's first run_scout call hydrates a NON-empty corpus, which means FilesystemEvidenceStore.all_observations (via observation_from_dict) is what actually reconstructs every previously-persisted Observation.content. Measured directly, with a two-pool-instance test (one pool populates the store; a second, fresh pool instance reopens it and calls analyze()): WITHOUT the observation_from_dict read-side fix, this raises the identical TypeError: unhashable type: 'dict' Phase 33 first found -- a hashable-but-not-round-trip-aware wrapper type is not a fix, only an accident of call order. WITH the fix, the second pool's analyze() succeeds and reports the correct MLLW comparison group."
+  conclusion: "a representation choice alone is insufficient; the serialization layer's read side had to gain a matching reconstruction rule. This is why action_taken in architecture/condition_provenance_reachability.yaml's Phase 33 record was correctly 'none' at the time (no read-side counterpart existed yet to make any wrapper type safe) and why this phase's decision (below) is B, not a bare Candidate-C class definition."
+
+# -------------------------------------------- existing primitive search --
+
+primitive_search:
+  searched:
+    - "every @dataclass(frozen=True) type in daf/, science/, epistemics/, boundary/, bridge/, assertion/, and the vendored substrate"
+    - "MappingProxyType / frozendict / any hand-rolled immutable-Mapping usage, repository-wide"
+    - "materials/model_state.py's own target_context/criterion_context mechanism (ActionCandidate, EvidenceRequirement) -- a caller-curated Mapping[str, object], but consumed ONLY via content_hash-based key derivation (resolve_model_state_key), never native hash(). It imposes no native-hashability requirement and is therefore not itself a candidate; it does confirm the vendored substrate already tolerates plain-dict-valued curated context elsewhere, just never asks Python's native hash() to operate on one directly."
+  found: none
+  conclusion: "no existing type in this repository or its vendored substrate is simultaneously a Mapping, natively hashable, and JSON-round-trip-stable. Candidate B (reuse an existing primitive) is therefore unavailable, confirmed by search rather than assumed."
+
+# ------------------------------------------------- candidates evaluated --
+
+candidates:
+  - id: A
+    description: "canonical immutable key/value tuple sequence, e.g. (('datum', 'MLLW'),)"
+    verdict: rejected
+    reason: "a plain tuple does not satisfy isinstance(x, Mapping); registering tuple as a virtual Mapping subclass would apply to every tuple in the process, an unacceptable global side effect for one content key"
+
+  - id: B_reuse_existing
+    description: "an existing immutable Mapping primitive already in the repository"
+    verdict: rejected
+    reason: "none exists -- see primitive_search above"
+
+  - id: C_frozen_mapping
+    description: "a dedicated dict subclass (daf.storage.frozen_mapping.FrozenMapping): immutable, hashable by sorted (key, value) pairs, Mapping-compatible via dict's own ABC registration, serializes via json.dumps exactly like a plain dict"
+    verdict: adopted
+    reason: "measured to satisfy every consumer in the inventory above, including the hydration/restart path once daf/storage/serialization.py's read side was taught to reconstruct it. ~15 lines; no new identity scheme (Observation.id/DerivedValue.id are byte-identical to the plain-dict equivalent); no vendored file touched; no source-specific type (FrozenMapping is generic, used identically for any future Mapping-shaped content value, not only NOAA's datum)."
+
+# --------------------------------------------------------- decision --
+
+decision: B
+decision_rationale: "a small, shared representation extension, justified by two independent existing consumers (materials.analysis's native-hashability requirement and daf/storage/serialization.py's round-trip requirement) and verified against the real, vendored, real-acquisition pipeline in both the same-process and reopened-store cases -- not chosen for implementation convenience: Candidates A and B_reuse_existing were ruled out by direct search and structural incompatibility first."
+
+# ------------------------------------------------------- properties --
+
+frozen_mapping_properties:
+  location: daf/storage/frozen_mapping.py
+  type: "dict subclass"
+  mapping: "isinstance(FrozenMapping(...), Mapping) is True -- dict is registered under collections.abc.Mapping"
+  hashable: "hash() succeeds -- hash(tuple(sorted(self.items(), key=lambda kv: kv[0])))"
+  immutable: "__setitem__/__delitem__/__ior__/update/pop/popitem/clear/setdefault all raise TypeError"
+  order_independent: "FrozenMapping({'a':1,'b':2}) == FrozenMapping({'b':2,'a':1}) and hash() agrees -- both dict.__eq__ (unmodified) and the sorted-items __hash__ are order-independent by construction; no conflict semantics were needed or invented for same-key values, since a Python dict cannot hold two values under one key to begin with"
+  equality_with_plain_dict: "unmodified dict.__eq__ -- FrozenMapping({'datum': 'MLLW'}) == {'datum': 'MLLW'} is True, measured directly, not assumed"
+  identity: "Observation.id/DerivedValue.id computed from a FrozenMapping-valued content entry are byte-identical to the same content with a plain dict of the same items -- content_hash's canonical JSON serialization is type-blind between dict and any dict subclass, measured directly"
+  serialization: "observation_to_dict/derived_value_to_dict need no change (a dict subclass already serializes correctly); observation_from_dict/derived_value_from_dict now apply daf.storage.frozen_mapping.freeze_nested_mappings to reconstruct any dict-valued content entry as a FrozenMapping on load"
+  recursive: "nested dict values (at any depth) are wrapped as FrozenMapping too, both at construction and at deserialization, so a construction-time value and its post-round-trip reconstruction are indistinguishable"
+  provenance: "conditions inherits provenance from Observation/ExecutionRecord exactly as every other content field already does -- no per-condition provenance was added or found necessary; conditions is not itself a provenance-bearing structure any more than value or unit are"
+
+# ---------------------------------------------------- what changed --
+
+implementation:
+  new_file: daf/storage/frozen_mapping.py
+  changed:
+    - path: daf/storage/serialization.py
+      change: "observation_from_dict and derived_value_from_dict reconstruct content via freeze_nested_mappings instead of passing payload['content'] straight through"
+    - path: daf/extractors/noaa_water_level_measurements.py
+      change: "conditions=FrozenMapping({'datum': self.datum}) added to every reading's content, replacing the Phase 33 reverted plain-dict attempt"
+  not_changed:
+    - "materials.analysis (vendored) -- not modified; already accepts any natively hashable content value"
+    - "evidence.identity / evidence.types (vendored) -- not modified; already accepts any dict-subclass content value"
+    - "science.admissibility.no_context_free_property -- not modified; already accepts any Mapping"
+    - "daf.extractors.usgs_earthquakes / edgar_daily_index / arxiv / graph_dataset / noaa_water_level -- none declares a conditions key"
+    - "USGS's own MISSING_CONDITIONS finding (architecture/condition_provenance_reachability.yaml) -- unaffected; USGS has no genuine condition to carry regardless of representation"
+
+# ----------------------------------------------- measured outcome --
+
+measured_reachability_change:
+  noaa_water_level_measurements:
+    before:
+      reasons:
+        - MISSING_CONDITIONS
+        - MISSING_METHOD
+    after:
+      reasons:
+        - MISSING_METHOD
+    note: "method was not fabricated to compensate -- CO-OPS still does not report, per reading, which sensor or algorithm produced a value. See architecture/property_admissibility.yaml's corrected_in_phase_34 and architecture/uncertainty_provenance_reachability.yaml's corrected_in_phase_34 for the two canonical records this change touches."
+  usgs_earthquakes:
+    before:
+      reasons:
+        - MISSING_CONDITIONS
+        - MISSING_UNCERTAINTY_KIND
+    after:
+      reasons:
+        - MISSING_CONDITIONS
+        - MISSING_UNCERTAINTY_KIND
+    note: "unchanged -- re-verified by re-running the real USGS acquisition path after this phase's change, exactly as after every prior single-source phase in this sequence"
+
+not_claimed:
+  - "conditions is now a solved concept for every future source -- FrozenMapping is a representation primitive, not a semantic one; a future source's condition still needs the same per-source evidence Phase 33 required for NOAA's datum"
+  - "MISSING_METHOD is resolved for NOAA -- it is not, and was not attempted here"
+  - "a new identity scheme was introduced -- Observation.id/DerivedValue.id are computed exactly as before; FrozenMapping changes no hash, no id derivation, no content_hash call signature"
+  - "materials.analysis or any other vendored file was modified -- none was; git -C vendor/scout-retrieval-agent status --short is empty"
