@@ -1,0 +1,63 @@
+{
+  "entities": {
+    "P5479": {
+      "aliases": [
+        "Ftu",
+        "Rm",
+        "TS",
+        "Tensile strength",
+        "UTS",
+        "stress at break"
+      ],
+      "label": "ultimate tensile strength"
+    },
+    "P5529": {
+      "aliases": [
+        "yield point",
+        "yield stress"
+      ],
+      "label": "yield strength"
+    },
+    "P5681": {
+      "aliases": [],
+      "label": "flexural modulus"
+    },
+    "Q192005": {
+      "aliases": [],
+      "label": "elastic modulus"
+    },
+    "Q2091584": {
+      "aliases": [
+        "Young modulus",
+        "elastic modulus",
+        "modulus of elasticity"
+      ],
+      "label": "Young's modulus"
+    },
+    "Q3807177": {
+      "aliases": [
+        "yield stress"
+      ],
+      "label": "yield strength"
+    },
+    "Q5459047": {
+      "aliases": [
+        "bending modulus"
+      ],
+      "label": "flexural modulus"
+    },
+    "Q76005": {
+      "aliases": [
+        "TS",
+        "UTS",
+        "tensile force",
+        "tensile strength",
+        "ultimate strength"
+      ],
+      "label": "ultimate tensile strength"
+    }
+  },
+  "note": "Verbatim SPARQL result for the English label/alias sets of the mechanical-property concepts examined in Phase 24. Recorded so every mapping's evidence is inspectable and re-checkable. Aliases are reported as Wikidata publishes them -- NOT all of them are encoded as equivalences; see the phase document for which were rejected and why.",
+  "retrieved_at": "2026-08-25",
+  "retrieved_from": "https://query.wikidata.org/sparql"
+}
