@@ -42,6 +42,7 @@ from daf.orchestration.bindings import (
     arxiv_binding,
     edgar_daily_index_binding,
     local_dataset_binding,
+    noaa_water_level_binding,
     usgs_earthquakes_binding,
 )
 from daf.scheduling.runner import CheckpointPersistenceError, execute_plan
@@ -55,6 +56,7 @@ def _default_adapters() -> AdapterRegistry:
     adapters.register(local_dataset_binding())
     adapters.register(edgar_daily_index_binding())
     adapters.register(usgs_earthquakes_binding())
+    adapters.register(noaa_water_level_binding())
     return adapters
 
 

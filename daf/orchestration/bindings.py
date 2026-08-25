@@ -18,10 +18,12 @@ from daf.adapters.arxiv import ArxivSourceAdapter
 from daf.adapters.edgar_daily_index import EdgarDailyIndexSourceAdapter
 from daf.adapters.incremental_dataset import IncrementalDatasetSourceAdapter, locator_for, sequence_of
 from daf.adapters.local_dataset import LocalDatasetSourceAdapter
+from daf.adapters.noaa_water_level import NoaaWaterLevelSourceAdapter, window_end_of
 from daf.adapters.usgs_earthquakes import UsgsEarthquakeSourceAdapter
 from daf.extractors.arxiv import ArxivExtractor
 from daf.extractors.edgar_daily_index import EdgarDailyIndexExtractor
 from daf.extractors.local_dataset import LocalDatasetExtractor
+from daf.extractors.noaa_water_level import NoaaWaterLevelExtractor
 from daf.extractors.usgs_earthquakes import UsgsEarthquakeExtractor
 from daf.orchestration.adapter_registry import AdapterBinding
 from daf.orchestration.request import AcquisitionRequest
@@ -167,4 +169,43 @@ def usgs_earthquakes_binding() -> AdapterBinding:
         build_adapter=build_adapter,
         build_extractor=UsgsEarthquakeExtractor,
         advance_position=_advance_usgs_position,
+    )
+
+
+def _advance_noaa_position(
+    artifacts: Tuple[AcquiredArtifact, ...], previous_position: Optional[str]
+) -> Optional[str]:
+    """NOAA's window locator (`"{station}:{product}:{begin}:{end}"`)
+    carries its own cursor value -- the window's end date -- exactly
+    like EDGAR's date-string locator and UNLIKE USGS's event-id locator
+    (which needed Phase H's `raw_content` field because no cursor
+    information could be recovered from the locator alone). Reading
+    `.locator` here, not `.raw_content`, is a deliberate, empirically-
+    grounded choice, not an oversight -- see
+    docs/DAF_NOAA_WATER_LEVEL_ADAPTER.md."""
+    if not artifacts:
+        return previous_position
+    max_end = max(window_end_of(artifact.locator) for artifact in artifacts)
+    if previous_position is not None:
+        max_end = max(max_end, previous_position)
+    return max_end
+
+
+def noaa_water_level_binding() -> AdapterBinding:
+    def build_adapter(source: SourceDefinition, request: AcquisitionRequest) -> NoaaWaterLevelSourceAdapter:
+        since = request.parameters.get("since")
+        return NoaaWaterLevelSourceAdapter(
+            station=str(request.parameters["station"]),
+            product=str(request.parameters["product"]),
+            start_date=str(request.parameters["start_date"]),
+            end_date=str(request.parameters["end_date"]),
+            retrieved_at=request.requested_at,
+            since_window_end=str(since) if since is not None else None,
+        )
+
+    return AdapterBinding(
+        adapter_id="noaa-water-level",
+        build_adapter=build_adapter,
+        build_extractor=NoaaWaterLevelExtractor,
+        advance_position=_advance_noaa_position,
     )

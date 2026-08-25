@@ -1,0 +1,10 @@
+{
+  "metadata": {
+    "id": "9999999",
+    "name": "SYNTHETIC TEST DATA -- NOT REAL NOAA CONTENT (missing v/q on second reading)"
+  },
+  "data": [
+    {"t": "2026-01-01 00:00", "v": "1.100", "s": "0.010", "f": "0,0,0,0", "q": "v"},
+    {"t": "2026-01-01 06:00"}
+  ]
+}
