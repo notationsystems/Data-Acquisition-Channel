@@ -1,0 +1,7 @@
+[
+  {"sequence": 1, "id": "reading-1", "value": "a"},
+  {"sequence": 2, "id": "reading-2", "value": "b"},
+  {"sequence": 3, "id": "reading-3", "value": "c"},
+  {"sequence": 4, "id": "reading-4", "value": "d"},
+  {"sequence": 5, "id": "reading-5", "value": "e"}
+]

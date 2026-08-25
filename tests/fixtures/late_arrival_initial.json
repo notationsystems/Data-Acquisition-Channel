@@ -1,0 +1,5 @@
+[
+  {"sequence": 1, "id": "reading-1", "value": "a"},
+  {"sequence": 2, "id": "reading-2", "value": "b"},
+  {"sequence": 5, "id": "reading-5", "value": "e"}
+]
