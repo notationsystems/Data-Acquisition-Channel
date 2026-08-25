@@ -126,7 +126,7 @@ def test_raw_artifact_and_identity_preserved(tmp_path):
     assert document.retrieval_method == "http:noaa_water_level_v1"
 
     record = next(r for r in FilesystemEvidenceStore(tmp_path / "evidence").all_records() if r.document_id == document.id)
-    assert record.locator == "9999999:water_level:20260101:20260103"  # the whole window, preserved verbatim
+    assert record.locator == "9999999:water_level:MLLW:metric:20260101:20260103"  # the whole window, preserved verbatim
 
 
 def test_checkpoint_advances_to_the_window_end_date_embedded_in_the_locator(tmp_path):
@@ -153,14 +153,14 @@ def test_incremental_second_run_rewinds_by_the_trailing_safety_window(tmp_path):
     )
 
     first = execute_plan(plan, sources, adapters, pool, checkpoints, requested_at="2026-08-25T00:00:00Z")
-    assert first.artifacts[0].locator == "9999999:water_level:20260101:20260103"
+    assert first.artifacts[0].locator == "9999999:water_level:MLLW:metric:20260101:20260103"
 
     adapters.register(_noaa_binding_with_routes(_second_window_routes()))
     second = execute_plan(plan, sources, adapters, pool, checkpoints, requested_at="2026-08-26T00:00:00Z")
 
     # window_start = 20260103 - 1 day = 20260102 -- overlaps Jan2-3 with
     # the first window on purpose, extends one new day to Jan4.
-    assert second.artifacts[0].locator == "9999999:water_level:20260102:20260104"
+    assert second.artifacts[0].locator == "9999999:water_level:MLLW:metric:20260102:20260104"
     assert checkpoints.get("noaa-plan").position == "20260104"
     assert len(pool.all_observations()) == 2  # two DIFFERENT window-artifacts, both legitimately admitted
 
@@ -199,7 +199,7 @@ def test_re_fetching_the_same_window_with_revised_readings_creates_a_new_version
 
     assert second_result.outcome == AcquisitionOutcome.ACQUIRED
     second_artifact = second_result.artifacts[0]
-    assert second_artifact.locator == first_artifact.locator == "9999999:water_level:20260101:20260103"
+    assert second_artifact.locator == first_artifact.locator == "9999999:water_level:MLLW:metric:20260101:20260103"
     assert second_artifact.artifact_id == first_artifact.artifact_id  # SAME artifact -- same (source_id, locator)
     assert second_artifact.version_id != first_artifact.version_id  # DIFFERENT version -- content genuinely changed
     assert second_artifact.is_new is True
@@ -358,7 +358,7 @@ def test_restart_resumes_incremental_acquisition_correctly(tmp_path):
 
     second = execute_plan(plan, sources_b, adapters_b, pool_b, checkpoints_b, requested_at="2026-08-26T00:00:00Z")
 
-    assert second.artifacts[0].locator == "9999999:water_level:20260102:20260104"
+    assert second.artifacts[0].locator == "9999999:water_level:MLLW:metric:20260102:20260104"
     assert len(pool_b.all_observations()) == 2
 
 

@@ -24,7 +24,7 @@ FIXTURES = Path(__file__).parent / "fixtures"
 
 
 def test_window_end_of_extracts_the_trailing_date():
-    assert window_end_of("9999999:water_level:20260101:20260103") == "20260103"
+    assert window_end_of("9999999:water_level:MLLW:metric:20260101:20260103") == "20260103"
 
 
 def test_first_fetch_covers_window_days_from_start_date():
@@ -41,7 +41,7 @@ def test_first_fetch_covers_window_days_from_start_date():
     documents = adapter.fetch()
 
     assert len(documents) == 1
-    assert documents[0].locator == "9999999:water_level:20260101:20260103"
+    assert documents[0].locator == "9999999:water_level:MLLW:metric:20260101:20260103"
     assert documents[0].source_name == "NOAA CO-OPS Tides & Currents"
     assert documents[0].source_kind == "tide-station-window"
     assert documents[0].retrieval_method == "http:noaa_water_level_v1"
@@ -78,7 +78,7 @@ def test_second_fetch_rewinds_by_the_revision_lookback():
     documents = adapter.fetch()
 
     # revision_lookback_days=2 -> window_start = previous_end - 1 day = 20260102
-    assert documents[0].locator == "9999999:water_level:20260102:20260104"
+    assert documents[0].locator == "9999999:water_level:MLLW:metric:20260102:20260104"
     assert "begin_date=20260102&end_date=20260104" in requested[0]
 
 

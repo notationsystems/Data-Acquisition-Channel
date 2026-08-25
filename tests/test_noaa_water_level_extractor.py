@@ -18,7 +18,7 @@ FIXTURES = Path(__file__).parent / "fixtures"
 def test_extract_projects_metadata_and_counts_quality_flags():
     raw_content = (FIXTURES / "noaa_window_synthetic_20260101_20260103.json").read_text()
     record = make_record(
-        document_id="doc-1", locator="9999999:water_level:20260101:20260103", raw_content=raw_content
+        document_id="doc-1", locator="9999999:water_level:MLLW:metric:20260101:20260103", raw_content=raw_content
     )
 
     candidates = NoaaWaterLevelExtractor().extract(record)
@@ -48,7 +48,7 @@ def test_extract_of_a_revised_window_reflects_the_revised_readings():
     # prior revision.
     raw_content = (FIXTURES / "noaa_window_synthetic_20260101_20260103_revised.json").read_text()
     record = make_record(
-        document_id="doc-2", locator="9999999:water_level:20260101:20260103", raw_content=raw_content
+        document_id="doc-2", locator="9999999:water_level:MLLW:metric:20260101:20260103", raw_content=raw_content
     )
 
     content = NoaaWaterLevelExtractor().extract(record)[0].content
@@ -59,14 +59,14 @@ def test_extract_of_a_revised_window_reflects_the_revised_readings():
 
 
 def test_extract_raises_on_invalid_json():
-    record = make_record(document_id="doc-1", locator="9999999:water_level:20260101:20260103", raw_content="not json")
+    record = make_record(document_id="doc-1", locator="9999999:water_level:MLLW:metric:20260101:20260103", raw_content="not json")
 
     with pytest.raises(NoaaWaterLevelExtractionError):
         NoaaWaterLevelExtractor().extract(record)
 
 
 def test_extract_raises_when_metadata_or_data_is_missing():
-    record = make_record(document_id="doc-1", locator="9999999:water_level:20260101:20260103", raw_content="{}")
+    record = make_record(document_id="doc-1", locator="9999999:water_level:MLLW:metric:20260101:20260103", raw_content="{}")
 
     with pytest.raises(NoaaWaterLevelExtractionError):
         NoaaWaterLevelExtractor().extract(record)
@@ -74,7 +74,7 @@ def test_extract_raises_when_metadata_or_data_is_missing():
 
 def test_extract_raises_when_a_reading_is_missing_required_fields():
     raw_content = (FIXTURES / "noaa_window_malformed.json").read_text()
-    record = make_record(document_id="doc-1", locator="9999999:water_level:20260101:20260101", raw_content=raw_content)
+    record = make_record(document_id="doc-1", locator="9999999:water_level:MLLW:metric:20260101:20260101", raw_content=raw_content)
 
     with pytest.raises(NoaaWaterLevelExtractionError):
         NoaaWaterLevelExtractor().extract(record)

@@ -150,7 +150,7 @@ def _format_date(value: datetime.date) -> str:
 
 def window_end_of(locator: str) -> str:
     """The end date embedded in a NOAA window locator
-    (`"{station}:{product}:{begin}:{end}"`) -- this IS the checkpoint
+    (`"{station}:{product}:{datum}:{units}:{begin}:{end}"`) -- this IS the checkpoint
     cursor value for this source (unlike USGS, where the cursor could
     not be recovered from the locator at all). Kept adapter-local, never
     imported by DAF core, exactly like EDGAR's own date-string locators
@@ -211,7 +211,26 @@ class NoaaWaterLevelSourceAdapter:
         if isinstance(payload, dict) and "error" in payload:
             raise NoaaFetchError(f"NOAA request to {url!r} returned an error envelope: {payload['error']!r}")
 
-        locator = f"{self.station}:{self.product}:{_format_date(window_start)}:{_format_date(window_end)}"
+        # Phase R: `datum` and `units` are part of the locator because they
+        # are part of WHAT WAS ACQUIRED, not how. NOAA returns genuinely
+        # different physical quantities for the same station/product/window
+        # under different datums -- measured live, MLLW 0.136 m vs STND
+        # 1.2 m at the same instant. `artifact_id` is
+        # content_hash({source_id, locator}) and the adapter's source
+        # identity is fixed, so omitting them collapsed two distinct
+        # quantities onto one logical artifact, where the second read as a
+        # REVISION of the first.
+        #
+        # This completes the existing scheme rather than introducing a new
+        # coupling: the locator already carried `station` and `product`,
+        # which are scientific identity dimensions of exactly the same
+        # kind. The checkpoint cursor is unaffected -- `window_end_of`
+        # reads the LAST component (`rsplit(":", 1)`), and checkpoint
+        # positions are bare date strings, never locators.
+        locator = (
+            f"{self.station}:{self.product}:{self.datum}:{self.units}"
+            f":{_format_date(window_start)}:{_format_date(window_end)}"
+        )
         document = RawDocument(
             source_name="NOAA CO-OPS Tides & Currents",
             source_kind="tide-station-window",

@@ -55,7 +55,9 @@ PARAMETERS = {
     "station": STATION, "product": "water_level",
     "start_date": "20240115", "end_date": "20240115",
 }
-WINDOW_LOCATOR = f"{STATION}:water_level:20240115:20240115"
+# Phase R added datum/units to the NOAA locator so two scientifically
+# different quantities no longer collapse onto one artifact identity.
+WINDOW_LOCATOR = f"{STATION}:water_level:MLLW:metric:20240115:20240115"
 ENGINE = DeterministicRetrievalEngine()
 
 
@@ -232,52 +234,28 @@ def test_restart_preserves_artifact_version_and_scientific_semantics(tmp_path):
     assert len(answer_2.observed_comparison_groups) == len(answer_1.observed_comparison_groups)
 
 
-def test_the_same_window_under_a_different_datum_collides_on_one_locator(tmp_path):
-    """A real hazard, measured against real bytes rather than reasoned
-    about. MLLW and STND are different vertical datums: NOAA reports
-    0.136 m and 1.2 m for the SAME instant at the SAME station. The
-    adapter's locator is `station:product:start:end` and omits the datum,
-    so both land under one artifact identity and the second reads as a
-    REVISION of the first rather than a different quantity.
+def test_the_same_window_under_a_different_datum_is_a_different_artifact(tmp_path):
+    """The real-data facts Phase 17 measured, now asserting the Phase R
+    fix. MLLW and STND are different vertical datums: NOAA reports
+    0.136 m and 1.2 m for the SAME instant at the SAME station. Phase 17
+    found both collapsing onto one artifact identity, because the locator
+    omitted the datum; Phase R added datum/units to it.
 
-    THERE IS NO CALLER-LEVEL REMEDY, which this test also pins. Artifact
-    identity is `compute_artifact_id(Document.source_id, locator)`, and
-    that `Document.source_id` is derived by `scout.pipeline.run_scout`
-    from the `source_name`/`source_kind` the ADAPTER hard-codes -- the
-    DAF `SourceDefinition.source_id` never reaches it. So registering the
-    two datums under different DAF source ids does NOT separate them.
-
-    Left unfixed in this phase deliberately, not silently: both candidate
-    fixes (putting datum/units in the locator, or making the adapter's
-    source identity configurable) change artifact identity for the
-    existing NOAA source, and the locator is additionally the checkpoint
-    cursor parsed by `window_end_of`. See the phase document's
-    "Locator collision" section for the recommended fix."""
+    Full identity analysis lives in tests/test_noaa_artifact_identity.py;
+    this keeps the original real-data observation that motivated it."""
     mllw_first = json.loads(MLLW_BYTES)["data"][0]
     stnd_first = json.loads(STND_BYTES)["data"][0]
     assert mllw_first["t"] == stnd_first["t"]
     assert float(mllw_first["v"]) == 0.136 and float(stnd_first["v"]) == 1.2
 
-    pool, mllw_result = _acquire(tmp_path / "collide", MLLW_BYTES, datum="MLLW")
-    _, stnd_result = _acquire(tmp_path / "collide", STND_BYTES, datum="STND", pool=pool)
-    assert {a.locator for a in mllw_result.artifacts} == {a.locator for a in stnd_result.artifacts}
-    assert {a.artifact_id for a in mllw_result.artifacts} == {a.artifact_id for a in stnd_result.artifacts}
-    assert {a.version_id for a in mllw_result.artifacts} != {a.version_id for a in stnd_result.artifacts}, (
-        "different content does at least get a distinct version identity, so no data is lost"
-    )
+    pool, mllw_result = _acquire(tmp_path / "separated", MLLW_BYTES, datum="MLLW")
+    _, stnd_result = _acquire(tmp_path / "separated", STND_BYTES, datum="STND", pool=pool)
+    assert {a.locator for a in mllw_result.artifacts} != {a.locator for a in stnd_result.artifacts}
+    assert {a.artifact_id for a in mllw_result.artifacts} != {a.artifact_id for a in stnd_result.artifacts}
+    assert {a.version_id for a in mllw_result.artifacts} != {a.version_id for a in stnd_result.artifacts}
 
-    # a different DAF source_id does NOT separate them -- the hazard is real
-    separate_pool, separate = _acquire(
-        tmp_path / "separate", STND_BYTES, datum="STND", source_id="noaa-cm-stnd"
-    )
-    _, baseline = _acquire(tmp_path / "separate", MLLW_BYTES, datum="MLLW", pool=separate_pool)
-    assert {a.artifact_id for a in separate.artifacts} == {a.artifact_id for a in baseline.artifacts}, (
-        "artifact identity ignores the DAF source_id entirely"
-    )
-
-    # the scientific consequence, stated plainly: both datums' readings now
-    # sit in the same pool, and they are correctly NOT conflated by analysis
-    # only because `datum` is part of each observation's comparison context
+    # unchanged by the identity fix: analysis keeps them apart because
+    # `datum` is a genuine scientific conditioning variable in its own right
     answer = analyze(pool, ENGINE, MaterialQuestion(material_natural_key=STATION, property="water_level"))
     assert {dict(g.context)["datum"] for g in answer.observed_comparison_groups} == {"MLLW", "STND"}
 

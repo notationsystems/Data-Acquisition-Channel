@@ -1,5 +1,14 @@
 # Phase I — Time-Series / Event Acquisition Validation (NOAA CO-OPS Water Level)
 
+> **Superseded in one respect (Phase R, `docs/PHASE_18_NOAA_ARTIFACT_IDENTITY.md`):**
+> every occurrence of the window locator `"{station}:{product}:{begin}:{end}"`
+> below now reads `"{station}:{product}:{datum}:{units}:{begin}:{end}"`. Phase 17
+> measured NOAA returning scientifically different quantities for one
+> station/product/window under different vertical datums, which collapsed onto a
+> single logical artifact identity. Checkpoint semantics are unchanged —
+> `window_end_of` reads the last component — so everything this document says
+> about cursors, windows and revision behaviour still holds as written.
+
 **Status:** implemented, passing, and validated against the real, live
 NOAA CO-OPS Tides & Currents API. Eighth DAF phase: a THIRD real,
 publicly-accessible external source, deliberately chosen to be neither a

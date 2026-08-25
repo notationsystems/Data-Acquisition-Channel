@@ -160,4 +160,4 @@ def test_noaa_window_locators_are_correctly_indexed(tmp_path):
     artifact_store = ArtifactStore(store)
     artifact = result.artifacts[0]
     assert artifact_store.list_versions(artifact.artifact_id) == (artifact.version_id,)
-    assert artifact_store._locator_for(pool.get_document(artifact.version_id)) == "9999999:water_level:20260101:20260103"
+    assert artifact_store._locator_for(pool.get_document(artifact.version_id)) == "9999999:water_level:MLLW:metric:20260101:20260103"

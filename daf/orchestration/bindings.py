@@ -198,7 +198,8 @@ def usgs_earthquakes_binding() -> AdapterBinding:
 def _advance_noaa_position(
     artifacts: Tuple[AcquiredArtifact, ...], previous_position: Optional[str]
 ) -> Optional[str]:
-    """NOAA's window locator (`"{station}:{product}:{begin}:{end}"`)
+    """NOAA's window locator
+    (`"{station}:{product}:{datum}:{units}:{begin}:{end}"`)
     carries its own cursor value -- the window's end date -- exactly
     like EDGAR's date-string locator and UNLIKE USGS's event-id locator
     (which needed Phase H's `raw_content` field because no cursor
@@ -258,19 +259,16 @@ def noaa_water_level_measurement_binding(
     hitting the live service; omitted, the adapter's live HTTP default is
     used unchanged.
 
-    CALLER CONSTRAINT (a real hazard, measured -- see
-    docs/PHASE_17_LIVE_SCIENTIFIC_OBSERVATION.md sec."Locator collision"):
-    `NoaaWaterLevelSourceAdapter`'s locator is
-    `station:product:start:end` and does NOT include datum or units,
-    while `ArtifactStore.artifact_id` keys on `(source_id, locator)`.
-    Acquiring the same station/product/window under two different datums
-    therefore produces two genuinely different scientific payloads under
-    ONE artifact identity, where the second looks like a REVISION of the
-    first rather than a different quantity. Registering distinct
-    `SourceDefinition.source_id`s per datum/units keeps them apart. This
-    binding does not change the shared adapter's locator format, because
-    that format is also the checkpoint cursor parsed by
-    `daf.adapters.noaa_water_level.window_end_of`."""
+    RESOLVED IN PHASE R (docs/PHASE_18_NOAA_ARTIFACT_IDENTITY.md): making
+    `datum`/`units` configurable here first exposed a real identity
+    collision, since `ArtifactStore.artifact_id` keys on
+    `(source_id, locator)` and the locator encoded only
+    `station:product:begin:end`. Two scientifically different quantities
+    (measured live: MLLW 0.136 m vs STND 1.2 m at the same instant)
+    therefore shared one logical artifact, and the second read as a
+    REVISION of the first. `NoaaWaterLevelSourceAdapter` now includes
+    both dimensions in the locator, so distinct quantities are distinct
+    artifacts. No caller constraint remains."""
 
     def build_adapter(source: SourceDefinition, request: AcquisitionRequest) -> NoaaWaterLevelSourceAdapter:
         since = request.parameters.get("since")
