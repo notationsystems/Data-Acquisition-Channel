@@ -19,6 +19,20 @@ invariants:
   # ---- Epistemic write path. The highest priority set: these close
   # ---- paths that become expensive to repair after records exist.
 
+  - id: a_check_must_be_shown_capable_of_failing
+    rule: "a check establishes nothing until it has been shown to fail on the thing it names. A green suite is not evidence that the tests in it ran."
+    status: enforced
+    implementation: tests/test_no_test_name_is_shadowed.py, tests/test_nonfinite_identity.py
+    enforcement: tests/test_no_test_name_is_shadowed.py
+    mechanisms:
+      - "no module may bind a test name twice -- read from SOURCE via AST, because after import the shadowed definition is already gone and pytest reports the file green with the test absent"
+      - "the shadow guard asserts its own domain is non-empty first, so it cannot pass over an empty glob"
+      - "every new check in this class is probed by planting the defect it claims to catch, before a pass is trusted"
+    measured: "three shadowed functions shipped in a fully green suite; pytest reported 82 collected and passing while three of them did not exist. One called a name the repository does not define, so a two-parser agreement check had been written, committed, and never once executed."
+    limitation: "catches a name bound twice in ONE module. A test absent because it was never written, or skipped by a marker, is a different gap and is not covered here."
+    failure_mode: fail_closed
+    class_record: architecture/proof_integrity.yaml
+
   - id: class_assigned_at_ingest
     rule: "every evidence object's class is fixed in the same call that admits it, and there is no reclassification path"
     status: enforced

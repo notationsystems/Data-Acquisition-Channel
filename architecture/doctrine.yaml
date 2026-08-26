@@ -29,6 +29,7 @@ sources:
   - architecture/method_provenance_reachability.yaml
   - architecture/model_binding.yaml
   - architecture/nonscalar_quantity.yaml
+  - architecture/proof_integrity.yaml
   - architecture/recursive_depth.yaml
 
 budget:
