@@ -27,7 +27,7 @@ blocking_requirements_as_recorded:
     daq_measurement: "the semantic domain WAS supplied -- corrected_semantic_domain now states that depth is evidence-lineage depth and never computation iteration count, and that a recursive estimator running N iterations over one stream is ONE lineage step. But the invariant's status is represented_unenforced, which means the concept is represented in data and NOTHING CHECKS IT."
     verdict: PARTIALLY_CLOSED_AND_NOT_DAQS_TO_DECLARE_CLOSED
     why_not_declared_closed_here: "the requirement is the compute layer's and the judgement of whether a represented-but-unenforced rule satisfies 'the rule must exist' is theirs to make. The consequence they recorded -- that nothing would detect a trajectory drifting arbitrarily far from measured input -- is about depth being TRACKED, which is enforcement rather than semantics. DAQ states what it supplied and what it did not; declaring the requirement met would be DAQ answering its counterparty's question."
-    a_staleness_to_surface_not_fix: "the requirements artifact describes DAQ's invariant as 'declared with status vacuously_enforced and zero references'. DAQ corrected it to represented_unenforced with an operative semantic domain on 2026-08-25. The artifact is the compute layer's and is mirrored read-only here, so this is reported rather than edited."
+    a_staleness_to_surface_not_fix: "the requirements artifact describes DAQ's invariant as 'declared with status vacuously_enforced and zero references'. That is now TWO corrections behind rather than one: DAQ corrected it downward to represented_unenforced on 2026-08-25, when the earlier evidence was found to prove acyclicity rather than boundedness, and it is ENFORCED as of the closure recorded below. The artifact is the compute layer's and is mirrored read-only here, so this is reported rather than edited -- carried in architecture/exchange/daq_requirement_response.yaml, which is the artifact they read."
 
 # ------------------- the requirements OUTSIDE the blocking rows, which is --
 # ------------------- where the least_squares near-miss lived --------------
@@ -122,3 +122,17 @@ requirements_artifact_stability:
 
   and_what_it_immediately_showed: "that structured_measurement_uncertainty is NOT the last row. The artifact lists TWO DAQ-owned blocking rows for kalman_filter_linear and both are UNSATISFIED. Because the artifact has not moved, nothing this phase did to DAQ's OWN invariant could have closed a row in the compute layer's artifact -- only the compute layer can update it, and the closure judgement for recursive_generation_depth is theirs. The stability check and the undercount correction are the same measurement."
   the_undercount_has_now_happened_three_times: "least_squares, where a third requirement sat outside blocking_requirements; Kalman, where four did; and here, where the count of the blocking rows themselves was read as one instead of two. Each time the reading was of a subset as though it were the set. The rule stands and is now stated with its instances: read the workload entry whole, and read the whole of the list you are counting."
+
+# --------------------------------------- both DAQ-owned rows now answered --
+both_daq_rows_answered:
+  structured_measurement_uncertainty:
+    built: science/structured_uncertainty.py
+    what_closed_it: "R expressible, and the ONLY-WHEN clause enforced as a correspondence rule rather than left advisory"
+  recursive_generation_depth:
+    built: science/lineage_depth.py
+    what_closed_it: "both clauses of the rule -- a declared bound that bites, and a depth recorded per record and VERIFIED against lineage rather than trusted"
+    the_composition_guard_is_the_substance: "the recorded semantic domain's last clause covers INITIALIZATION only, and initialization alone closes recursion without closing CHAINING. A filter initialized from a fresh measured state while consuming another filter's output reports depth 0 under that reading, while standing one lineage step further from measurement than the filter it consumes. Depth is a maximum over both kinds of source, so nothing reaches 0 but a record whose every source is measured."
+    the_guard_is_an_extension_not_an_amendment: "the quoted clause is true. It is simply not the whole rule, and the record it came from is unchanged."
+  the_evidence_is_supplied_not_the_status: "architecture/exchange/daq_requirement_response.yaml, content-addressed with a sidecar. It states no status for either row. The compute layer owns the status of its own requirements, and writing SATISFIED there would be DAQ answering their question about their requirement -- the same reason DAQ frames a workload choice and does not elect it."
+  what_moving_the_rows_would_clear: "kalman_filter_linear, whose remaining blockers after that are the compute layer's own -- its covariance contract and its Kalman build, both of which now exist there."
+  the_count_is_derived_not_asserted: "the response addresses every DAQ-owned blocking row the requirements artifact lists, with the set taken from the artifact programmatically. A subset read as the set is a mistake this pair has made three times and it is now checked rather than remembered."

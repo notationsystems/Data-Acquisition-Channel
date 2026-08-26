@@ -60,10 +60,16 @@ def _invariant(invariant_id):
 # ------------------------------------------------- 1. the measured absence
 
 
-def test_no_depth_symbol_is_defined_anywhere():
-    """The first clause of the correction, measured rather than asserted:
-    no authored module and no vendored evidence module defines a
-    depth/generation/lineage symbol."""
+def test_the_depth_symbol_now_exists_and_lives_in_exactly_one_place():
+    """INVERTED. This measured the first clause of the correction: no
+    authored module defined a depth symbol, so the rule's "the depth is
+    recorded" half had nowhere to record anything.
+
+    It is now implemented, and the inversion pins the property that
+    matters after the fact rather than deleting the lock: ONE definition,
+    in `science/lineage_depth.py`. Two modules computing depth is how the
+    number and the lineage stop agreeing, and it is the same drift the
+    leaf rule was made public to prevent."""
     targets = [REPO_ROOT / package for package in AUTHORED]
     targets += [VENDOR / "evidence"]
 
@@ -77,7 +83,10 @@ def test_no_depth_symbol_is_defined_anywhere():
                     lowered = node.name.lower()
                     if any(token in lowered for token in ("generation_depth", "lineage_depth")):
                         found.append(f"{path.name}:{node.name}")
-    assert found == [], f"a depth symbol now exists: {found} -- the invariant's status must be revisited"
+    definitions = {entry.split(":")[0] for entry in found}
+    assert definitions == {"lineage_depth.py"}, (
+        f"lineage depth is defined in more than one module: {sorted(found)}. One definition, or "
+        "the depth and the lineage drift apart.")
 
 
 def test_derived_value_has_no_depth_field():
@@ -92,10 +101,28 @@ def test_derived_value_has_no_depth_field():
     assert "depth" not in names
 
 
-def test_the_invariant_declares_no_bound_value():
+def test_the_invariant_now_declares_a_bound_AND_enforces_it():
+    """INVERTED, and the original wording said exactly how: "a numeric
+    bound now exists; enforce it rather than declaring it". Both halves
+    are asserted, because a declared-but-unenforced bound is the state
+    this invariant was corrected out of once already."""
+    from science.lineage_depth import MAX_LINEAGE_DEPTH, recursive_computation_is_depth_bounded
+
     entry = _invariant("generation_depth_bounded")
-    assert "bound" not in entry, "a numeric bound now exists; enforce it rather than declaring it"
-    assert entry["status"] == "represented_unenforced"
+    assert entry["status"] == "enforced"
+    assert str(MAX_LINEAGE_DEPTH) in str(entry["declared_bound"])
+    assert "POLICY" in entry["declared_bound"], "the number is a choice and must read as one"
+
+    # declared AND enforced: the bound refuses something.
+    over_bound = {
+        "stream_identity": [{"stream_id": "s", "kind": "computed", "prior_id": "deep"}],
+        "window_or_horizon": "10 samples",
+        "initialization_provenance": {"kind": "measured"},
+        "lineage_depth": MAX_LINEAGE_DEPTH + 1,
+    }
+    verdict = recursive_computation_is_depth_bounded(
+        over_bound, {"deep": MAX_LINEAGE_DEPTH}.__getitem__)
+    assert not verdict.admissible
 
 
 def test_ancestry_discards_the_level_at_which_each_node_was_reached():

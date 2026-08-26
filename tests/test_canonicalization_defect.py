@@ -330,15 +330,23 @@ def test_every_directory_with_a_sha256_sidecar_is_covered_by_the_check():
 def _tracked_yaml():
     import subprocess
 
+    # TRACKED **AND UNTRACKED**. Deriving from the index alone made the
+    # surface cover a new artifact only AFTER it was committed -- measured,
+    # when a freshly generated exchange artifact was checked by the older
+    # directory glob and not by this derivation. A check that starts
+    # applying one commit late is the enumerated failure with a clock on
+    # it: correct about the world as it was when someone last looked.
     listing = subprocess.run(
-        ["git", "ls-files", "*.yaml", "*.yml"],
+        ["git", "ls-files", "--cached", "--others", "--exclude-standard", "*.yaml", "*.yml"],
         cwd=str(REPO_ROOT), capture_output=True, text=True,
     )
     if listing.returncode != 0:
         return None
     return sorted(
-        REPO_ROOT / line for line in listing.stdout.split()
-        if not line.startswith("vendor/")
+        {
+            REPO_ROOT / line for line in listing.stdout.split()
+            if not line.startswith("vendor/")
+        }
     )
 
 

@@ -278,9 +278,25 @@ def test_the_record_states_the_split_and_does_not_claim_kalman_is_cleared():
     assert record["named_consuming_workload"]["id"] == "kalman_filter_linear"
 
     still_open = record["named_consuming_workload"]["requirements_still_open"]
-    assert "recursive_generation_depth" in still_open, (
-        "this extension closes ONE of the two DAQ-owned rows blocking Kalman; a record claiming "
-        "otherwise would be the undercount this phase already made twice")
+    closes = record["named_consuming_workload"]["requirement_this_closes"]
+
+    # THE COUNT IS DERIVED FROM THE ARTIFACT, never from this record's prose
+    # or from anyone's recollection. That is the repair for the reading form
+    # of the enumerated class (architecture/proof_integrity.yaml
+    # reading_a_subset_as_though_it_were_the_set), and it is cheap: the test
+    # that already asserts requirements_still_open asserts the count too.
+    requirements = loads(
+        (REPO_ROOT / "architecture" / "exchange" / "scl_requirements.yaml").read_text())
+    daq_rows = {
+        row["requirement"]
+        for row in requirements["workloads"]["kalman_filter_linear"]["blocking_requirements"]
+        if row["owner"] == "daq"
+    }
+    assert closes in daq_rows
+    assert set(still_open) | {closes} == daq_rows, (
+        f"the record accounts for {sorted(set(still_open) | {closes})} of the artifact's "
+        f"{sorted(daq_rows)}. A row the artifact lists and the record does not name is the "
+        "undercount this pair has now made three times.")
 
     owned = record["what_the_compute_layer_owns"]
     assert set(owned) == {"numeric_entry", "rectangular", "square", "symmetric",

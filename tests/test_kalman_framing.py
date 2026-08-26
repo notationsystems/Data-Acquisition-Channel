@@ -174,8 +174,11 @@ def test_the_upstream_staleness_is_reported_and_not_edited():
 
     invariants = loads((REPO_ROOT / "architecture" / "invariants.yaml").read_text())
     ours = next(e for e in invariants["invariants"] if e["id"] == "generation_depth_bounded")
-    assert ours["status"] == "represented_unenforced", (
-        "DAQ's status changed; the framing's staleness report needs re-measuring")
+    assert ours["status"] == "enforced", (
+        "DAQ's status changed again; the framing's staleness report needs re-measuring")
+    assert "TWO corrections behind" in row["a_staleness_to_surface_not_fix"], (
+        "the gap between what the upstream artifact says and what DAQ's invariant says has "
+        "widened; the report must say how far behind it is, not merely that it is behind")
 
 
 # ------------------ the shape rules the gate declines, measured not asserted
