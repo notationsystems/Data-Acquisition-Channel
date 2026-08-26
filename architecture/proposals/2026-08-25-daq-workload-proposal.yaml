@@ -3,6 +3,7 @@
   - "The joint decision is a two-party act. This session has WRITE access to the acquisition repository and READ-ONLY access to the compute layer, so a decision record written here would be one party writing both sides -- which defeats the exact property the record exists to provide, that a decision cannot be reconstructed from one agent's account of both repos."
   - "The decision record belongs where BOTH hashes can be verified against their origin repositories. This proposal carries DAQ's half: the capability measurement, the reading of the compute layer's published requirements, and the recommendation with its rationale."
 "binding_rule": "the two hashes above bind this PROPOSAL to the exact measured artifacts that produced it. If either artifact changes -- including through the coordinated canonicalization fix recorded in architecture/canonicalization_defect.yaml, which re-hashes both -- this proposal must be reissued rather than edited."
+"binding_rule_after_supersession": "this record is now HISTORY and takes no further reissue. Its capabilities_artifact_hash names the bytes it was actually written against, and it must NOT be rebound as that artifact moves: doing so would make a historical proposal claim to bind artifacts that did not exist when it was written, and would reissue a superseded record forever. Its hash is verified against the COMMITTED HISTORY of the artifact instead of against today's bytes -- which is a stronger check, since it proves the record bound something real at the time rather than merely matching now."
 "capabilities_artifact": "architecture/exchange/daq_capabilities.yaml"
 "capabilities_artifact_authority": "authored here; DAQ is its owner and this is the origin copy"
 "capabilities_artifact_hash": "sha256:d985e1a30a3d3978b357ff87edf3842dcba237bcf0536f80887ee2b663492ea5"
@@ -30,6 +31,7 @@
 "recommended_workload": "convolution_1d"
 "reissue":
   "did_the_decision_move": false
+  "final_issue_note": "the last live issue bound the capabilities artifact at sha256:d985e1a30a3d3978b357ff87edf3842dcba237bcf0536f80887ee2b663492ea5. The artifact has moved since, and this record deliberately does not follow it."
   "how_it_moved": "away from fourier_transform_1d because it is BUILT -- withdrawn on completion, not on merit -- and to convolution_1d, the only remaining in-scope candidate the rule admits. The re-measure also revealed that the rule's answer and the highest-leverage answer have come apart: least_squares carries more value and cannot be elected by DAQ alone."
   "issue": 5
   "open_question_this_record_does_not_answer": "the coupling finding -- that multivariate value and structured uncertainty are ONE extension, and that closing the visible half first degrades the silent half -- is an argument about HOW a non-scalar extension would have to be built, not whether to build one now. It bears directly on the least_squares pairing this issue frames but does not elect."
@@ -76,7 +78,9 @@
     - "viterbi"
   "note": "the universal gate the first issue required first -- variable-length array on the wire, generic configuration block, operation-generic result -- is BUILT as of 5447df3 and is no longer a term in any candidate's cost."
 "serializer_note": "a bare ISO date is NOT used as a value anywhere in this record. The vendored canonical_yaml.py leaves 2026-08-25 unquoted, which PyYAML resolves to datetime.date while this repository's own reader returns str -- so such a value would have a parser-dependent hash. The serializer is byte-identical across both repositories by agreement and must not be edited on one side, so the field was removed instead. decision_id carries the date and is not date-shaped. Recorded as a measured gap in the shared serializer."
-"status": "proposed"
+"status": "superseded"
+"superseded_by": "architecture/decisions/2026-08-26-joint-workload-decision.yaml"
+"superseded_note": "the decision record has claimed to supersede this proposal since it was written, while this record's own status still said 'proposed'. Two artifacts disagreeing about one record's state, with nothing checking -- the same shape as every other unbound claim found in this phase."
 "superseded_recommendation": "fourier_transform_1d, recommended in the first issue of this proposal. It is now BUILT in the compute layer, so recommending it is no longer a decision. Withdrawn on completion, not on merit."
 "tradeoff_recorded":
   "generality_falsification_argument": "this argument has been partly SPENT. It selected a transform because the substrate had been exercised by exactly one kernel family. The transform is now built, so the substrate has been exercised by two. convolution_1d is adjacent to the transform rather than orthogonal to it, so it falsifies less than Fourier did -- which is why this reissue's recommendation is weaker than the first issue's rather than merely different."

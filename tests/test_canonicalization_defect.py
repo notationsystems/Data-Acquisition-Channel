@@ -213,12 +213,41 @@ def test_the_fix_is_emitter_side_not_reader_normalization():
     assert "double-quoted always" in scalars or "double-quoted ALWAYS".lower() in scalars
     assert "implicit typing is forbidden" in scalars
 
-    blob = " ".join(str(v) for v in rule.values()).lower()
+    # KEYWORD BAN REPLACED BY A PROPERTY CHECK, and the replacement was
+    # forced by the check's own false positive.
+    #
+    # This scanned every value in the rule for the substrings "normaliz",
+    # "coerce", "post-process", "on read", "after parsing". That is a
+    # coverage predicate specified by enumeration -- of banned WORDS this
+    # time -- and it failed the moment the rule gained a passage EXPLAINING
+    # why reader-side normalization is forbidden. A rule that states the
+    # prohibition trips a check that bans the word for it.
+    #
+    # It is the fourth arrival of that shape in this repository and it is
+    # now a proposed core-vocabulary candidate; see
+    # daq_capabilities.yaml core_vocabulary_candidates. So the repair is
+    # the one that generalizes: assert what the rule must SAY, not which
+    # words it must avoid.
+    prescriptive = " ".join(
+        str(rule[field]) for field in ("scalars", "timestamps", "verification", "forbidden_scalars")
+    ).lower()
     for reader_side in ("normaliz", "coerce", "post-process", "on read", "after parsing"):
-        assert reader_side not in blob, (
-            f"the corrected rule mentions {reader_side!r} -- a reader-side repair hides the "
-            "ambiguity rather than removing it"
+        assert reader_side not in prescriptive, (
+            f"the rule PRESCRIBES {reader_side!r} for the ambiguity class -- a reader-side repair "
+            "hides ambiguous bytes rather than removing them"
         )
+
+    # And the discriminator must actually discriminate, which is the
+    # property the word-ban was standing in for.
+    discriminator = rule["which_side_to_fix"]
+    assert "does a form exist that both sides read identically" in discriminator["ask_first"].lower()
+    assert "writer" in discriminator["if_no"].lower()
+    assert "side that is wrong" in discriminator["if_yes"].lower()
+    assert "relocating" in discriminator["why_this_is_not_a_loophole"].lower(), (
+        "the reader-side branch must state that it is permitted only where there is no ambiguity "
+        "to relocate, or it becomes the loophole the ban existed to prevent"
+    )
+    assert discriminator["measured_basis"], "both branches must name where they were exercised"
 
 
 def test_byte_equality_alone_would_have_passed_the_date_bug():

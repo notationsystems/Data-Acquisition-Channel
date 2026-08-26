@@ -328,6 +328,33 @@ IDENTITY_MODEL = {
 }
 
 
+CORE_VOCABULARY_CANDIDATES = {
+    "coverage_specified_by_enumeration": {
+        "edge": "DAF proposes this as a core-vocabulary candidate on the same footing as absent-is-not-zero and one-meaning-one-encoding, on THREE independent arrivals in this repository: (1) a push reported failed by grepping command output for a failure string, which matched a stale `fatal` and reported failure over a success; (2) a mutation check that a mutation was applied without checking it reached executable semantics, so it passed on a comment; (3) the two-parser typed-agreement check, which globbed architecture/exchange and architecture/proposals and NOT architecture/decisions -- so an escape defect reached a hash-bearing artifact with every suite green.",
+        "the_shared_shape": "in each case the check's PREDICATE was a list someone wrote rather than the property anyone cared about. A check specified by enumeration is correct exactly until the world grows an item nobody added to the list, and it fails SILENTLY at that moment -- it reports success, because the thing it enumerates is still fine.",
+        "the_repair_that_generalizes": "assert the PROPERTY, not the enumeration. The decisions/ hole was not repaired by adding the directory; it was repaired by asserting the rule -- every directory carrying a .sha256 sidecar has its artifacts in the checked set -- which fails on the next hash-bearing directory nobody thought about. Adding the missing item fixes one instance; asserting the property fixes the class.",
+        "how_to_tell_you_are_in_it": "the check names WHAT it looks at instead of deriving it. A glob over a written list of directories, a grep for a specific string, a search over an enumerated set of files -- each is a coverage predicate that cannot notice its own incompleteness.",
+        "why_it_is_worse_than_the_defects_it_hides": "the enumerated check is not merely absent, it is ACTIVELY REASSURING. No coverage at all leaves a visible hole; coverage-by-enumeration reports green over the hole, and a green suite is then cited as evidence that the property holds.",
+        "relation_to_the_other_two_candidates": "absent-is-not-zero is about a VALUE that must not be encodable as another value. One-meaning-one-encoding is about BYTES that must not carry two meanings. This is about a CHECK whose scope must not be a list -- the same family, applied to the verification layer rather than to the data.",
+        "status": "PROPOSED_CORE_VOCABULARY_CANDIDATE",
+    },
+}
+
+
+def _fixture_agreement() -> str:
+    """The fixture digest READ FROM THE SIDECAR rather than transcribed.
+
+    The transcribed value went stale through two coordinated reissues --
+    it named a digest from before both -- because a hand-copied hash in a
+    prose field is a claim nothing binds. Deriving it means the artifact
+    cannot describe an encoding other than the one it was generated
+    under."""
+    recorded = (pathlib.Path(__file__).resolve().parent
+                / "canonicalization_fixture.sha256").read_text().strip()
+    return (f"both repositories independently produce {recorded} for the shared fixture -- "
+            "verified by running canonical_yaml.py in each")
+
+
 DOCUMENT = {
     "artifact": "daq_capabilities",
     "canonicalization": {
@@ -338,12 +365,14 @@ DOCUMENT = {
         "implementation": "architecture/exchange/canonical_yaml.py -- byte-identical to the compute layer's copy",
         "keys": "sorted lexicographically at every level",
         "reference_format": "sha256:<hex>",
-        "serialization": "YAML 1.2, block style only; {} and [] are the one documented exception, since empty collections have no block form",
+        "sequence_in_sequence": "REFUSED at the emitter. The compact block form `- - 1` is read as a nested sequence by PyYAML and as the STRING '- 1' by the dependency-free reader, with no error from either -- same bytes, two values. No emitted form is read identically by both, so it is refused rather than rendered differently.",
+        "serialization": "YAML 1.2, block style only; {} and [] are the one documented exception, since empty collections have no block form. Block style is NOT by itself sufficient for agreement -- `- - 1` is block style and is refused; see sequence_in_sequence.",
         "shared_fixture": "architecture/exchange/canonicalization_fixture.yaml",
-        "shared_fixture_agreement": "both repositories independently produce sha256:5859ce6e16e2be1650b940290574a65864239a876831e747ca5e5d3d6c31429c for the shared fixture -- verified by running canonical_yaml.py in each",
-        "strings": "double-quoted only where plain style would be unsafe or ambiguous",
+        "shared_fixture_agreement": _fixture_agreement(),
+        "strings": "double-quoted ALWAYS, values and keys alike. NOT 'only where plain style would be unsafe' -- that was the rule this artifact carried until the first coordinated reissue replaced it, and the description went un-updated through two reissues because nothing bound an artifact's account of the encoding to the encoding.",
     },
     "capability_inventory": CAPABILITIES,
+    "core_vocabulary_candidates": CORE_VOCABULARY_CANDIDATES,
     "classification_vocabulary": [_EXISTING, _REUSABLE, _SMALL_EXTENSION, _MISSING, _OUT_OF_SCOPE],
     "contains_workload_selection": False,
     "execution_record_resolution": EXECUTION_RECORD_RESOLUTION,

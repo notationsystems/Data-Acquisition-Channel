@@ -82,9 +82,21 @@ papered over.
 
 ### Forensics: has anything already been persisted?
 
-The same check the covariance case earned, and for the same reason — an id
-minted over invalid JSON cannot be recomputed by a conformant reader, so a
-stored record carrying one would be *unrecoverable*, not merely wrong.
+The same check the covariance case earned. **The premise turned out to be
+wrong, and the truth is worse.** The question was framed as "such an id cannot
+be recomputed." Measured — by the concurrent session, verified here — it
+recomputes *perfectly*: `content_hash` is deterministic over the bytes it is
+handed, so a NaN-bearing observation re-mints to the identical id every time.
+
+What a hand-authored NaN store file actually did: `json.loads` read the bare
+`NaN` back without error, the id recomputed without error, the tamper check
+**passed**, and the value it certified was not equal to itself. The
+repository's corruption check did not fail to catch the corruption — it
+*certified* it, correctly by its own rules, over bytes no conformant JSON
+implementation in any language can parse. **Recomputable here, unverifiable by
+anyone else**, which is the one thing a content address exists to prevent.
+
+A check asking only "does recomputation succeed" scores that a clean pass.
 
 Searched every committed file in both repositories for a bare `NaN`/`Infinity`
 token, and counted committed evidence-store artifacts. **Committed evidence
@@ -434,9 +446,146 @@ Performing the join is the compute layer's work.
 
 ## Verification
 
-- full DAF suite: **970 passed**
+- full DAF suite: **1086 passed**
 - vendored SCOUT suite: **1273 passed**, unchanged; submodule tree clean
 - `mypy daf/ science/ boundary/ bridge/ epistemics/`: clean
 - doctrine regenerated from `architecture/*.yaml`; re-running the generator
   produces **zero** further diff
 - both new invariants trace to an enforcement test that names them
+
+## Addendum: the discriminator, the coverage principle, and Kalman framed
+
+### "Block style only" was a prohibition standing in for a positive rule
+
+The correction is the more useful of the two findings, and it's worse than
+non-compliance: **compliance was never sufficient.** `- - "a"` *is* block
+style. The emitter honoured the stated rule and still produced bytes the two
+parsers type differently. A prohibition ("no flow style") had been standing in
+for a positive rule ("emit only forms both sides read identically"), and it
+held for scalars by luck.
+
+The spec now names the refusal explicitly, and the capabilities artifact
+records that block style is **not by itself sufficient** for agreement.
+
+### The discriminator, stated in the rule
+
+Two encoding defects look identical from a distance and take opposite repairs.
+The rule now asks the question rather than leaving it to instinct:
+
+> **Does a form exist that both sides read identically?**
+>
+> - **No** → refuse at the **writer**. The bytes genuinely carry two meanings
+>   and no rendering escapes that. *(scalar class, collection class)*
+> - **Yes** → fix the **side that is wrong**. The bytes have one correct
+>   meaning and one reader is non-conformant. *(escape class)*
+
+The reader-side branch is not a loophole, and the rule says why: the
+prohibition is about **relocating an ambiguity**. A reader normalizing a
+correctly-parsed date back to a string leaves the bytes ambiguous for every
+other reader. A reader failing to decode a well-defined escape had no
+ambiguity to relocate — it was returning a wrong answer to a question with one
+right answer. That it moved no artifact and no digest is the tell.
+
+### Coverage by enumeration → proposed as a core-vocabulary candidate
+
+Filed in `daq_capabilities.yaml` under `core_vocabulary_candidates`, alongside
+absent-is-not-zero and one-meaning-one-encoding. The shared shape: **the
+check's predicate was a list someone wrote rather than the property anyone
+cared about.** It fails silently, and worse than no check — it reports green
+over the hole.
+
+Three arrivals justified the proposal. Landing it turned up **four more in one
+pass**, each caught by asserting a property where a list had been:
+
+| where | the enumeration | the property |
+|---|---|---|
+| the reissue chain check | named `canonicalization_fixture_hash` only | bound fields **derived** from the record — caught two more unchained bindings |
+| the reader-normalization ban | banned five **words** | assert what the rule must *say* — the word-ban false-positived on the passage explaining the prohibition |
+| the proposal's status lock | pinned the literal `"proposed"` | it never became a *decision*, whatever state it reached |
+| the capabilities artifact's own `canonicalization` block | transcribed digest + prose rule | digest **derived** from the sidecar; string rule checked against emitter behaviour |
+
+That last one is the sharpest: the artifact that *describes* the encoding
+carried the **pre-always-quote** string rule and a fixture digest from before
+*both* reissues. Two coordinated reissues landed and neither updated the
+artifact's account of what they changed, because nothing bound a claim in an
+artifact to the thing it claimed about.
+
+### A correction to my own half
+
+The concurrent session found that the recorded reason for the collection
+refusal was wrong: the reader doesn't refuse a nested sequence in general, it
+**silently mistypes** the single-element form. Their accounting says both
+halves made that error. Checking rather than accepting: my original probe used
+single-element inner sequences and measured the silent case correctly —
+`canonicalization_defect.yaml` has said so since `88248ac`, unchanged.
+
+What I actually did wrong is narrower and worth naming: I adopted their
+serializer **wholesale** on a behavioural-equivalence check. That check was
+sound for *behaviour* — byte-identical output across every document — and I
+extended it without re-verification to the **stated reason** in the adopted
+file's prose, which contradicted a record sitting in the same repository.
+Nothing caught it because nothing compares a code comment to an architecture
+record.
+
+Their lesson was "agreement between authors is not a measurement." The sharper
+form here: the two halves *disagreed in writing* and the merge silently
+resolved it in favour of the wrong one. Behavioural equivalence licenses taking
+the other side's **code**. It does not license taking their **account of why**.
+
+The module docstring still carried the wrong reason after their fix — they
+corrected the inline comment 100 lines below and the spec block above still
+said `REFUSES`. Now consistent.
+
+## Kalman: framed, and the claim does not survive measurement
+
+"Kalman's blocker is now only the covariance extension" — checked, and it is
+**partly** right. Two supports hold. The third does not, and reading the
+workload entry *whole* turns up four DAQ-owned requirements outside
+`blocking_requirements`.
+
+**Cell typing was resolved on one axis only.** The rules I added — no bool, no
+sentinel, no numeric-looking string — ran **only for scalar cells**. Measured:
+
+```
+vector with NaN     ADMITTED        matrix with a bool   ADMITTED
+vector with a bool  ADMITTED        mapping with NaN     ADMITTED
+```
+
+A covariance is a matrix of cells. The exact case flagged — *a bool in a
+covariance passes a PSD check while meaning nothing* — was the case still
+passing. Refusing a bool **as** the cell did nothing about a bool **inside**
+it. Now closed by applying one rule set recursively to every leaf, enforced as
+a property (every leaf refused alone is refused nested, carrying the same
+reason) rather than as two parallel lists — because two rule sets that agree
+today are exactly how this opened. **Shape stays deferred by name**:
+raggedness, dimensionality, symmetry and PSD are the covariance extension's
+contract.
+
+**What actually blocks Kalman — five open DAQ-owned requirements, four of them
+outside the blocking list:**
+
+| requirement | where it lives | measured |
+|---|---|---|
+| structured measurement uncertainty | blocking | open — one scalar `uncertainty`, no covariance |
+| recursive generation depth | blocking | semantic domain **supplied**; still `represented_unenforced` — and not DAQ's to declare closed |
+| ordering required and significant | `ordering_requirements` | open — no order field on `Observation` |
+| stream identity | `observation_requirements` | open — no stream concept anywhere |
+| elapsed time between measurements | `observation_requirements` | open — the Δt rule, arriving as a hard requirement |
+| units per measurement component | `required_metadata` | open — one unit per observation |
+| conditions affecting measurement noise | `condition_requirements` | **likely satisfied** |
+
+The sharp part: **the aligned-table gate refuses precisely what Kalman
+requires.** It rejects positional identity by name, because `least_squares`
+states ordering is explicitly *not* required by its modality; Kalman's modality
+is `ordered_multivariate_time_series`. Neither gate is wrong — the modalities
+genuinely differ — but the extension built this phase does **not** carry over,
+and a session reaching for it would reach for the wrong shape.
+
+**Why the undercount happened twice**, both times from the same cause: reading
+`blocking_requirements` as if it were the requirement list. It is the subset
+the counterparty marked as blocking. Two arrivals make it a reading rule, not
+an incident: **read the workload entry whole.**
+
+Nothing of the five was started. This record frames; it does not elect —
+building one before the decision would be electing by momentum, which is the
+defect already recorded against the selection rule.

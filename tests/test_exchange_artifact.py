@@ -413,3 +413,73 @@ def test_the_emitter_refuses_a_non_finite_float():
     for value in (float("nan"), float("inf"), float("-inf")):
         with pytest.raises(ValueError, match="non-finite"):
             cy.canonical_dump({"k": value})
+
+
+# ------ an artifact's ACCOUNT of the encoding, bound to the encoding itself
+#
+# A fourth arrival of the shape this repository now proposes as a
+# core-vocabulary candidate. The capabilities artifact carries a
+# `canonicalization` block DESCRIBING the encoding, and that description
+# went stale through TWO coordinated reissues without any suite noticing:
+# it stated `strings: double-quoted only where plain style would be unsafe`
+# -- the rule the FIRST reissue replaced -- and named a shared-fixture
+# digest from before both. Nothing was checking, because nothing bound a
+# claim in an artifact to the thing it claimed about.
+
+
+def test_the_artifacts_claimed_fixture_digest_is_the_real_one():
+    """The transcribed digest is now DERIVED from the sidecar, so this
+    should hold by construction. Asserted anyway: `by construction` is a
+    property of today's generator, and the previous value was also once
+    correct by construction."""
+    import re
+    claimed = re.search(r"sha256:[0-9a-f]{64}",
+                        DOCUMENT["canonicalization"]["shared_fixture_agreement"])
+    assert claimed, "the agreement statement names no digest at all"
+    recorded = (EXCHANGE / "canonicalization_fixture.sha256").read_text().strip()
+    assert claimed.group(0) == recorded, (
+        "the artifact describes a shared fixture other than the committed one")
+    assert claimed.group(0) == cy.canonical_sha256(cy.FIXTURE)
+
+
+def test_the_artifacts_string_rule_matches_the_emitter_that_produced_it():
+    """The stale claim, checked against behaviour rather than against
+    prose. The artifact said strings are quoted `only where plain style
+    would be unsafe`; the emitter quotes every string unconditionally, and
+    has since the first reissue."""
+    rule = DOCUMENT["canonicalization"]["strings"].lower()
+    assert "always" in rule, "the artifact states a string rule the emitter does not implement"
+    assert "only where" not in rule.split("not '")[0], "the superseded rule is stated as current"
+
+    # behaviour, not prose: a scalar needing no quoting is quoted anyway
+    assert cy.canonical_dump({"k": "plain"}) == '"k": "plain"\n'
+
+
+def test_the_artifact_records_that_block_style_is_not_sufficient():
+    """The correction that came out of this phase and is easy to lose: the
+    emitter WAS honouring `block style only`, and `- - 1` is block style.
+    Compliance with the stated rule was never sufficient for agreement,
+    which is why the rule now names the refusal explicitly rather than
+    leaving a prohibition to stand in for it."""
+    canonicalization = DOCUMENT["canonicalization"]
+    assert "REFUSED" in canonicalization["sequence_in_sequence"]
+    assert "NOT by itself sufficient" in canonicalization["serialization"]
+
+    with pytest.raises(TypeError, match="sequence directly inside a sequence"):
+        cy.canonical_dump({"k": [[1]]})
+
+
+def test_the_new_core_vocabulary_candidate_is_not_filed_as_an_unresolved_edge():
+    """It is a PROPOSAL, and the two have different statuses and different
+    obligations. Filing it under unresolved_edges made the edge check fail,
+    which was the right failure: an edge says `nobody has solved this`, a
+    candidate says `this belongs in the shared vocabulary`."""
+    candidates = DOCUMENT["core_vocabulary_candidates"]
+    entry = candidates["coverage_specified_by_enumeration"]
+    assert entry["status"] == "PROPOSED_CORE_VOCABULARY_CANDIDATE"
+    assert "coverage_specified_by_enumeration" not in UNRESOLVED_EDGES
+
+    # It must carry the three arrivals, since a candidate on one arrival is
+    # an anecdote -- the standard the compute layer set for absent-is-not-zero.
+    assert entry["edge"].count("(") >= 3
+    assert "absent-is-not-zero" in entry["relation_to_the_other_two_candidates"]

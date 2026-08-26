@@ -34,6 +34,19 @@
   "scalars": "implicit typing is forbidden -- every scalar is emitted with an explicit resolved type. Strings are double-quoted ALWAYS (not 'only where required'); numbers and booleans are emitted in canonical form and never as bare words that could resolve otherwise."
   "timestamps": "ISO-8601 strings, double-quoted, never native date/datetime"
   "verification": "round-trip through two independent parsers must yield identical TYPED STRUCTURES, not merely identical bytes. This is a required step of Phase 2, not an optional check."
+
+  # THE DISCRIMINATOR. Added because the next person to hit an encoding
+  # defect will reach for the rule above, and the rule above does not tell
+  # them which half of it they are in. Two defects that look identical
+  # from a distance take OPPOSITE repairs, and this phase hit both in the
+  # same pass.
+  "which_side_to_fix":
+    "ask_first": "does a form exist that both sides read identically?"
+    "if_no": "REFUSE AT THE WRITER. The bytes genuinely carry two meanings and no rendering escapes that, so the only fix is not to emit them. The scalar class -- a bare `2026-08-25` typed as str by one parser and date by another -- and the collection class -- a compact `- - 1` typed as a nested list by one reader and a string by the other -- are both here."
+    "if_yes": "FIX THE SIDE THAT IS WRONG. The bytes have exactly one correct meaning under the spec and one reader is non-conformant. The escape class is here: the five escapes the emitter produces have one meaning under YAML 1.2, PyYAML already returned it, and the dependency-free reader simply did not decode them."
+    "why_this_is_not_a_loophole": "the prohibition on reader-side repair is about RELOCATING an ambiguity. A reader that normalizes a correctly-parsed date back into a string leaves the bytes ambiguous for every OTHER reader and hides the defect behind one implementation. A reader that was failing to decode a well-defined escape had no ambiguity to relocate -- it was returning a wrong answer to a question with one right answer. Repairing it moves no artifact and no digest, which is itself the tell."
+    "the_failure_mode_this_prevents": "reaching for 'always fix the emitter' without asking the question, which preserves a non-conformant reader behind a writer-side workaround and leaves every other consumer of that reader still wrong."
+    "measured_basis": "both branches were exercised in one phase. The collection class had NO form both readers accept -- written long, the minimal reader raises where the compact form silently mistypes -- so refusal was the only emitter-side option. The escape class round-tripped correctly through PyYAML the entire time."
 "extends": "core@1.0.0"
 "fix_is_verified":
   "conclusion": "'strings always double-quoted' closes the entire measured class in one rule, including all six current divergences"

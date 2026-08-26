@@ -82,6 +82,7 @@ VALUE_AND_ABSENCE_BOTH_PRESENT = "VALUE_AND_ABSENCE_BOTH_PRESENT"
 SENTINEL_ENCODED_ABSENCE = "SENTINEL_ENCODED_ABSENCE"
 BOOLEAN_IS_NOT_A_QUANTITY = "BOOLEAN_IS_NOT_A_QUANTITY"
 NUMERIC_LOOKING_STRING_CELL = "NUMERIC_LOOKING_STRING_CELL"
+COMPOSITE_CELL_LEAF_IS_NOT_A_QUANTITY = "COMPOSITE_CELL_LEAF_IS_NOT_A_QUANTITY"
 POSITIONAL_IDENTITY_IS_NOT_IDENTITY = "POSITIONAL_IDENTITY_IS_NOT_IDENTITY"
 
 SAMPLE_ID = "sample_id"
@@ -104,6 +105,62 @@ def _looks_numeric(text: str) -> bool:
     except (TypeError, ValueError):
         return False
     return True
+
+
+
+def _cell_leaf_reason(value: object) -> str:
+    """The scalar-cell rules, as one function, so a composite cell can be
+    held to exactly the same ones its leaves would face alone."""
+    if isinstance(value, bool):
+        return BOOLEAN_IS_NOT_A_QUANTITY
+    if isinstance(value, str):
+        return NUMERIC_LOOKING_STRING_CELL if _looks_numeric(value) else ""
+    if isinstance(value, (int, float)) and not math.isfinite(value):
+        return SENTINEL_ENCODED_ABSENCE
+    return ""
+
+
+def _composite_cell_reasons(value: object) -> Tuple[str, ...]:
+    """MEASURED HOLE, closed here. Every cell rule this gate enforces --
+    no bool, no sentinel, no numeric-looking string -- ran only when the
+    cell was a SCALAR. The moment a cell was a list or a mapping, none of
+    them ran: a vector carrying NaN, a vector carrying a bool, and a
+    MATRIX carrying a bool were all admissible.
+
+    That last one is the exact case the covariance work was warned about
+    -- a covariance is a matrix of cells, and a bool in one passes a
+    positive-semidefiniteness check while meaning nothing. Refusing a
+    bool AS the cell did nothing about a bool INSIDE it, so the rule was
+    closed on one axis and open on the other.
+
+    WHAT THIS DOES NOT DECIDE. Shape is not touched: raggedness,
+    dimensionality, symmetry and positive-semidefiniteness are the
+    covariance extension's contract to define, and inventing them here
+    would pre-empt a decision that belongs in the joint record. This
+    applies only the rules already decided, at every depth."""
+    if isinstance(value, Mapping):
+        items: Tuple[object, ...] = tuple(value.values())
+    elif isinstance(value, (list, tuple)):
+        items = tuple(value)
+    else:
+        return ()
+
+    reasons: List[str] = []
+    for item in items:
+        if isinstance(item, (Mapping, list, tuple)):
+            reasons.extend(_composite_cell_reasons(item))
+            continue
+        leaf = _cell_leaf_reason(item)
+        if leaf:
+            reasons.append(COMPOSITE_CELL_LEAF_IS_NOT_A_QUANTITY)
+            reasons.append(leaf)
+    # Deduplicated, order-preserving: one bad leaf and fifty bad leaves are
+    # the same verdict, and a fifty-entry reason list is unreadable.
+    seen = []
+    for reason in reasons:
+        if reason not in seen:
+            seen.append(reason)
+    return tuple(seen)
 
 
 def _identity_is_typed(content: Mapping[str, object], key: str, missing: str, untyped: str) -> Tuple[str, ...]:
@@ -144,7 +201,7 @@ def _conditions_are_recoverable(content: Mapping[str, object]) -> Tuple[str, ...
     if not isinstance(conditions, Mapping):
         return (CONDITION_KEYS_ARE_NOT_IDENTIFIERS,)
 
-    reasons = []
+    reasons: List[str] = []
     if any(not isinstance(key, str) or not key.strip() for key in conditions):
         reasons.append(CONDITION_KEYS_ARE_NOT_IDENTIFIERS)
     # A condition named `variable` or `sample_id` collides with the
@@ -188,7 +245,9 @@ def observation_is_table_alignable(content: Mapping[str, object]) -> Admissibili
         reasons.append(VALUE_AND_ABSENCE_BOTH_PRESENT)
     elif has_value:
         value = content["value"]
-        if isinstance(value, bool):
+        if isinstance(value, (Mapping, list, tuple)):
+            reasons.extend(_composite_cell_reasons(value))
+        elif isinstance(value, bool):
             # MEASURED: a bool cell was admissible here. `isinstance(True,
             # int)` is True in Python, so a bool passes every numeric check
             # that does not exclude it by name -- and downstream it means
