@@ -126,3 +126,26 @@ run:
     the_general_statement: "A GATE APPLIED TO CONTENT IT DOES NOT GOVERN PRODUCES REFUSALS THAT ARE NOT EVIDENCE. A reachability proof that counts refusals cannot tell those from the ones it was looking for, and this probe produced four of them before producing zero real ones."
 
   why_this_is_the_demonstration_the_probe_was_for: "the constraint on this probe was that confirming a gate was REACHED is not confirming WHICH gate. That was stated as a risk and then occurred, three times, in the probe written to respect it. The predicted-id comparison is what separated 'refused' from 'refused for the reason claimed' on every one."
+
+# ----------------------------------------------------------------------
+# THE FLAGGED FOLLOW-ON, measured after the run: is PDI-without-lineage the
+# COMPOSITION GUARD'S BOUNDARY, or a SECOND UNOWNED RELATION?
+#
+# The diagnostic offered was whether the quantities are jointly interpreted
+# downstream. Measured, they are, and the answer is the second.
+# ----------------------------------------------------------------------
+the_pdi_relation:
+  question: "PDI is admitted with no lineage to the moments it divides. Is that generation_depth_bounded's declared boundary, or a relation nobody owns?"
+  answer: A_SECOND_UNOWNED_RELATION
+
+  why_it_is_not_the_composition_guard_s_boundary: "the lineage gate governs DECLARED recursion -- a computation stating stream_identity, window_or_horizon and initialization_provenance. A PDI printed by a GPC instrument declares none of that and correctly should not: it was not computed here. The instrument derived it. Observation is documented as 'always tied to exactly one extraction event over one Record', and that extraction event is real. So the lineage gate is not failing to reach this; the relation is outside what it is about."
+
+  what_is_actually_missing: "any way to say that one observation is a FUNCTION of two others. Measured: DerivedValue.derived_from expresses exactly this and applies only when the derivation happens HERE. ClaimedRelationship relates REFERENTS -- from_referent_id, to_referent_id -- so it cannot relate observations at all. Nothing else in science/, epistemics/, daf/ or the vendored evidence types names functional dependence between observations; a search for functional/depends_on/computed_from/not_independent returns nothing."
+
+  the_joint_interpretation_measured_not_argued: "Mn, Mw and PDI on one batch share sample_id and conditions, so the aligned observation table joins them into ONE ROW as THREE INDEPENDENT COLUMNS. All three are admissible; verified directly. And Mw/Mn = 1.050000 equals the declared PDI to six decimal places -- the third column carries no information the first two do not."
+
+  the_concrete_consequence: "a consumer fitting over those columns, or propagating uncertainty across them, double-counts one measurement. Nothing in the row, the gate or the table records the dependence, so nothing can warn it."
+
+  why_it_is_the_polymer_vertical_s_decision: "the shape is general -- any derived-at-source quantity arriving beside its inputs has it -- but whether the substrate should carry inter-observation functional dependence is a representation change, and this pair's rule is that a workload names its extension. Recorded as a framing for the vertical, with data in hand, not as a proposal."
+
+  what_would_settle_it: "a real polymer acquisition where a GPC report supplies Mn, Mw and PDI together. If the downstream consumer treats them as independent, the cost is measurable rather than argued."

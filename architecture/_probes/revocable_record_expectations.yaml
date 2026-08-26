@@ -1,0 +1,91 @@
+# THE REVOCABLE-RECORD PROBE, STATED BEFORE IT IS RUN.
+#
+# The last UNTESTED property in architecture/_probes/generality.yaml, and
+# the one that reaches the recorded candidate bend. architecture/
+# invariants.yaml records `retraction` with status ABSENT: the store is
+# append-only and content-addressed, no delete method exists, and no
+# tombstone, supersession or retraction path exists for any evidence type.
+#
+# WHY IT MATTERS MORE THAN THE OTHER THREE. cohort_identity was a missing
+# DISTINCTION -- nothing was broken, nothing refused. This one is a missing
+# CAPABILITY with a live consequence: a source that can compel revocation
+# (a retracted paper, a withdrawn dataset, a subject exercising erasure)
+# cannot be honestly onboarded, because the onboarding would promise
+# something the substrate cannot do. That promise is the bend.
+#
+# EXPECTED IDS, NOT EXPECTED REFUSALS. Same discipline as the cohort probe,
+# and the cohort probe is why it is restated rather than assumed: that run
+# produced FOUR real refusals from correctly-behaving gates, none of which
+# was about the property under test. Counting them would have inverted the
+# result. Here the risk is sharper still, because the expected outcome is
+# an ABSENCE -- and an absence is what every wrong stimulus also produces.
+extends: core@1.0.0
+
+probe: revocable_record
+status: expectations_recorded_run_not_yet_performed
+property_under_test: "can an admitted Observation be removed, tombstoned or superseded -- and if not, what exactly happens to a caller who tries?"
+
+# ---------------------------------------------------- the derived basis --
+
+surveyed_before_stating_expectations:
+  method: "searched daf/, epistemics/ and the vendored evidence types for any def named delete/remove/retract/tombstone/purge, and read the store's public surface."
+  removal_methods_found: 0
+  what_the_invariant_says: "retraction, status ABSENT: 'FilesystemEvidenceStore is append-only and content-addressed and has no delete method; no tombstone, supersession or retraction path exists for any evidence type'"
+  what_that_licenses: "an expectation. Zero methods means no INTENDED path; whether an unintended one exists -- an overwrite, a same-id rewrite, a store that silently accepts a replacement -- is what the run measures."
+
+# ------------------------------------------------------- the plantings --
+#
+# THE ABSENCE PROBLEM. Four of these predict that something CANNOT be done,
+# and 'it did not work' is what a wrong stimulus produces too. So each case
+# names the OBSERVABLE it expects -- an exception type, a returned value, a
+# post-condition on the store -- rather than merely 'fails'. A case that
+# fails differently than predicted is a gate reached and a claim
+# unsupported, exactly as in the cohort probe.
+
+cases:
+
+  - name: no_removal_method_exists_on_the_store
+    plant: "introspect FilesystemEvidenceStore's public surface for a removal operation"
+    expected_observable: "no attribute named delete/remove/retract/tombstone/purge, checked by name against the class rather than by grep over source"
+    expected_exception: null
+    reasoning: "the invariant claims this and a source grep agrees; introspecting the CLASS tests the claim against the object a caller actually holds."
+    what_a_surprise_would_mean: "a removal path exists that the invariant does not know about, which would be a more serious finding than the gap."
+
+  - name: rewriting_an_id_with_different_content_is_refused
+    plant: "persist an Observation, then persist a DIFFERENT Observation under the same id"
+    expected_observable: "the store refuses, or the original bytes survive unchanged"
+    expected_exception: "ArtifactIdentityMismatch or an equivalent refusal naming the identity conflict"
+    reasoning: "the store re-verifies an existing file's own identity on write. A same-id rewrite with different content is the closest thing to a delete-and-replace that the API permits attempting."
+    what_a_surprise_would_mean: "content-addressing is not enforced on write, which would make every digest in the pair unreliable -- a far larger finding."
+
+  - name: re_persisting_identical_content_is_idempotent_not_a_conflict
+    plant: "persist the same Observation twice"
+    expected_observable: "no exception, and the stored bytes are unchanged"
+    expected_exception: null
+    reasoning: "the write path returns early when the existing file already validly represents the id. This is the CONTROL case: it shows the refusal above is about the identity conflict and not about writing twice."
+
+  - name: nothing_expresses_supersession_between_two_observations
+    plant: "search the evidence vocabulary for a supersedes/replaces/retracts relation"
+    expected_observable: "no such relation type, and ClaimedRelationship relates REFERENTS rather than observations, so it cannot carry one"
+    expected_exception: null
+    reasoning: "supersession is the weaker cousin of deletion -- keep the bytes, mark them superseded. If it existed, revocation would be partially expressible without deleting anything."
+    what_a_surprise_would_mean: "a supersession path exists, and the bend is smaller than recorded."
+
+  - name: a_revoked_observation_would_orphan_downstream_state
+    plant: "confirm that a downstream reference to an observation id exists and would not be repaired by removal"
+    expected_observable: "at least one structure references an observation by id with no back-reference from the observation, so removing the observation leaves the reference dangling"
+    expected_exception: null
+    reasoning: "this is the consequence the invariant records. It is the reason deletion is not merely unimplemented but unsafe to implement naively, and it is the part a decision to bend would have to price."
+
+# --------------------------------------------------------- the verdict --
+
+predicted_outcome:
+  cases: 5
+  the_claim: "there is no removal path, no supersession relation, and no repair for downstream references -- so revocation is not merely unbuilt, it is unrepresentable, and a source that can compel it cannot be onboarded without promising something the substrate cannot do."
+
+how_this_probe_can_fail_honestly:
+  - "a removal or supersession path is found -> the invariant's ABSENT status is wrong and the bend is smaller than recorded."
+  - "a case fails with an unexpected observable -> the mechanism predicted did not produce the outcome, and the claim is unsupported even where the outcome matched."
+  - "the same-id rewrite SUCCEEDS -> a far larger finding than this probe was scoped for, and it invalidates content-addressing rather than merely confirming a gap."
+
+what_this_probe_does_not_decide: "whether to take the bend. Measuring that a capability is absent, and what its absence costs, is not proposing that it be built. bend_protocol governs that decision and this probe is an input to it."
