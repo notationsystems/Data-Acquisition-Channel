@@ -268,3 +268,28 @@ def test_both_gaps_share_one_constraint_surface():
     # precedent the sequence half does not yet have.
     assert hash(FrozenMapping({"a": 1}))
     assert json.dumps(FrozenMapping({"a": 1})) == '{"a": 1}'
+
+
+def test_two_extractors_pass_arbitrary_content_through_verbatim():
+    """The exposure is not bounded by what extractors currently EMIT,
+    because two of them emit whatever they are given.
+
+    `graph_dataset` consumes entities/relations as structure and passes
+    every other key through; `local_dataset` passes the entire parsed JSON
+    object through with no structural extraction at all -- broader still.
+    So the §8 repair has to tighten this route, not only add covariance
+    support, or the next unhashable shape arrives the same way. Recorded
+    in architecture/nonscalar_quantity.yaml pass_through_path."""
+    extractors = pathlib.Path(__file__).resolve().parent.parent / "daf" / "extractors"
+
+    local = (extractors / "local_dataset.py").read_text()
+    assert "content = json.loads(record.raw_content)" in local
+    assert "content=content," in local, "local_dataset hands the parsed object straight to content"
+
+    graph = (extractors / "graph_dataset.py").read_text()
+    assert "verbatim" in graph or "unmodified" in graph
+
+    # neither inspects a value's SHAPE on the way in
+    for source, name in ((local, "local_dataset"), (graph, "graph_dataset")):
+        assert "isinstance(value, (int, float))" not in source, (
+            f"{name} appears to type-check content values; update this test if it now does")
