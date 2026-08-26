@@ -345,7 +345,7 @@ migration rules were needed and none were invented.
 | `tests/test_canonicalization_defect.py` | **38 passed** (new) |
 | `tests/test_daq_workload_proposal.py` | **25 passed** (new) |
 | `tests/test_recursive_lineage_depth.py` | **17 passed** (new) |
-| DAF full suite | **832 passed** |
+| DAF full suite | **842 passed** |
 | Vendored SCOUT suite | 1273 passed, unchanged |
 | Submodule | clean |
 | SCL clone | untouched, `git status --porcelain` empty |

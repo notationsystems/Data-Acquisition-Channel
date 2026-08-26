@@ -32,6 +32,7 @@ Nothing here weakens the rule. The rule is retained verbatim; the
 from __future__ import annotations
 
 import ast
+import json
 from pathlib import Path
 
 import pytest
@@ -371,3 +372,95 @@ def test_the_two_vacuity_style_invariants_both_have_real_checks(invariant_id):
     entry = _invariant(invariant_id)
     named = entry["enforcement"].split(",")[0].strip()
     assert invariant_id in (REPO_ROOT / named).read_text()
+
+
+# ============ 4. the DOMAIN is empty, not merely un-violated
+#
+# The three layers above are detectors: they scan authored source for a
+# generative path and find none. That establishes NO VIOLATION WAS FOUND,
+# which is a weaker claim than THE DOMAIN IS EMPTY, and the two come apart
+# exactly when a detector's coverage narrows -- a path shaped differently
+# from `make_derived_value(`, a record written by a tool, a fixture that
+# gets persisted. A guard that would silently stop detecting is the same
+# failure class as a conformance test that has never failed.
+#
+# So the domain is also asserted DIRECTLY, at the record level: `computed`
+# and `derived` are admissible-but-unproduced classes, and the first
+# record of either is the domain becoming non-empty. That trips this
+# guard REGARDLESS of whether the record is well-formed -- which is why
+# the scan reads raw JSON rather than going through
+# `assignment_from_dict`. A corrupt computed record is still a computed
+# record; a parse-based check would refuse it and report nothing found.
+
+GENERATIVE_CLASSES = {"computed", "derived"}
+
+
+def _raw_class_values_on_disk():
+    """Every `evidence_class` value in any committed assignment file,
+    read as raw JSON so a malformed record is still seen."""
+    seen = []
+    for directory in REPO_ROOT.rglob("evidence_classes"):
+        if not directory.is_dir() or "vendor" in directory.parts:
+            continue
+        for path in sorted(directory.rglob("*.json")):
+            try:
+                payload = json.loads(path.read_text())
+            except ValueError:
+                # unparseable, but its presence is still a record; surface
+                # it rather than skipping, which is the whole point.
+                seen.append(("<unparseable>", path))
+                continue
+            seen.append((payload.get("evidence_class"), path))
+    return seen
+
+
+def test_no_generative_class_record_exists_anywhere():
+    """The domain, asserted directly rather than inferred from a source
+    scan. Fails on the FIRST computed or derived record, well-formed or
+    not."""
+    offenders = [(value, str(path.relative_to(REPO_ROOT)))
+                 for value, path in _raw_class_values_on_disk()
+                 if value in GENERATIVE_CLASSES or value == "<unparseable>"]
+    assert not offenders, (
+        f"a generative-class record exists: {offenders}. generation_depth_bounded's "
+        "domain is no longer empty -- write the depth rule before this ships.")
+
+
+def test_the_generative_classes_are_admissible_so_emptiness_is_a_fact_not_a_prohibition():
+    """Why this layer is needed at all: nothing FORBIDS a computed or
+    derived assignment. Both are canonically admissible. The domain is
+    empty because nothing produces one, and that is a fact about today
+    that no rule protects."""
+    from epistemics.evidence_class import COMPUTED, DERIVED, _CANONICAL_ADMISSIBLE
+
+    assert COMPUTED in _CANONICAL_ADMISSIBLE
+    assert DERIVED in _CANONICAL_ADMISSIBLE
+    assert {COMPUTED, DERIVED} == GENERATIVE_CLASSES
+
+
+def test_the_domain_detector_fires_on_a_planted_record(tmp_path):
+    """A guard that cannot fire reads as protection while providing none.
+    Planted twice: once well-formed, once corrupt, because the corrupt
+    case is the one a parse-based check would miss."""
+    directory = tmp_path / "store" / "evidence_classes"
+    directory.mkdir(parents=True)
+    (directory / "well_formed.json").write_text(json.dumps({
+        "id": "x", "evidence_id": "e1", "evidence_kind": "derived_value",
+        "evidence_class": "derived", "assigned_by": "planted",
+    }))
+    (directory / "corrupt.json").write_text('{"evidence_class": "computed"')
+
+    def scan(root):
+        found = []
+        for path in sorted((root).rglob("evidence_classes/*.json")):
+            try:
+                found.append(json.loads(path.read_text()).get("evidence_class"))
+            except ValueError:
+                found.append("<unparseable>")
+        return found
+
+    seen = scan(tmp_path)
+    assert "derived" in seen, "the well-formed generative record must be seen"
+    assert "<unparseable>" in seen, (
+        "the corrupt generative record must ALSO be seen -- a parse-based "
+        "check would report nothing found while a computed record exists")

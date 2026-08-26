@@ -107,7 +107,7 @@ CAPABILITIES = {
     },
     "generation_depth_tracking": {
         "classification": _MISSING,
-        "evidence": "architecture/recursive_depth.yaml. generation_depth_bounded is declared with status vacuously_enforced; `generation_depth` appears nowhere in source. The invariant is declared and its DOMAIN is empty.",
+        "evidence": "architecture/recursive_depth.yaml. `generation_depth` appears nowhere in source; DerivedValue has no depth field; ancestry_of returns a flat set union that discards the level each node was reached at. The invariant's status was CORRECTED to represented_unenforced -- its former vacuously_enforced evidence argued only that a derivation CYCLE is unconstructible, which is true and does not support the rule: acyclicity is not boundedness.",
     },
     "physical_actuation": {
         "classification": _OUT_OF_SCOPE,
@@ -150,7 +150,7 @@ REQUIREMENT_RESPONSES = {
     "recursive_generation_depth": {
         "raised_by": "scl_requirements.yaml workloads.kalman_filter_linear",
         "daf_status": "UNSATISFIED",
-        "measured_basis": "architecture/recursive_depth.yaml; generation_depth_bounded is vacuously_enforced with an empty domain and no implementation",
+        "measured_basis": "architecture/recursive_depth.yaml; generation_depth_bounded has no implementation and an empty domain. Its status has since been corrected from vacuously_enforced to represented_unenforced, because the former evidence proved acyclicity rather than boundedness.",
         "caveat": "routed as write-it-correctly-first, and determined NOT to be a bend provided the rule is authored before the first recursive result exists. The proposed rule is recorded as offered, not adopted.",
     },
     "stable_sample_and_variable_identity": {
@@ -197,6 +197,14 @@ NONSCALAR_QUANTITY_FINDING = {
         "but_unreached_is_not_unreachable": "daf/extractors/graph_dataset.py consumes entities/relations as structure and passes EVERY other key into Observation.content unmodified, by design. A source record declaring a covariance would be carried through verbatim, admitted, and content-addressed. The hole is closed today by what sources happen to send, not by any check -- the same extractor and the same mechanism as the Phase 35 verbatim-pass-through finding for `conditions`, in a different field.",
         "enforcement": "tests/test_nonscalar_quantity_frontier.py::test_no_extractor_emits_a_nonscalar_uncertainty, ::test_no_committed_fixture_carries_a_nonscalar_uncertainty, ::test_but_the_pass_through_extractor_would_carry_one_verbatim",
     },
+    "the_fix_must_also_tighten_the_pass_through": {
+        "finding": "daf/extractors/graph_dataset.py passes every non-structural key into Observation.content unmodified, and daf/extractors/local_dataset.py passes the ENTIRE parsed JSON object through with no structural extraction at all. Neither inspects a value's shape.",
+        "consequence_for_scope": "the exposure is not bounded by what extractors currently emit. Adding covariance SUPPORT while leaving the pass-through open fixes the shape that was named and leaves the route open for the next one, which would again be admitted, again receive a stable id, and again fail only at the comparison layer.",
+        "precedent": "not hypothetical -- the Phase 35 finding is the same route producing a plain unhashable dict for a declared `conditions` object.",
+        "requirement": "a structured-uncertainty extension must tighten the verbatim route as well as add representation, so the contract binds shapes nobody wrote an extractor for.",
+        "not_decided_here": "whether tightening means validating content shapes at the extraction boundary, refusing unknown non-scalar shapes, or wrapping them on the way in. That belongs to whoever builds the extension; this records that the pass-through is IN SCOPE for it.",
+        "enforcement": "tests/test_nonscalar_quantity_frontier.py::test_two_extractors_pass_arbitrary_content_through_verbatim",
+    },
     "which_half_must_lead": {
         "answer": "the structured-uncertainty half",
         "reason": "it is the silent one. Closing the multivariate half first converts the uncertainty failure from a loud gate refusal into a silent late TypeError, so the visible half cannot go first without making the invisible half worse. Ordering within a single extension, not two extensions.",
@@ -219,28 +227,36 @@ EXECUTION_RECORD_RESOLUTION = {
     "adopted_shape": "discriminated kind with a shared core",
     "shared_core_is_the_intersection": True,
     "shared_core": [
-        "id", "operation_id", "runtime_id", "started_at", "finished_at", "status",
+        "id", "runtime_id", "started_at", "finished_at", "status",
         "input_fingerprint", "output_fingerprint", "error", "parent_execution_id",
         "content_digest",
     ],
     "acquisition_only": [
-        "plan_id", "source_id", "adapter_id", "adapter_version", "outcome",
-        "artifact_ids", "version_ids", "admission_failure_count",
+        "acquisition_operation_id", "plan_id", "source_id", "adapter_id",
+        "adapter_version", "outcome", "artifact_ids", "version_ids",
+        "admission_failure_count",
     ],
     "computation_only": [
-        "backend", "backend_version", "hardware", "seed", "verification_status",
-        "computation_identity",
+        "computation_request_id", "backend", "backend_version", "hardware", "seed",
+        "verification_status", "computation_identity",
     ],
     "refused_merges": "adapter_version/backend_version, outcome/verification_status and output_fingerprint/computation_identity are analogies rather than identities and were deliberately NOT unified; unifying any of them would change what content_digest covers in exchange for a word",
-    "core_field_constraint_raised": {
-        "field": "operation_id",
-        "finding": "present in both kinds, but NOT meaning the same thing. DAF's operation_id is H(plan_id, source_id, parameters, mode) and deliberately EXCLUDES the adapter, because a coordinate is never an identity. The compute layer's operation identity INCLUDES the backend, so the same mathematics on a different backend is a different operation there.",
-        "why_it_matters": "a consumer reading operation_id from a core-typed record without knowing the kind would conclude that equal operation_id means the same logical request regardless of how it ran -- true for acquisition, false for computation. A silent, kind-dependent misreading of a field the core presents as uniform.",
-        "proposed_constraint": "the unified record's operation_id is implementation-independent for every kind; the implementation lives in the kind block, where both kinds already carry it (adapter_id/adapter_version, backend/backend_version). This is also the non-redundant reading: with backend already a computation_only field, folding it into operation_id states it twice.",
-        "scope": "constrains the unified RECORD's field only. It says nothing about how the compute layer computes its own internal identities.",
-        "status": "RAISED_FOR_THE_JOINT_DECISION",
-        "if_rejected": "operation_id leaves the shared core and moves into both kind blocks, which is the same answer the strict intersection test gives once the constraint is refused",
-        "how_it_was_found": "by re-reading every core field for kind-specific MEANING rather than kind-specific PRESENCE. It was the only field that failed, and it is the most load-bearing one in the core.",
+    "core_membership_rule": {
+        "requires_both": ["present_in_every_kind", "identical_semantics_across_kinds"],
+        "comparability_test": "a consumer must be able to compare the field across kinds WITHOUT KNOWING which kind it holds, and get a right answer",
+        "on_presence_without_semantic_agreement": "move to the per-kind branches, with DIFFERENT NAMES if the meanings differ -- a shared name across differing meanings is the invitation to compare that the rule exists to remove",
+        "why_the_first_version_was_insufficient": "it tested presence in both kinds and nothing else. That is how the junk drawer forms: a field present in both and meaning different things in each passes, lands in the core, then answers correctly for one kind and silently wrongly for the other. No error, no type failure -- a wrong equality.",
+        "worked_case_operation_id": {
+            "passed": "present_in_every_kind",
+            "failed": "identical_semantics_across_kinds",
+            "the_disagreement": "DAF's operation_id is H(plan_id, source_id, parameters, mode) and deliberately EXCLUDES the adapter, because a coordinate is never an identity here. The compute layer's request identity INCLUDES the backend, so the same mathematics on a different backend is a different request there. BOTH ARE RIGHT FOR THEIR DOMAIN, which is what makes it dangerous -- there is no error on either side to correct.",
+            "consequence_if_it_had_stayed": "a shared core CONTAINING this field is worse than one without it, because the core is what promises comparability.",
+            "resolution": "REMOVED from the core. Split into acquisition_operation_id and computation_request_id -- two names, because two meanings.",
+            "why_not_keep_it_with_a_constraint": "an earlier revision kept it in the core and required implementation-independence of every kind. That imposes DAF's semantics on the compute layer's own identity model to preserve a field position -- the wrong trade. Moving it costs nothing while there is one kind.",
+        },
+        "consequence_for_the_core": "the core now carries NO kind-relative identity field. `id` remains and passes on its own terms: its DERIVATION is per-kind (it hashes whichever request identity the kind has), its MEANING is not. Derivation may be kind-specific; meaning may not.",
+        "status": "RESOLVED_IN_DAF",
+        "enforcement": "tests/test_execution_record_divergence.py",
     },
     "rejected_shapes": {
         "abstract_contract_two_concretes": "collapses into the adopted shape at the persistence boundary, since execution_record_from_dict must recover the kind FROM THE PAYLOAD, which requires a discriminant anyway",
@@ -256,7 +272,7 @@ EXECUTION_RECORD_RESOLUTION = {
 RECURSIVE_DEPTH_DETERMINATION = {
     "invariant": "generation_depth_bounded",
     "implemented": False,
-    "invariant_status": "vacuously_enforced",
+    "invariant_status": "represented_unenforced",
     "measured_basis": "`generation_depth` appears nowhere in daf/, epistemics/, science/, boundary/, bridge/ or assertion/. The invariant is DECLARED and its DOMAIN is empty -- a third state, neither enforced nor absent.",
     "correction_mode": "write_it_correctly_first",
     "correction_mode_reason": "demonstrate-then-correct requires an implementation whose behaviour can be demonstrated and then corrected; there is none",
@@ -268,6 +284,13 @@ RECURSIVE_DEPTH_DETERMINATION = {
     "proposed_rule_status": "offered_not_adopted",
     "daf_assessment_of_the_guard": "the composition guard is the substantive part and is correct to include: without it, a chain alternating computation and re-ingestion would reset to depth 0 at every re-ingestion, so an arbitrarily long derived chain could present as depth 0 while satisfying the letter of the rule",
     "what_daf_would_still_have_to_supply": "the rule references initialization_provenance and a per-stream evidence class. Evidence classes exist; nothing carries a per-stream class into a computation's inputs. That is DAF-side work and is not costed here.",
+    "domain_emptiness_is_asserted_directly": {
+        "why": "the source-level detectors establish NO VIOLATION WAS FOUND, which is weaker than THE DOMAIN IS EMPTY. The two come apart exactly when a detector's coverage narrows -- a path shaped differently, a record written by a tool, a fixture that gets persisted. A guard that would silently stop detecting is the same failure class as a conformance test that has never failed.",
+        "what_is_asserted": "no `computed` or `derived` evidence-class record exists anywhere, scanned as RAW JSON rather than through assignment_from_dict -- because a corrupt computed record is still a computed record, and a parse-based check would refuse it and report nothing found.",
+        "fires_on": "the first record of either class, well-formed or not",
+        "why_this_layer_is_needed": "nothing FORBIDS a computed or derived assignment; both are canonically admissible. The domain is empty because nothing produces one, and that is a fact about today which no rule protects.",
+        "enforcement": "tests/test_recursive_lineage_depth.py::test_no_generative_class_record_exists_anywhere, proven to fire by ::test_the_domain_detector_fires_on_a_planted_record",
+    },
     "detail": "architecture/recursive_depth.yaml",
 }
 

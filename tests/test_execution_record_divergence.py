@@ -48,13 +48,14 @@ def resolution():
     return document["divergence_resolution"]
 
 
+def _names(entries):
+    """Every field block is a YAML sequence whose entries are either a
+    bare name or a one-key mapping of name to rationale."""
+    return [next(iter(e)) if isinstance(e, dict) else e for e in entries]
+
+
 def _core_names(resolution):
-    """The shared core is written as a YAML sequence whose entries are
-    either a bare name or a one-key mapping of name to rationale."""
-    names = []
-    for entry in resolution["shared_core"]:
-        names.append(next(iter(entry)) if isinstance(entry, dict) else entry)
-    return names
+    return _names(resolution["shared_core"])
 
 
 # ------------------------------------------------ the shape is decided
@@ -80,8 +81,8 @@ def test_the_shared_core_is_disjoint_from_both_kind_specific_blocks(resolution):
     """A field in the core must not also be claimed by one kind: that
     would make it kind-specific and shared at once."""
     core = set(_core_names(resolution))
-    acquisition = set(resolution["acquisition_only"])
-    computation = set(resolution["computation_only"])
+    acquisition = set(_names(resolution["acquisition_only"]))
+    computation = set(_names(resolution["computation_only"]))
     assert core & acquisition == set(), core & acquisition
     assert core & computation == set(), core & computation
     assert acquisition & computation == set(), "the two kind blocks must not overlap"
@@ -94,7 +95,58 @@ def test_the_shared_core_is_not_the_union(resolution):
     assert core, "an empty core would mean shape C (rename) was the right answer"
     for kind in ("acquisition_only", "computation_only"):
         assert resolution[kind], f"{kind} is empty -- then there is nothing to discriminate"
-        assert not set(resolution[kind]) <= core
+        assert not set(_names(resolution[kind])) <= core
+
+
+def test_the_core_carries_no_kind_relative_identity_field(resolution):
+    """THE CORRECTED RULE. Presence in both kinds is necessary and NOT
+    sufficient: the field must also mean the same thing under both, so a
+    consumer can compare it across kinds without knowing which it holds.
+
+    `operation_id` passed the presence test and failed the semantic one --
+    DAF excludes the adapter, the compute layer includes the backend, and
+    both are right for their domain, which is what made it dangerous. A
+    core CONTAINING it is worse than one without, because the core is what
+    promises comparability."""
+    core = set(_core_names(resolution))
+    assert "operation_id" not in core, (
+        "operation_id is kind-relative and must not sit in the shared core")
+    for kind_relative in ("acquisition_operation_id", "computation_request_id"):
+        assert kind_relative not in core
+
+    acquisition = set(_names(resolution["acquisition_only"]))
+    computation = set(_names(resolution["computation_only"]))
+    assert "acquisition_operation_id" in acquisition
+    assert "computation_request_id" in computation
+    assert acquisition.isdisjoint(computation), (
+        "the two request-identity fields must not share a name -- a shared "
+        "name across differing meanings is the invitation to compare")
+
+
+def test_the_core_membership_rule_is_stated_as_data(resolution):
+    """Stated alongside the lock because the next field will face the same
+    choice, and prose alone did not stop the first mistake."""
+    rule = resolution["core_membership_rule"]
+    assert rule["requires_both"] == ["present_in_every_kind",
+                                     "identical_semantics_across_kinds"]
+    assert "without knowing which kind" in rule["comparability_test"].lower()
+    assert "different names" in rule["on_presence_without_semantic_agreement"].lower()
+    worked = rule["worked_case_operation_id"]
+    assert worked["passed"] == "present_in_every_kind"
+    assert worked["failed"] == "identical_semantics_across_kinds"
+    assert "both are right for their domain" in worked["the_disagreement"].lower()
+    assert "no kind-relative identity field" in rule["consequence_for_the_core"].lower()
+
+
+def test_id_survives_because_derivation_may_be_kind_specific_but_meaning_may_not(resolution):
+    """`id` hashes whichever request identity the kind carries, so its
+    DERIVATION is kind-specific -- and it still belongs in the core,
+    because equal id means the same execution under any kind. The rule is
+    about meaning, not about derivation."""
+    core = _core_names(resolution)
+    assert "id" in core
+    rule = resolution["core_membership_rule"]
+    assert "derivation may be kind-specific" in rule["consequence_for_the_core"].lower()
 
 
 def test_the_core_costs_the_acquisition_kind_no_field(resolution):
@@ -106,17 +158,27 @@ def test_the_core_costs_the_acquisition_kind_no_field(resolution):
     assert not missing, f"the core claims fields the real record lacks: {missing}"
 
 
+#: today's field -> the name it takes under the adopted shape. Only the
+#: renamed one appears; everything else keeps its name.
+RENAMED_UNDER_SHAPE_A = {"operation_id": "acquisition_operation_id"}
+
+
 def test_every_acquisition_only_field_is_real(resolution):
+    """Each acquisition_only field is one today's record has, allowing for
+    the one deliberate rename. The rename is listed explicitly so it
+    cannot be mistaken for a field that quietly appeared."""
     actual = {f.name for f in dataclasses.fields(ExecutionRecord)}
-    missing = set(resolution["acquisition_only"]) - actual
+    actual |= set(RENAMED_UNDER_SHAPE_A.values())
+    missing = set(_names(resolution["acquisition_only"])) - actual
     assert not missing, f"acquisition_only names fields the record lacks: {missing}"
 
 
 def test_the_core_and_acquisition_block_together_account_for_the_whole_record(resolution):
     """Nothing in today's record may be silently unclassified: every
     existing field is either shared or acquisition-specific."""
-    actual = {f.name for f in dataclasses.fields(ExecutionRecord)}
-    classified = set(_core_names(resolution)) | set(resolution["acquisition_only"])
+    actual = {RENAMED_UNDER_SHAPE_A.get(f.name, f.name)
+              for f in dataclasses.fields(ExecutionRecord)}
+    classified = set(_core_names(resolution)) | set(_names(resolution["acquisition_only"]))
     assert actual - classified == set(), f"unclassified fields: {actual - classified}"
 
 

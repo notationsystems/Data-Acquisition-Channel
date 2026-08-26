@@ -81,6 +81,21 @@ open_semantic_questions:
   variable_identity: "a vector's components need stable identity, or component order becomes load-bearing in exactly the way row order is not allowed to be for an unordered modality"
   partial_absence: "one component measured and another not is representable for neither shape today; absent-vs-zero applies per component, not per quantity"
 
+# ------------------------------- what a fix must ALSO tighten --
+#
+# The forensic answer is that no covariance has ever been
+# content-addressed, so the repair is forward-only. That is the right
+# level of alarm and it is NOT the whole scope, because the exposure is
+# not bounded by what extractors currently emit.
+
+pass_through_path:
+  finding: "daf/extractors/graph_dataset.py consumes entities/relations as structure and passes EVERY other key into Observation.content unmodified, by design. daf/extractors/local_dataset.py does the same. So a source record declaring a covariance -- or any other non-scalar shape nobody has thought of -- is carried through, admitted, and content-addressed, without any extractor being changed."
+  why_it_matters_for_scope: "adding covariance SUPPORT while leaving the pass-through open fixes the shape we happen to have named and leaves the route open for the next one. The next unhashable shape would arrive by exactly the same path, and would again be admitted, again receive a stable id, and again fail only at the comparison layer."
+  precedent: "this is not hypothetical. The Phase 35 finding is the same extractor and the same mechanism producing a plain, unhashable dict for a declared `conditions` object -- a different field, an identical route."
+  consequence_for_the_fix: "a structured-uncertainty extension must tighten the pass-through path as well as add representation. Whatever the non-scalar contract turns out to be, the verbatim route has to be made to CHECK against it rather than to bypass it -- otherwise the contract binds only the shapes an extractor was written for."
+  what_this_does_not_decide: "whether tightening means validating content shapes at the extraction boundary, refusing unknown non-scalar shapes, or wrapping them in a hashable representation on the way in. That is the extension's design and belongs to whoever builds it; this file records that the pass-through is IN SCOPE for it, not merely adjacent to it."
+  status: RECORDED_IN_SCOPE
+
 # ------------------------------------------------------- not claimed --
 
 not_claimed:
