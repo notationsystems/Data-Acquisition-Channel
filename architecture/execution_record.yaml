@@ -133,6 +133,7 @@ divergence_resolution:
       resolution: "moved to the per-kind branches as acquisition_operation_id and computation_request_id. Two names, because two meanings."
       why_not_keep_it_with_a_constraint: "an earlier revision kept it in the core and required implementation-independence of every kind. That imposes DAF's semantics on the compute layer's own identity model to preserve a field position -- the wrong trade. Moving it costs nothing while there is one kind, and each branch naming its own is cleaner than a constrained shared name."
 
+    the_formulation_that_separates_the_two_failures: "DERIVATION MAY BE KIND-SPECIFIC; MEANING MAY NOT. That is the whole rule in one line, and it is what keeps `id` and `operation_id` from looking like an inconsistency. operation_id had ONE NAME FOR TWO MEANINGS, which breaks a consumer that compares it. `id` has ONE MEANING WITH TWO DERIVATIONS, which breaks nothing -- a consumer comparing two ids gets the right answer under either kind. Stated here because the next reader will see one identity-ish field in the core and one out of it, and that asymmetry is deliberate rather than an oversight."
     consequence_for_the_core: "the core now carries NO kind-relative identity field. `id` remains, and passes on its own terms: its DERIVATION is per-kind (it hashes whichever request identity the kind has) but its MEANING is not -- equal id means the same execution under any kind. Derivation may be kind-specific; meaning may not."
 
     fields_re_read_and_found_genuinely_shared:

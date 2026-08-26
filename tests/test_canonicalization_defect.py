@@ -71,16 +71,22 @@ def _round_trips_as_a_string(text, original):
 
 
 @pytest.mark.parametrize("scalar", DIVERGING)
-def test_each_known_diverging_scalar_still_diverges(scalar):
-    """A characterization lock. If one of these starts passing, the
-    shared serializer changed -- which re-hashes every artifact and must
-    be a coordinated reissue, not a silent improvement."""
+def test_each_formerly_diverging_scalar_now_survives(scalar):
+    """INVERTED, deliberately, and the inversion is the point.
+
+    This began as a characterization lock asserting the divergence still
+    existed, with the instruction that it must not be turned green by a
+    silent serializer change but by a COORDINATED REISSUE that re-hashes
+    every artifact. That reissue has now happened: the shared serializer
+    quotes every string unconditionally, both repositories carry the
+    byte-identical file, and every digest moved in the same step.
+
+    So the assertion is inverted rather than deleted -- the six scalars
+    that measurably diverged are the six this rule had to close, and they
+    stay named here as the regression surface."""
     text = canonical_dump({"k": scalar})
-    assert not _round_trips_as_a_string(text, scalar), (
-        f"{scalar!r} no longer diverges -- the shared serializer changed. Every artifact digest "
-        "must be reissued in the same coordinated step; update "
-        "architecture/canonicalization_defect.yaml rather than this assertion."
-    )
+    assert _round_trips_as_a_string(text, scalar), (
+        f"{scalar!r} diverges again -- the always-quote rule has regressed")
 
 
 @pytest.mark.parametrize("scalar", CURRENTLY_SAFE)
@@ -89,13 +95,16 @@ def test_scalars_that_currently_survive_still_survive(scalar):
     assert _round_trips_as_a_string(text, scalar), f"{scalar!r} regressed into the divergence class"
 
 
-def test_the_divergence_class_is_exactly_what_is_recorded():
-    """The recorded count must match the measurement, so the artifact
-    cannot drift away from reality."""
+def test_the_divergence_class_is_now_empty():
+    """The whole class, not merely its six named instances. Both groups
+    are measured together, because the incidental passes were never held
+    by any rule and are exactly what regresses on a parser upgrade."""
     measured = [s for s in DIVERGING + CURRENTLY_SAFE
                 if not _round_trips_as_a_string(canonical_dump({"k": s}), s)]
-    assert sorted(measured) == sorted(DIVERGING)
-    assert DEFECT["measured_failure_class"]["scalars_that_diverge"] == len(DIVERGING)
+    assert measured == [], f"still diverging: {measured}"
+    assert DEFECT["measured_failure_class"]["scalars_that_diverge"] == len(DIVERGING), (
+        "the RECORD keeps the original measurement; it is history, not current state")
+    assert DEFECT["status"] == "corrected_applied_in_both_repositories"
 
 
 def test_the_prescribed_fix_closes_the_entire_class():
@@ -112,11 +121,24 @@ def test_the_prescribed_fix_closes_the_entire_class():
     assert DEFECT["fix_is_verified"]["divergences_after"] == 0
 
 
+def test_the_record_states_the_fix_is_emitter_side_and_landed_in_both():
+    applied = DEFECT["applied"]
+    assert "unconditionally" in applied["what_landed"]
+    assert applied["fix_is_emitter_side"].startswith("deliberately")
+    assert "reader-side" in applied["fix_is_emitter_side"], (
+        "a reader-side normalization restates the defect rather than fixing it")
+    assert "TWO independent parsers" in applied["verified"]
+    assert "0 divergences" in applied["verified"]
+    assert "byte-identical in both repositories" in applied["byte_identity_preserved"]
+    assert "one commit per repository" in applied["landed_as"]
+    assert applied["incidental_passes_now_pinned"]
+
+
 def test_it_is_recorded_as_a_class_not_as_a_date_bug():
     summary = DEFECT["summary"].lower()
     assert "class" in summary
     assert "always" in summary
-    assert DEFECT["status"] == "measured_open_requires_coordination"
+    assert DEFECT["status"] == "corrected_applied_in_both_repositories"
 
 
 def test_the_shared_serializer_was_not_patched_unilaterally():
