@@ -102,8 +102,53 @@ def test_no_bare_iso_date_is_used_as_a_value():
 
 
 def test_exactly_one_workload_and_one_extension_are_recommended():
-    assert PROPOSAL["recommended_workload"] == "fourier_transform_1d"
+    """The recommendation is whatever the CURRENT matrix admits -- not a
+    name frozen into this test. Issue 1 recommended fourier_transform_1d
+    from a stale matrix; the re-measure moved it, which is what a
+    re-measure is for."""
+    recommended = PROPOSAL["recommended_workload"]
+    assert isinstance(recommended, str) and recommended
     assert PROPOSAL["recommended_daq_extension"] == "none"
+    assert recommended not in PROPOSAL["scope"]["do_not_build"]
+    assert recommended in PROPOSAL["scope"]["build"]
+
+
+def test_a_workload_already_built_is_never_recommended():
+    """Recommending something that exists is not a decision."""
+    built = PROPOSAL["scope"]["already_built_do_not_rebuild"]
+    assert PROPOSAL["recommended_workload"] not in built
+    assert "fourier_transform_1d" in built
+    assert "BUILT" in PROPOSAL["superseded_recommendation"]
+
+
+def test_the_reissue_chain_is_recorded_rather_than_overwritten():
+    """Each issue's basis stays visible, so a reader can see the
+    recommendation move and why."""
+    reissue = PROPOSAL["reissue"]
+    assert reissue["issue"] >= 3
+    assert len(reissue["previous_issues"]) == reissue["issue"] - 1
+
+    # The chain must still show WHERE the recommendation last moved, even
+    # once later issues are re-encodings that move nothing. Asserting the
+    # HEAD issue moved would make a pure re-encoding impossible to record
+    # honestly.
+    moved = [i for i in reissue["previous_issues"] + [reissue]
+             if i.get("did_the_decision_move") or i.get("how_it_moved")]
+    assert moved, "the chain must record at least one substantive movement"
+
+    basis = " ".join(str(i.get("reason", "")) + str(i.get("basis", ""))
+                     for i in reissue["previous_issues"] + [reissue])
+    assert "5447df3" in basis and "edfc2dc" in basis, (
+        "the stale-versus-current compute-layer commits stay visible in the chain")
+
+    if reissue["did_the_decision_move"] is False:
+        assert "RE-ENCODING ONLY" in reissue["reason"], (
+            "an issue that moves nothing must say why it exists")
+
+
+def test_the_recommendation_rests_on_the_remeasured_matrix():
+    assert PROPOSAL["matrix_basis"] == "architecture/workload_primitive_matrix.yaml"
+    assert (REPO_ROOT / PROPOSAL["matrix_basis"]).exists()
 
 
 def test_it_is_a_proposal_and_says_so():
@@ -121,7 +166,7 @@ def test_the_requirements_artifact_is_declared_a_read_only_mirror():
     from here it would be DAQ's account of it instead."""
     authority = " ".join(PROPOSAL["requirements_artifact_authority"]).lower()
     assert "read-only mirror" in authority
-    assert "not regenerated in this repository" in authority.replace("was not", "not")
+    assert "sidecar" in authority, "what makes the mirror trustworthy is the upstream digest"
     assert PROPOSAL["requirements_artifact_hash"] == PROPOSAL["requirements_artifact_upstream_sha256"], (
         "the mirror must hash to the digest recorded in the ORIGIN repository"
     )
@@ -140,8 +185,10 @@ def test_the_selected_workload_is_one_daq_actually_satisfies():
     selected = PROPOSAL["recommended_workload"]
     assert selected in workloads, f"{selected!r} is absent from the requirements artifact"
 
-    blocking = workloads[selected]["blocking_requirements"]
-    assert blocking, f"{selected} declares no blocking requirements at all"
+    # An EMPTY blocking list is the ideal case -- fully unblocked on both
+    # sides -- not a missing declaration. Asserting it non-empty was a real
+    # test bug: it failed exactly the candidate the rule most wants.
+    blocking = workloads[selected]["blocking_requirements"] or []
     unmet = [
         entry["requirement"]
         for entry in blocking

@@ -1,0 +1,129 @@
+artifact: workload_primitive_matrix
+compute_layer_reported_not_verified_here:
+  attribution: "reported by the compute layer. NOT re-derived in this repository: the native build cannot run on this host. Recorded with attribution rather than as a DAQ measurement."
+  fourier_validation: 40 of 40
+  suite: 203 passing
+extends: core@1.0.0
+how_the_leverage_argument_shifted:
+  - The old matrix's central claim was a universal gate -- a variable-length array on the wire, a generic configuration block, an operation-generic result -- that unblocked zero workloads by itself and behind which everything sat. That gate is now BUILT. Its cost has already been paid by the compute layer, and it is no longer a term in any candidate's cost.
+  - "The old matrix scored fourier_transform_1d at 9 of 10 primitives needing new code. That was true of edfc2dc. It is now BUILT, so it cannot be recommended: a recommendation to build something that exists is not a decision."
+  - convolution_1d was scored second-cheapest in the old matrix at 6 primitives. Re-measured, the compute layer records ZERO blocking requirements for it on either side -- the wire layer it needed is built, and the transform gives it a second implementation strategy via the convolution theorem. It is now the only fully unblocked candidate that is also in scope.
+  - "The reuse-leverage chain (least_squares to linear algebra to Kalman to PCA) is UNCHANGED in its arithmetic and unchanged in being blocked. What changed is the shape of the blockage: least_squares is now the only candidate whose blockers split across both repositories, which makes it the natural subject of the joint rule's second clause -- the smallest DAQ extension that unblocks the highest-leverage justified workload."
+  - "So the re-measure does move the answer, and it moves it twice: away from fourier_transform_1d because it is done, and toward a genuine choice between convolution_1d (zero blockers, low marginal value now that the transform exists) and a paired least_squares extension (high leverage, requires a DAQ representation change). That choice is not made here."
+measured_against:
+  compute_layer_commit: 5447df3
+  intervening_commits:
+    - e49828b -- generalized the operation boundary, added fourier_transform_1d
+    - 0bb3e66 -- Phase 1 recon and the Phase 2 exchange artifact
+    - 5447df3 -- stated the operation contract, generalized the annotating-parameter rule
+  previous_measurement_commit: edfc2dc
+  what_daq_can_and_cannot_measure_here: "STRUCTURE is measurable from this repository: source files, the registry table, type signatures, the wire layout, and the test count via collection. BEHAVIOUR is not: the native build needs nlohmann_json, which is absent on this host, so the compute layer's suite errors at its build fixture here. Every behavioural figure below is attributed to the compute layer's own report and is NOT re-derived here. Cross-repository measurement without the build is exactly where a confident wrong number enters."
+owner: daf
+primitive_status_remeasured:
+  - evidence: length is derived from byte count over element size; fourier consumes N*16 bytes, lj N*24. Was the head of the old universal gate.
+    primitive: variable_length_1d_array_on_the_wire
+    status: EXISTING
+  - evidence: each operation decodes its own configuration; fourier uses int32 direction, int32 normalization, int32 has_spacing, int32 reserved, then a double
+    primitive: generic_per_operation_configuration_block
+    status: EXISTING
+  - evidence: OperationOutcome carries raw output bytes plus metrics
+    primitive: operation_generic_result_shape
+    status: EXISTING
+  - evidence: operation_registry.cpp table, find_operation, supported_operation_names
+    primitive: operation_registry
+    status: EXISTING
+  - evidence: std::complex<double> throughout fourier.cpp -- was MISSING at edfc2dc
+    primitive: complex_arithmetic
+    status: EXISTING
+  - evidence: fourier_transform_1d, forward and inverse -- was MISSING at edfc2dc
+    primitive: discrete_fourier_transform
+    status: EXISTING
+  - evidence: FourierNormalization enum participates in parameters identity, not a backend default
+    primitive: normalization_convention_as_a_parameter
+    status: EXISTING
+  - evidence: sample spacing enters request identity but not computation identity, and absence is an explicit has_sample_spacing flag rather than a sentinel
+    primitive: annotating_parameter_rule
+    status: EXISTING
+  - evidence: no rank or dimension field exists in the envelope or in bytes.hpp; a 1-D run of float64 crosses, a 2-D matrix cannot cross AS a matrix
+    primitive: explicit_rank_or_dims_on_the_wire
+    status: MISSING
+  - evidence: no occurrence in native sources
+    primitive: matrix_multiplication
+    status: MISSING
+  - evidence: no occurrence in native sources
+    primitive: transpose
+    status: MISSING
+  - evidence: no QR, Cholesky, SVD or normal-equation path exists
+    primitive: stable_linear_solve
+    status: MISSING
+  - evidence: no decomposition of any kind exists
+    primitive: symmetric_eigendecomposition_or_svd
+    status: MISSING
+  - evidence: no covariance representation exists
+    primitive: covariance_propagation
+    status: MISSING
+  - evidence: every operation is a pure function of one request; no cross-call state exists
+    primitive: stateful_feedback_across_calls
+    status: MISSING
+  - evidence: no occurrence
+    primitive: dynamic_programming_table_with_backtracking
+    status: MISSING
+status: remeasured
+structural_measurements:
+  byte_layer: native/include/scl/bytes.hpp provides read_double_le, write_double_le, read_int32_le
+  complex_arithmetic: present -- native/src/fourier.cpp operates on std::vector<std::complex<double>>
+  dispatch: a registry table in native/src/operation_registry.cpp with find_operation(name) and supported_operation_names() -- no longer the single string equality measured at edfc2dc
+  operations_registered:
+    - lj_pairwise_energy_forces
+    - fourier_transform_1d
+  outcome_shape: OperationOutcome carries raw std::vector<uint8_t> output plus named metrics, rather than the hardwired (energy, forces) pair measured at edfc2dc
+  request_shape: OperationRequest carries raw std::vector<uint8_t> configuration and input; each operation validates its own layout. The 24-byte LJ-specific envelope constraint measured at edfc2dc is gone from the boundary.
+  tests_collected: 204
+  tests_collected_note: measured by pytest collection, which needs no native build
+  transform: present -- forward and inverse, three normalizations (None, OneOverN, OneOverSqrtN)
+supersedes: the matrix carried in docs/PHASE_36_SCIENTIFIC_MODALITY_AND_SCL_INTERFACE.md, which was measured against compute-layer commit edfc2dc and is three commits stale. That matrix reported 1 of 28 primitives present and every workload blocked at the protocol boundary. Both statements were true of edfc2dc and are false of the current commit.
+why_no_decision_is_recorded_here: "two independent reasons, either sufficient. First, the encoding is not settled: architecture/canonicalization_defect.yaml records an open implicit-typing defect whose fix re-hashes both exchange artifacts, so any decision written now would bind digests that are about to change. Second, a joint decision is a two-party act and this session has read-only access to the compute layer. The correct order is settle the encoding, re-hash and freeze the artifacts, then write the decision where both digests can be verified against their origin repositories."
+workload_status_from_the_compute_layers_own_artifact:
+  - blocking_requirements: 0
+    note: no longer a forward-looking candidate; it is complete
+    state: BUILT
+    workload: fourier_transform_1d
+  - blocking_requirements: 0
+    note: the compute layer records zero blocking requirements on either side, and states that its DAQ requirement is satisfied wherever Fourier's is because it shares the ordered-1d modality
+    state: UNBLOCKED
+    workload: convolution_1d
+  - blocking_requirements: 3
+    daq_owned:
+      - stable_sample_and_variable_identity
+      - explicit_missing_value_semantics
+    note: the only candidate whose blockers split across BOTH repositories, so it is the natural pairing for a DAQ extension under the joint rule's second clause
+    scl_owned:
+      - linear_algebra_primitive_family
+    state: BLOCKED
+    workload: least_squares
+  - blocking_requirements: 2
+    daq_owned:
+      - stable_sample_and_variable_identity
+      - commensurable_units_or_explicit_scaling
+    note: shares least_squares' multivariate entry modality
+    scl_owned: []
+    state: BLOCKED
+    workload: pca
+  - blocking_requirements: 2
+    daq_owned:
+      - structured_measurement_uncertainty
+      - recursive_generation_depth
+    note: BOTH blockers are DAQ-owned, and one of them -- recursive_generation_depth -- is the invariant this phase corrected from vacuously_enforced to represented_unenforced. That correction is a prerequisite this phase supplied; structured_measurement_uncertainty remains open.
+    scl_owned: []
+    state: BLOCKED
+    workload: kalman_filter_linear
+  - blocking_requirements: 0
+    note: pure computation is unblocked; its distinctive value is actuation, and no actuation-authority boundary exists in any repository
+    state: UNBLOCKED_BUT_OUT_OF_SCOPE
+    workload: pid_controller
+  - blocking_requirements: 1
+    daq_owned:
+      - categorical_or_discretized_emission_sequence
+    scl_owned: []
+    state: BLOCKED
+    workload: viterbi

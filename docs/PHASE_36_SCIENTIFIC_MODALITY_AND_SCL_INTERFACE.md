@@ -3,7 +3,7 @@
 *(Continues from `ca3d0aa`. Coordinated DAQ/SCL phase, run as the brief's three stages:
 parallel reconnaissance → requirement/capability exchange → one joint decision.)*
 
-**DAQ's proposal: build `fourier_transform_1d`; `daq_extension: none`.**
+**DAQ's proposal (issue 3): build `convolution_1d`; `daq_extension: none`.**
 
 Recorded in `architecture/proposals/2026-08-25-daq-workload-proposal.yaml`, carrying the
 SHA-256 of both exchange artifacts.
@@ -48,18 +48,17 @@ Re-measured at `5447df3`, most of the headline numbers I reported are wrong:
 | **1 of 28 primitives = 3.6%** | **wrong as of current SCL** |
 | "every workload blocked at the protocol boundary" | **wrong** — the boundary was generalized in `e49828b` |
 
-SCL reports Fourier built and validated 40/40 with 203 tests passing. **I did not verify those
-numbers**: SCL's native build needs `nlohmann_json`, which is not installed on this host (a
-recon agent vendored it into scratch to build at all), so its suite errors here at the build
-fixture. 204-collected is measured; the pass counts are SCL's own and are cited, not confirmed.
+SCL reports Fourier validated 40/40 with 203 tests passing. **Those are SCL's figures, carried
+with attribution, not DAQ's re-derivation.** SCL's native build needs `nlohmann_json`, absent on
+this host, so its suite errors here at the build fixture: DAQ can measure SCL's *structure*
+(sources, registry table, type signatures, wire layout, 204 collected) but not its *behaviour*.
+Cross-repo measurement without the build is exactly where a confident wrong number enters, so
+the capabilities artifact carries no SCL figures at all — verified, it re-derives none.
 
-**What survives the correction, and why the recommendation is unaffected:** the primitive
-matrix measured *primitive absence at `edfc2dc`*, which is a narrower claim than "workload
-runnable" — and the workload it scored as most-unblocked-by-DAQ-availability is precisely the
-one SCL then built. The leverage *arithmetic* (Kalman's 14× sequencing penalty, the
-linear-algebra cluster's shared cost) is about relative ordering among unbuilt workloads and is
-not disturbed by Fourier existing. But the report should not have carried `3.6%` and
-"every workload blocked" as current facts, and they are withdrawn here.
+`3.6%` and "every workload blocked at the protocol boundary" are **withdrawn**. The matrix was
+rebuilt on `5447df3` before any recommendation was carried forward — see
+**Workload / primitive matrix** below. It moved the recommendation, which is what a re-measure
+is for.
 
 ## DAQ capability exchange
 
@@ -105,14 +104,16 @@ Measured details that drive the decision:
 `architecture/exchange/scl_requirements.yaml` — `sha256:be15539449f2…95636017`
 
 **A read-only mirror, and marked as one.** The origin is SCL's own artifact at `5447df3`; the
-copy here is byte-identical to those committed bytes and was **not regenerated in this
-repository**. Verified: the mirrored bytes hash to the digest in the *origin* repository's own
-`.sha256` sidecar — no divergence exists.
+copy here is byte-identical to those committed bytes and hashes to the digest in the *origin*
+repository's own `.sha256` sidecar.
 
-Regenerating it here would have made it *DAQ's account of SCL's requirements* rather than SCL's
-measured claim about itself, and the proposal's hash would then bind a copy whose provenance is
-a different repo than the one it describes. That is the same failure as an agent validating its
-own output through a second file it also wrote.
+**I over-stated the objection here earlier.** I wrote that a locally-held copy would be "DAQ's
+account of SCL's requirements". That is wrong for this artifact: byte-identity plus a matching
+upstream sidecar means it *is* SCL's own emission, and the proposal may reference its hash
+directly. The mirror was fine as it stood. What the sidecar and the byte check actually protect
+against is a future session **regenerating it locally and not noticing** — which is why it is
+labelled a mirror with the upstream digest recorded, rather than left looking like an artifact
+this repository owns. The labeling is the safeguard; the provenance was never in doubt.
 
 | Workload | DAQ availability (measured) |
 |---|---|
@@ -128,60 +129,72 @@ Statuses are SCL's own, read from its `blocking_requirements` blocks, not this r
 reading of them. The decision record and its test use SCL's exact workload names so the two
 artifacts share one vocabulary.
 
-## Workload / primitive matrix (measured at `edfc2dc`, superseded for Fourier)
+## Workload / primitive matrix — rebuilt on the current commit
 
-*(Fourier's row is historical: it describes the substrate before `e49828b`. The rest still
-describes unbuilt workloads.)*
+The earlier matrix was measured at `edfc2dc` and its central claim — a "universal gate" of wire,
+configuration and result primitives that unblocked zero workloads and behind which everything
+sat — described a substrate that **no longer exists**. Rebuilt at `5447df3`
+(`architecture/workload_primitive_matrix.yaml`):
 
-| Workload | Required | Hard-missing | Needs new code |
-|---|---|---|---|
-| convolution | 7 | 4 | 6/7 |
-| PID | 7 | 4 | 6/7 |
-| **FFT** | 10 | 7 | 9/10 |
-| Viterbi | 11 | 9 | 10/11 |
-| PCA | 11 | 8 | 10/11 |
-| least squares | 12 | 8 | 11/12 |
-| Kalman | 15 | 11 | **14/15** |
+**8 primitives EXISTING, 8 MISSING** — not 1 of 28.
 
-The universal gate — a variable-length array on the wire with an explicit shape, a generic
-configuration block, and a callable reduction — unblocks **zero** workloads by itself, and
-nothing is reachable without it.
+| Now EXISTING | Still MISSING |
+|---|---|
+| variable-length 1-D array on the wire | explicit rank/dims on the wire |
+| generic per-operation configuration block | matrix multiplication |
+| operation-generic result shape | transpose |
+| operation registry | stable linear solve |
+| complex arithmetic | symmetric eigendecomposition / SVD |
+| discrete Fourier transform | covariance propagation |
+| normalization convention as a parameter | stateful feedback across calls |
+| annotating-parameter rule | DP table with backtracking |
 
-Ordering result worth recording: **Kalman costs 1 additional primitive if built after the
-linear-algebra cluster and 14 if built first — a 14× sequencing penalty.**
+The gate is **built**. Its cost is paid and it is no longer a term in any candidate's cost.
 
-## The recommendation
+Workload states, read from SCL's own `blocking_requirements` rather than re-derived:
 
-**`fourier_transform_1d`, `daq_extension: none`.**
+| Workload | Blockers | State |
+|---|---|---|
+| `fourier_transform_1d` | 0 | **BUILT** |
+| `convolution_1d` | 0 | **UNBLOCKED** |
+| `pid_controller` | 0 | unblocked but out of scope (actuation) |
+| `viterbi` | 1 | blocked (DAQ) |
+| `pca` | 2 | blocked (DAQ) |
+| `kalman_filter_linear` | 2 | blocked — **both DAQ-owned** |
+| `least_squares` | 3 | blocked — **splits across both repos** |
 
-The rule is: select the highest-leverage workload whose observation requirements are *already*
-satisfied by DAQ. Applying it mechanically:
+Two things the re-measure surfaced that the stale matrix could not:
 
-- `least_squares`, `pca`, `viterbi` — **forbidden**, DAQ marks their entry modality absent.
-- `kalman_filter_linear` — only partially satisfied, and worst-case to sequence first.
-- `pid_controller` — satisfied for pure computation, but its distinctive value is actuation,
-  and no actuation-authority boundary exists anywhere. Building it would create an implicit
-  control plane.
-- `fourier_transform_1d` and `convolution_1d` — identical observation requirements, both
-  satisfied.
+- **`kalman_filter_linear`'s blockers are both DAQ-owned**, and one of them is
+  `recursive_generation_depth` — the invariant this phase corrected. That prerequisite is now
+  supplied; `structured_measurement_uncertainty` remains open.
+- **`least_squares` is the only candidate whose blockers split across both repositories**
+  (two DAQ-owned, one SCL-owned), which makes it the natural subject of the joint rule's second
+  clause: the smallest DAQ extension that unblocks the highest-leverage workload, paired with
+  the workload that consumes it.
 
-FFT wins over convolution on three measured grounds: **generality falsification** (the
-substrate has been exercised by exactly one MD kernel; a transform is orthogonal to it and to
-the linear-algebra family, whereas convolution shares the existing kernel's reduction shape),
-**independent validation quality** (impulse, DC, pure tone, Parseval, reconstruction — none of
-which requires a second implementation, while convolution's natural oracle is another
-convolution), and **contract generality** (it forces `input_kind`, `spectrum_convention`,
-`direction`, `normalization`, `precision`, `sample_spacing` into the parameter identity model).
+## The recommendation — reissued
 
-`daq_extension: none` because the workload needs nothing DAQ lacks. CO-OPS states no Δt, and
-the correct consequence is a **bin-index axis, not a fabricated frequency axis**. Extending
-DAQ to carry a Δt the source never provided would be fabrication; extending it for any other
-modality would be representation work with no named consuming workload, which the joint rule
-forbids.
+**`convolution_1d`, `daq_extension: none`.** DAQ's answer is gate A.
 
-The reuse-leverage argument (least squares → linear algebra → Kalman → PCA, 17 primitives for
-3 workloads) is **not rejected — it is unreachable today**, and is recorded in the decision as
-deferred on availability rather than on merit.
+The first issue recommended `fourier_transform_1d`. That is **withdrawn on completion, not on
+merit** — SCL built it, and recommending something that exists is not a decision.
+
+Applying the rule to SCL's own blocking requirements at `5447df3`, `convolution_1d` is the only
+in-scope candidate with zero blockers on either side. SCL states its DAQ requirement is
+satisfied wherever Fourier's is, because it shares the ordered-1d modality.
+
+**This is a weaker recommendation than the first, and the report should say so.** The
+generality-falsification argument that selected a transform has been partly *spent*: the
+substrate had been exercised by one kernel family, now by two, and convolution is adjacent to
+the transform rather than orthogonal to it — it can even be implemented *through* it via the
+convolution theorem. It is recommended because it is what the rule admits, not because it is
+the most valuable thing to build.
+
+**The rule's answer and the highest-value answer have come apart.** `least_squares` carries more
+leverage and DAQ cannot elect it alone: its blockers split across both repositories, which is
+exactly the shape the joint rule's second clause addresses. Framing that choice is DAQ's job;
+making it is not.
 
 ## Canonicalization — the defect is a class, not a date bug
 
@@ -329,10 +342,10 @@ migration rules were needed and none were invented.
 
 | Check | Result |
 |---|---|
-| `tests/test_canonicalization_defect.py` | **35 passed** (new) |
-| `tests/test_daq_workload_proposal.py` | **22 passed** (new) |
+| `tests/test_canonicalization_defect.py` | **38 passed** (new) |
+| `tests/test_daq_workload_proposal.py` | **25 passed** (new) |
 | `tests/test_recursive_lineage_depth.py` | **17 passed** (new) |
-| DAF full suite | **829 passed** |
+| DAF full suite | **842 passed** |
 | Vendored SCOUT suite | 1273 passed, unchanged |
 | Submodule | clean |
 | SCL clone | untouched, `git status --porcelain` empty |
