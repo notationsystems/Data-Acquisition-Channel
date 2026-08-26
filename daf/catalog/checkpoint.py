@@ -39,6 +39,7 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Optional
+from daf.storage.serialization import strict_json_loads
 
 
 @dataclass(frozen=True)
@@ -76,7 +77,7 @@ class CheckpointStore:
         path = self.root / f"{plan_id}.json"
         if not path.exists():
             return None
-        return _checkpoint_from_dict(json.loads(path.read_text()))
+        return _checkpoint_from_dict(strict_json_loads(path.read_text()))
 
     def advance(self, checkpoint: AcquisitionCheckpoint) -> None:
         path = self.root / f"{checkpoint.plan_id}.json"

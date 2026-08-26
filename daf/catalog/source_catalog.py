@@ -21,6 +21,7 @@ from pathlib import Path
 from typing import Any, Dict
 
 from daf.orchestration.source_registry import SourceDefinition, SourceRegistry
+from daf.storage.serialization import strict_json_loads
 
 
 def _source_to_dict(source: SourceDefinition) -> Dict[str, Any]:
@@ -55,7 +56,7 @@ class SourceCatalog(SourceRegistry):
         self.root = Path(root)
         self.root.mkdir(parents=True, exist_ok=True)
         for path in sorted(self.root.glob("*.json")):
-            SourceRegistry.register(self, _source_from_dict(json.loads(path.read_text())))
+            SourceRegistry.register(self, _source_from_dict(strict_json_loads(path.read_text())))
 
     def register(self, definition: SourceDefinition) -> None:
         path = self.root / f"{definition.source_id}.json"
