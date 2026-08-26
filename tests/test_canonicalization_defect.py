@@ -304,3 +304,105 @@ def test_every_directory_with_a_sha256_sidecar_is_covered_by_the_check():
         f"these directories carry .sha256 sidecars but no artifact in them is checked for "
         f"two-parser agreement: {sorted(str(d) for d in uncovered)}"
     )
+
+
+# ============ the hand-authored YAML surface, derived rather than globbed
+#
+# The two-parser check is the only thing standing between hand-written YAML
+# and a digest the two repositories disagree on. It was specified by
+# DIRECTORY GLOB in two places, and `decisions/` being absent from one of
+# them is what let an escape defect reach a hash-bearing artifact with every
+# suite green.
+#
+# Measured after that repair: the two globs together cover 29 of the 30
+# tracked YAML files outside the vendored submodule. So the coverage is
+# correct TODAY -- and it is correct the way a list is correct, which is
+# exactly the shape this repository now records as the default failure of a
+# check written under time pressure.
+#
+# THE INVERSION IS THE POINT. Below, every tracked YAML file is IN the
+# surface by default and must be excluded EXPLICITLY, with a stated reason.
+# A new architecture file, in a new subdirectory or anywhere else, is
+# checked the moment it is committed. Under the globs it was unchecked
+# until someone remembered to widen one.
+
+
+def _tracked_yaml():
+    import subprocess
+
+    listing = subprocess.run(
+        ["git", "ls-files", "*.yaml", "*.yml"],
+        cwd=str(REPO_ROOT), capture_output=True, text=True,
+    )
+    if listing.returncode != 0:
+        return None
+    return sorted(
+        REPO_ROOT / line for line in listing.stdout.split()
+        if not line.startswith("vendor/")
+    )
+
+
+#: The ONLY files excluded from the two-parser surface, each with the reason
+#: the property does not apply. Absence from this mapping is not an
+#: exclusion -- it is inclusion.
+PARSER_SURFACE_EXCLUSIONS = {
+    ".github/workflows/conformance.yml": (
+        "consumed by GitHub Actions, not by either parser in this repository. The two-parser "
+        "agreement property is about two readers of ONE document disagreeing; here there is one "
+        "reader and it is not ours. Its correctness is established by the workflow running."
+    ),
+}
+
+
+def test_every_tracked_yaml_is_in_the_parser_surface_or_excluded_with_a_reason():
+    """THE PROPERTY, replacing two directory globs.
+
+    A file absent from every glob was silently unchecked. A file absent
+    from the exclusion mapping is now checked. That is the whole change,
+    and it is the difference between coverage that decays as the
+    repository grows and coverage that does not."""
+    tracked = _tracked_yaml()
+    if tracked is None:
+        pytest.skip("no git listing available (shallow clone)")
+
+    for path in tracked:
+        relative = path.relative_to(REPO_ROOT).as_posix()
+        if relative in PARSER_SURFACE_EXCLUSIONS:
+            assert PARSER_SURFACE_EXCLUSIONS[relative].strip(), (
+                f"{relative} is excluded with an empty reason, which is not an exclusion")
+            continue
+
+        text = path.read_text()
+        assert loads(text) == yaml.safe_load(text), (
+            f"{relative} parses to different TYPED structures under the two parsers. If the "
+            "two-parser property genuinely does not apply to it, add it to "
+            "PARSER_SURFACE_EXCLUSIONS with the reason -- do not narrow the surface silently."
+        )
+
+
+def test_the_exclusion_list_names_only_files_that_exist():
+    """An exclusion for a file that has been deleted or renamed is a
+    permission nobody is using, and it hides the next file that lands on
+    that path."""
+    for relative in PARSER_SURFACE_EXCLUSIONS:
+        assert (REPO_ROOT / relative).exists(), (
+            f"{relative} is excluded from the parser surface and does not exist")
+
+
+def test_the_old_globs_are_a_subset_of_the_derived_surface():
+    """The two directory globs stay -- they carry the extra guarantees
+    their own tests add, and HASH_BEARING is also used for the digest
+    checks. What must not happen is a glob reaching a file the derived
+    surface does not, which would mean the derivation had a hole the
+    enumeration did not."""
+    tracked = _tracked_yaml()
+    if tracked is None:
+        pytest.skip("no git listing available (shallow clone)")
+
+    surface = {
+        path for path in tracked
+        if path.relative_to(REPO_ROOT).as_posix() not in PARSER_SURFACE_EXCLUSIONS
+    }
+    outside = [path.name for path in HASH_BEARING if path not in surface]
+    assert outside == [], (
+        f"these are checked by the glob but not by the derived surface: {outside}")
