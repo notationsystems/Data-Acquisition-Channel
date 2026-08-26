@@ -59,6 +59,7 @@ MISSING_UNCERTAINTY_KIND = "MISSING_UNCERTAINTY_KIND"
 UNKNOWN_UNCERTAINTY_KIND = "UNKNOWN_UNCERTAINTY_KIND"
 NON_FINITE_QUANTITY = "NON_FINITE_QUANTITY"
 NON_FINITE_UNCERTAINTY = "NON_FINITE_UNCERTAINTY"
+UNTYPED_UNCERTAINTY = "UNTYPED_UNCERTAINTY"
 
 
 @dataclass(frozen=True)
@@ -127,11 +128,13 @@ def quantity_is_typed(content: Mapping[str, object]) -> Admissibility:
     # to carry -- so it gets its own reason code rather than being folded
     # into NON_FINITE_QUANTITY, because it is a different claim.
     uncertainty = content.get("uncertainty")
-    if (
-        isinstance(uncertainty, (int, float))
-        and not isinstance(uncertainty, bool)
-        and not math.isfinite(uncertainty)
-    ):
+    if isinstance(uncertainty, bool):
+        # `isinstance(True, int)` is True, so a bool satisfied every
+        # numeric check here and a bool uncertainty was ADMISSIBLE --
+        # measured. It is not a magnitude: True is not "one unit of
+        # error", and there is no unit in which it would be.
+        reasons.append(UNTYPED_UNCERTAINTY)
+    elif isinstance(uncertainty, (int, float)) and not math.isfinite(uncertainty):
         reasons.append(NON_FINITE_UNCERTAINTY)
 
     return Admissibility(admissible=not reasons, reasons=tuple(reasons))

@@ -165,7 +165,16 @@ class FilesystemEvidenceStore:
             return  # existing file already validly represents this id -- nothing to do
 
         tmp_path = directory / f"{artifact_id}.json.tmp"
-        tmp_path.write_text(json.dumps(payload, sort_keys=True, indent=2))
+        # allow_nan=False, deliberately. Python's default emits BARE
+        # NaN/Infinity/-Infinity, which are a Python extension and not JSON
+        # -- so the default silently writes a file that claims to be JSON
+        # and is not, and that no conformant reader in another language
+        # will accept. Measured before this was set: a NaN-valued
+        # Observation persisted as the literal `NaN` and read back as a
+        # value not equal to itself. Refusing at the WRITER is the rule
+        # this repository already applies to the canonical YAML emitter; a
+        # reader taught to tolerate NaN would only move the problem.
+        tmp_path.write_text(json.dumps(payload, sort_keys=True, indent=2, allow_nan=False))
         tmp_path.replace(final_path)  # atomic on POSIX -- readers never see a partial file
 
     def _read_all(self, category: str) -> Tuple[dict, ...]:

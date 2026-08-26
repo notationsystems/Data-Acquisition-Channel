@@ -80,6 +80,7 @@ CONDITION_KEYS_ARE_NOT_IDENTIFIERS = "CONDITION_KEYS_ARE_NOT_IDENTIFIERS"
 CONDITION_KEY_SHADOWS_AN_IDENTITY = "CONDITION_KEY_SHADOWS_AN_IDENTITY"
 VALUE_AND_ABSENCE_BOTH_PRESENT = "VALUE_AND_ABSENCE_BOTH_PRESENT"
 SENTINEL_ENCODED_ABSENCE = "SENTINEL_ENCODED_ABSENCE"
+BOOLEAN_IS_NOT_A_QUANTITY = "BOOLEAN_IS_NOT_A_QUANTITY"
 POSITIONAL_IDENTITY_IS_NOT_IDENTITY = "POSITIONAL_IDENTITY_IS_NOT_IDENTITY"
 
 SAMPLE_ID = "sample_id"
@@ -170,7 +171,25 @@ def observation_is_table_alignable(content: Mapping[str, object]) -> Admissibili
         reasons.append(VALUE_AND_ABSENCE_BOTH_PRESENT)
     elif has_value:
         value = content["value"]
-        if isinstance(value, (int, float)) and not isinstance(value, bool) and not math.isfinite(value):
+        if isinstance(value, bool):
+            # MEASURED: a bool cell was admissible here. `isinstance(True,
+            # int)` is True in Python, so a bool passes every numeric check
+            # that does not exclude it by name -- and downstream it means
+            # something nobody asserted: `sum([True, True, False])` is 2, so
+            # a bool column silently becomes a count.
+            #
+            # Refusing it is also the modelling boundary, not just a type
+            # check. If the source means an indicator, encoding it as 0/1 is
+            # a DESIGN MATRIX decision, and the requirements artifact says
+            # the choice of design matrix is a modelling assertion rather
+            # than an observation. DAQ must not make it silently by letting
+            # `True` arrive where a number is read.
+            #
+            # This is the surface a covariance inherits directly: a
+            # covariance is a matrix of cells, and a bool cell passes a
+            # positive-semidefiniteness check while meaning nothing.
+            reasons.append(BOOLEAN_IS_NOT_A_QUANTITY)
+        elif isinstance(value, (int, float)) and not math.isfinite(value):
             # The sentinel the requirement forbids, named as what it is.
             reasons.append(SENTINEL_ENCODED_ABSENCE)
     elif has_absence:

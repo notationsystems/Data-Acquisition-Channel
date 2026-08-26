@@ -54,7 +54,7 @@ class LocalDatasetSourceAdapter:
                 RawDocument(
                     source_name=self.source_name,
                     source_kind="dataset",
-                    content=json.dumps(record, sort_keys=True),
+                    content=json.dumps(record, sort_keys=True, allow_nan=False),
                     locator=f"{self.path}#{record['id']}",
                     retrieval_method="file:local_json_v1",
                     retrieved_at=self.retrieved_at,

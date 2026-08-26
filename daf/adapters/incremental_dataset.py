@@ -121,7 +121,7 @@ class IncrementalDatasetSourceAdapter:
                 RawDocument(
                     source_name=self.source_name,
                     source_kind="incremental-dataset",
-                    content=json.dumps(record, sort_keys=True),
+                    content=json.dumps(record, sort_keys=True, allow_nan=False),
                     locator=document_locator_for(self.path, sequence),
                     retrieval_method="file:incremental_json_v1",
                     retrieved_at=self.retrieved_at,

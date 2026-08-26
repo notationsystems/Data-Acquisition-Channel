@@ -47,7 +47,7 @@ class ExecutionRecordStore:
 
     def put(self, record: ExecutionRecord) -> None:
         path = self.root / f"{record.id}.json"
-        path.write_text(json.dumps(execution_record_to_dict(record), sort_keys=True, indent=2))
+        path.write_text(json.dumps(execution_record_to_dict(record), sort_keys=True, indent=2, allow_nan=False))
 
     def get(self, execution_id: str) -> ExecutionRecord:
         path = self.root / f"{execution_id}.json"
@@ -88,7 +88,7 @@ class QuarantineStore:
 
     def put(self, record: QuarantineRecord) -> None:
         path = self.root / f"{record.id}.json"
-        path.write_text(json.dumps(quarantine_record_to_dict(record), sort_keys=True, indent=2))
+        path.write_text(json.dumps(quarantine_record_to_dict(record), sort_keys=True, indent=2, allow_nan=False))
 
     def all_records(self) -> Tuple[QuarantineRecord, ...]:
         records = []

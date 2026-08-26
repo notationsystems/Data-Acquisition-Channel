@@ -38,7 +38,7 @@ class ClassAssignmentStore:
     def put(self, assignment: EvidenceClassAssignment) -> None:
         path = self.root / f"{assignment.id}.json"
         payload = assignment_to_dict(assignment)
-        path.write_text(json.dumps(payload, sort_keys=True, indent=2))
+        path.write_text(json.dumps(payload, sort_keys=True, indent=2, allow_nan=False))
 
     def all_assignments(self) -> Tuple[EvidenceClassAssignment, ...]:
         found = []

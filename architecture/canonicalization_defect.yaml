@@ -96,3 +96,51 @@ enforcement_in_both_suites:
   never_the_right_fix: "updating the pinned digest alone. A legitimate serializer change is a COORDINATED REISSUE: change both repositories, regenerate every artifact, reissue every record carrying a digest, and confirm with verify_pair_landed.py that both REMOTES landed it."
   measured_ci_asymmetry: "the pin now runs in BOTH SUITES, but not in both CI paths, because there is only one CI path. Measured: this repository has .github/workflows/conformance.yml, which runs the full suite on every push; the compute layer's tree contains no CI configuration at all -- no .github, no workflow file, no Makefile, no tox or nox. So on that side the pin runs only when someone runs the suite. Recorded rather than fixed here: authoring CI for the other repository would mean shipping a workflow this session cannot verify passes, since that suite's conftest builds a native CMake target whose nlohmann_json dependency is absent from this container."
   measured_on: "2026-08-26"
+
+# ==================== SECOND REISSUE: the classes ABOVE and BESIDE scalars ==
+#
+# The always-quote rule closed the ambiguity class among SCALARS and the
+# record above says so. It did not close the class one level UP, among
+# collections, and it did not close a third class beside it, among escape
+# sequences -- which always-quote in fact WIDENED, since every string now
+# passes through the quoting path. Both were measured after that fix
+# landed. Recorded as a second reissue rather than folded into the first,
+# because they moved a different set of digests and one of the two has the
+# OPPOSITE repair.
+second_reissue:
+  "status": corrected_applied_in_both_repositories
+  "date": "2026-08-26"
+
+  "collection_class":
+    "measured": "canonical_dump({'k': [['a'], ['b']]}) emitted the compact block form `- - \"a\"`. PyYAML types that as [['a'], ['b']]; epistemics/_yaml.py types it as the STRINGS ['- \"a\"', '- \"b\"']. Same bytes, same digest, two different values."
+    "also_measured": "an empty collection nested in a sequence did not merely diverge -- the emitter CRASHED on it, raising `unsupported scalar type for canonical YAML: list` from the scalar formatter, because the nested-empty case fell through to the wrong branch."
+    "repair": emitter_side_refusal
+    "why_refusal_and_not_a_different_rendering": "there is no emitted form both readers accept. Written out long instead of collapsed, the minimal reader RAISES on the bare `-` rather than mistyping it. So the canonical answer is the one the scalar rule already took: refuse the ambiguous form at the writer."
+    "why_not_reader_side": "teaching one reader to parse the compact form leaves the bytes ambiguous for every OTHER reader, including any third implementation. That is the argument that made the scalar fix emitter-side and it is unchanged here."
+    "scope_of_the_refusal": "a sequence nested DIRECTLY in a sequence, and nothing else. A mapping in a sequence, a sequence in a mapping, and every depth of the two interleaved remain legal and are pinned in the fixture."
+    "cost_measured": "zero. No committed artifact in either repository contained a nested sequence -- checked across every architecture/**/*.yaml on both sides -- so no artifact bytes changed."
+
+  "escape_class":
+    "measured": "the emitter's _quote escapes exactly five sequences (backslash, double quote, newline, carriage return, tab) and the always-quote rule sends EVERY string through it. epistemics/_yaml.py returned the quoted body verbatim via text[1:-1], decoding none of them, so 'he said \"x\"' came back with the backslashes still in it while PyYAML returned the intended string. Measured across 13 shapes: all 13 diverged."
+    "repair": reader_side_conformance_fix
+    "why_the_opposite_repair_is_correct_here": "this is NOT the ambiguity class. These bytes have exactly one correct meaning under YAML 1.2 and PyYAML already returns it; the minimal reader was simply non-conformant. Fixing a wrong reader is not the reader-side NORMALIZATION the scalar rule forbids -- that one coerced a correctly-parsed value back into a different type to hide ambiguous bytes. Distinguishing the two is the whole content of this entry."
+    "blast_radius": "none. epistemics/_yaml.py is this repository's own reader, not a shared file. No artifact byte changed and no digest moved."
+    "unknown_escapes_raise": "the decoder refuses any escape outside the five the canonical emitter can produce, rather than passing it through. An unrecognized escape means the document did not come from that emitter, and silently accepting it is how a subset parser stops being a subset parser."
+    "it_reached_a_hash_bearing_artifact": "yes, and that is how it was found. The reissued joint decision record carried an escaped quote and parsed to two different values while the suite stayed green."
+
+  "the_enforcement_hole_that_let_it_through":
+    "what": "the two-parser typed-agreement check globbed architecture/exchange/*.yaml and architecture/proposals/*.yaml. architecture/decisions/ was not in the list."
+    "consequence": "the one artifact type that binds a joint decision to its input hashes was never checked for two-parser agreement. The check existed and simply did not look there."
+    "repair": "the directory is added AND the coverage rule is now asserted: every directory carrying a .sha256 sidecar must have its artifacts in the checked set. A hash-bearing directory left off a list is an unenforced guarantee."
+    "enforcement": "tests/test_canonicalization_defect.py::test_every_directory_with_a_sha256_sidecar_is_covered_by_the_check"
+
+  "blast_radius_measured_not_estimated":
+    "moved": "canonical_yaml.py and its source pin; the agreement fixture and its sidecar; the joint decision record and its sidecar. Six files, in both repositories, one commit each."
+    "did_not_move": "daq_capabilities.yaml, scl_requirements.yaml and both their sidecars. Verified by regenerating each from its own repository's committed generator: byte-identical output."
+    "why_narrower_than_the_first_reissue": "the first reissue changed how every string is emitted, so every artifact was re-emitted and every digest moved. This one refuses a shape no artifact used and fixes a reader, so only the serializer, the fixture that pins it, and the record that binds the fixture hash moved."
+    "why_the_decision_record_moved_at_all": "it binds canonicalization_fixture_hash, and its own binding_rule says a bound artifact changing means the record is REISSUED rather than edited. It was reissued: the decision itself is untouched, and the reissue block states what forced it."
+
+  "the_pair_check_was_also_incomplete":
+    "found": "verify_pair_landed.py's SHARED list named five files. It omitted the serializer's own source pin and the joint decision record, both byte-identical by agreement."
+    "why_it_mattered": "a fixture change reissues the decision record, so a pair check that did not compare that record would have reported PAIR LANDED while the two repositories held different records. That is not hypothetical -- they HAD diverged once, when one clone was three commits stale and still held the pre-correction record."
+    "repair": "the list is now eight files and is byte-identical across the pair."

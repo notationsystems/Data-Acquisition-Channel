@@ -46,6 +46,59 @@ def _strip_comment(line: str) -> str:
     return "".join(out).rstrip()
 
 
+#: The complete escape set `architecture/exchange/canonical_yaml.py` can
+#: emit. Its `_quote` escapes exactly these five, in this order, and the
+#: always-quote rule means EVERY string passes through it -- so any value
+#: containing a quote, a backslash or whitespace-as-a-control-character
+#: arrives here escaped.
+_ESCAPES = {"\\": "\\", '"': '"', "n": "\n", "r": "\r", "t": "\t"}
+
+
+def _unescape(body: str) -> str:
+    """Decode a double-quoted scalar's body.
+
+    WHY THIS EXISTS. Measured: this reader used to return `text[1:-1]`,
+    stripping the quotes and leaving every escape as literal characters.
+    So `"he said \\"hi\\""` came back as the 14-character string with
+    backslashes still in it, while PyYAML returned the 12-character string
+    the emitter meant. Same bytes, two values -- which is precisely the
+    condition the pinned encoding exists to rule out, and it reached a
+    hash-bearing artifact before anything caught it.
+
+    This is NOT the ambiguity class the always-quote rule closed, and the
+    repair is deliberately the opposite one. There the BYTES were
+    ambiguous, so the fix had to be emitter-side; a reader-side
+    normalization would have hidden it. Here the bytes have exactly one
+    correct meaning under YAML 1.2 and PyYAML already returns it -- this
+    reader was simply non-conformant. Fixing a wrong reader is not
+    relocating a problem, and it moves no artifact and no digest.
+
+    An unrecognized escape RAISES rather than being guessed at. The
+    canonical emitter cannot produce one, so encountering it means the
+    document did not come from that emitter, and silently passing it
+    through is how a subset parser stops being a subset parser."""
+    out: List[str] = []
+    index = 0
+    while index < len(body):
+        char = body[index]
+        if char != "\\":
+            out.append(char)
+            index += 1
+            continue
+        if index + 1 >= len(body):
+            raise YamlSubsetError(f"trailing backslash in quoted scalar: {body!r}")
+        code = body[index + 1]
+        if code not in _ESCAPES:
+            sequence = "\\" + code
+            raise YamlSubsetError(
+                f"unsupported escape {sequence!r} in quoted scalar: {body!r}. The canonical "
+                "emitter produces only backslash, double-quote, n, r and t."
+            )
+        out.append(_ESCAPES[code])
+        index += 2
+    return "".join(out)
+
+
 def _scalar(text: str) -> Any:
     text = text.strip()
     if text == "" or text in ("null", "~"):
@@ -62,7 +115,9 @@ def _scalar(text: str) -> Any:
     if text in ("false", "False"):
         return False
     if len(text) >= 2 and text[0] == text[-1] and text[0] in "\"'":
-        return text[1:-1]
+        if text[0] == "'":
+            return text[1:-1]
+        return _unescape(text[1:-1])
     try:
         return int(text)
     except ValueError:
@@ -97,7 +152,7 @@ def _split_key(item: str) -> Tuple[str, str]:
         elif quote is None and ch == ":" and (i + 1 == len(item) or item[i + 1] == " "):
             key = item[:i].strip()
             if len(key) >= 2 and key[0] == key[-1] and key[0] in "\"'":
-                key = key[1:-1]
+                key = key[1:-1] if key[0] == "'" else _unescape(key[1:-1])
             return key, item[i + 1 :].strip()
     raise YamlSubsetError(f"expected 'key: value', got {item!r}")
 

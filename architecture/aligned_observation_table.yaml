@@ -130,6 +130,39 @@ side_effect_closed:
 # ------------------------------------------------------- what is not done --
 
 deliberately_not_done:
+  covariance_inherits_the_bool_surface: "a covariance is a MATRIX OF CELLS, so it inherits this extension's cell surface directly -- and the sharpest instance is the bool. isinstance(True, int) is True in Python, so a bool passes every numeric check that does not name it, and a bool inside a covariance passes a positive-semidefinite check while meaning nothing. Measured here at one level down: a bool was refused as a QUANTITY but ADMITTED as an uncertainty and ADMITTED as a table cell, and both are now closed. Recorded against the covariance work rather than left to be rediscovered inside it."
   covariance_extension: "structured measurement uncertainty plus recursive generation depth, which unblocks Kalman. It is the next DECISION, not a queue item, and it goes through the same joint record. Starting it here would be the conflated-extension error again in the opposite direction."
   wiring_into_an_admission_path: "the table gate is a scientific-layer gate, exactly like quantity_is_typed and no_context_free_property before it. Ingest is scout.pipeline.run_scout, inside the vendored submodule that is never modified."
   a_table_builder: "DAQ states what an observation must carry to be joined. Performing the join is the compute layer's work, and DAQ must not implement it."
+
+# ------------------------------------- identity over non-JSON, the larger half --
+#
+# Sentinel-encoded absence was the stated concern and absence_rule above
+# closes it. The NaN finding was bigger than that, and the difference is
+# worth stating because the absence rule alone would not have caught two
+# of its three parts.
+three_stacked_failures:
+  one_identity_over_invalid_json: "Observation.id minted over bytes containing a bare NaN token -- a Python extension, not JSON -- so the identity names a document no conformant parser in another language will read back. This is not an absence problem at all, and it is the larger one: content addressing across processes and languages is the property the whole repository rests on."
+  two_artifact_outside_its_own_format: "FilesystemEvidenceStore persisted that literal, so the stored file claimed to be JSON and was not."
+  three_reflexivity_broken: "nan != nan, so the value is not equal to itself after a round trip. Any dedup, cache or comparison keyed on it MISBEHAVES SILENTLY rather than erroring -- an equality check that would catch a corrupted round trip returns False for an intact one."
+  why_they_are_listed_separately: "collapsing them into 'the sentinel gap' is the easy mistake. Only the first is about missing values; the other two are about a writer emitting a form its own format forbids."
+
+writer_repair:
+  rule: "canonical at the WRITER; refuse the ambiguous form"
+  it_is_the_fourth_instance_of_this_rule:
+    - "clause 2 of the operation contract"
+    - "the YAML implicit-typing defect -- strings emitted bare and resolved differently per parser"
+    - "the YAML collection and escape classes, measured in the same phase as this"
+    - "NaN and Infinity in emitted JSON -- this"
+  what_landed: "every DAF-owned json.dumps on a write path now sets allow_nan=False, so a non-finite refuses at the write instead of producing a file that claims to be JSON and is not. Enforced over the whole daf/ tree by a test, not fixed one call at a time."
+  a_tolerant_reader_is_not_the_fix: "a reader taught to accept NaN relocates the problem to every OTHER reader, including the ones in other languages this format exists to reach. Same argument that made the YAML repair emitter-side."
+  bounded_honestly: "evidence.identity.content_hash is VENDORED and calls json.dumps with the permissive default, so DAQ cannot make id minting itself refuse a non-finite. An Observation constructed directly in memory with a NaN still gets an id over invalid JSON. What DAQ closes is every ROUTE it owns -- both gates, both pass-through extractors, every DAF-owned writer. The residue is stated rather than papered over."
+
+forensic_check:
+  question: "has anything already been persisted with a non-finite, and was any such id referenced?"
+  why_it_was_run: "the same class as a covariance content-addressed before the TypeError, and it earns the same check: an id minted over invalid JSON cannot be recomputed by a conformant reader, so a stored record carrying one would be unrecoverable rather than merely wrong."
+  method: "searched every committed file in both repositories for a bare NaN or Infinity token, and counted committed evidence-store artifacts."
+  result_committed_evidence_records: 0
+  result_bare_non_finite_in_committed_files: "every hit is PROSE about this defect -- the gate sources, the tests and the records written in this phase. No emitted JSON, no artifact."
+  conclusion: "nothing was persisted, no id was minted over one, and there is nothing to recover. The finding is forward-only, which is the same answer the covariance check returned."
+  consistent_with: "architecture/invariants.yaml migration, which recorded committed_records_in_repository as 0 by inspection -- re-verified here rather than assumed."

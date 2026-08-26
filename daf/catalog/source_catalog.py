@@ -60,6 +60,6 @@ class SourceCatalog(SourceRegistry):
     def register(self, definition: SourceDefinition) -> None:
         path = self.root / f"{definition.source_id}.json"
         tmp_path = self.root / f"{definition.source_id}.json.tmp"
-        tmp_path.write_text(json.dumps(_source_to_dict(definition), sort_keys=True, indent=2))
+        tmp_path.write_text(json.dumps(_source_to_dict(definition), sort_keys=True, indent=2, allow_nan=False))
         tmp_path.replace(path)  # atomic on POSIX
         SourceRegistry.register(self, definition)
