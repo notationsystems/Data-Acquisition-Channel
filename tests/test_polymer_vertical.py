@@ -294,3 +294,70 @@ def test_the_ingest_gate_still_does_not_read_a_key_of_content():
         "the ingest gate now reads a key of content; the vertical's claim that no content check "
         "happens at ingest is stale"
     )
+
+
+# ------------------------------------------------- rho, and what it does not do
+
+
+def test_rho_is_recorded_as_modelled_and_not_as_measured():
+    """The whole discipline of this block. A forward model of an
+    instrument is not the instrument, and the vertical must not let the
+    two read alike."""
+    rho = VERTICAL["the_correlation_between_the_moments"]
+    assert rho["status"] == "modelled_not_instrument_measured"
+    assert "Not the replicate dataset" in (
+        pathlib.Path(REPO_ROOT / "architecture" / "polymer_vertical.yaml").read_text())
+    assert "not the instrument" in VERTICAL["the_cheapest_next_measurement"]
+    assert VERTICAL["status"] == "measured_not_proposed", (
+        "the status must not advance on a modelled input"
+    )
+
+
+def test_the_lowest_modelled_rho_is_still_above_the_crossover():
+    """The claim that carries the conclusion. If a configuration is ever
+    modelled that reaches the crossover, this fails and the direction is
+    unknown again."""
+    rho = VERTICAL["the_correlation_between_the_moments"]
+    lowest = rho["measured"]["lowest_rho_over_every_configuration_modelled"]
+    crossover = rho["the_crossover"]
+    assert crossover == pytest.approx(1 / math.sqrt(2), rel=1e-4)
+    assert lowest > crossover, (
+        f"the lowest modelled rho ({lowest}) is at or below the crossover ({crossover}); the "
+        "direction of gap 2's confidence-region error is unknown again"
+    )
+    assert 1 / (2 * (1 - lowest ** 2)) > 1.0, "above the crossover the error must be UNDERconfident"
+    assert "UNDERCONFIDENT" in rho["where_that_puts_the_system"]
+
+
+def test_the_degenerate_perturbation_artifact_is_recorded():
+    """A one-parameter perturbation family forces correlation +-1 before
+    any chemistry enters. Caught mid-measurement and kept, because a
+    number that a design forces is not evidence."""
+    rho = VERTICAL["the_correlation_between_the_moments"]
+    artifact = rho["the_artifact_caught_mid_measurement"]
+    assert "BY CONSTRUCTION" in artifact
+    assert "800" in artifact, "the non-degenerate mechanism must be named"
+    # and the informative mechanism must be the one least favourable to the conclusion
+    assert rho["measured"]["per_slice_detector_noise_alone_800_parameters"] == pytest.approx(
+        rho["measured"]["lowest_rho_over_every_configuration_modelled"], rel=1e-6)
+
+
+def test_the_surviving_harm_is_the_fabricated_agreement_not_the_understated_spread():
+    """What the rho measurement changed, and what it did not."""
+    rho = VERTICAL["the_correlation_between_the_moments"]
+    assert "DEFLATES" in rho["what_this_does_to_gap_2"]
+    assert "shrinks under measurement is still a finding" in rho["what_this_does_to_gap_2"]
+    survives = rho["what_survives_untouched"]
+    assert "identically zero for ALL data" in survives
+    assert "needs no rho" in survives
+
+
+def test_the_compute_layers_diagnostics_are_recorded_as_reassuring():
+    """The sharpest half: the metric a caller would check comes back
+    healthy. Numbers here must match the boundary recorded on the other
+    side of the pair."""
+    claim = VERTICAL["the_correlation_between_the_moments"]["and_the_compute_layer_endorses_it"]
+    assert "effective_rank = 2" in claim and "FULL RANK" in claim
+    assert "1.4378" in claim
+    assert "ACTIVELY REASSURES" in claim
+    assert "wrong matrix" in claim

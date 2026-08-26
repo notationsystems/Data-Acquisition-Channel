@@ -115,4 +115,38 @@ what_would_settle_each:
   gap_1: "a polymer acquisition whose downstream consumer acts on the recorded uncertainty -- a formulation decision, a specification check, a model fit over the material. The moment a consumer treats u(Mn) as the spread, the 9.9x is a cost incurred rather than a cost computed."
   gap_2: "a real GPC report supplying Mn, Mw and PDI together, consumed by least_squares through the aligned table. And, separately measurable and cheaper: the correlation rho between the moments as the instrument reports them, which decides the SIGN of the error and which nothing here can supply."
 
-the_cheapest_next_measurement: "rho. It needs one instrument's replicate data, it is the single input that flips the gap-2 conclusion, and it is the one number above that is a choice rather than a measurement. Until it exists, gap 2's magnitude is known and its direction is not."
+# ----------------------------------------------------------------------
+# RHO, MEASURED AS FAR AS IT CAN BE MEASURED FROM HERE -- and the answer
+# flips the direction a second time, toward the safe side.
+#
+# WHAT THIS IS NOT. Not the replicate dataset. No GPC instrument, no
+# replicate data and no polymer acquisition exists in this repository, and
+# none can be manufactured. What follows is rho under a STATED FORWARD
+# MODEL of how a GPC computes the two moments, which answers a weaker but
+# decisive question: is rho = 0 -- the value that produced "overconfident,
+# always" -- physically reachable at all?
+# ----------------------------------------------------------------------
+the_correlation_between_the_moments:
+  status: modelled_not_instrument_measured
+  why_it_cannot_be_zero_structurally: "Mn = sum(w_i M_i)/sum(w_i) and Mw = sum(w_i M_i^2)/sum(w_i M_i) are computed from THE SAME detector slices through THE SAME calibration curve. Every error in the calibration moves both, in the same direction, by nearly the same amount. rho = 0 would require the two moments to be computed from disjoint information, which they never are."
+
+  the_artifact_caught_mid_measurement: "THE FIRST RUN REPORTED rho = +1.0000 FOR THREE MECHANISMS AND THAT WAS NOT A MEASUREMENT. A perturbation family with ONE scalar parameter makes ln Mn and ln Mw two smooth functions of one number, so to first order their correlation is +-1 BY CONSTRUCTION, before any chemistry enters. A degenerate design returns a confident number. Only a mechanism with many independent parameters says anything, and there is exactly one such mechanism here -- per-slice detector noise, 800 parameters -- which is also the DECORRELATING one, so the informative case is the one least favourable to the conclusion."
+
+  measured:
+    per_slice_detector_noise_alone_800_parameters: 0.9625
+    what_that_case_is: "the only non-degenerate mechanism modelled, and the one that pushes rho DOWN. On its own it gives 0.96."
+    mixtures_of_common_mode_calibration_with_per_slice_noise: "swept across calibration standard deviations from 0 to 0.010 decades against slice noise of 1% and 5%. Every configuration gives rho between 0.964 and 1.000."
+    lowest_rho_over_every_configuration_modelled: 0.9625
+
+  the_crossover: 0.7071
+  where_that_puts_the_system: "rho = 1/sqrt(2) is where det(Cov_3)/det(Cov_2) = 1 and the error changes sign. The lowest rho any modelled configuration produces is 0.9625, and it comes from the single mechanism that decorrelates. Reaching the crossover would need a decorrelating mechanism not in this model and stronger than detector noise. So the system sits in the UNDERCONFIDENT regime -- the SAFE direction -- and rho = 0 is not merely unmeasured but structurally implausible."
+
+  what_this_does_to_gap_2: "it DEFLATES the confidence-region half of it, and that is reported because it is what was measured. The first framing said the consumer's region is 1/sqrt(2) of its correct area -- overconfident. Verification reduced that to `the direction is unknown`. This measurement reduces it further, to `the direction is known and it is the conservative one`. A finding that shrinks under measurement is still a finding."
+
+  what_survives_untouched: "the fabricated agreement. chi-square is identically zero for ALL data on this row, whatever rho is, because the third row is reproduced exactly by any fit of the first two. A goodness-of-fit test reads PERFECT AGREEMENT BETWEEN THREE MEASUREMENTS THAT ARE NOT THREE, and a reduced chi-square divides by a degrees-of-freedom count that is nominally 1 and truly 0. That needs no rho, and it is now the surviving harm."
+
+  and_the_compute_layer_endorses_it: "MEASURED against SCL's real solver, not argued. The polymer design fitted through least_squares returns effective_rank = 2 (FULL RANK), condition_number = 1.4378 (excellent), residuals ~1e-15, weighted chi-square 2.1e-26. The conditioning metric does not merely fail to warn -- at 1.44 it ACTIVELY REASSURES. Rank and conditioning are properties of the design matrix's COLUMNS; this dependence is among the DATA ROWS, and no rank check can see it because it is looking at the wrong matrix. Recorded as a contract boundary in native/include/scl/least_squares.hpp with tests/test_least_squares_row_dependence.py pinning it."
+
+  what_would_still_settle_it: "replicate GPC runs on one batch, giving rho from the instrument rather than from a model of it. The model says what rho cannot be; only data says what it is."
+
+the_cheapest_next_measurement: "replicate GPC runs on one batch. rho was the single input that decided gap 2's sign, and it has now been MODELLED rather than measured -- enough to establish that rho = 0 is structurally unreachable and the direction is the conservative one, not enough to give a number an instrument would recognise. The status above stays measured_not_proposed until real replicate data is in, because a model of an instrument is not the instrument."
