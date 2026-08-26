@@ -115,27 +115,44 @@ def _refuse(constant):
     raise ValueError(f"strict JSON has no {constant}")
 
 
-def test_a_nan_value_does_not_compare_equal_to_itself_after_a_round_trip(tmp_path):
-    """The second consequence, and the one that makes a sentinel absence
-    silent rather than loud: `nan != nan`. An equality check that would
-    catch a corrupted round trip returns False for an INTACT one."""
+def test_the_store_now_refuses_the_write_that_used_to_persist_a_literal_nan(tmp_path):
+    """INVERTED, and the inversion is the writer repair landing.
+
+    This began as a characterization test of what a NaN actually did:
+    `FilesystemEvidenceStore` wrote the literal `NaN` to disk, so the
+    stored file was not valid JSON, and `back.content["value"] !=
+    back.content["value"]` came back True -- an equality check that
+    would catch a corrupted round trip returning False for an INTACT
+    one.
+
+    With `allow_nan=False` at the writer there is no round trip to
+    characterize: the write refuses. So the assertion becomes that the
+    refusal happens and that nothing reaches disk, which is the property
+    that actually matters -- a partially-written store would be worse
+    than the literal it replaced."""
     store = FilesystemEvidenceStore(tmp_path / "evidence")
     observation = make_observation(
         record_ids=("r1",), extraction_method="test",
         content={"property": "p", "unit": "m", "value": float("nan")},
         confidence=1.0, extracted_at="2020-01-01T00:00:00Z",
     )
-    store.put_observation(observation)
-    back = store.get_observation(observation.id)
 
-    assert math.isnan(back.content["value"])
-    assert back.content["value"] != back.content["value"], (
-        "if this ever becomes equal, Python changed and the measurement below is stale"
-    )
-    raw = (tmp_path / "evidence").rglob("*.json")
-    assert any("NaN" in path.read_text() for path in raw), (
-        "the literal NaN is what reaches disk -- the file is not valid JSON either"
-    )
+    with pytest.raises(ValueError, match="not JSON compliant"):
+        store.put_observation(observation)
+
+    # Nothing partial survives the refusal, and no file on disk carries
+    # the literal that used to be written there.
+    for path in (tmp_path / "evidence").rglob("*"):
+        # bytes, not text: the store's tree also holds non-UTF-8 blobs, and
+        # a decode error here would mask the thing being checked.
+        if path.is_file():
+            assert b"NaN" not in path.read_bytes(), f"{path} still carries the literal"
+
+    # The reflexivity break itself is unchanged -- it is a property of the
+    # float, not of the store -- which is precisely why the value must
+    # never be allowed to reach a place where something compares it.
+    value = observation.content["value"]
+    assert math.isnan(value) and value != value
 
 
 # ============================== 2. the property gate refuses the sentinel
@@ -653,123 +670,301 @@ def test_the_extension_record_names_a_consuming_workload():
     assert "next DECISION" in record["deliberately_not_done"]["covariance_extension"]
 
 
-# ============ TWO SEPARATE FINDINGS ABOUT THE VALUE CELL, split on purpose
+# ============ 8. the writer repair: identity over non-JSON is the larger half
 #
-# The gate's stated rule is "the gate checks the TYPE of every identity
-# field, not its presence". Probing whether that holds for the CELL as
-# well as for the identity turns up two things, and they are NOT the same
-# kind of thing. Carrying them as one open question would hand the author
-# two decisions when there is one decision and one defect.
+# Sentinel-encoded absence was the stated concern and the gate closes it.
+# But a NaN reaching content stacked THREE distinct failures, and only one
+# of them was about absence:
+#
+#   1. an identity minted over a document no conformant parser will read
+#      back -- `Observation.id` computed over bytes containing a bare
+#      `NaN` token, which is a Python extension and not JSON;
+#   2. a persisted artifact outside the format it claims to be in;
+#   3. a value that breaks REFLEXIVITY, so any dedup, cache or comparison
+#      keyed on it misbehaves silently rather than raising.
+#
+# (2) and (3) are not absence problems at all. The repair for them is the
+# one this repository already applies to its canonical YAML emitter:
+# CANONICAL AT THE WRITER, refuse the ambiguous form. A reader taught to
+# tolerate NaN would relocate the problem rather than remove it.
+
+
+def test_the_store_refuses_to_write_a_non_finite_rather_than_persisting_it():
+    """`json.dumps` defaults to `allow_nan=True`, which emits bare
+    `NaN`/`Infinity`. Measured before this was set: the store wrote that
+    literal and the file was not valid JSON. Now the write refuses."""
+    import json
+    with pytest.raises(ValueError, match="not JSON compliant"):
+        json.dumps({"v": float("nan")}, allow_nan=False)
+
+    source = (Path(__file__).resolve().parent.parent
+              / "daf" / "storage" / "filesystem_store.py").read_text()
+    assert "allow_nan=False" in source
+    assert "json.dumps(payload, sort_keys=True, indent=2)" not in source, (
+        "the store's writer dropped allow_nan=False -- it will silently emit invalid JSON again")
+
+
+def test_every_daf_owned_json_writer_sets_allow_nan_false():
+    """One writer fixed is one writer fixed. The rule is a boundary
+    property, so it is checked at every DAF-owned `json.dumps`, and a new
+    one added without it fails here rather than at whichever consumer
+    first reads the file back."""
+    import re
+    root = Path(__file__).resolve().parent.parent
+    offenders = []
+    for path in sorted((root / "daf").rglob("*.py")):
+        for match in re.finditer(r"json\.dumps\([^()]*(?:\([^()]*\)[^()]*)*\)", path.read_text()):
+            if "allow_nan=False" not in match.group(0):
+                offenders.append(f"{path.relative_to(root)}: {match.group(0)[:60]}")
+    assert offenders == [], (
+        "these writers emit bare NaN/Infinity by default, producing files that claim to be "
+        f"JSON and are not: {offenders}")
+
+
+def test_content_hash_is_vendored_so_the_repair_is_bounded_and_says_so():
+    """HONEST LIMIT. `evidence.identity.content_hash` lives in the
+    vendored substrate, which is never modified, and it calls
+    `json.dumps` with the permissive default. So DAQ cannot make ID
+    MINTING itself refuse a non-finite -- an Observation constructed
+    directly in memory with a NaN still gets an id over invalid JSON.
+
+    What DAQ can and does do is ensure nothing non-finite reaches that
+    point through any route it owns: both gates refuse it, both
+    pass-through extractors refuse it, and every DAF-owned writer refuses
+    it. The residue is stated rather than papered over."""
+    import evidence.identity as identity
+    assert "vendor/scout-retrieval-agent" in identity.__file__, (
+        "content_hash is no longer vendored -- if it became DAF-owned, the writer repair should "
+        "be applied there too and this test replaced")
+
+    # The residue, demonstrated rather than asserted in prose.
+    assert content_hash({"v": float("nan")}), "minting still succeeds; only the routes are closed"
+
+
+def test_the_three_failures_are_distinct_and_only_one_is_about_absence():
+    """Stated as a test because collapsing them is the easy mistake: the
+    absence rule alone would not have caught (1) or (3)."""
+    import json
+    value = float("nan")
+
+    # 1. identity over non-JSON
+    serialized = json.dumps({"v": value}, sort_keys=True, separators=(",", ":"))
+    assert serialized == '{"v":NaN}'
+    with pytest.raises(ValueError):
+        json.loads(serialized, parse_constant=_refuse)
+
+    # 3. reflexivity broken -- nothing to do with whether the cell is absent
+    assert value != value
+    assert len({value, value}) == 2 or value is value, (
+        "set membership uses identity before equality, which is exactly why this misbehaves "
+        "silently rather than raising")
+
+
+# ================================ 9. the bool class, and what a covariance gets
+#
+# `isinstance(True, int)` is True, so a bool passes every numeric check
+# that does not exclude it by name. Measured: a bool was refused as a
+# QUANTITY but admitted as an UNCERTAINTY and admitted as a TABLE CELL.
+
+
+def test_a_bool_uncertainty_was_admissible_and_now_is_not():
+    from science.admissibility import UNTYPED_UNCERTAINTY
+    for value in (True, False):
+        verdict = quantity_is_typed(_typed_property(uncertainty=value))
+        assert not verdict.admissible
+        assert UNTYPED_UNCERTAINTY in verdict.reasons
+    assert quantity_is_typed(_typed_property(uncertainty=0.1)).admissible
+
+
+def test_a_bool_table_cell_was_admissible_and_now_is_not():
+    """The downstream harm is silent, which is what makes it worth a
+    reason code rather than a coercion: `sum([True, True, False])` is 2,
+    so a bool column quietly becomes a count nobody asserted."""
+    verdict = observation_is_table_alignable(dict(ALIGNED_CELL, value=True))
+    assert not verdict.admissible
+    assert table.BOOLEAN_IS_NOT_A_QUANTITY in verdict.reasons
+    assert sum([True, True, False]) == 2, "the silent reinterpretation this refuses"
+
+
+def test_refusing_a_bool_is_the_modelling_boundary_not_only_a_type_check():
+    """If the source means an indicator, encoding it as 0/1 is a design
+    matrix decision -- and the requirements artifact says the choice of
+    design matrix is a modelling assertion, not an observation. Letting
+    `True` arrive where a number is read makes that choice silently."""
+    from epistemics._yaml import loads
+    root = Path(__file__).resolve().parent.parent
+    artifact = loads((root / "architecture" / "exchange" / "scl_requirements.yaml").read_text())
+    assert any("modelling assertion" in str(p)
+               for p in artifact["workloads"]["least_squares"]["model_parameters"])
+
+    # Genuine numeric zero and one are unaffected -- the refusal is about
+    # the TYPE, not the magnitude.
+    for value in (0, 1, 0.0, 1.0):
+        assert observation_is_table_alignable(dict(ALIGNED_CELL, value=value)).admissible
+
+
+def test_the_bool_surface_is_recorded_as_inherited_by_the_covariance_work():
+    """A covariance is a matrix of cells and inherits this surface
+    directly: a bool in a covariance passes a positive-semidefiniteness
+    check while meaning nothing. Recorded against the covariance
+    extension rather than left to be rediscovered there."""
+    from epistemics._yaml import loads
+    root = Path(__file__).resolve().parent.parent
+    record = loads((root / "architecture" / "aligned_observation_table.yaml").read_text())
+    inherited = record["deliberately_not_done"]["covariance_inherits_the_bool_surface"]
+    assert "positive-semidefinite" in inherited or "PSD" in inherited
+    assert "matrix of cells" in inherited.lower()
+
+
+def test_emitted_json_is_json_is_enforced_as_the_ledger_claims():
+    entry = _invariant("emitted_json_is_json")
+    assert entry["status"] == "enforced"
+    assert Path(__file__).name in entry["enforcement"]
+    assert "fourth instance" in entry["it_is_the_fourth_instance_of_one_rule"].lower() or \
+        "Clause 2" in entry["it_is_the_fourth_instance_of_one_rule"]
+    assert "relocates the problem" in entry["the_rule"]
+    assert "vendored" in entry["bounded_limitation"]
+
+
+def test_a_bool_is_not_a_quantity_is_enforced_as_the_ledger_claims():
+    from science.admissibility import UNTYPED_UNCERTAINTY
+    entry = _invariant("a_bool_is_not_a_quantity")
+    assert entry["status"] == "enforced"
+    assert Path(__file__).name in entry["enforcement"]
+    assert "positive-semidefinite" in entry["inherited_by"]
+
+    # All three positions the ledger claims, exercised.
+    assert not quantity_is_typed(_typed_property(value=True)).admissible
+    assert UNTYPED_UNCERTAINTY in quantity_is_typed(_typed_property(uncertainty=True)).reasons
+    assert table.BOOLEAN_IS_NOT_A_QUANTITY in observation_is_table_alignable(
+        dict(ALIGNED_CELL, value=True)).reasons
+
+
+# ========== 10. the value cell: one decision made, one defect fixed
+#
+# A concurrent session probed this gate against its OWN stated rule --
+# "the gate checks the TYPE of every identity field, not its presence" --
+# and asked whether that holds for the CELL as well. It did not, and the
+# session split what it found into two things rather than one, which was
+# the right split:
 #
 #     value = 1.5      table: admissible    scalar: admissible
-#     value = "1.5"    table: ADMISSIBLE    scalar: UNTYPED_QUANTITY   <- DECISION
-#     value = True     table: ADMISSIBLE    scalar: UNTYPED_QUANTITY   <- DEFECT
+#     value = "1.5"    table: ADMISSIBLE    scalar: UNTYPED_QUANTITY   DECISION
+#     value = True     table: ADMISSIBLE    scalar: UNTYPED_QUANTITY   DEFECT
 #
-# ---------------------------------------------------------------- DECISION
+# Both were left to this gate's author, deliberately and correctly. Both
+# are now resolved, and the tests below are their characterization tests
+# turned over to the resolved state.
 #
-# The STRING case is a genuine design question about what a table is FOR.
-# A categorical column can be alignable without being numerically
-# fittable, and this gate answers alignability rather than fittability.
-# Admitting "1.5" may well be correct. Nobody has decided, and this file
-# does not decide it.
-#
-# ------------------------------------------------------------------ DEFECT
-#
-# The BOOL case is the file contradicting itself, and it is not open.
-# architecture/aligned_observation_table.yaml excludes bool from identity
-# fields with an explicit rationale: isinstance(True, int) is True, so a
-# bool passes any numeric check that does not name it. That reasoning is
-# not about identity. It is about bool, and it applies with more force to
-# the cell than to the identity:
-#
-#   * an identity field is a JOIN KEY -- a bool one produces a table with
-#     two rows, which is visibly wrong;
-#   * a cell reaches a DESIGN MATRIX -- a bool one is summed as 1.0, with
-#     no error at any layer, and the fit looks entirely healthy.
-#
-# The scalar gate already refuses it. `two_gates_that_must_agree` says
-# neither gate subsumes the other and neither call may be dropped -- and
-# they do not agree here, so a caller running only the table gate (which
-# is the gate FOR the table workload) admits it.
-#
-# Still characterized rather than patched, because the gate is another
-# session's design and the fix belongs with its author. But it is recorded
-# as a DEFECT with the contradiction named, not as a second open question.
+# A NOTE ON THE DEPARTURE. Their bool test said "if this starts failing,
+# the defect has been fixed -- delete this test rather than updating it."
+# It is inverted rather than deleted, because every other closed gap in
+# this repository kept its lock as the regression surface, and a deleted
+# test cannot catch the defect coming back. The instruction is recorded
+# here rather than silently overridden.
 
-# ================= CHARACTERIZATION: the value cell is not element-typed
-#
-# Found by probing the gate against its own stated rule -- "the gate checks
-# the TYPE of every identity field, not its presence" -- and asking whether
-# it holds for the CELL as well as for the identity.
-#
-# It does not. Measured, not argued: the two gates disagree about `value`.
-#
-#     shape            observation_is_table_alignable   quantity_is_typed
-#     ---------------  ------------------------------   -----------------
-#     value = 1.5      admissible                       admissible
-#     value = "1.5"    ADMISSIBLE                       UNTYPED_QUANTITY
-#     value = True     ADMISSIBLE                       UNTYPED_QUANTITY
-#
-# The string case is arguably a design choice: a categorical column may be
-# genuinely alignable without being numerically fittable, and the table
-# gate answers alignability. Recorded, not asserted to be wrong.
-#
-# The BOOL case is not that. This file's own rationale excludes bool from
-# identity fields precisely because isinstance(True, int) makes it pass any
-# numeric check that does not name it -- and a bool cell reaching a design
-# matrix is summed as 1.0, silently, which is the exact failure that
-# rationale exists to prevent. The exclusion is applied to identity and not
-# to the cell.
-#
-# Locked here rather than patched: the gate is another session's fresh
-# design and the string question is genuinely open. This makes the gap
-# undriftable while leaving the decision where it belongs -- the same
-# posture test_persistent_condition_lifecycle.py took for the
-# graph_dataset write-side gap.
 
-def test_DECISION_a_string_cell_is_admitted_and_that_may_be_correct():
-    """OPEN DESIGN QUESTION, not a defect. A categorical column can be
-    alignable without being numerically fittable, and this gate answers
-    alignability. Recorded so the choice is made deliberately rather than
-    inherited."""
+def test_DECISION_a_categorical_string_cell_is_alignable_and_a_numeric_looking_one_is_not():
+    """THE DECISION, made rather than inherited.
+
+    The question was whether a string cell is alignable, given that this
+    gate answers ALIGNABILITY and not fittability. The answer splits, and
+    the dividing line is measured rather than chosen:
+
+        True     float() -> 1.0   SILENT    sum -> 2   SILENT
+        "1.5"    float() -> 1.5   SILENT    sum RAISES LOUD
+        "B7"     float() RAISES   LOUD      sum RAISES LOUD
+
+    A categorical column is a real column, and the workload's requirement
+    asks for identity rather than for numerics -- so "B7" is admitted. A
+    numeric-looking string is refused, because it coerces silently: a
+    column holding 1.5 in one observation and "1.5" in another MERGES
+    under a coercing consumer and SPLITS under a strict one, and neither
+    says anything. That is the implicit-typing defect one layer in, the
+    same class the always-quote rule closed where a value's type depended
+    on who read it."""
     base = {"sample_id": "s1", "variable": "v1", "unit": "m", "value": 1.5}
-    assert observation_is_table_alignable(base).admissible is True
-    assert observation_is_table_alignable({**base, "value": "1.5"}).admissible is True
+    assert observation_is_table_alignable(base).admissible
+
+    for categorical in ("B7", "low", "control", "north-east"):
+        assert observation_is_table_alignable({**base, "value": categorical}).admissible, categorical
+
+    for numeric_looking in ("1.5", "3", "1e5", "-0.2", "nan", "inf"):
+        verdict = observation_is_table_alignable({**base, "value": numeric_looking})
+        assert not verdict.admissible, numeric_looking
+        assert table.NUMERIC_LOOKING_STRING_CELL in verdict.reasons
+
+    # "nan" and "inf" as STRINGS are in that list deliberately: a sentinel
+    # absence smuggled in as text is the same forbidden encoding wearing a
+    # different type, and the absence rule does not care which type it wore.
+    assert table.NUMERIC_LOOKING_STRING_CELL in observation_is_table_alignable(
+        {**base, "value": "NaN"}).reasons
 
 
-def test_DEFECT_a_bool_cell_is_admitted_against_the_files_own_rationale():
-    """NOT an open question. The design excludes bool from identity fields
-    because isinstance(True, int) passes any numeric check that does not
-    name it -- reasoning about BOOL, not about identity, and it applies
-    with more force to the cell: a bool join key makes a visibly wrong
-    two-row table, a bool cell is summed as 1.0 in a design matrix with no
-    error at any layer.
+def test_the_dividing_line_is_what_a_consumer_actually_calls():
+    """`float()` is the test rather than a regex, because `float()` is
+    what a consumer actually calls -- so the gate asks the real question
+    (would this coerce without complaint?) instead of approximating it."""
+    for value in ("B7", "low", "", "  ", "1.5.2", "one"):
+        try:
+            float(value)
+            coerces = True
+        except (TypeError, ValueError):
+            coerces = False
+        admitted = observation_is_table_alignable(
+            {"sample_id": "s", "variable": "v", "value": value}).admissible
+        assert admitted is not coerces, f"{value!r}: gate and float() disagree"
 
-    If this starts failing, the defect has been fixed -- delete this test
-    rather than updating it."""
+
+def test_FIXED_the_bool_cell_defect_the_concurrent_session_named():
+    """INVERTED from their characterization test. Their argument was that
+    the file was contradicting itself: it already excluded bool from
+    IDENTITY fields on the rationale that `isinstance(True, int)` makes a
+    bool pass any numeric check that does not name it -- reasoning about
+    bool, not about identity -- and it applies with MORE force to the
+    cell:
+
+      * a bool JOIN KEY produces a visibly wrong two-row table;
+      * a bool CELL reaches a design matrix and is summed as 1.0, with no
+        error at any layer, and the fit looks entirely healthy.
+
+    That argument was correct and the exclusion now applies to both."""
     base = {"sample_id": "s1", "variable": "v1", "unit": "m", "value": 1.5}
-    assert observation_is_table_alignable({**base, "value": True}).admissible is True
+    for value in (True, False):
+        verdict = observation_is_table_alignable({**base, "value": value})
+        assert not verdict.admissible
+        assert table.BOOLEAN_IS_NOT_A_QUANTITY in verdict.reasons
 
 
-def test_the_scalar_gate_refuses_exactly_what_the_table_gate_admits():
-    """The two gates disagree, which matters because the file's own
-    `two_gates_that_must_agree` says neither may be dropped in favour of
-    the other. A caller running only the table gate admits a bool cell."""
-    from science.admissibility import UNTYPED_QUANTITY, quantity_is_typed
+def test_the_two_gates_now_agree_on_every_shape_that_split_them():
+    """`two_gates_that_must_agree` says neither gate subsumes the other
+    and neither call may be dropped. The finding was that they DISAGREED
+    about `value`, so a caller running only the table gate -- which is the
+    gate FOR this workload -- admitted what the scalar gate refused.
 
-    for cell in ("1.5", True):
+    Asserted as agreement over the disputed shapes rather than as a fix to
+    one of them, because agreement is the property the file claims."""
+    from science.admissibility import UNTYPED_QUANTITY
+
+    for cell in ("1.5", True, False, "3"):
         scalar = quantity_is_typed(
             {"value": cell, "unit": "m", "uncertainty": 0.1, "uncertainty_kind": "stated"})
-        assert scalar.admissible is False
-        assert UNTYPED_QUANTITY in scalar.reasons
+        alignable = observation_is_table_alignable(
+            {"sample_id": "s1", "variable": "v1", "value": cell})
+        assert not scalar.admissible and UNTYPED_QUANTITY in scalar.reasons
+        assert not alignable.admissible, f"the table gate still admits {cell!r}"
+
+    # ...and they still answer DIFFERENT questions, which the agreement
+    # must not be mistaken for. A categorical cell is alignable and is not
+    # a typed quantity, and that is correct on both sides.
+    categorical = {"sample_id": "s1", "variable": "v1", "value": "B7"}
+    assert observation_is_table_alignable(categorical).admissible
+    assert not quantity_is_typed({"value": "B7", "unit": "m"}).admissible
 
 
-def test_the_bool_exclusion_is_applied_to_identity_and_not_to_the_cell():
-    """The asymmetry stated precisely, so the inconsistency is the thing
-    recorded rather than the symptom."""
+def test_the_bool_exclusion_is_now_applied_to_identity_AND_to_the_cell():
+    """The asymmetry they named, stated as closed."""
     base = {"sample_id": "s1", "variable": "v1", "unit": "m", "value": 1.5}
-    # identity: bool IS excluded, by name
-    assert observation_is_table_alignable({**base, "sample_id": True}).admissible is False
-    assert observation_is_table_alignable({**base, "variable": True}).admissible is False
-    # the cell: bool is NOT excluded
-    assert observation_is_table_alignable({**base, "value": True}).admissible is True
+    assert not observation_is_table_alignable({**base, "sample_id": True}).admissible
+    assert not observation_is_table_alignable({**base, "variable": True}).admissible
+    assert not observation_is_table_alignable({**base, "value": True}).admissible

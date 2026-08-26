@@ -266,14 +266,31 @@ def test_a_sequence_inside_a_sequence_is_refused_at_the_writer():
     rather than by teaching one reader to cope."""
     from epistemics._yaml import loads as repo_loads
 
-    with pytest.raises(TypeError, match="nested directly in a sequence"):
+    with pytest.raises(TypeError, match="sequence directly inside a sequence"):
         cy.canonical_dump({"k": [[1, 2], [3]]})
 
-    # the divergence itself, still demonstrable on a hand-authored document
-    bare = '"k":\n  - - 1\n    - 2\n'
-    assert yaml.safe_load(bare) == {"k": [[1, 2]]}
+    # THE LOUD SHAPE. Multi-element compact: the minimal reader raises, so
+    # the disagreement announces itself.
+    multi = '"k":\n  - - 1\n    - 2\n'
+    assert yaml.safe_load(multi) == {"k": [[1, 2]]}
     with pytest.raises(Exception):
-        repo_loads(bare)
+        repo_loads(multi)
+
+    # THE SILENT SHAPE, AND THE REASON THIS TEST WAS REWRITTEN. Both halves
+    # of the reissue probed only `multi` above, both saw a refusal, and both
+    # wrote down "the dependency-free reader refuses the block form". It does
+    # not. With ONE inner element -- which is what a compact emitter produces
+    # for a single-row nested sequence -- neither reader errors and they
+    # return different types for identical bytes.
+    single = '"k":\n  - - 1\n'
+    assert yaml.safe_load(single) == {"k": [[1]]}          # a nested list
+    assert repo_loads(single) == {"k": ["- 1"]}            # a STRING
+    assert yaml.safe_load(single) != repo_loads(single)
+
+    # Stated as the property rather than the example: same bytes, two values,
+    # no error on either side. A loud disagreement costs a failed read; a
+    # silent one reaches a digest, and a digest over a value the other side
+    # cannot reproduce is the whole failure this pair exists to prevent.
 
     # the documented alternative round-trips through both
     wrapped = {"k": [{"row": [1, 2]}]}
@@ -285,7 +302,114 @@ def test_the_fixture_pins_collection_shapes_across_both_parsers():
     from epistemics._yaml import loads as repo_loads
 
     shapes = cy.FIXTURE["collection_shapes"]
-    assert len(shapes) >= 8, "the fixture pinned no collection shapes before this"
+    assert len(shapes) >= 11, "the fixture pinned no collection shapes before this"
     text = cy.canonical_dump(cy.FIXTURE)
     assert yaml.safe_load(text)["collection_shapes"] == shapes
     assert repo_loads(text)["collection_shapes"] == shapes
+
+
+# ---------------- the escape class, and the two shapes only this half pinned
+#
+# The collection tests above came from the other half of this reissue, which
+# reached the same refusal independently and swept it across both parsers more
+# thoroughly. What follows is what only this half measured: a THIRD class,
+# beside the collection one and wider, plus the narrowness check and the
+# non-finite guard.
+
+
+def test_the_refusal_also_covers_the_shapes_that_used_to_CRASH_the_emitter():
+    """The refusal above is the divergence case. These are the cases that
+    were not a divergence at all -- the emitter could not represent them.
+    An empty collection nested in a sequence fell through to the scalar
+    formatter and raised `unsupported scalar type for canonical YAML:
+    list`, so a legal document shape had no canonical form. They now hit
+    the same named refusal, which is the difference between "we decided
+    not to encode this" and "we did not notice"."""
+    for shape in ([[], [1]], [(1,)], [1, ["x"]], [{"a": 1}, ["b"]]):
+        with pytest.raises(TypeError, match="sequence directly inside a sequence"):
+            cy.canonical_dump({"k": shape})
+
+
+def test_the_refusal_is_narrow_and_the_legal_shapes_still_emit():
+    """A mapping inside a sequence, and a sequence inside a mapping, are
+    both fine and unaffected. Only sequence-directly-inside-sequence is
+    refused, so the refusal costs nothing any real artifact does."""
+    for document in (
+        {"k": ["a", "b"]},
+        {"k": [{"a": 1}, {"b": 2}]},
+        {"k": {"a": {"b": 1}}},
+        {"k": [{"a": [1, 2]}]},
+        {"k": [{}, {"a": 1}]},
+        {"k": {"a": {}, "b": []}},
+        {"k": [{"b": {"c": ["x"]}}]},
+    ):
+        assert yaml.safe_load(cy.canonical_dump(document)) == document
+
+
+def test_the_fixture_pins_the_collection_class_not_only_scalars():
+    """The scalar class is pinned by `implicit_typing_traps`. Until Phase
+    37 nothing pinned the shapes where the block renderer's dash-collapse
+    actually runs, which is where the divergence lived."""
+    shapes = cy.FIXTURE["collection_shapes"]
+    # The UNION of two independently-authored fixtures. Both halves of this
+    # reissue closed the collection class concurrently and reached the same
+    # refusal; their fixtures differed, and coverage is the entire purpose
+    # of this entry, so neither replaced the other.
+    assert set(shapes) >= {
+        # depth -- the deepest legal interleave the dash-collapse runs on
+        "empty_seq_under_a_key_in_a_sequence",
+        "map_in_seq_in_map_in_seq",
+        "seq_under_a_key_in_a_map_in_a_seq",
+        # breadth -- empty collections in every position, and the
+        # documented alternative to a bare nested sequence
+        "empty_map_in_a_sequence",
+        "empty_map_value",
+        "empty_sequence_value",
+        "nested_empty_map",
+        "nested_empty_sequence",
+        "sequence_of_maps",
+        "sequence_of_scalars",
+        "wrapped_inner_sequence",
+    }
+    for value in shapes.values():
+        assert yaml.safe_load(cy.canonical_dump({"v": value}))["v"] == value
+
+
+# ==================================================== the ESCAPE class (§2.1)
+#
+# A different defect from the two above, and the difference decides the
+# repair. The bytes here have exactly ONE correct meaning under YAML 1.2
+# and PyYAML already returns it; the minimal reader was simply
+# non-conformant. So this one is fixed reader-side -- fixing a wrong
+# reader is not the reader-side normalization the always-quote rule
+# forbids, and it moves no artifact and no digest.
+
+
+@pytest.mark.parametrize("value", [
+    'he said "x"', "a\\b", 'a\\"b', "a\nb", "a\tb", "a\rb",
+    "C:\\Users\\x", 'he said "hi" # not a comment', 'he said "hi": and more',
+    "\\", 'ends with "', "",
+])
+def test_every_escape_the_emitter_can_produce_round_trips_identically(value):
+    """`_quote` escapes exactly five sequences -- backslash, double quote,
+    newline, carriage return, tab -- and the always-quote rule sends EVERY
+    string through it. So any value containing one of those arrives at the
+    reader escaped, and until Phase 37 the minimal reader returned it with
+    the backslashes still in place."""
+    text = cy.canonical_dump({"k": value})
+    assert yaml.safe_load(text)["k"] == value
+
+
+def test_escaped_keys_round_trip_too():
+    document = {'a "b"': 1, "c\\d": 2}
+    assert yaml.safe_load(cy.canonical_dump(document)) == document
+
+
+def test_the_emitter_refuses_a_non_finite_float():
+    """Checked here rather than assumed: the shared serializer is already
+    clean on the axis that produced the NaN finding elsewhere in this
+    phase. `_format_float` raises rather than emitting `.nan`/`.inf`,
+    which is the same writer-side rule applied one layer down."""
+    for value in (float("nan"), float("inf"), float("-inf")):
+        with pytest.raises(ValueError, match="non-finite"):
+            cy.canonical_dump({"k": value})

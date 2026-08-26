@@ -81,5 +81,5 @@ class CheckpointStore:
     def advance(self, checkpoint: AcquisitionCheckpoint) -> None:
         path = self.root / f"{checkpoint.plan_id}.json"
         tmp_path = self.root / f"{checkpoint.plan_id}.json.tmp"
-        tmp_path.write_text(json.dumps(_checkpoint_to_dict(checkpoint), sort_keys=True, indent=2))
+        tmp_path.write_text(json.dumps(_checkpoint_to_dict(checkpoint), sort_keys=True, indent=2, allow_nan=False))
         tmp_path.replace(path)  # atomic on POSIX

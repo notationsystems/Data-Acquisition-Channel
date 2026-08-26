@@ -45,6 +45,134 @@ missing half.
 The last row is why the pass-through routes mattered. A sentinel travelled
 `local_dataset` end to end without one error being raised anywhere.
 
+### It is three distinct failures, and only one is about absence
+
+Sentinel-encoded absence was the stated concern, and the gate closes it. But
+collapsing the finding into "the sentinel gap" loses two thirds of it:
+
+1. **An identity minted over a document no conformant parser will read
+   back.** Not an absence problem at all, and the largest of the three:
+   content addressing across processes and languages is what the whole
+   repository rests on.
+2. **A persisted artifact outside the format it claims.**
+3. **A value that breaks reflexivity** — so any dedup, cache, or comparison
+   keyed on it misbehaves *silently* rather than erroring.
+
+### The writer repair — fourth instance of one rule
+
+`NaN`/`Infinity` in emitted JSON is the same class as clause 2 and the YAML
+implicit-typing defect: **a writer emitting a form its own reader can't
+accept.** With the YAML collection and escape classes measured in this same
+phase, that is now four. The §6.2 repair applies unchanged — canonical at the
+writer, refuse the ambiguous form. A reader taught to tolerate `NaN` only
+relocates the problem to every other reader, including the ones in other
+languages the format exists to reach.
+
+Every DAF-owned `json.dumps` on a write path now sets `allow_nan=False`,
+enforced tree-wide by a test rather than one call at a time, so a new writer
+added without it fails here rather than at whichever consumer first reads the
+file back.
+
+**Bounded honestly.** `evidence.identity.content_hash` is vendored and uses
+the permissive default, so DAQ cannot make *id minting* refuse. An
+`Observation` built directly in memory with a NaN still gets an id over
+invalid JSON. What DAQ closes is every route it owns — both gates, both
+pass-through extractors, every DAF-owned writer. The residue is recorded, not
+papered over.
+
+### Forensics: has anything already been persisted?
+
+The same check the covariance case earned, and for the same reason — an id
+minted over invalid JSON cannot be recomputed by a conformant reader, so a
+stored record carrying one would be *unrecoverable*, not merely wrong.
+
+Searched every committed file in both repositories for a bare `NaN`/`Infinity`
+token, and counted committed evidence-store artifacts. **Committed evidence
+records: 0.** Every `NaN` hit is prose about this defect — gate sources, tests,
+records written this phase. No emitted JSON, no artifact.
+
+**Nothing was persisted, no id was minted over one, nothing to recover.** The
+finding is forward-only. Consistent with `architecture/invariants.yaml`'s
+migration section recording zero committed records — re-verified rather than
+assumed.
+
+## The bool class, and what the covariance work inherits
+
+`isinstance(True, int)` is `True`, so a bool passes every numeric check that
+doesn't exclude it *by name*. Measured: a bool was already refused as a
+**quantity**, but was **admissible as an uncertainty** and **admissible as a
+table cell**. Both now closed.
+
+The harm is silent, which is why it earns a reason code rather than a
+coercion: `sum([True, True, False])` is `2`, so a bool column quietly becomes
+a count nobody asserted.
+
+It is also a modelling boundary, not only a type check. If the source means
+an indicator, encoding it as 0/1 is a *design matrix* decision — and the
+requirements artifact records the choice of design matrix as a modelling
+assertion rather than an observation. Letting `True` arrive where a number is
+read makes that choice silently.
+
+**A covariance is a matrix of cells and inherits this surface directly**: a
+bool in a covariance passes a positive-semidefiniteness check while meaning
+nothing. Recorded against the covariance extension rather than left to be
+rediscovered inside it.
+
+### The string cell: a decision, made rather than inherited
+
+A concurrent session probed this gate against its *own stated rule* — "checks
+the TYPE of every identity field, not its presence" — and asked whether that
+holds for the **cell**. It didn't, and they split what they found into two
+things, which was the right split:
+
+| | table gate | scalar gate | |
+|---|---|---|---|
+| `1.5` | admissible | admissible | |
+| `"1.5"` | **admissible** | `UNTYPED_QUANTITY` | ← decision |
+| `True` | **admissible** | `UNTYPED_QUANTITY` | ← defect |
+
+They left both to the gate's author. The bool half is the defect above. The
+string half was a real question: this gate answers *alignability*, not
+fittability, so a categorical column may well be alignable without being
+numerically fittable.
+
+Decided by measuring, not by taste:
+
+```
+True     float() -> 1.0   SILENT    sum -> 2   SILENT
+"1.5"    float() -> 1.5   SILENT    sum RAISES LOUD
+"B7"     float() RAISES   LOUD      sum RAISES LOUD
+```
+
+All three separate cleanly on the loud/silent axis this repository keeps
+measuring, and the line falls between the second and third. **A categorical
+string cell is admitted** — a categorical column is a real column, the
+requirement asks for identity rather than numerics, and `float()` raises on it
+loudly. Refusing it would make this gate answer fittability, which is not its
+question. **A numeric-looking string cell is refused** — it coerces *silently*,
+so a column holding `1.5` in one observation and `"1.5"` in another merges
+under a coercing consumer and splits under a strict one, and neither says
+anything. That is the implicit-typing defect one layer in: the same class the
+always-quote rule closed, where a value's type depended on who read it.
+
+The test is `float()` itself rather than a regex, because `float()` is what a
+consumer actually calls. `"nan"` and `"inf"` fall out as a consequence — a
+sentinel absence smuggled in as text is the same forbidden encoding wearing a
+different type.
+
+**The limit this gate cannot close**, named rather than assumed: it is
+per-observation and cannot see a column. A variable whose cells are `float` in
+one observation and a categorical string in another is admissible cell by cell
+and is still a broken column. Refusing numeric-looking strings removes the case
+where that inconsistency is silent; the rest raise at the consumer. Whoever
+assembles the table owns the cross-observation check.
+
+One departure worth recording: their bool test said "if this starts failing,
+the defect has been fixed — delete this test rather than updating it." It is
+**inverted** rather than deleted, because every other closed gap here kept its
+lock as the regression surface and a deleted test cannot catch the defect
+coming back.
+
 ## What was built
 
 | file | what it is |
@@ -157,14 +285,107 @@ caught that the two new invariants named an enforcement file that never
 mentioned them. The fix was to make the file mention them, which is what the
 test was asking for.
 
-## A parser divergence, found by the check that exists for it
+## The second coordinated reissue: two more canonicalization classes
 
-`epistemics/_yaml.py` does not decode backslash escapes inside a
-double-quoted scalar; PyYAML does. Found because the new architecture record
-originally embedded escaped quotes, and the two-parser typed-agreement check
-refused it. The record was restated without them and the exact bytes are
-asserted in a test instead. Recorded here because it is a real limitation of
-this repository's own reader, and because the check working is the point.
+What began as "a parser disagreement on a hand-written flow sequence" was
+pulled on and turned into two real defects in the **shared** serializer's
+neighbourhood — one level up from the scalar class the always-quote rule
+closed, and one beside it.
+
+### The collection class — emitter-side refusal
+
+`canonical_dump({"k": [["a"], ["b"]]})` emitted the compact block form
+`- - "a"`. PyYAML types that as `[["a"], ["b"]]`; the minimal reader types it
+as the **strings** `['- "a"', '- "b"']`. Same bytes, same digest, two values.
+Separately, an empty collection nested in a sequence didn't merely diverge —
+the emitter **crashed**, raising `unsupported scalar type for canonical YAML:
+list` from the scalar formatter.
+
+One correction to the initial framing: the emitter *was* honouring block
+style. `- - "a"` is block. So this wasn't "an emitter ignoring its own rule" —
+it was a block-style shape the pair can't agree on, which the spec never
+excluded.
+
+Repaired the way the scalar rule was: **refuse at the writer.** There is no
+emitted form both readers accept — written out long instead of collapsed, the
+minimal reader *raises* on the bare `-` rather than mistyping it. Teaching one
+reader the compact form would leave the bytes ambiguous for every other
+reader. The refusal is narrow: sequence-directly-inside-sequence only.
+
+### The escape class — reader-side, and that's not a contradiction
+
+Wider, and always-quote *widened* it. `_quote` escapes five sequences
+(`\\`, `\"`, `\n`, `\r`, `\t`) and always-quote sends **every** string
+through it. The minimal reader returned the quoted body verbatim via
+`text[1:-1]`, decoding none of them. Measured across 13 shapes: **all 13
+diverged.**
+
+This one is fixed reader-side, and the difference from the scalar rule is the
+whole point. There the *bytes* were ambiguous, so a reader-side normalization
+would have hidden it. Here the bytes have exactly one correct meaning under
+YAML 1.2 and PyYAML already returns it — the minimal reader was simply
+non-conformant. Fixing a wrong reader isn't relocating a problem, and it moves
+no artifact and no digest.
+
+### The enforcement hole that let it through
+
+The escape defect reached a **hash-bearing artifact** — the reissued decision
+record — and the suite stayed green. Cause: the two-parser agreement check
+globbed `exchange/` and `proposals/`. **`decisions/` was not in the list.** The
+one artifact type that binds a joint decision to its input hashes was never
+checked. Fixed by adding the directory *and* asserting the coverage rule:
+every directory carrying a `.sha256` sidecar must have its artifacts checked.
+
+`verify_pair_landed.py` had the same shape of hole — its `SHARED` list named
+five files, omitting the serializer's own source pin and the decision record.
+A fixture change reissues that record, so the check would have said PAIR
+LANDED while the two repos held different records. Not hypothetical: they had
+already diverged once, when one clone was three commits stale.
+
+### Both halves found it independently
+
+The other repository's session closed the collection class in the same
+window, from the same measurement, and reached the **same refusal by the same
+argument**. Verified rather than assumed: the two emitters produce
+**byte-identical output for every document tested** and refuse exactly the
+same shapes. The differences were source prose and fixture contents.
+
+Resolved by taking their source — it states the rule in the module's spec
+block, which is where a canonicalization rule belongs — and taking the
+**union of both fixtures**. Coverage is the entire purpose of the fixture and
+each half exercised paths the other didn't: theirs carries breadth (empty
+collections in every position, sequences of scalars, the documented wrapped
+alternative), mine carries depth (a sequence under a key inside a mapping
+inside a sequence, the deepest legal interleave the dash-collapse actually
+runs on). Eleven collection shapes are pinned now; the fixture pinned none
+before this phase.
+
+Their half also caught something mine didn't: an empty *mapping* inside a
+sequence used to raise `unsupported scalar type` — the emitter couldn't
+represent a legal document shape at all. Loud, so never silent, but a hole.
+
+### Blast radius, measured rather than estimated
+
+Narrower than expected, and worth stating precisely rather than repeating
+"every digest moves":
+
+| moved | did not move |
+|---|---|
+| `canonical_yaml.py` + source pin | `daq_capabilities.yaml` + sidecar |
+| `canonicalization_fixture.yaml` + sidecar | `scl_requirements.yaml` + sidecar |
+| joint decision record + sidecar | |
+
+Six files per repo, one commit each. The capabilities and requirements
+artifacts regenerate **byte-identically** from their own repositories'
+committed generators — because no committed artifact in either repo contained
+a nested sequence, checked across every `architecture/**/*.yaml` on both
+sides. The first reissue changed how every string is emitted and moved
+everything; this one refuses a shape nothing used and fixes a reader.
+
+The decision record moved only because it binds `canonicalization_fixture_hash`
+and its own `binding_rule` says a bound artifact changing means **reissue, not
+edit**. It was reissued: the decision is untouched, and the reissue block
+states what forced it.
 
 ## The serializer pin: both suites, not both CI paths
 
@@ -213,7 +434,7 @@ Performing the join is the compute layer's work.
 
 ## Verification
 
-- full DAF suite: **925 passed**
+- full DAF suite: **970 passed**
 - vendored SCOUT suite: **1273 passed**, unchanged; submodule tree clean
 - `mypy daf/ science/ boundary/ bridge/ epistemics/`: clean
 - doctrine regenerated from `architecture/*.yaml`; re-running the generator

@@ -46,7 +46,17 @@ from canonical_yaml import canonical_dump
 DEFECT = loads((ARCHITECTURE / "canonicalization_defect.yaml").read_text())
 
 # Every committed artifact whose bytes a hash is, or will be, taken over.
-HASH_BEARING = sorted(EXCHANGE.glob("*.yaml")) + sorted((ARCHITECTURE / "proposals").glob("*.yaml"))
+# Every committed artifact whose bytes a hash IS taken over. `decisions/`
+# was missing from this list until Phase 37, which is how a reissued
+# decision record carrying escaped quotes passed the suite while parsing
+# to two different values -- the check existed and simply did not look
+# there. A hash-bearing directory left off this list is an unenforced
+# guarantee, so the glob is asserted to cover all three below.
+HASH_BEARING = (
+    sorted(EXCHANGE.glob("*.yaml"))
+    + sorted((ARCHITECTURE / "proposals").glob("*.yaml"))
+    + sorted((ARCHITECTURE / "decisions").glob("*.yaml"))
+)
 
 # The scalars measured to diverge under the CURRENT shared serializer.
 DIVERGING = ("2026-08-25", "2026-08-25T12:00:00Z", "1:30:00", "0x1F", ".inf", ".nan")
@@ -240,3 +250,28 @@ def test_the_recorded_verification_step_demands_typed_structures():
     assert "typed structures" in verification
     assert "not" in verification and "bytes" in verification
     assert "required step" in verification, "it must be required, not advisory"
+
+
+# ------------------------- the directories the check must not stop covering
+
+
+def test_every_directory_with_a_sha256_sidecar_is_covered_by_the_check():
+    """The defect this catches is not a wrong assertion but a MISSING
+    one. `architecture/decisions/` carries `.sha256` sidecars and was not
+    in HASH_BEARING, so the two-parser agreement check silently skipped
+    the one artifact type that binds a joint decision to its inputs.
+
+    Rather than adding the directory and moving on, the coverage rule is
+    stated: anywhere a sidecar lives, the agreement check looks."""
+    with_sidecars = {
+        path.parent for path in ARCHITECTURE.rglob("*.sha256")
+    }
+    covered = {path.parent for path in HASH_BEARING}
+    uncovered = {
+        directory for directory in with_sidecars
+        if any(directory.glob("*.yaml")) and directory not in covered
+    }
+    assert uncovered == set(), (
+        f"these directories carry .sha256 sidecars but no artifact in them is checked for "
+        f"two-parser agreement: {sorted(str(d) for d in uncovered)}"
+    )

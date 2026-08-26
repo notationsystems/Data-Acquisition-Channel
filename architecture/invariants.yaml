@@ -266,7 +266,7 @@ invariants:
   - id: absence_is_never_an_in_range_value
     rule: "a missing value is expressed structurally and never as a number; no member of the numeric range, NaN and the infinities included, may mean absent"
     status: enforced
-    implementation: science/admissibility.py, science/table.py, daf/extractors/_passthrough.py
+    implementation: science/admissibility.py, science/table.py, daf/extractors/_passthrough.py, daf/storage/filesystem_store.py
     enforcement: tests/test_aligned_observation_table.py
     fourth_instance_of: "uncertainty_kind absent, the Fourier metrics DAQ refuses to fabricate, delta-t as a sentinel, and now a missing table cell. The rule is identical in all four and is stated once here."
     mechanisms:
@@ -275,6 +275,29 @@ invariants:
       - "daf/extractors/_passthrough.py refuses a non-finite number at any nesting depth on both verbatim pass-through routes, which were the paths that reached no gate"
     measured_consequence_if_unenforced: "content_hash emits a bare NaN token, which is not valid strict JSON, so Observation.id is computed over bytes no conformant reader in another language accepts; the literal persists to disk; and the value does not compare equal to itself after a round trip, so an equality check that would catch a corrupted round trip returns False for an intact one"
     limitation: "enforced where an aligned table is gated and where the two pass-through extractors read. A source-specific extractor that constructs content by hand is separately responsible; the seam covers the generic transports, not every author."
+    failure_mode: fail_closed
+
+  - id: emitted_json_is_json
+    rule: "no DAF-owned writer emits a token its own format does not define; a non-finite number is refused at the write rather than serialized as a bare NaN or Infinity"
+    status: enforced
+    implementation: daf/storage/filesystem_store.py and every other DAF-owned json.dumps
+    enforcement: tests/test_aligned_observation_table.py
+    measured_before: "json.dumps defaults to allow_nan=True, which emits bare NaN/Infinity -- a Python extension, not JSON. The store wrote that literal, so a file claiming to be JSON was not, and no conformant reader in another language would accept it."
+    it_is_the_fourth_instance_of_one_rule: "a writer emitting a form its own reader cannot accept. Clause 2; the YAML implicit-typing defect; the YAML collection and escape classes; and this."
+    the_rule: "canonical at the WRITER, refuse the ambiguous form. A reader taught to tolerate the form relocates the problem to every other reader, including the ones in other languages the format exists to reach."
+    enforced_tree_wide: "checked over every json.dumps under daf/, not one call at a time, so a new writer added without it fails here rather than at whichever consumer first reads the file back"
+    bounded_limitation: "evidence.identity.content_hash is vendored and uses the permissive default, so id MINTING cannot be made to refuse. DAQ closes every route it owns instead; an Observation built directly in memory with a NaN still gets an id over invalid JSON, and that residue is recorded rather than hidden."
+    failure_mode: fail_closed
+
+  - id: a_bool_is_not_a_quantity
+    rule: "a boolean is refused wherever a measured magnitude is read -- as a quantity, as an uncertainty, and as a table cell"
+    status: enforced
+    implementation: science/admissibility.py, science/table.py
+    enforcement: tests/test_aligned_observation_table.py
+    why_it_needs_saying: "isinstance(True, int) is True in Python, so a bool passes every numeric check that does not exclude it BY NAME. Measured: a bool was already refused as a quantity but was ADMISSIBLE as an uncertainty and ADMISSIBLE as a table cell."
+    the_harm_is_silent: "sum([True, True, False]) is 2, so a bool column becomes a count nobody asserted. Nothing raises."
+    it_is_also_a_modelling_boundary: "if the source means an indicator, encoding it as 0/1 is a design-matrix decision, and the requirements artifact records the choice of design matrix as a modelling assertion rather than an observation. Letting True arrive where a number is read makes that choice silently."
+    inherited_by: "the covariance extension -- a covariance is a matrix of cells, and a bool in one passes a positive-semidefinite check while meaning nothing"
     failure_mode: fail_closed
 
   - id: table_identity_is_typed_not_positional

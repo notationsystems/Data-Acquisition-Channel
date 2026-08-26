@@ -51,7 +51,7 @@ class PlanCatalog:
     def register(self, plan: AcquisitionPlan) -> None:
         path = self.root / f"{plan.plan_id}.json"
         tmp_path = self.root / f"{plan.plan_id}.json.tmp"
-        tmp_path.write_text(json.dumps(_plan_to_dict(plan), sort_keys=True, indent=2))
+        tmp_path.write_text(json.dumps(_plan_to_dict(plan), sort_keys=True, indent=2, allow_nan=False))
         tmp_path.replace(path)  # atomic on POSIX
         self._plans[plan.plan_id] = plan
 
