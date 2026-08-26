@@ -291,11 +291,55 @@ def test_the_probe_now_covers_recursive_computation():
 
 
 def test_the_probe_records_the_failure_rather_than_a_pass():
-    assert PROBE["result"]["recursive_computation"]["verdict"] == "FAIL"
-    assert PROBE["outcome"]["failed"] == ["recursive_computation"]
+    """REWRITTEN 2026-08-26, and the rewrite is the point.
+
+    This test used to assert `verdict == "FAIL"` and
+    `outcome.failed == ["recursive_computation"]`. Those held when the
+    invariant was represented_unenforced. 6f890e5 implemented it, and the
+    assertions above then PINNED a probe result that no longer described
+    the repository -- green, and stale, through two later commits that
+    edited the probe file for other reasons.
+
+    What the probe must record is not a fixed verdict but that the FAIL is
+    not reachable by deletion: the failure, its measurement, and what
+    closed it all survive the repair. The verdict itself is now gated by
+    tests/test_generality_probe_gate.py, which goes red when a core
+    invariant moves instead of freezing whatever it said last.
+    """
+    result = PROBE["result"]["recursive_computation"]
+    assert result["prior_verdict"] == "FAIL", (
+        "the probe's only FAIL must remain recorded as having happened"
+    )
+    assert result["verdict"] != "FAIL"
+    assert "prior_detail" in result and "prior_on_fail_applied" in result, (
+        "the measurement that produced the FAIL is retained, not replaced"
+    )
+    assert PROBE["outcome"]["failed_and_since_repaired"] == ["recursive_computation"]
+    assert PROBE["outcome"]["failed"] == []
     assert PROBE["outcome"]["core_invariants_modified"] == 0, (
-        "a truthfulness repair to a status is not a core-invariant modification; if a core "
-        "invariant ever is modified, this number must change and the probe must be re-run"
+        "a truthfulness repair to a status is not a core-invariant modification, and "
+        "neither is IMPLEMENTING a declared rule; if a core invariant is ever modified, "
+        "this number must change and the probe must be re-run"
+    )
+
+
+def test_the_re_run_measured_the_clauses_the_failure_was_made_of():
+    """The FAIL rested on four measured clauses. A re-run that says 'fixed'
+    without revisiting them is an assertion, not a measurement."""
+    result = PROBE["result"]["recursive_computation"]
+    clauses = [k for k in result if k.startswith("clause_")]
+    assert len(clauses) == 4, f"expected four re-measured clauses, found {clauses}"
+
+    repaired = [k for k in clauses if result[k].startswith("REPAIRED")]
+    standing = [k for k in clauses if result[k].startswith("STILL TRUE")]
+    assert len(repaired) + len(standing) == 4, (
+        "every clause of the original FAIL must be re-measured as repaired or as still "
+        "true; a clause with neither verdict was not re-run"
+    )
+    assert repaired, "a repaired FAIL must have repaired at least one of its clauses"
+    assert standing, (
+        "two clauses of this FAIL are facts about the VENDORED types and are still "
+        "true; recording them as repaired would be false"
     )
 
 

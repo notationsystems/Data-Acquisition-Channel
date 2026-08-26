@@ -31,6 +31,44 @@ computation_properties:
 
 gate: re-run whenever a core invariant changes
 
+# THE GATE ABOVE WAS DECLARED AND UNENFORCED UNTIL 2026-08-26, and it
+# failed exactly once, silently. `generation_depth_bounded` went from
+# represented_unenforced to enforced at 6f890e5; the probe's
+# recursive_computation FAIL was measured against the state before that
+# and was never re-run. Two later commits edited this file without
+# noticing, and a test pinned the stale FAIL, so every suite stayed green
+# over a probe result that no longer described the repository.
+#
+# It is enforced by the mechanism this pair already uses for the exchange
+# artifacts -- a digest that moves -- rather than by a second one.
+# tests/test_generality_probe_gate.py recomputes the projection below and
+# fails when it moves, which is the re-run instruction arriving as a red
+# test instead of as a thing to remember.
+#
+# WHAT THE PROJECTION COVERS, and therefore what the gate can and cannot
+# see: (id, rule, status) for every invariant, sorted. A rule reworded or
+# a status moved trips it. Prose, evidence lines and implementation
+# pointers do not -- so a repair that lands code WITHOUT moving a status
+# is outside what this catches, and that limit is stated rather than left
+# to be discovered. It is not the enumeration of invariants the probe
+# happens to depend on: that list would go stale the way this result did.
+#
+# SHOWN CAPABLE OF FAILING AGAINST REAL HISTORY, not a synthetic mutation.
+# Recomputed over `git show <rev>:architecture/invariants.yaml`:
+#   6f890e5^  sha256:cac236b2...  43 invariants
+#   6f890e5   sha256:4e5bc31b...  43 invariants   <- the repair, digest moved
+#   7d5b7ab   sha256:4e5bc31b...  unchanged since
+# Had this check existed, it would have gone red at 6f890e5 and forced the
+# re-run before either probe run was written on top of a stale result.
+gate_enforcement:
+  enforced_by: tests/test_generality_probe_gate.py
+  projection: "sorted (id, rule, status) over every invariant in architecture/invariants.yaml"
+  invariant_count: 43
+  invariants_projection_digest: "sha256:4e5bc31bfd3cb9d88cbe1f1ad9e7614518d731da9d8df0289bfc40902fd446b2"
+  measured_against: "the repository state at the commit that reissues the outcome below"
+  what_to_do_when_it_moves: "re-run the probe against the changed invariant and reissue the result and outcome. Updating the digest without re-running is the defect this block exists to make visible."
+  what_it_does_not_cover: "the non-invariant surfaces two of the results actually rest on -- the science/ gates cohort_identity was planted against, and the evidence store surface revocable_record introspected. The declared gate names core invariants; extending it to those would be a wider claim than the gate makes, and is recorded here rather than assumed."
+
 criterion:
   pass: "zero core invariants require modification; qualification via per-vertical admissibility classes is permitted"
   fail: "any core invariant requires modification to admit these properties"
@@ -45,6 +83,7 @@ result:
   revocable_record:
     verdict: TESTED_2026_08_26_CAPABILITY_ABSENT_CONFIRMED
     prior_verdict: UNTESTED
+    what_changed_about_the_verdict: "not the detail below, which is retained UNCHANGED from the UNTESTED verdict because it was accurate and the run confirmed it. What changed is the STANDING of the claim: `no removal path exists` was an inference from a survey of method names, and is now a measurement against five plantings whose expectations were committed first. There is no prior_detail here because the prior detail IS the detail -- restating it would be two encodings of one meaning."
     run: "architecture/_probes/revocable_record_expectations.yaml -- five plantings against expectations committed first. No removal path on the store's class surface, no supersession vocabulary anywhere, downstream references by id with no back-reference to repair. Content-addressing HOLDS: a forged same-id payload is never written. The publicly reachable finding is that FIRST WRITE WINS for non-identity fields, silently -- so a re-acquisition with better confidence is discarded without notice, and revocation is far outside what the store does rather than a near miss."
     detail: "Nothing in this repository can remove an admitted Observation. FilesystemEvidenceStore is append-only and content-addressed, and no tombstone or retraction path exists. A source compelling removal would today require deleting content-addressed blobs that materials ModelState Sample.observation_id still references, orphaning scientific state. This is the probe's clearest live finding and is recorded as a gap in architecture/invariants.yaml retraction."
   cohort_identity:
@@ -54,10 +93,26 @@ result:
     detail: "RUN, five plantings, all admitted, zero refusals naming a cohort concept. See architecture/_probes/cohort_identity_expectations.yaml, whose expectations were committed BEFORE the run. A polymer batch is constructible as a Referent because kind is an open string; Mn is admitted as a scalar indistinguishable from a single-object measurement; the full chain-length distribution is admitted through exactly the multivariate path a measurement VECTOR uses; PDI is admitted with no lineage to the moments it divides, because the lineage gate engages only on DECLARED recursion; and a scalar uncertainty on a distribution moment is the admitted case even though the spread is the physically interesting part."
     what_changed_about_the_verdict: "the UNTESTED verdict was ACCURATE and is superseded by a measurement rather than by an argument. The probe recorded it as having 'found no way to run' the property; the way to run it is to plant the cases and observe that nothing refuses, which distinguishes 'no gate exists' from 'the gate was never reached'."
     still_not_decided: "whether the substrate SHOULD distinguish a population from an object. A gap measured is not a change proposed."
+  # RE-RUN 2026-08-26. The probe's own gate says "re-run whenever a core
+  # invariant changes". `generation_depth_bounded` changed at 6f890e5 --
+  # from represented_unenforced to enforced, with an implementation and an
+  # enforcement suite -- and the probe was NOT re-run. Two later commits
+  # (7d5b7ab, 6e5c9b2) edited this very file for the other two properties
+  # and left the FAIL standing, while a test PINNED it. Nothing was red.
+  # The gate was declared and unenforced, which is the same shape this
+  # result itself found in the invariant it was measuring.
   recursive_computation:
-    verdict: FAIL
-    detail: "the probe's clearest finding, and the first time it has returned FAIL. `generation_depth_bounded` (architecture/invariants.yaml) states that derivation-from-derivation is bounded and that the depth is recorded. MEASURED, both clauses are false of the code: no module in this repository or its vendored substrate defines any depth/generation/lineage symbol; `DerivedValue`'s fields are exactly (id, derived_from, method, content, confidence, derived_at) with no depth; the invariant declares no bound value; and `evidence.provenance.ancestry_of` returns a flat set union that discards the level at which each node was reached. The invariant's own evidence line argues only that a derivation CYCLE is unconstructible, which is true -- but acyclicity is not boundedness, and an unbounded acyclic chain is exactly what a recursive estimator produces. The correct semantic domain is evidence lineage, not computation iteration: repeated filter iterations over one measurement stream are one lineage step, not N. A recursive computation must instead carry stream_identity, window_or_horizon and initialization_provenance (measured | computed(prior_id))."
-    on_fail_applied: "the invariant was not domain-specific and misfiled -- it was declared and never implemented. Its status is corrected from vacuously_enforced to represented_unenforced, and its evidence line is corrected to state what is actually true, rather than the invariant being weakened to accommodate recursion."
+    verdict: RE_RUN_2026_08_26_FAIL_REPAIRED
+    prior_verdict: FAIL
+    prior_detail: "the probe's clearest finding, and the first time it has returned FAIL. `generation_depth_bounded` (architecture/invariants.yaml) states that derivation-from-derivation is bounded and that the depth is recorded. MEASURED, both clauses are false of the code: no module in this repository or its vendored substrate defines any depth/generation/lineage symbol; `DerivedValue`'s fields are exactly (id, derived_from, method, content, confidence, derived_at) with no depth; the invariant declares no bound value; and `evidence.provenance.ancestry_of` returns a flat set union that discards the level at which each node was reached. The invariant's own evidence line argues only that a derivation CYCLE is unconstructible, which is true -- but acyclicity is not boundedness, and an unbounded acyclic chain is exactly what a recursive estimator produces. The correct semantic domain is evidence lineage, not computation iteration: repeated filter iterations over one measurement stream are one lineage step, not N. A recursive computation must instead carry stream_identity, window_or_horizon and initialization_provenance (measured | computed(prior_id))."
+    prior_on_fail_applied: "the invariant was not domain-specific and misfiled -- it was declared and never implemented. Its status is corrected from vacuously_enforced to represented_unenforced, and its evidence line is corrected to state what is actually true, rather than the invariant being weakened to accommodate recursion."
+    what_changed_about_the_verdict: "the FAIL was ACCURATE when recorded and is superseded by a repair, not by an argument. The invariant was IMPLEMENTED; it was not weakened, and its rule text is unchanged. core_invariants_modified therefore stays 0 -- implementing a declared rule is not modifying it."
+    re_run_clause_by_clause: "the FAIL rested on four measured clauses. Two are repaired and two still hold, and the two that hold are no longer load-bearing because the repair routed around them rather than through them."
+    clause_1_no_depth_symbol_anywhere: "REPAIRED. Measured by AST over daf/, science/, boundary/, bridge/, epistemics/ and assertion/: 3 symbols now match depth|generation|lineage -- DepthAccount, lineage_depth and recursive_computation_is_depth_bounded, all in science/lineage_depth.py. At the time of the FAIL there were 0."
+    clause_2_derived_value_has_no_depth_field: "STILL TRUE, and correctly so. Measured by dataclasses.fields: DerivedValue is exactly (id, derived_from, method, content, confidence, derived_at). The vendored type is never modified; the repair declares depth in `content` and VERIFIES it against lineage rather than trusting a settable field. The clause is true and is no longer a defect."
+    clause_3_the_invariant_declares_no_bound: "REPAIRED. MAX_LINEAGE_DEPTH = 3 exists in science/lineage_depth.py and is enforced at line 241; the invariant records it as a declared POLICY rather than a derived number. What the rule requires is that a bound exist, be enforced and be recorded per record."
+    clause_4_ancestry_of_discards_the_level: "STILL TRUE. Measured: evidence.provenance.ancestry_of names neither depth nor level and returns id-sorted tuples with no level information. Unchanged, vendored, and routed around -- DepthAccount carries the per-source contributions the flat union discards, so the level is recorded where the repair put it rather than recovered from a traversal that never had it."
+    what_the_re_run_does_not_claim: "that recursion is now fully represented. It claims the four clauses the FAIL was made of, re-measured. The composition guard recorded beside the invariant is what closes CHAINING as opposed to initialization, and it is enforced by tests/test_lineage_depth.py (36 tests, passing at this commit) -- not by this probe, which stays paper_only."
 
   uncontrolled_conditions:
     verdict: ALREADY_QUALIFIED
@@ -74,7 +129,28 @@ outcome:
   tested_since_the_verdict_below:
     - cohort_identity
     - revocable_record
-  failed:
+  failed: []
+  failed_and_since_repaired:
     - recursive_computation
+
+  # ------------------------------------------------------------------
+  # REISSUED 2026-08-26. All five properties have now been measured, and
+  # the two prior verdicts are kept verbatim beneath rather than
+  # rewritten. A superseded verdict standing ALONE is the defect this
+  # pair's class record names; a superseded verdict retained with the
+  # current one stated beside it is the form that passes.
+  # ------------------------------------------------------------------
+  what_the_reissue_changes:
+    untested_went_from_two_to_zero: "cohort_identity and revocable_record were recorded UNTESTED with the note that the probe had 'found no way to run' them. Both were run against expectations committed first, with named expected ids rather than counted refusals. Neither required a core invariant to change."
+    failed_went_from_one_to_zero: "recursive_computation's FAIL was accurate and has been repaired -- the invariant was IMPLEMENTED, not weakened. See result.recursive_computation, re-run clause by clause. The list `failed_and_since_repaired` exists so the zero above is not read as 'the probe never failed'."
+    the_gate_is_now_enforced: "see gate_enforcement above. The FAIL's repair should have forced this re-run at 6f890e5 and did not, because nothing read the gate. That is the reissue's own finding and it is recorded in architecture/proof_integrity.yaml."
+
+  verdict: "PASS, with every property measured and one prior FAIL repaired. Zero core invariants required modification: two properties were already qualified, two were run and found to be REPRESENTATION GAPS rather than defects -- nothing refused them and nothing records the distinction -- and the one FAIL was closed by implementing a declared rule rather than by relaxing it. What the probe does NOT now claim is that the two measured gaps are decided: cohort_identity leaves inter-observation functional dependence unowned, and revocable_record leaves a missing CAPABILITY with a live consequence. Both are recorded with data in hand and neither is a change proposed."
+
+  what_this_verdict_still_does_not_settle:
+    cohort_identity: "whether the substrate SHOULD distinguish a population from an object, and whether it should carry inter-observation functional dependence. See the_pdi_relation in the cohort expectations file: measured as A SECOND UNOWNED RELATION, framed for the polymer vertical, not proposed here."
+    revocable_record: "whether to take the bend. The capability is absent and confirmed absent; the publicly reachable finding is that first-write-wins silently for non-identity fields. The decision belongs to bend_protocol with a workload paired to it, under the rule that made least_squares a decision rather than a wish."
+    the_probe_s_own_reach: "gate_enforcement.what_it_does_not_cover. Two of the five results rest on surfaces the declared gate does not watch."
+
   verdict_superseded_2026_08_25: "the verdict below was recorded when the probe enumerated observation properties only. It is left verbatim rather than rewritten. It is superseded by the recursive_computation FAIL above, which is a correction to the VERIFICATION SUBSTRATE -- the probe's own coverage -- not a change to any core invariant. core_invariants_modified remains 0: generation_depth_bounded's status and evidence are corrected to match measured reality, which is a truthfulness repair, not a semantic weakening."
-  verdict: "PASS with two properties untested. Zero core invariants required modification, so the generality claim survives -- but two of the four properties have never been exercised by any source in this repository, so the probe has not been run against them so much as found no way to run them."
+  verdict_superseded_2026_08_25_text: "PASS with two properties untested. Zero core invariants required modification, so the generality claim survives -- but two of the four properties have never been exercised by any source in this repository, so the probe has not been run against them so much as found no way to run them."
