@@ -23,12 +23,21 @@ modifiable_reason: "daf/_vendor.py -- the vendored system is used without copyin
 # ----------------------------------------------------------------------
 # WHAT `core@1.0.0` ACTUALLY REFERS TO.
 #
-# Declared here because 26 artifacts say `extends: core@1.0.0`, the
+# Declared here because 33 artifacts say `extends: core@1.0.0`, the
 # register derivation joins on it, and `bent: []` is a claim made RELATIVE
 # to a core -- and until now every one of those joined on a MUTABLE label.
 #
 # MEASURED BEFORE DECLARING:
-#   * 26 artifacts declare `extends: core@1.0.0`; all join on the version.
+#   * 33 artifacts declare `extends: core@1.0.0`; all join on the version.
+#     RECORDED AS 26 UNTIL 2026-08-26, and the undercount is instructive:
+#     it came from a text search for `extends: core@1.0.0`, which cannot
+#     see `"extends": "core@1.0.0"` -- the form the shared canonical
+#     emitter writes, because it always-quotes. The artifacts invisible to
+#     the count were therefore the CANONICALLY EMITTED ones: the most
+#     carefully produced files in the pair were the ones a grep missed.
+#     The count is now derived by PARSING, in
+#     architecture/exchange/build_invariant_register.py, and asserted
+#     against an independent parse in tests/test_invariant_register.py.
 #   * `submodule_commit: 3e5bea9` is recorded above and NOTHING verifies it
 #     against the gitlink the repository actually points at.
 #   * the one check on the version is `f'version = "{v}"' in pyproject_text`
@@ -40,7 +49,7 @@ modifiable_reason: "daf/_vendor.py -- the vendored system is used without copyin
 # never read. THE FAILURE THAT MAKES THIS URGENT is not a version bump,
 # which is loud -- it is a submodule bumped to a commit whose pyproject
 # still says 1.0.0. Patch commits do not bump versions. Every check passes,
-# the recorded commit is silently wrong, and all 26 `extends` still agree.
+# the recorded commit is silently wrong, and all 33 `extends` still agree.
 #
 # THE RULE, in this project's own identity vocabulary (SCL_CONTRACT 6.1):
 #
@@ -57,7 +66,7 @@ core_referent:
   participating: submodule_commit
   annotating: version
   the_join_that_must_hold: "core.yaml's submodule_commit equals the gitlink this repository points at, AND core.yaml's version equals the [project] version parsed from the pyproject at that commit -- parsed, not substring-matched."
-  why_the_label_is_kept: "26 artifacts and every doctrine projection read `core@<version>`, and a commit hash is not a readable claim. The label is retained and BOUND, which is the same disposition as any annotating field: it may not be removed and it may not be joined on."
+  why_the_label_is_kept: "33 artifacts and every doctrine projection read `core@<version>`, and a commit hash is not a readable claim. The label is retained and BOUND, which is the same disposition as any annotating field: it may not be removed and it may not be joined on."
   what_a_claim_relative_to_core_means: "`bent: []`, `core_invariants_modified: 0` and every `extends:` are assertions about the core AT THE PARTICIPATING REFERENT. If the commit moves, they are claims about a different object and must be re-measured, whatever the label says."
   enforcement: tests/test_core_referent.py
 

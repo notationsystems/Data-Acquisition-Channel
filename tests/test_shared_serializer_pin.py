@@ -82,7 +82,28 @@ def test_the_cross_repo_verifier_checks_remotes_and_not_locals():
     prove the pair landed together."""
     verifier = (EXCHANGE / "verify_pair_landed.py").read_text()
     assert "asks the REMOTES, not the locals" in verifier
-    assert "architecture/exchange/canonical_yaml.py" in verifier
+
+    # The serializer must be in the set the verifier actually compares.
+    # It used to be enough to find its path as a string in this file --
+    # but the shared set became DERIVED on 2026-08-26, and that string now
+    # survives in a RETAINED historical enumeration. A test that kept
+    # asserting it would be asserting the presence of a dated list, not
+    # membership of the live set: exactly the pin-over-a-record shape
+    # filed in proof_integrity.yaml the same day.
+    import sys
+    sys.path.insert(0, str(EXCHANGE))
+    import verify_pair_landed as vpl
+
+    root = EXCHANGE.parent.parent
+    surface = (root / vpl.SHARED_SURFACE).resolve()
+    serializer = (EXCHANGE / "canonical_yaml.py").resolve()
+    assert surface in serializer.parents, (
+        "the shared serializer is not on the shared surface, so the pair verifier would never "
+        "compare it -- and every artifact digest depends on the two sides emitting identically"
+    )
+    assert serializer in {
+        p.resolve() for p in surface.rglob("*") if p.is_file()
+    }, "the serializer is not present on the surface it must be compared across"
 
 
 def test_the_recorded_ci_asymmetry_is_stated_rather_than_implied():
