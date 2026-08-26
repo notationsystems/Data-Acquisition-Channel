@@ -342,6 +342,28 @@ A fixture change reissues that record, so the check would have said PAIR
 LANDED while the two repos held different records. Not hypothetical: they had
 already diverged once, when one clone was three commits stale.
 
+### Both halves found it independently
+
+The other repository's session closed the collection class in the same
+window, from the same measurement, and reached the **same refusal by the same
+argument**. Verified rather than assumed: the two emitters produce
+**byte-identical output for every document tested** and refuse exactly the
+same shapes. The differences were source prose and fixture contents.
+
+Resolved by taking their source — it states the rule in the module's spec
+block, which is where a canonicalization rule belongs — and taking the
+**union of both fixtures**. Coverage is the entire purpose of the fixture and
+each half exercised paths the other didn't: theirs carries breadth (empty
+collections in every position, sequences of scalars, the documented wrapped
+alternative), mine carries depth (a sequence under a key inside a mapping
+inside a sequence, the deepest legal interleave the dash-collapse actually
+runs on). Eleven collection shapes are pinned now; the fixture pinned none
+before this phase.
+
+Their half also caught something mine didn't: an empty *mapping* inside a
+sequence used to raise `unsupported scalar type` — the emitter couldn't
+represent a legal document shape at all. Loud, so never silent, but a hole.
+
 ### Blast radius, measured rather than estimated
 
 Narrower than expected, and worth stating precisely rather than repeating
@@ -412,7 +434,7 @@ Performing the join is the compute layer's work.
 
 ## Verification
 
-- full DAF suite: **960 passed**
+- full DAF suite: **970 passed**
 - vendored SCOUT suite: **1273 passed**, unchanged; submodule tree clean
 - `mypy daf/ science/ boundary/ bridge/ epistemics/`: clean
 - doctrine regenerated from `architecture/*.yaml`; re-running the generator
