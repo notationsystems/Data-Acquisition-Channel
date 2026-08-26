@@ -46,8 +46,12 @@ result:
     verdict: UNTESTED
     detail: "Nothing in this repository can remove an admitted Observation. FilesystemEvidenceStore is append-only and content-addressed, and no tombstone or retraction path exists. A source compelling removal would today require deleting content-addressed blobs that materials ModelState Sample.observation_id still references, orphaning scientific state. This is the probe's clearest live finding and is recorded as a gap in architecture/invariants.yaml retraction."
   cohort_identity:
-    verdict: UNTESTED
-    detail: "Referent(natural_key, kind) identifies an object. Every subject in the repository is a formulation, a station, a paper or an event -- never a population. Distribution identity for polymers, formulations and batches is the same observation arriving from the domain side."
+    verdict: TESTED_2026_08_26_REPRESENTATION_GAP_CONFIRMED
+    prior_verdict: UNTESTED
+    prior_detail: "Referent(natural_key, kind) identifies an object. Every subject in the repository is a formulation, a station, a paper or an event -- never a population. Distribution identity for polymers, formulations and batches is the same observation arriving from the domain side."
+    detail: "RUN, five plantings, all admitted, zero refusals naming a cohort concept. See architecture/_probes/cohort_identity_expectations.yaml, whose expectations were committed BEFORE the run. A polymer batch is constructible as a Referent because kind is an open string; Mn is admitted as a scalar indistinguishable from a single-object measurement; the full chain-length distribution is admitted through exactly the multivariate path a measurement VECTOR uses; PDI is admitted with no lineage to the moments it divides, because the lineage gate engages only on DECLARED recursion; and a scalar uncertainty on a distribution moment is the admitted case even though the spread is the physically interesting part."
+    what_changed_about_the_verdict: "the UNTESTED verdict was ACCURATE and is superseded by a measurement rather than by an argument. The probe recorded it as having 'found no way to run' the property; the way to run it is to plant the cases and observe that nothing refuses, which distinguishes 'no gate exists' from 'the gate was never reached'."
+    still_not_decided: "whether the substrate SHOULD distinguish a population from an object. A gap measured is not a change proposed."
   recursive_computation:
     verdict: FAIL
     detail: "the probe's clearest finding, and the first time it has returned FAIL. `generation_depth_bounded` (architecture/invariants.yaml) states that derivation-from-derivation is bounded and that the depth is recorded. MEASURED, both clauses are false of the code: no module in this repository or its vendored substrate defines any depth/generation/lineage symbol; `DerivedValue`'s fields are exactly (id, derived_from, method, content, confidence, derived_at) with no depth; the invariant declares no bound value; and `evidence.provenance.ancestry_of` returns a flat set union that discards the level at which each node was reached. The invariant's own evidence line argues only that a derivation CYCLE is unconstructible, which is true -- but acyclicity is not boundedness, and an unbounded acyclic chain is exactly what a recursive estimator produces. The correct semantic domain is evidence lineage, not computation iteration: repeated filter iterations over one measurement stream are one lineage step, not N. A recursive computation must instead carry stream_identity, window_or_horizon and initialization_provenance (measured | computed(prior_id))."
@@ -66,6 +70,7 @@ outcome:
   bent: []
   untested:
     - revocable_record
+  tested_since_the_verdict_below:
     - cohort_identity
   failed:
     - recursive_computation

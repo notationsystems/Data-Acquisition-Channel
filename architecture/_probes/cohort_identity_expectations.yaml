@@ -95,3 +95,34 @@ how_this_probe_can_fail_honestly:
   - "all five admitted -> the predicted outcome, and the finding is a REPRESENTATION GAP rather than a defect: nothing is broken, and nothing distinguishes a population from an object."
 
 what_this_probe_does_not_decide: "whether the substrate SHOULD distinguish them. A gap measured is not a change proposed -- that belongs in a joint record with a workload paired to it, under the rule that made least_squares a decision rather than a wish."
+
+# ======================================================================
+# THE RUN. Appended after the expectations above were committed (eeb1c36),
+# and after the run itself was written against them. The expectations are
+# NOT edited: what was predicted stands as predicted, and what happened is
+# recorded beneath it.
+# ======================================================================
+run:
+  performed_by: tests/test_cohort_identity_probe.py
+  cases_run: 5
+  cases_admitted: 5
+  cases_refused: 0
+  refusals_naming_a_cohort_concept: 0
+  verdict: PREDICTION_HELD
+
+  what_it_establishes: "no gate in this repository refuses an observation on the grounds that its subject is a POPULATION rather than an object, and none records the distinction. A polymer batch is constructible as a Referent because `kind` is an open string; Mn is admitted as a scalar measurement indistinguishable from a single-object one; the full chain-length distribution is admitted through exactly the multivariate path a measurement vector uses; PDI is admitted with no lineage to the moments it divides, because the lineage gate engages only on DECLARED recursion; and a scalar uncertainty on a distribution moment is the admitted case, even though the spread is the physically interesting part."
+
+  what_it_does_not_establish: "that this is a defect. Nothing is broken -- every gate did what it says. It is a REPRESENTATION GAP: cohort_identity was recorded UNTESTED because there was nothing to test, not because nobody ran it, and that is now measured rather than inferred."
+
+  # ------------------------------------------------------------------
+  # THE PROBE CAUGHT ITS OWN CONSTRUCTION THREE TIMES, and each time the
+  # named-id discipline is what made the mistake legible rather than
+  # counting it as a result.
+  # ------------------------------------------------------------------
+  the_probe_caught_its_operator:
+    first: "the run fed TABLE-shaped content to the PROPERTY gates, which govern a different shape. Four of five cases refused, with MISSING_PROPERTY, MISSING_METHOD, MISSING_UNCERTAINTY_KIND and UNTYPED_QUANTITY. Counting refusals would have concluded THE SUBSTRATE REFUSES POLYMER OBSERVATIONS. Not one of those ids is a cohort id, and that is the only reason it was visible. Fixed by expressing each case in both shapes and showing each gate only the shape it governs."
+    second: "the planted uncertainty_kind was `standard_error`, which is not in the vocabulary -- UNCERTAINTY_KINDS is (stated, estimated, propagated, absent). UNKNOWN_UNCERTAINTY_KIND fired. Again a refusal, again nothing to do with cohorts."
+    third: "the property gates were imported under a name that does not exist. That one failed loudly at import and could not have been mistaken for a result, which is the contrast worth keeping beside the other two."
+    the_general_statement: "A GATE APPLIED TO CONTENT IT DOES NOT GOVERN PRODUCES REFUSALS THAT ARE NOT EVIDENCE. A reachability proof that counts refusals cannot tell those from the ones it was looking for, and this probe produced four of them before producing zero real ones."
+
+  why_this_is_the_demonstration_the_probe_was_for: "the constraint on this probe was that confirming a gate was REACHED is not confirming WHICH gate. That was stated as a risk and then occurred, three times, in the probe written to respect it. The predicted-id comparison is what separated 'refused' from 'refused for the reason claimed' on every one."
