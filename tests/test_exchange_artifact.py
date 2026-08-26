@@ -266,7 +266,7 @@ def test_a_sequence_inside_a_sequence_is_refused_at_the_writer():
     rather than by teaching one reader to cope."""
     from epistemics._yaml import loads as repo_loads
 
-    with pytest.raises(TypeError, match="sequence directly inside a sequence"):
+    with pytest.raises(TypeError, match="nested directly in a sequence"):
         cy.canonical_dump({"k": [[1, 2], [3]]})
 
     # the divergence itself, still demonstrable on a hand-authored document
