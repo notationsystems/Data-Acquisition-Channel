@@ -968,3 +968,79 @@ def test_the_bool_exclusion_is_now_applied_to_identity_AND_to_the_cell():
     assert not observation_is_table_alignable({**base, "sample_id": True}).admissible
     assert not observation_is_table_alignable({**base, "variable": True}).admissible
     assert not observation_is_table_alignable({**base, "value": True}).admissible
+
+
+# ====== 11. the composite cell: the rule was closed on one axis, open on the other
+#
+# The cell rules above -- no bool, no sentinel, no numeric-looking string --
+# ran only when the cell was a SCALAR. Measured: the moment a cell was a
+# list or a mapping, none of them ran. A vector carrying NaN, a vector
+# carrying a bool, and a MATRIX carrying a bool were all admissible.
+#
+# That last one is precisely the covariance case: a covariance is a matrix
+# of cells, and a bool in one passes a positive-semidefiniteness check
+# while meaning nothing. Refusing a bool AS the cell did nothing about a
+# bool INSIDE it. "Cell typing is resolved" was true on one axis only.
+
+
+@pytest.mark.parametrize("cell,expected", [
+    ([1.0, float("nan")], table.SENTINEL_ENCODED_ABSENCE),
+    ([1.0, True], table.BOOLEAN_IS_NOT_A_QUANTITY),
+    ([[1.0, True], [True, 1.0]], table.BOOLEAN_IS_NOT_A_QUANTITY),
+    ([[1.0, 0.2], [0.2, float("inf")]], table.SENTINEL_ENCODED_ABSENCE),
+    (["1.5", "2.5"], table.NUMERIC_LOOKING_STRING_CELL),
+    ({"a": float("nan")}, table.SENTINEL_ENCODED_ABSENCE),
+    ({"a": {"b": True}}, table.BOOLEAN_IS_NOT_A_QUANTITY),
+])
+def test_a_composite_cell_is_held_to_the_same_rules_as_a_scalar_one(cell, expected):
+    verdict = observation_is_table_alignable(dict(ALIGNED_CELL, value=cell))
+    assert not verdict.admissible
+    assert table.COMPOSITE_CELL_LEAF_IS_NOT_A_QUANTITY in verdict.reasons
+    assert expected in verdict.reasons, (
+        "the composite refusal must name WHICH scalar rule the leaf broke, or the two gates stop "
+        "agreeing about the same rule at different depths")
+
+
+def test_a_clean_vector_or_matrix_cell_is_still_admitted():
+    """The refusal must not become 'no composite cells'. Kalman's own
+    requirement is an ordered stream of measurement VECTORS, so refusing
+    composites outright would close the next workload rather than open
+    it."""
+    for cell in ([1.0, 2.0], [[1.0, 0.2], [0.2, 1.0]], {"a": 1.0, "b": 2.0}, ["low", "high"], []):
+        assert observation_is_table_alignable(dict(ALIGNED_CELL, value=cell)).admissible, cell
+
+
+def test_shape_is_deliberately_not_decided_here():
+    """A ragged nested list is ADMITTED, and that is a deferral rather
+    than an oversight. Raggedness, dimensionality, symmetry and
+    positive-semidefiniteness are the covariance extension's contract to
+    define; inventing them here would pre-empt a decision that belongs in
+    the joint record. What this gate applies is only the rules already
+    decided, at every depth."""
+    assert observation_is_table_alignable(
+        dict(ALIGNED_CELL, value=[[1.0, 2.0], [3.0]])).admissible
+
+    source = (Path(__file__).resolve().parent.parent / "science" / "table.py").read_text()
+    assert "shape is not touched" in source.lower() or "does not decide" in source.lower()
+    for shape_word in ("symmetr", "positive_semidefinite", "psd", "dimension", "ragged"):
+        assert f"def _{shape_word}" not in source, (
+            f"science/table.py defines a {shape_word} check -- that is the covariance extension's "
+            "contract, not this gate's")
+
+
+def test_the_scalar_and_composite_paths_apply_ONE_rule_set():
+    """Stated as a property rather than as parallel test lists, because
+    two rule sets that agree today are exactly how this hole opened: the
+    scalar path grew three rules and the composite path had none."""
+    for leaf in (True, False, float("nan"), float("inf"), "1.5"):
+        alone = observation_is_table_alignable(dict(ALIGNED_CELL, value=leaf))
+        nested = observation_is_table_alignable(dict(ALIGNED_CELL, value=[leaf]))
+        assert not alone.admissible and not nested.admissible, leaf
+        # the scalar reason appears in the composite verdict too
+        assert set(alone.reasons) <= set(nested.reasons), (
+            f"{leaf!r} refused as a scalar for {list(alone.reasons)} but the nested verdict "
+            f"{list(nested.reasons)} does not carry that reason")
+
+    for leaf in (1.0, 0, -2.5, "B7"):
+        assert observation_is_table_alignable(dict(ALIGNED_CELL, value=leaf)).admissible
+        assert observation_is_table_alignable(dict(ALIGNED_CELL, value=[leaf])).admissible

@@ -1,0 +1,77 @@
+# What actually blocks kalman_filter_linear, measured rather than carried
+# forward. DAQ FRAMES; it does not elect. This is the input to the next
+# joint decision, not the decision.
+extends: core@1.0.0
+
+artifact: kalman_framing
+phase: 37
+status: framing_only
+owner: daf
+measured_against: "architecture/exchange/scl_requirements.yaml workloads.kalman_filter_linear, read WHOLE"
+
+the_claim_being_checked: "that Kalman's remaining blocker is only the covariance extension -- cell typing resolved on both axes, recursive depth supplied, the joint record's reissue discipline working."
+verdict: "partly. Two of the three supports hold. The cell-typing one did not, and reading the workload entry whole turns up four DAQ-owned requirements that sit OUTSIDE blocking_requirements -- the same place the least_squares third requirement was nearly missed."
+
+# ------------------------------------------ the two blocking rows, checked --
+
+blocking_requirements_as_recorded:
+  structured_measurement_uncertainty:
+    owner: daq
+    status_in_artifact: UNSATISFIED
+    daq_measurement: "unchanged. DAQ expresses one scalar `uncertainty` with an `uncertainty_kind`. There is no covariance representation, and quantity_is_typed refuses a vector-valued `value` with per-component units as UNTYPED_QUANTITY -- measured."
+    verdict: OPEN
+  recursive_generation_depth:
+    owner: daq
+    status_in_artifact: UNSATISFIED
+    what_the_requirement_asks: "generation_depth_bounded must acquire an OPERATIVE SEMANTIC DOMAIN before a recursive operation can be admitted, and the rule must exist BEFORE the first recursive result rather than be retrofitted around one."
+    daq_measurement: "the semantic domain WAS supplied -- corrected_semantic_domain now states that depth is evidence-lineage depth and never computation iteration count, and that a recursive estimator running N iterations over one stream is ONE lineage step. But the invariant's status is represented_unenforced, which means the concept is represented in data and NOTHING CHECKS IT."
+    verdict: PARTIALLY_CLOSED_AND_NOT_DAQS_TO_DECLARE_CLOSED
+    why_not_declared_closed_here: "the requirement is the compute layer's and the judgement of whether a represented-but-unenforced rule satisfies 'the rule must exist' is theirs to make. The consequence they recorded -- that nothing would detect a trajectory drifting arbitrarily far from measured input -- is about depth being TRACKED, which is enforcement rather than semantics. DAQ states what it supplied and what it did not; declaring the requirement met would be DAQ answering its counterparty's question."
+    a_staleness_to_surface_not_fix: "the requirements artifact describes DAQ's invariant as 'declared with status vacuously_enforced and zero references'. DAQ corrected it to represented_unenforced with an operative semantic domain on 2026-08-25. The artifact is the compute layer's and is mirrored read-only here, so this is reported rather than edited."
+
+# ------------------- the requirements OUTSIDE the blocking rows, which is --
+# ------------------- where the least_squares near-miss lived --------------
+
+requirements_outside_the_blocking_list:
+  ordering_is_required_and_significant:
+    stated_as: "ordering_requirements: required_and_significant; modality: ordered_multivariate_time_series"
+    daq_measurement: "Observation carries NO order field -- id, record_ids, extraction_method, content, confidence, extracted_at, and nothing else. Order is not represented."
+    the_sharp_part: "the aligned observation table gate ACTIVELY REFUSES positional identity, by name, because least_squares states that ordering is explicitly NOT required by its modality. So the gate built this phase refuses precisely what Kalman requires. That is not a defect in either -- the two modalities genuinely differ -- but it means the table extension does not carry over, and a session reaching for it would be reaching for the wrong shape."
+    verdict: OPEN
+  stream_identity:
+    stated_as: "stream identity, so a recursive trajectory can name the stream it consumed"
+    daq_measurement: "absent. No stream concept exists in evidence.types or anywhere in daf/, science/, epistemics/, bridge/ or boundary/."
+    why_it_is_not_incidental: "it is the identity a recursive result needs in order to say what it was computed FROM. DAQ's own corrected_semantic_domain for generation_depth_bounded already names stream_identity as a thing a recursive computation must carry -- so DAQ has stated the requirement and not built it."
+    verdict: OPEN
+  elapsed_time_between_measurements:
+    stated_as: "timestamps or a stated uniform interval; the transition depends on elapsed time"
+    daq_measurement: "this is the delta-t finding from the modality reconnaissance, arriving as a hard requirement rather than as an option. There, spacing was OPTIONAL and absence had to be distinguishable from a default. Here the transition DEPENDS on elapsed time, so absence is not merely to be flagged -- it blocks."
+    the_rule_that_already_applies: "DAQ must not fabricate delta-t, and must not let ordering stand in for it. A uniform interval is a CLAIM about the acquisition and has to be stated by the source, not inferred from records arriving in order."
+    verdict: OPEN
+  units_per_measurement_component:
+    stated_as: "required_metadata: units_per_measurement_component"
+    daq_measurement: "DAQ carries one `unit` per observation. A vector value with a list of units is refused as UNTYPED_QUANTITY -- measured. There is no per-component unit representation."
+    verdict: OPEN
+  conditions_affecting_measurement_noise:
+    stated_as: "conditions affecting measurement noise must be recoverable if R varies with them"
+    daq_measurement: "conditions are carried, hashable and recoverable under stable identifiers, and the aligned-table gate already refuses a condition key that shadows an identity column. This is the one requirement outside the blocking list that DAQ appears to satisfy."
+    verdict: LIKELY_SATISFIED
+    hedged_because: "whether a condition is sufficient to RECONSTRUCT how R varies is a modelling judgement, and DAQ does not make it. DAQ's part -- that the conditions are carried and joinable -- is measured and holds."
+
+# ---------------------------- the cell-typing support, which did not hold --
+
+cell_typing_was_resolved_on_one_axis_only:
+  what_was_closed: "a bool AS a cell, a sentinel AS a cell, a numeric-looking string AS a cell. All three refused, and that work stands."
+  what_was_open: "every one of those rules ran only when the cell was a SCALAR. Measured: a vector carrying NaN, a vector carrying a bool, a MATRIX carrying a bool, a mapping carrying NaN -- all ADMISSIBLE, because the moment the cell was composite none of the rules ran."
+  why_it_matters_for_exactly_this_workload: "a covariance is a matrix of cells. The case the covariance work was warned about -- a bool in a covariance passing a positive-semidefinite check while meaning nothing -- was the case still passing. Refusing a bool AS the cell did nothing about a bool INSIDE it."
+  closed_now: "the scalar rules are applied recursively to every leaf of a composite cell, so one rule set governs both depths. Enforced as a PROPERTY -- every leaf refused alone is refused nested, and the composite verdict carries the scalar reason -- rather than as two parallel lists, because two rule sets that agree today are exactly how this opened."
+  deliberately_still_open: "SHAPE. Raggedness, dimensionality, symmetry and positive-semidefiniteness are the covariance extension's contract to define. A ragged nested list is admitted, and that is a deferral with a name on it rather than an oversight. Deciding it here would pre-empt the joint record."
+
+# ------------------------------------------------------- what this means --
+
+framing_for_the_next_decision:
+  the_correction: "Kalman's remaining blocker is NOT only the covariance extension. Structured R is one of at least five open DAQ-owned requirements: structured uncertainty, ordering, stream identity, elapsed time, and per-component units. Four of those five sit outside blocking_requirements."
+  why_the_undercount_happened_twice: "both times, by reading blocking_requirements as if it were the requirement list. It is not -- it is the subset the compute layer marked as blocking, and the entry also carries observation_requirements, ordering_requirements, required_metadata and condition_requirements. The least_squares near-miss and this one have the same cause, which makes it a reading rule rather than an incident: read the workload entry WHOLE."
+  is_it_still_the_right_next_decision: "that is not DAQ's to answer, and this record does not. What DAQ can say is that the cost is larger than one extension -- structured uncertainty is a data-shape gap, but ordering and stream identity are IDENTITY gaps and elapsed time is a provenance gap, and the aligned-table extension does not carry over because Kalman's modality requires the ordering that least_squares' modality forbids."
+  what_would_make_it_a_decision: "the joint record, with the workload named and its extension paired -- the rule that made least_squares a decision rather than a wish. The same rule applies here and nothing about it is weakened by the count being five instead of one."
+  deliberately_not_started: "none of the five. This record frames; it does not build. Building one of them before the decision would be electing by momentum, which is the defect already recorded against the selection rule."

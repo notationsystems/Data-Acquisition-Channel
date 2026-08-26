@@ -50,10 +50,68 @@ def _digest(path):
 # ------------------------------------------------------------- binding
 
 
-def test_the_recorded_hashes_bind_to_the_bytes_on_disk():
-    """The guarantee the proposal carries forward to whoever writes the decision."""
-    assert PROPOSAL["capabilities_artifact_hash"] == _digest(CAPABILITIES)
-    assert PROPOSAL["requirements_artifact_hash"] == _digest(REQUIREMENTS)
+def test_the_recorded_hashes_bind_to_BYTES_THAT_EXISTED_not_to_todays():
+    """CHANGED when the proposal became superseded, and the change is a
+    strengthening rather than a relaxation.
+
+    While the proposal was live, binding to today's bytes was right: a
+    live recommendation must name the artifacts a reader can check now,
+    and this test caught two real staleness bugs doing exactly that.
+
+    Once superseded it is HISTORY, and rebinding history is wrong twice
+    over. It would make a record written on 2026-08-25 claim to bind an
+    artifact that did not exist then, and it would reissue a superseded
+    record every time the capabilities artifact moved -- forever, for a
+    recommendation nobody can act on.
+
+    So the check becomes: the hash it carries must be a value the
+    artifact REALLY HAD, verified against committed history. That is
+    strictly stronger than equality with today's bytes, because it proves
+    the record bound something real AT THE TIME rather than merely
+    matching now -- a record could match today by luck or by having been
+    quietly rewritten."""
+    import hashlib
+    import subprocess
+
+    assert PROPOSAL["status"] == "superseded", (
+        "while this record is live its hashes must equal today's bytes; restore the equality "
+        "assertions rather than leaving history-only checking on a live record")
+
+    for field, artifact in (("capabilities_artifact_hash", CAPABILITIES),
+                            ("requirements_artifact_hash", REQUIREMENTS)):
+        relative = artifact.relative_to(REPO_ROOT).as_posix()
+        log = subprocess.run(["git", "log", "--format=%H", "--", relative],
+                             cwd=str(REPO_ROOT), capture_output=True, text=True)
+        if log.returncode != 0 or not log.stdout.strip():
+            pytest.skip("no git history (shallow clone)")
+        versions = set()
+        for commit in log.stdout.split():
+            blob = subprocess.run(["git", "show", f"{commit}:{relative}"],
+                                  cwd=str(REPO_ROOT), capture_output=True)
+            if blob.returncode == 0:
+                versions.add("sha256:" + hashlib.sha256(blob.stdout).hexdigest())
+        assert PROPOSAL[field] in versions, (
+            f"{field} names {PROPOSAL[field]}, which {artifact.name} has never had in committed "
+            f"history -- the record binds bytes that never existed")
+
+
+def test_a_superseded_record_says_so_and_the_superseding_one_agrees():
+    """Two artifacts disagreed about this record's state and nothing
+    checked: the decision record has claimed to supersede this proposal
+    since it was written, while this record's own status said `proposed`.
+
+    Asserted in BOTH directions, because either half alone is a claim
+    rather than a binding."""
+    from epistemics._yaml import loads
+
+    decision = loads((REPO_ROOT / "architecture" / "decisions"
+                      / "2026-08-26-joint-workload-decision.yaml").read_text())
+
+    assert PROPOSAL["status"] == "superseded"
+    assert PROPOSAL["superseded_by"].endswith("2026-08-26-joint-workload-decision.yaml")
+    assert PROPOSAL_PATH.name in decision["supersedes"], (
+        "the proposal names a superseding record that does not claim it")
+    assert "no further reissue" in PROPOSAL["binding_rule_after_supersession"]
 
 
 def test_both_artifacts_carry_a_committed_sidecar_digest_that_agrees():
@@ -153,8 +211,18 @@ def test_the_recommendation_rests_on_the_remeasured_matrix():
 
 def test_it_is_a_proposal_and_says_so():
     """The correction this file exists to lock: one party with read-only
-    access to the other must not author a two-party decision."""
-    assert PROPOSAL["status"] == "proposed"
+    access to the other must not author a two-party decision.
+
+    The status literal was `proposed` and is now `superseded`, and the
+    assertion is on the PROPERTY rather than on either word: this record
+    never became a decision, whatever lifecycle state it reached. Pinning
+    the literal made a legitimate transition look like a violation --
+    which is the same enumerated-predicate shape found four other times
+    in this phase, in a place small enough to be easy to miss."""
+    assert PROPOSAL["status"] in ("proposed", "superseded"), PROPOSAL["status"]
+    assert "decision" not in PROPOSAL["status"], (
+        "this record must never carry a decision status; the joint decision is a separate artifact")
+    assert PROPOSAL["proposal_id"].endswith("proposal")
     authority = " ".join(PROPOSAL["authority"]).lower()
     assert "not the joint decision" in authority
     assert "read-only" in authority
