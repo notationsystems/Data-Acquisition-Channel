@@ -651,3 +651,70 @@ def test_the_extension_record_names_a_consuming_workload():
     # this project already made once and corrected.
     assert "Kalman is NOT" in record["named_consuming_workload"]["note"]
     assert "next DECISION" in record["deliberately_not_done"]["covariance_extension"]
+
+
+# ================= CHARACTERIZATION: the value cell is not element-typed
+#
+# Found by probing the gate against its own stated rule -- "the gate checks
+# the TYPE of every identity field, not its presence" -- and asking whether
+# it holds for the CELL as well as for the identity.
+#
+# It does not. Measured, not argued: the two gates disagree about `value`.
+#
+#     shape            observation_is_table_alignable   quantity_is_typed
+#     ---------------  ------------------------------   -----------------
+#     value = 1.5      admissible                       admissible
+#     value = "1.5"    ADMISSIBLE                       UNTYPED_QUANTITY
+#     value = True     ADMISSIBLE                       UNTYPED_QUANTITY
+#
+# The string case is arguably a design choice: a categorical column may be
+# genuinely alignable without being numerically fittable, and the table
+# gate answers alignability. Recorded, not asserted to be wrong.
+#
+# The BOOL case is not that. This file's own rationale excludes bool from
+# identity fields precisely because isinstance(True, int) makes it pass any
+# numeric check that does not name it -- and a bool cell reaching a design
+# matrix is summed as 1.0, silently, which is the exact failure that
+# rationale exists to prevent. The exclusion is applied to identity and not
+# to the cell.
+#
+# Locked here rather than patched: the gate is another session's fresh
+# design and the string question is genuinely open. This makes the gap
+# undriftable while leaving the decision where it belongs -- the same
+# posture test_persistent_condition_lifecycle.py took for the
+# graph_dataset write-side gap.
+
+def test_the_value_cell_is_not_element_typed_by_the_table_gate():
+    """CHARACTERIZATION of a measured gap, not an endorsement."""
+    base = {"sample_id": "s1", "variable": "v1", "unit": "m", "value": 1.5}
+    assert observation_is_table_alignable(base).admissible is True
+
+    for cell in ("1.5", True):
+        verdict = observation_is_table_alignable({**base, "value": cell})
+        assert verdict.admissible is True, (
+            f"if {cell!r} is now refused, this gap has been closed -- update the "
+            "characterization rather than deleting it")
+
+
+def test_the_scalar_gate_refuses_exactly_what_the_table_gate_admits():
+    """The two gates disagree, which matters because the file's own
+    `two_gates_that_must_agree` says neither may be dropped in favour of
+    the other. A caller running only the table gate admits a bool cell."""
+    from science.admissibility import UNTYPED_QUANTITY, quantity_is_typed
+
+    for cell in ("1.5", True):
+        scalar = quantity_is_typed(
+            {"value": cell, "unit": "m", "uncertainty": 0.1, "uncertainty_kind": "stated"})
+        assert scalar.admissible is False
+        assert UNTYPED_QUANTITY in scalar.reasons
+
+
+def test_the_bool_exclusion_is_applied_to_identity_and_not_to_the_cell():
+    """The asymmetry stated precisely, so the inconsistency is the thing
+    recorded rather than the symptom."""
+    base = {"sample_id": "s1", "variable": "v1", "unit": "m", "value": 1.5}
+    # identity: bool IS excluded, by name
+    assert observation_is_table_alignable({**base, "sample_id": True}).admissible is False
+    assert observation_is_table_alignable({**base, "variable": True}).admissible is False
+    # the cell: bool is NOT excluded
+    assert observation_is_table_alignable({**base, "value": True}).admissible is True
