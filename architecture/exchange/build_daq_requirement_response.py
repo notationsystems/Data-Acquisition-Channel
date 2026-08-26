@@ -84,6 +84,25 @@ DOCUMENT = {
     "artifact": "daq_requirement_response",
     "extends": "core@1.0.0",
     "owner": "daf",
+    # ONE PARTY, TWO NAMES, and neither side noticed for the whole exchange.
+    # This repository calls itself `daf` in all six of its own artifacts;
+    # the compute layer addresses all eight of its requirement rows to
+    # `daq`. Both are internally consistent, so no check inside either
+    # repository could see it -- it is only visible when something JOINS on
+    # the token, which nothing did until the cross-repository claim check
+    # tried to match a response to the row it answers.
+    #
+    # Declared here rather than fixed by renaming, for two reasons. It is
+    # THIS repository's own name, so the compute layer renaming its rows
+    # would be one side deciding the other's identity. And both tokens sit
+    # in hash-bound artifacts, so a rename is a coordinated reissue for a
+    # question that is not yet decided.
+    #
+    # A two-entry closed vocabulary is one of the cases where a list IS the
+    # property -- there are two parties -- so this is a declaration rather
+    # than an enumeration standing in for one.
+    "also_known_as": "daq, in the compute layer's requirements artifact",
+    "the_names_are_one_party": True,
     "paired_artifact": "scl_requirements.yaml, in the compute layer's repository",
     "responds_to_workload": "kalman_filter_linear",
     "generated_by": "architecture/exchange/build_daq_requirement_response.py",
