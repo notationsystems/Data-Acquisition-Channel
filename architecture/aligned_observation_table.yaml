@@ -48,15 +48,6 @@
   "nan_was_admissible": "NaN, +inf and -inf all passed the FULL property gate. Every isinstance(value, (int, float)) check in science/admissibility.py admitted them, because NaN and the infinities ARE floats. The type check was never the wrong check; it was not sufficient."
   "not_equal_to_itself": "after a round trip, back.content['value'] == back.content['value'] is False -- so an equality check that would catch a CORRUPTED round trip returns False for an INTACT one"
   "persisted_as_the_literal": "FilesystemEvidenceStore wrote the literal NaN to disk, so the stored artifact was not valid JSON either"
-"measured_gap_found_by_probing_the_rule":
-  "enforcement": "tests/test_aligned_observation_table.py::test_the_bool_exclusion_is_applied_to_identity_and_not_to_the_cell"
-  "how_it_was_found": "by probing the gate against its own stated rule rather than against its tests: does 'checks the TYPE of every identity field' also hold for the cell? Same method that found the fourier_transform_1d canonical-encoding defect in a fully-validated operation."
-  "status": "CHARACTERIZED_NOT_PATCHED"
-  "the_bool_case": "not that. This file's own rationale excludes bool from identity fields precisely because isinstance(True, int) makes it pass any numeric check that does not name it. A bool CELL reaching a design matrix is summed as 1.0, silently -- the exact failure that rationale exists to prevent. The exclusion is applied to identity and not to the cell."
-  "the_string_case": "arguably a design choice rather than a defect -- a categorical column may be genuinely alignable without being numerically fittable, and this gate answers alignability. Recorded, not asserted to be wrong."
-  "what": "element_types_not_presence holds for the IDENTITY fields and not for the value CELL. Measured: value='1.5' and value=True are both admitted by observation_is_table_alignable, and both are refused by quantity_is_typed as UNTYPED_QUANTITY."
-  "why_it_matters_for_two_gates_that_must_agree": "that section says neither gate subsumes the other and neither call may be dropped. A caller running only the table gate -- which is the gate FOR the table workload -- admits a bool cell."
-  "why_not_patched_here": "the gate is another session's fresh design and the string question is genuinely open. Locked as characterization so it cannot drift, leaving the decision with its author -- the same posture tests/test_persistent_condition_lifecycle.py took for the graph_dataset write-side gap."
 "named_consuming_workload":
   "daq_part_of_the_third_is_narrow": "whether a condition becomes a predictor column or a stratum is a MODELLING assertion, and the same artifact says so -- the choice of design matrix / basis functions is a modelling assertion, not an observation -- so DAQ must not decide it and the gate does not. What DAQ owes is that conditions are carried under stable identifiers a consumer can join on, and that no condition key silently shadows one of the table's own identity columns."
   "id": "least_squares"
@@ -103,3 +94,22 @@
   "the_one_rule_they_share": "nothing in the numeric range can ever mean missing"
   "they_answer_different_questions": "an observation may be alignable and inadmissible as a canonical property assertion, and the reverse. Neither subsumes the other and neither call may be dropped in favour of the other."
   "why_it_is_locked_as_a_test": "if either admitted a sentinel, the extension's guarantee would hold only on whichever gate happened to run"
+"value_cell_is_not_element_typed":
+  "decision_open_the_string_cell":
+    "enforcement": "tests/test_aligned_observation_table.py::test_DECISION_a_string_cell_is_admitted_and_that_may_be_correct"
+    "owner": "the gate's author"
+    "question": "is a categorical column alignable?"
+    "status": "OPEN_DESIGN_QUESTION"
+    "why_it_is_genuinely_open": "a categorical column can be alignable without being numerically fittable, and this gate answers ALIGNABILITY rather than fittability. Admitting a string cell may well be correct; nobody has decided."
+  "defect_the_bool_cell":
+    "enforcement": "tests/test_aligned_observation_table.py::test_DEFECT_a_bool_cell_is_admitted_against_the_files_own_rationale"
+    "it_applies_with_MORE_force_to_the_cell": "a bool JOIN KEY produces a two-row table, which is visibly wrong. A bool CELL reaches a design matrix and is summed as 1.0, with no error at any layer, and the fit looks entirely healthy."
+    "owner": "the gate's author"
+    "status": "DEFECT"
+    "the_files_own_rule_it_breaks": "two_gates_that_must_agree -- neither gate subsumes the other and neither call may be dropped. They do not agree here, so a caller running only the table gate, which is the gate FOR this workload, admits it."
+    "why_it_is_not_open": "this file already excludes bool from identity fields, with the rationale that isinstance(True, int) is True so a bool passes any numeric check that does not name it. That reasoning is about BOOL, not about identity, and applying it to identity and not to the cell is one design contradicting itself."
+    "why_still_characterized_and_not_patched": "the gate is another session's fresh design and the fix belongs with its author. Recorded as a defect with the contradiction named, so it reads as one thing to fix rather than one more thing to weigh."
+  "how_it_was_found": "by probing the gate against its own stated rule rather than against its tests: does 'checks the TYPE of every identity field' also hold for the cell? Same method that found the fourier_transform_1d canonical-encoding defect in a fully-validated operation."
+  "split_deliberately": "these are NOT one open question. Carrying them together would hand the author two decisions when there is one decision and one defect."
+  "the_measurement": "value=1.5 admitted by both gates; value='1.5' and value=True admitted by observation_is_table_alignable and refused by quantity_is_typed as UNTYPED_QUANTITY"
+  "why_it_blocks_the_covariance_extension": "a covariance-bearing R is a matrix of CELLS, so it inherits this surface directly. A bool in a covariance is worse than in a design matrix: it will pass a positive-semidefinite check while meaning nothing. Resolve the cell-typing question before Kalman goes through the joint record."

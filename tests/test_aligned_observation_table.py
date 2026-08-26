@@ -653,6 +653,49 @@ def test_the_extension_record_names_a_consuming_workload():
     assert "next DECISION" in record["deliberately_not_done"]["covariance_extension"]
 
 
+# ============ TWO SEPARATE FINDINGS ABOUT THE VALUE CELL, split on purpose
+#
+# The gate's stated rule is "the gate checks the TYPE of every identity
+# field, not its presence". Probing whether that holds for the CELL as
+# well as for the identity turns up two things, and they are NOT the same
+# kind of thing. Carrying them as one open question would hand the author
+# two decisions when there is one decision and one defect.
+#
+#     value = 1.5      table: admissible    scalar: admissible
+#     value = "1.5"    table: ADMISSIBLE    scalar: UNTYPED_QUANTITY   <- DECISION
+#     value = True     table: ADMISSIBLE    scalar: UNTYPED_QUANTITY   <- DEFECT
+#
+# ---------------------------------------------------------------- DECISION
+#
+# The STRING case is a genuine design question about what a table is FOR.
+# A categorical column can be alignable without being numerically
+# fittable, and this gate answers alignability rather than fittability.
+# Admitting "1.5" may well be correct. Nobody has decided, and this file
+# does not decide it.
+#
+# ------------------------------------------------------------------ DEFECT
+#
+# The BOOL case is the file contradicting itself, and it is not open.
+# architecture/aligned_observation_table.yaml excludes bool from identity
+# fields with an explicit rationale: isinstance(True, int) is True, so a
+# bool passes any numeric check that does not name it. That reasoning is
+# not about identity. It is about bool, and it applies with more force to
+# the cell than to the identity:
+#
+#   * an identity field is a JOIN KEY -- a bool one produces a table with
+#     two rows, which is visibly wrong;
+#   * a cell reaches a DESIGN MATRIX -- a bool one is summed as 1.0, with
+#     no error at any layer, and the fit looks entirely healthy.
+#
+# The scalar gate already refuses it. `two_gates_that_must_agree` says
+# neither gate subsumes the other and neither call may be dropped -- and
+# they do not agree here, so a caller running only the table gate (which
+# is the gate FOR the table workload) admits it.
+#
+# Still characterized rather than patched, because the gate is another
+# session's design and the fix belongs with its author. But it is recorded
+# as a DEFECT with the contradiction named, not as a second open question.
+
 # ================= CHARACTERIZATION: the value cell is not element-typed
 #
 # Found by probing the gate against its own stated rule -- "the gate checks
@@ -684,16 +727,28 @@ def test_the_extension_record_names_a_consuming_workload():
 # posture test_persistent_condition_lifecycle.py took for the
 # graph_dataset write-side gap.
 
-def test_the_value_cell_is_not_element_typed_by_the_table_gate():
-    """CHARACTERIZATION of a measured gap, not an endorsement."""
+def test_DECISION_a_string_cell_is_admitted_and_that_may_be_correct():
+    """OPEN DESIGN QUESTION, not a defect. A categorical column can be
+    alignable without being numerically fittable, and this gate answers
+    alignability. Recorded so the choice is made deliberately rather than
+    inherited."""
     base = {"sample_id": "s1", "variable": "v1", "unit": "m", "value": 1.5}
     assert observation_is_table_alignable(base).admissible is True
+    assert observation_is_table_alignable({**base, "value": "1.5"}).admissible is True
 
-    for cell in ("1.5", True):
-        verdict = observation_is_table_alignable({**base, "value": cell})
-        assert verdict.admissible is True, (
-            f"if {cell!r} is now refused, this gap has been closed -- update the "
-            "characterization rather than deleting it")
+
+def test_DEFECT_a_bool_cell_is_admitted_against_the_files_own_rationale():
+    """NOT an open question. The design excludes bool from identity fields
+    because isinstance(True, int) passes any numeric check that does not
+    name it -- reasoning about BOOL, not about identity, and it applies
+    with more force to the cell: a bool join key makes a visibly wrong
+    two-row table, a bool cell is summed as 1.0 in a design matrix with no
+    error at any layer.
+
+    If this starts failing, the defect has been fixed -- delete this test
+    rather than updating it."""
+    base = {"sample_id": "s1", "variable": "v1", "unit": "m", "value": 1.5}
+    assert observation_is_table_alignable({**base, "value": True}).admissible is True
 
 
 def test_the_scalar_gate_refuses_exactly_what_the_table_gate_admits():
