@@ -210,6 +210,11 @@ def test_only_one_precondition_is_irreversible_and_the_record_says_which():
     preconditions = READINESS["what_would_have_to_be_true_before_acquiring"]
     assert set(preconditions) == {"one", "two", "three", "four"}
     assert "unrecoverable if wrong" in preconditions["one"]
+    assert preconditions["two"].endswith("SATISFIED."), "the consumer is built"
+    assert "SATISFIED, by divergence stated rather than by suppression." in preconditions["three"]
+    assert "ONE ALONE" in READINESS["what_remains_outstanding"], (
+        "only the irreversible precondition may remain outstanding"
+    )
     assert "cannot be repaired after the data exists" in READINESS["the_order_that_matters"]
     assert "discarding a measurement to make a check pass" in preconditions["three"], (
         "the tempting fix for the uncertainty split must be named and refused"
