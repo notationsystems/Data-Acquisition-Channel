@@ -1,0 +1,97 @@
+# THE COHORT-IDENTITY PROBE, STATED BEFORE IT IS RUN.
+#
+# architecture/_probes/generality.yaml records cohort_identity as UNTESTED
+# with the note that the probe "has not been run against them so much as
+# found no way to run them", and the whole probe carries status
+# paper_only. This file is the expectation half; the run is separate and
+# comes after, so the ordering is in git rather than in a claim.
+#
+# WHY A PROBE NEEDS EXPECTED IDS AND NOT MERELY EXPECTED REFUSALS.
+# Confirming a gate was REACHED is not confirming WHICH gate. A planted
+# violation refused with the wrong invariant id is a gate reached and a
+# claim unsupported -- the run would report "refused, as predicted" while
+# the predicted mechanism did nothing. Every case below therefore names
+# the id it expects, and an id-less "refused" is not a pass.
+#
+# The same failure this pair just measured one level up: two independent
+# checks both passing established neither's property, because each was
+# answering something adjacent to it.
+extends: core@1.0.0
+
+probe: cohort_identity
+status: expectations_recorded_run_not_yet_performed
+property_under_test: "a polymer is a POPULATION, not an object. Mn and Mw are moments of a chain-length distribution, and PDI is a ratio of two of them. Does anything in this substrate distinguish a measurement OF a population from a measurement of an individual?"
+
+# --------------------------------------------------- the derived basis --
+
+refusal_vocabulary_measured_before_stating_expectations:
+  method: "collected every module-level refusal code across science/*.py programmatically rather than from memory."
+  total_codes: 46
+  gates: 5
+  codes_naming_a_cohort_concept: 0
+  searched_for:
+    - "COHORT"
+    - "POPULATION"
+    - "DISTRIB"
+    - "BATCH"
+    - "ENSEMBLE"
+    - "AGGREGATE"
+  what_that_licenses: "an expectation, not a result. Zero codes naming the concept means no gate CLAIMS to refuse on cohort grounds; whether some gate refuses incidentally is exactly what the run measures."
+
+# ------------------------------------------------------- the plantings --
+#
+# Each case names what it expects and, where a refusal is expected, the
+# EXACT id. `expected_refusal_ids: []` means ADMITTED IS THE PREDICTION --
+# not an absence of prediction.
+
+cases:
+
+  - name: a_population_as_a_referent
+    plant: "Referent(natural_key='PS-lot-4471', kind='polymer_batch')"
+    expected_admitted: true
+    expected_refusal_ids: []
+    reasoning: "Referent.kind is an open string documented as 'material | instrument | process | sample | concept | ...'. Nothing constrains it, so a population kind is constructible and indistinguishable from an object kind."
+    what_a_refusal_would_mean: "the expectation is wrong and kind is constrained somewhere this survey missed."
+
+  - name: a_distribution_moment_as_a_scalar_measurement
+    plant: "an observation whose value is Mn = 104000 g/mol on that batch, with conditions and a unit"
+    expected_admitted: true
+    expected_refusal_ids: []
+    reasoning: "Mn is a finite float with a unit, so every cell rule is satisfied. THIS IS THE PROBE'S POINT: a moment of a distribution is admitted as if it were a point measurement of an object, and nothing records which it is."
+    what_a_refusal_would_mean: "a gate does distinguish, and the UNTESTED verdict in generality.yaml is wrong."
+
+  - name: the_full_distribution_as_the_value
+    plant: "the same observation with value = a chain-length vector and a per-component unit list"
+    expected_admitted: true
+    expected_refusal_ids: []
+    reasoning: "this is shaped exactly like a multivariate measurement, which the structured-uncertainty work admits by design. A distribution and a measurement vector are the same bytes."
+    what_a_refusal_would_mean: "the multivariate path distinguishes them, which would be a stronger result than expected."
+
+  - name: pdi_as_a_ratio_with_no_lineage_to_its_moments
+    plant: "PDI = 1.05 as an observation, with no declared relationship to the Mn and Mw it is computed from"
+    expected_admitted: true
+    expected_refusal_ids: []
+    reasoning: "lineage_depth only engages when a record DECLARES recursion. An undeclared derivation is not partially-declared, so PARTIALLY_DECLARED_RECURSION does not fire."
+    what_a_refusal_would_mean: "the lineage gate reaches undeclared derivations, which would close part of this gap already."
+
+  - name: a_scalar_uncertainty_on_a_distribution_moment
+    plant: "Mn with a scalar standard error"
+    expected_admitted: true
+    expected_refusal_ids: []
+    reasoning: "the ONLY-WHEN clause fires on a MULTIVARIATE VALUE, and Mn is scalar. A scalar sigma on a scalar value is exactly the admitted case -- even though the underlying quantity is a distribution whose spread is the physically interesting part."
+    what_a_refusal_would_mean: "SCALAR_UNCERTAINTY_ON_A_MULTIVARIATE_VALUE fires on a scalar, which would be a defect in that gate rather than a finding here."
+
+# --------------------------------------------------------- the verdict --
+
+predicted_outcome:
+  cases: 5
+  predicted_admitted: 5
+  predicted_refused: 0
+  the_claim: "no gate in this repository refuses an observation on the grounds that its subject is a population rather than an object, and none records the distinction either. cohort_identity is UNTESTED because there is nothing to test, not because nobody ran it."
+
+how_this_probe_can_fail_honestly:
+  - "any case refused -> the expectation is wrong and the survey missed a constraint. Record the id and revise."
+  - "any case refused with an id NOT listed above -> the gate was reached and the claim is unsupported. This is the outcome the run must be able to distinguish, and the reason ids are named rather than counted."
+  - "all five admitted -> the predicted outcome, and the finding is a REPRESENTATION GAP rather than a defect: nothing is broken, and nothing distinguishes a population from an object."
+
+what_this_probe_does_not_decide: "whether the substrate SHOULD distinguish them. A gap measured is not a change proposed -- that belongs in a joint record with a workload paired to it, under the rule that made least_squares a decision rather than a wish."
