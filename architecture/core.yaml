@@ -20,6 +20,47 @@ submodule_path: vendor/scout-retrieval-agent
 modifiable: false
 modifiable_reason: "daf/_vendor.py -- the vendored system is used without copying or modifying a single line"
 
+# ----------------------------------------------------------------------
+# WHAT `core@1.0.0` ACTUALLY REFERS TO.
+#
+# Declared here because 26 artifacts say `extends: core@1.0.0`, the
+# register derivation joins on it, and `bent: []` is a claim made RELATIVE
+# to a core -- and until now every one of those joined on a MUTABLE label.
+#
+# MEASURED BEFORE DECLARING:
+#   * 26 artifacts declare `extends: core@1.0.0`; all join on the version.
+#   * `submodule_commit: 3e5bea9` is recorded above and NOTHING verifies it
+#     against the gitlink the repository actually points at.
+#   * the one check on the version is `f'version = "{v}"' in pyproject_text`
+#     -- a SUBSTRING match over the whole file, which cannot tell the
+#     project version from a dependency pin, a tool table or a comment.
+#
+# So the identity of the core was carried by the one field that upstream
+# controls and can move, while the field that cannot move was carried and
+# never read. THE FAILURE THAT MAKES THIS URGENT is not a version bump,
+# which is loud -- it is a submodule bumped to a commit whose pyproject
+# still says 1.0.0. Patch commits do not bump versions. Every check passes,
+# the recorded commit is silently wrong, and all 26 `extends` still agree.
+#
+# THE RULE, in this project's own identity vocabulary (SCL_CONTRACT 6.1):
+#
+#   the SUBMODULE COMMIT is PARTICIPATING -- it determines what the core
+#       IS, so anything asserting a property OF the core is relative to it
+#   the VERSION STRING is ANNOTATING -- it is a human label upstream
+#       assigns, may be reused across commits, and may move without the
+#       vendored code changing at all
+#
+# A join on an annotating field is the defect. `extends: core@1.0.0` stays
+# as the readable form, and is now VERIFIED against the participating
+# referent rather than standing in for it.
+core_referent:
+  participating: submodule_commit
+  annotating: version
+  the_join_that_must_hold: "core.yaml's submodule_commit equals the gitlink this repository points at, AND core.yaml's version equals the [project] version parsed from the pyproject at that commit -- parsed, not substring-matched."
+  why_the_label_is_kept: "26 artifacts and every doctrine projection read `core@<version>`, and a commit hash is not a readable claim. The label is retained and BOUND, which is the same disposition as any annotating field: it may not be removed and it may not be joined on."
+  what_a_claim_relative_to_core_means: "`bent: []`, `core_invariants_modified: 0` and every `extends:` are assertions about the core AT THE PARTICIPATING REFERENT. If the commit moves, they are claims about a different object and must be re-measured, whatever the label says."
+  enforcement: tests/test_core_referent.py
+
 # The core's own schema-closure surface, by inspection.
 schema:
   canonical_state: core/canonical/state.py
