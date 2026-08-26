@@ -1044,3 +1044,99 @@ def test_the_scalar_and_composite_paths_apply_ONE_rule_set():
     for leaf in (1.0, 0, -2.5, "B7"):
         assert observation_is_table_alignable(dict(ALIGNED_CELL, value=leaf)).admissible
         assert observation_is_table_alignable(dict(ALIGNED_CELL, value=[leaf])).admissible
+
+
+# ---------------------------------------------------------------------------
+# THE ELEMENT-TYPING SURFACE A COVARIANCE INHERITS.
+#
+# Measured before the Kalman extension is designed around it, because the
+# question "does the refusal reach MATRIX cells or only scalar ones" has a
+# split answer and the split is the useful part.
+#
+# The leaf rule used to be a DENYLIST -- it named bool, numeric-looking
+# string and non-finite, and returned "no reason" for everything else.
+# Probed against fifteen leaf types, that admitted None, bytes, a complex
+# number, a Decimal, a Fraction and a set inside what a covariance would
+# read as a matrix entry. That is coverage-by-enumeration
+# (architecture/proof_integrity.yaml): the check named what it looked for
+# instead of asserting the property, so it was correct until a type nobody
+# listed arrived, and silent at that moment. The bool repair was itself an
+# instance -- it added one name and left the class open.
+# ---------------------------------------------------------------------------
+
+import decimal as _decimal
+import fractions as _fractions
+
+
+def _matrix_with(leaf):
+    return dict(ALIGNED_CELL, value=[[1.0, 0.2], [0.2, leaf]])
+
+
+@pytest.mark.parametrize("leaf", [
+    True, False,
+    float("nan"), float("inf"), float("-inf"),
+    "1.5", "1e3", "-2",
+    None,
+    b"\x00",
+    1 + 2j,
+    _decimal.Decimal("1.0"),
+    _fractions.Fraction(1, 2),
+    {1, 2},
+])
+def test_a_matrix_entry_that_is_not_a_number_is_refused_at_every_depth(leaf):
+    """The property, asserted over types rather than over a list of the
+    ones that were once a problem."""
+    assert not observation_is_table_alignable(_matrix_with(leaf)).admissible, leaf
+    assert not observation_is_table_alignable(
+        dict(ALIGNED_CELL, value=[[[leaf]]])).admissible, f"depth 3: {leaf!r}"
+
+
+def test_the_refusal_is_narrow_enough_to_leave_kalman_buildable():
+    """Kalman's requirement is an ordered stream of measurement VECTORS
+    with a covariance-bearing R. If this refusal closed composites, it
+    would close the next workload rather than open it."""
+    for cell in ([1.0, 2.0],
+                 [[1.0, 0.2], [0.2, 1.0]],
+                 [[4.0, 0.0, 0.0], [0.0, 4.0, 0.0], [0.0, 0.0, 4.0]],
+                 {"variance": 0.25, "covariance": [[1.0, 0.0], [0.0, 1.0]]},
+                 [0, -2, 3]):
+        assert observation_is_table_alignable(dict(ALIGNED_CELL, value=cell)).admissible, cell
+
+
+# --- the two things this gate does NOT decide, pinned as OPEN ---------------
+#
+# Pinned as tests rather than left as prose, so the covariance extension
+# cannot assume a rule that is not here. Each ASSERTS THE ADMISSION -- if a
+# later phase closes one, this test fails and the obligation is discharged
+# deliberately rather than discovered.
+
+
+def test_OPEN_a_matrix_entry_is_not_required_to_be_numeric():
+    """A categorical string is admitted as a leaf, exactly as it is as a
+    scalar cell -- the scalar and composite paths apply ONE rule set, and
+    the categorical-cell decision was made deliberately.
+
+    Refusing it as a leaf was TRIED IN THIS PHASE AND REVERTED: it would
+    say a matrix entry must be numeric, which is a covariance rule, and
+    this gate answers alignability rather than fittability. The existing
+    one-rule-set property test caught the over-reach immediately.
+
+    CONSEQUENCE FOR KALMAN: a covariance-bearing R whose entries are
+    categorical strings passes this gate. The numeric-entry requirement is
+    the extension's to state; it does not exist yet."""
+    assert observation_is_table_alignable(_matrix_with("B7")).admissible
+
+
+def test_OPEN_an_empty_composite_is_admitted_at_any_depth():
+    """`[]` and `{}` pass, bare or nested, because there is no leaf to
+    find a fault in -- the vacuous-domain shape one layer in.
+
+    Also tried as a refusal in this phase and reverted: length is SHAPE,
+    and shape is deliberately not decided here. Refusing `[]` nested but
+    not bare would have been a depth rule, which is shape by another name.
+
+    CONSEQUENCE FOR KALMAN: an empty row inside a covariance is admissible
+    here and means nothing. Raggedness, dimensionality, symmetry and
+    positive-semidefiniteness all sit behind this same line."""
+    assert observation_is_table_alignable(dict(ALIGNED_CELL, value=[])).admissible
+    assert observation_is_table_alignable(_matrix_with([])).admissible

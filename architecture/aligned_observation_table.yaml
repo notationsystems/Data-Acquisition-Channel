@@ -198,3 +198,67 @@ value_cell_typing:
     "the_test_is_float_itself_not_a_pattern": "float() is what a consumer actually calls, so the gate asks the real question -- would this coerce without complaint -- instead of approximating it with a regex. Non-finite spellings are caught as a consequence: the strings nan and inf coerce, and a sentinel absence smuggled in as text is the same forbidden encoding wearing a different type."
 
   "the_limit_this_gate_cannot_close": "it is a PER-OBSERVATION gate and cannot see a column. A variable whose cells are float in one observation and a categorical string in another is admissible cell by cell and is still a broken column. Refusing numeric-looking strings removes the case where that inconsistency is SILENT; the remaining cases raise at the consumer. Whoever assembles the table owns the cross-observation check, and it is named here rather than assumed."
+
+# ---------------------------------------------------------------------
+# THE ELEMENT-TYPING SURFACE A COVARIANCE INHERITS.
+#
+# Measured before the Kalman extension is designed around it, in answer to
+# a direct question: does the cell refusal reach MATRIX cells, or only
+# scalar ones? The answer is split, and the split is the useful part.
+# ---------------------------------------------------------------------
+covariance_inherits_this_surface:
+
+  question: "does the element-type refusal reach matrix cells and not just scalar cells?"
+
+  answer: "it reaches every depth, for the rules that are DECIDED. Two rules a covariance needs are NOT decided, and they were confirmed open rather than quietly closed."
+
+  the_defect_found_while_confirming:
+    what: "the leaf rule was a DENYLIST. It named bool, numeric-looking string and non-finite, and returned no reason for anything else."
+    measured: "probed against fifteen leaf types inside a 2x2 matrix. Six were admitted that should not have been: None, bytes, a complex number, a Decimal, a Fraction and a set. The scalar path had the same shape and admitted the same types as whole cells."
+    why_it_is_the_named_class: "coverage-by-enumeration, exactly as architecture/proof_integrity.yaml states it -- the check named what it looked for instead of asserting the property, so it was correct until a type nobody listed arrived, and SILENT at that moment. The bool repair was itself an instance of the class: it added one name to the list and left the class open. The repair rule that class proposes is what closed this -- assert the property, not the enumeration."
+    repair: "a leaf must BE a finite real number, and bool is excluded before the int check because isinstance(True, int) is True. The specific reasons (BOOLEAN_IS_NOT_A_QUANTITY, NUMERIC_LOOKING_STRING_CELL, SENTINEL_ENCODED_ABSENCE) are kept because they tell a caller more than a bare type error, but they are now SPECIALISATIONS of a refusal already decided rather than the conditions for one."
+    # A BLOCK sequence, not a flow one. The flow form was written here
+    # first and the two-parser check refused it -- PyYAML read a list of
+    # eleven strings where the dependency-free reader read ONE STRING
+    # containing the brackets, with no error from either. The same silent
+    # divergence the canonical emitter refuses to PRODUCE; the emitter
+    # governs emitted artifacts, and this file is hand-authored, so the
+    # two-parser check is the only thing standing between a hand-written
+    # flow sequence and a digest over a value the two sides disagree on.
+    now_refused_at_every_depth:
+      - "bool"
+      - "NaN"
+      - "inf"
+      - "-inf"
+      - "numeric-looking string"
+      - "None"
+      - "bytes"
+      - "complex"
+      - "Decimal"
+      - "Fraction"
+      - "set"
+
+  # ---- what this gate does NOT decide, confirmed by trying to and reverting
+
+  still_open_1_matrix_entries_need_not_be_numeric:
+    status: OPEN_AND_PINNED
+    measured: "a categorical string is admitted as a matrix leaf, exactly as it is as a scalar cell."
+    tried_and_reverted: "refusing it as a leaf was implemented in this phase and reverted. It would say a matrix entry must be numeric, which is a COVARIANCE rule, and this gate answers alignability rather than fittability. The pre-existing property test -- that the scalar and composite paths apply ONE rule set -- caught the over-reach on the first run."
+    consequence_for_kalman: "a covariance-bearing R whose entries are categorical strings PASSES this gate. The numeric-entry requirement is the extension's to state. It does not exist yet and must not be assumed."
+    pinned_by: "tests/test_aligned_observation_table.py::test_OPEN_a_matrix_entry_is_not_required_to_be_numeric -- which ASSERTS the admission, so closing it later fails the test and discharges the obligation deliberately rather than by discovery."
+
+  still_open_2_empty_composites_are_admitted:
+    status: OPEN_AND_PINNED
+    measured: "`[]` and `{}` pass, bare and nested, at any depth -- there is no leaf to find a fault in. The vacuous-domain shape, one layer in."
+    tried_and_reverted: "also implemented as a refusal in this phase and reverted. Length is SHAPE, and shape is deliberately not decided here. Refusing `[]` nested but not bare would have been a depth rule, which is shape by another name."
+    consequence_for_kalman: "an empty row inside a covariance is admissible here and means nothing. Raggedness, dimensionality, symmetry and positive-semidefiniteness all sit behind this same line, and all of them are the extension's contract."
+    pinned_by: "tests/test_aligned_observation_table.py::test_OPEN_an_empty_composite_is_admitted_at_any_depth"
+
+  # ---- the second carry-in: an upstream gate the extension must not rely on
+
+  the_upstream_minting_gate_stays_open:
+    what: "evidence.identity.canonical_json_bytes calls json.dumps with no allow_nan argument, so it mints an id over bare NaN/Infinity bytes that no conformant JSON reader can parse."
+    why_it_is_not_fixed_here: "vendor/scout-retrieval-agent is a pinned submodule that daf/_vendor.py states is used without copying or modifying a single line. The identity function is not this repository's to change. See architecture/nonfinite_identity_reachability.yaml."
+    why_a_covariance_makes_it_matter_more: "a covariance is many values per record through the same minting path, so the number of opportunities scales with the square of the measurement dimension rather than staying at one per observation."
+    what_the_extension_must_assume: "that the upstream gate is OPEN until it is actually fixed upstream. Every non-finite refusal the extension relies on must be one of this repository's own -- the admission gate, the table gate, or a store reader -- and none of them may be assumed to be reached on a path the extension itself introduces. Reaching content_hash directly bypasses all three."
+    not_a_blocker: true

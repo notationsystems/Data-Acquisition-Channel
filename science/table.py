@@ -83,6 +83,7 @@ SENTINEL_ENCODED_ABSENCE = "SENTINEL_ENCODED_ABSENCE"
 BOOLEAN_IS_NOT_A_QUANTITY = "BOOLEAN_IS_NOT_A_QUANTITY"
 NUMERIC_LOOKING_STRING_CELL = "NUMERIC_LOOKING_STRING_CELL"
 COMPOSITE_CELL_LEAF_IS_NOT_A_QUANTITY = "COMPOSITE_CELL_LEAF_IS_NOT_A_QUANTITY"
+CELL_TYPE_IS_NOT_A_QUANTITY = "CELL_TYPE_IS_NOT_A_QUANTITY"
 POSITIONAL_IDENTITY_IS_NOT_IDENTITY = "POSITIONAL_IDENTITY_IS_NOT_IDENTITY"
 
 SAMPLE_ID = "sample_id"
@@ -109,13 +110,52 @@ def _looks_numeric(text: str) -> bool:
 
 
 def _cell_leaf_reason(value: object) -> str:
-    """The scalar-cell rules, as one function, so a composite cell can be
-    held to exactly the same ones its leaves would face alone."""
+    """A leaf inside a composite cell must BE a finite real number.
+
+    STATED AS THE PROPERTY, NOT AS A LIST OF WHAT IS FORBIDDEN, and the
+    rewrite is the point. This function used to name three bad things --
+    bool, numeric-looking string, non-finite -- and return "" for
+    everything else. Measured against fifteen leaf types, that admitted
+    None, a plain string, bytes, a complex number, a Decimal, a Fraction,
+    an empty list, an empty dict and a set, every one of them inside what
+    a covariance extension would read as a matrix entry.
+
+    That is coverage-by-enumeration (architecture/proof_integrity.yaml):
+    the check named what it looked for instead of asserting the property,
+    so it was correct exactly until a type nobody listed arrived, and
+    silent at that moment. The bool repair itself was an instance -- it
+    added one name to the list and left the class open.
+
+    The specific reasons are still returned where they apply, because
+    "this is a bool" and "this is a numeric-looking string" tell a caller
+    more than "wrong type". They are now the SPECIALISATIONS of a refusal
+    that has already been decided, rather than the conditions for one.
+
+    Scope, deliberately narrow: this says a matrix entry must be a
+    number. It says nothing about shape -- raggedness, dimensionality,
+    symmetry and positive-semidefiniteness remain the covariance
+    extension's contract to define, and deciding them here would pre-empt
+    the joint record."""
     if isinstance(value, bool):
+        # before the int check: isinstance(True, int) is True
         return BOOLEAN_IS_NOT_A_QUANTITY
     if isinstance(value, str):
+        # A CATEGORICAL string stays admitted, here as in the scalar
+        # branch. THIS WAS TRIED THE OTHER WAY AND REVERTED, and the
+        # reason is worth keeping: refusing it as a leaf would say a
+        # matrix entry must be numeric, which is a COVARIANCE rule, and
+        # this gate answers alignability rather than fittability. The
+        # existing property test -- that the scalar and composite paths
+        # apply ONE rule set -- caught the over-reach immediately.
+        #
+        # So "a matrix entry must be a number" is NOT a rule this gate
+        # holds, and the covariance extension cannot assume it does. That
+        # obligation is the extension's, and it is recorded rather than
+        # quietly satisfied here.
         return NUMERIC_LOOKING_STRING_CELL if _looks_numeric(value) else ""
-    if isinstance(value, (int, float)) and not math.isfinite(value):
+    if not isinstance(value, (int, float)):
+        return CELL_TYPE_IS_NOT_A_QUANTITY
+    if not math.isfinite(value):
         return SENTINEL_ENCODED_ABSENCE
     return ""
 
@@ -143,6 +183,21 @@ def _composite_cell_reasons(value: object) -> Tuple[str, ...]:
     elif isinstance(value, (list, tuple)):
         items = tuple(value)
     else:
+        return ()
+
+    if not items:
+        # AN EMPTY COMPOSITE PASSES, at any depth, for the reason a scan
+        # over an empty domain passes: there is nothing to find a fault
+        # in. THIS WAS TRIED AS A REFUSAL AND REVERTED. `value: []` is a
+        # zero-length quantity, and length is SHAPE, which this gate
+        # deliberately does not decide (see
+        # test_shape_is_deliberately_not_decided_here). Refusing `[]`
+        # nested but not bare would have been a depth rule, which is shape
+        # by another name.
+        #
+        # Recorded rather than closed: an empty row inside a covariance is
+        # admissible here and means nothing, and that is the covariance
+        # extension's obligation, not this gate's.
         return ()
 
     reasons: List[str] = []
@@ -295,6 +350,20 @@ def observation_is_table_alignable(content: Mapping[str, object]) -> Admissibili
         elif isinstance(value, (int, float)) and not math.isfinite(value):
             # The sentinel the requirement forbids, named as what it is.
             reasons.append(SENTINEL_ENCODED_ABSENCE)
+        elif not isinstance(value, (int, float, str)):
+            # THE SAME ENUMERATION DEFECT THE LEAF RULE HAD, on this axis.
+            # The branches above name bool, numeric-looking string and
+            # non-finite; everything unnamed fell through as admissible.
+            # Measured: bytes, a complex number, a Decimal, a Fraction and
+            # a set were all admissible as CELLS.
+            #
+            # The categorical-string decision above is PRESERVED, not
+            # reversed: `str` is listed here precisely so a non-numeric
+            # string keeps reaching the admitted path. That decision was
+            # made deliberately, with the coercion table that justifies
+            # it, and this repair is about the types nobody decided
+            # anything about.
+            reasons.append(CELL_TYPE_IS_NOT_A_QUANTITY)
     elif has_absence:
         absence = content[VALUE_ABSENCE]
         if not isinstance(absence, str) or absence not in ABSENCE_REASONS:
