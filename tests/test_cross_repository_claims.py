@@ -166,6 +166,48 @@ def test_every_row_the_response_answers_still_exists_upstream():
     assert RESPONSE.get("the_names_are_one_party") is True or len(tokens) == 1, (
         "more than one owner token is in play and the party has not declared them the same")
 
+    # THE ALIAS MUST DENOTE THIS PARTY, NOT MERELY SELECT A CONSISTENT SET.
+    #
+    # Set equality below asserts that what was ANSWERED equals what was
+    # SELECTED, which is self-consistency and not identity. An alias naming
+    # the WRONG party selects that party's rows, and a response answering
+    # exactly those rows passes it. Probed: with a verbatim quote, that case
+    # went straight through.
+    #
+    # THE FIRST FIX FOR THIS WAS CIRCULAR AND IS WORTH RECORDING. It derived
+    # the counterparty's names as "every owner token that is not in
+    # `tokens`" -- and `tokens` contains the alias, so the very token under
+    # test excluded itself from the set meant to catch it. It passed the
+    # probe it was written for. The check was reading its own input as its
+    # own authority.
+    #
+    # Derived from the DECLARED SELF instead, which does not move when the
+    # alias does, and only from TOP-LEVEL artifact ownership: a top-level
+    # `owner` says whose artifact this is, while an `owner` inside a
+    # requirement row says who a row is ADDRESSED to. `scl` is a top-level
+    # owner and so is a party's self-name; `daq` is only ever an addressing
+    # token, which is exactly what an alias should be.
+    declared_self = RESPONSE["owner"]
+    counterparty_self_names = set()
+    for artifact in (sorted(EXCHANGE.glob("*.yaml"))
+                     + sorted((REPO_ROOT / "architecture").glob("*.yaml"))
+                     + sorted((REPO_ROOT / "architecture" / "decisions").glob("*.yaml"))):
+        try:
+            document = loads(artifact.read_text())
+        except Exception:
+            continue
+        owner = document.get("owner") if isinstance(document, dict) else None
+        if isinstance(owner, str) and owner != declared_self and len(owner) < 12:
+            counterparty_self_names.add(owner)
+
+    assert counterparty_self_names, (
+        "no counterparty self-name found; the check below would pass vacuously")
+    stolen = tokens & counterparty_self_names
+    assert not stolen, (
+        f"the alias claims {sorted(stolen)}, which is a token another party uses as its "
+        f"OWN artifact ownership. An alias naming the wrong party still selects a "
+        f"self-consistent set of rows, so set equality below cannot catch it.")
+
     upstream = {row["requirement"]
                 for row in REQUIREMENTS["workloads"][workload]["blocking_requirements"]
                 if row["owner"] in tokens}
