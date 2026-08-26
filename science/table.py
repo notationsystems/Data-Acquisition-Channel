@@ -109,8 +109,17 @@ def _looks_numeric(text: str) -> bool:
 
 
 
-def _cell_leaf_reason(value: object) -> str:
+def leaf_is_a_quantity(value: object) -> str:
     """A leaf inside a composite cell must BE a finite real number.
+
+    PUBLIC, deliberately, and it is the only part of this module the
+    covariance extension reuses. The ordering caveat that came out of the
+    Kalman framing is that THE LEAF RULE IS REUSABLE AND THE GATE AROUND
+    IT IS NOT -- this gate refuses positional identity by name because
+    least_squares forbids ordering, and Kalman requires it. So a second
+    gate written for the covariance modality must import THIS function
+    rather than restate its rule, or the two drift and the pair ends up
+    with two definitions of what a quantity is.
 
     STATED AS THE PROPERTY, NOT AS A LIST OF WHAT IS FORBIDDEN, and the
     rewrite is the point. This function used to name three bad things --
@@ -205,7 +214,7 @@ def _composite_cell_reasons(value: object) -> Tuple[str, ...]:
         if isinstance(item, (Mapping, list, tuple)):
             reasons.extend(_composite_cell_reasons(item))
             continue
-        leaf = _cell_leaf_reason(item)
+        leaf = leaf_is_a_quantity(item)
         if leaf:
             reasons.append(COMPOSITE_CELL_LEAF_IS_NOT_A_QUANTITY)
             reasons.append(leaf)

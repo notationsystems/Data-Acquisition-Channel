@@ -32,6 +32,7 @@ sources:
   - architecture/nonscalar_quantity.yaml
   - architecture/proof_integrity.yaml
   - architecture/recursive_depth.yaml
+  - architecture/structured_uncertainty.yaml
 
 budget:
   max_words: 1400

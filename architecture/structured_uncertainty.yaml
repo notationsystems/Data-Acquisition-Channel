@@ -1,0 +1,69 @@
+# DAQ's covariance extension: a measurement covariance R, admitted into an
+# observation. Paired with kalman_filter_linear, which is being built in
+# the compute layer against the boundary this record declares.
+extends: core@1.0.0
+
+artifact: structured_uncertainty
+phase: 38
+status: built
+owner: daf
+
+named_consuming_workload:
+  id: kalman_filter_linear
+  named_by: the joint decision record
+  requirement_this_closes: structured_measurement_uncertainty
+  requirements_still_open:
+    - recursive_generation_depth
+  the_pairing_is_incomplete_and_says_so: "this extension closes ONE of the TWO DAQ-owned rows the requirements artifact lists as blocking Kalman. An earlier reading had structured uncertainty as the last row; measured against the artifact, recursive_generation_depth is still there and still UNSATISFIED. Recording the pairing as complete would be the undercount this pair has now made twice, both times by reading a subset as if it were the set."
+  who_judges_the_second_row: "not DAQ. The requirement asks that generation_depth_bounded acquire an OPERATIVE SEMANTIC DOMAIN before a recursive operation is admitted. DAQ supplied the semantic domain and its invariant is still represented_unenforced -- the concept is in the data and nothing checks it. Whether that satisfies 'the rule must exist' is the compute layer's judgement about its own requirement."
+
+requirement_as_stated: "DAQ must be able to express a measurement covariance R, not only a scalar uncertainty per observation. A scalar is sufficient ONLY when the measurement is genuinely 1-D and uncorrelated."
+
+two_halves_and_the_second_has_the_teeth:
+  representation: "expressing R at all -- a vector-valued measurement, a structured uncertainty, and one unit per component"
+  correspondence: "enforcing the ONLY-WHEN. A single sigma over a three-component measurement does not merely lose the off-diagonals; it asserts an independence nobody stated. That is the rule with teeth and it is what makes a scalar sigma refusable rather than merely unfortunate."
+
+# ------------------------------------------------ the split, from our side --
+
+what_daq_owns:
+  the_question: "is this OBSERVATION internally coherent?"
+  correspondence_value_to_uncertainty: "a scalar value takes a scalar uncertainty; an n-component value takes an uncertainty of outer length n. Both directions are refused: a scalar sigma on a multivariate value, and a matrix on a scalar value."
+  correspondence_value_to_units: "an n-component value takes n component units, each a non-empty name. One unit string on a multivariate measurement is the same shape of error as one sigma -- position and velocity do not share a unit and one string cannot say so."
+  every_number_is_a_number: "every leaf of the value and of the uncertainty, at any depth, must satisfy the shared leaf rule"
+  outer_dimension_only: "that R has as many rows as the value has components is this observation's coherence. Whether those rows are equal-length is not."
+
+what_the_compute_layer_owns:
+  numeric_entry: "every entry a finite double"
+  rectangular: "every row the same length -- a ragged matrix has no transpose, so symmetry and spectrum cannot be stated over one"
+  square: "a covariance relates a set of components to itself"
+  symmetric: "within a stated tolerance"
+  positive_semidefinite: "within a stated tolerance"
+
+why_the_split_falls_here: "a matrix that is ragged, asymmetric or indefinite is a perfectly coherent OBSERVATION of something that is not a covariance. DAQ can say whether a record is internally consistent; only the consumer can say whether the thing it carries is a covariance. Nothing in this extension computes a spectrum."
+
+# ---------------------------------------------- the three carried-in rules --
+
+pinned_admissions_were_obligations:
+  what_it_means: "ragged, asymmetric, non-PSD, 1-D-where-2-D, empty and categorical-entry matrices all passed the aligned-observation gate with TESTS ASSERTING THEY PASS. Closing any of them would fail those tests loudly, which is the point: the extension's first act had to be deciding where each rule lives, not silently tightening a gate."
+  what_was_decided: "all five stay with the compute layer, and this extension closes none of them. The pinned tests are unchanged and still pass, and equivalent pins now exist on this side too -- a ragged R of the right outer length is admitted here, deliberately, with a test saying so."
+  the_one_thing_that_did_tighten: "a matrix uncertainty on a SCALAR value, which quantity_is_typed admitted -- measured. That is a correspondence failure rather than a shape rule, so it is DAQ's, and it was not among the pinned admissions."
+
+the_upstream_residual_scales_as_the_square:
+  measured: "a scalar-uncertainty observation carried 2 numeric slots -- value and sigma. An n-component measurement with a covariance carries n + n-squared: 6 at dimension 2, 12 at dimension 3, 110 at dimension 10. Every one is a place a non-finite can enter."
+  the_consequence: "the exposure changed shape rather than merely existing. A residual that was one-per-record is now quadratic in measurement dimension."
+  therefore: "every non-finite refusal this extension leans on is one DAQ owns, and all three were verified to reach a slot nested two levels deep -- the pass-through names the exact path (uncertainty[1][1]), the writer refuses with allow_nan=False, and the correspondence gate refuses the leaf."
+  the_bypass_that_remains: "evidence.identity.content_hash is vendored and mints over whatever it is handed. The gate, the pass-through and the writer are all upstream of it and none is on its path, so calling it directly bypasses all three. Unchanged by this extension and restated here because the covariance path multiplies the number of chances to take it."
+
+the_leaf_rule_is_reusable_and_the_gate_is_not:
+  what_it_governs: "this extension imports science.table.leaf_is_a_quantity rather than restating its rule, and a test asserts the import and asserts that no finiteness check is written locally."
+  why: "the aligned-observation gate refuses positional identity BY NAME because least_squares states ordering is not required by its modality, and Kalman's modality requires it. So the gate does not carry over and a second gate had to be written -- which is exactly the condition under which two definitions of 'a quantity' appear and drift. Two gates that CALL one rule cannot drift; two gates that restate it will."
+  one_deliberate_divergence: "a categorical string is an admissible table CELL and is not an admissible UNCERTAINTY. Stated as a divergence rather than smuggled: it is DAQ's own semantics, the same one under which quantity_is_typed has refused a boolean uncertainty since UNTYPED_UNCERTAINTY was added. An uncertainty is a magnitude. It is NOT this extension pre-empting the compute layer's numeric-entry rule, which is stated over matrix entries and is rechecked there regardless."
+
+implementation:
+  gate: science/structured_uncertainty.py
+  shared_leaf_rule: science/table.py leaf_is_a_quantity
+  tests: tests/test_structured_uncertainty.py
+
+deliberately_not_done:
+  recursive_generation_depth: "the second DAQ-owned row blocking Kalman. Its rule -- derivation from derivation is bounded and the depth is recorded -- is implemented in neither clause: nothing is bounded and no depth is recorded, and DerivedValue carries no depth field. Closing it needs an evidence-lineage depth representation carrying stream_identity, window_or_horizon and initialization_provenance, which is its own build and not a corollary of this one."
+  any_of_the_five_compute_layer_rules: "declining them is the boundary, not an omission. Supplying one here would put the covariance contract inside DAQ without going through the joint record."

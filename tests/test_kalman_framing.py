@@ -221,3 +221,56 @@ def test_the_declined_rules_are_recorded_where_the_other_half_will_read_them():
 
     # the PSD entry must carry why the bool finding does not close it
     assert "does not close this" in owned["positive_semidefiniteness"]
+
+
+# ------------- the requirements artifact, re-measured rather than quoted
+
+
+def test_the_requirements_artifact_has_not_moved_during_the_reissues():
+    """Walks committed history in BOTH repositories rather than comparing
+    current bytes to the current sidecar -- which would agree even if both
+    had moved together, and is the proxy this repository keeps catching."""
+    import hashlib
+    import subprocess
+
+    relative = "architecture/exchange/scl_requirements.yaml"
+    log = subprocess.run(["git", "log", "--format=%H", "--", relative],
+                         cwd=str(REPO_ROOT), capture_output=True, text=True)
+    if log.returncode != 0 or not log.stdout.strip():
+        pytest.skip("no git history (shallow clone)")
+
+    versions = []
+    for commit in log.stdout.split():
+        blob = subprocess.run(["git", "show", f"{commit}:{relative}"],
+                              cwd=str(REPO_ROOT), capture_output=True)
+        if blob.returncode:
+            continue
+        digest = "sha256:" + hashlib.sha256(blob.stdout).hexdigest()
+        if not versions or versions[-1] != digest:
+            versions.append(digest)
+
+    stability = FRAMING["requirements_artifact_stability"]
+    assert stability["verdict"] == "CONFIRMED_STABLE"
+    assert versions[0] == stability["current_in_both"].split(",")[0], (
+        "the requirements artifact moved since the stability check was recorded; the joint record "
+        "no longer binds the set the decision was reasoned over")
+
+    decision = loads((REPO_ROOT / "architecture" / "decisions"
+                      / "2026-08-26-joint-workload-decision.yaml").read_text())
+    assert decision["requirements_artifact_hash"] == versions[0]
+
+
+def test_the_artifact_lists_TWO_daq_owned_blocking_rows_not_one():
+    """The correction the stability check surfaced. Re-measured from the
+    artifact, because a claim about how many rows block a workload is
+    exactly the kind that gets carried forward without checking."""
+    daq_rows = [r for r in KALMAN["blocking_requirements"] if r["owner"] == "daq"]
+    assert len(daq_rows) == 2
+    assert {r["requirement"] for r in daq_rows} == {
+        "structured_measurement_uncertainty", "recursive_generation_depth"}
+    assert all(r["status"] == "UNSATISFIED" for r in daq_rows)
+
+    stability = FRAMING["requirements_artifact_stability"]
+    assert "NOT the last row" in stability["and_what_it_immediately_showed"]
+    assert "read the workload entry whole" in stability["the_undercount_has_now_happened_three_times"]
+    assert "the_undercount_has_now_happened_three_times" in stability

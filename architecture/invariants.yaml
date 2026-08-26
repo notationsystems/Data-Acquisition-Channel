@@ -314,6 +314,18 @@ invariants:
     inherited_by: "the covariance extension -- a covariance is a matrix of cells, and a bool in one passes a positive-semidefinite check while meaning nothing"
     failure_mode: fail_closed
 
+  - id: uncertainty_corresponds_to_its_value
+    rule: "an observation's uncertainty and units describe as many components as its value has; a scalar uncertainty is admissible only for a one-dimensional measurement"
+    status: partially_enforced
+    implementation: science/structured_uncertainty.py
+    enforcement: tests/test_structured_uncertainty.py
+    gap: "not wired into any admission path -- a scientific-layer gate, like quantity_is_typed and no_context_free_property before it"
+    measured_hole_it_closes: "quantity_is_typed ADMITTED a 2x2 matrix uncertainty on a scalar value. Nothing compared the uncertainty's shape to the value's, so a covariance attached to a one-dimensional measurement passed every gate."
+    the_clause_with_teeth: "a scalar sigma over a multivariate measurement does not merely lose the off-diagonals; it asserts an independence nobody stated. Refusing it is what makes the requirement's ONLY-WHEN enforceable rather than advisory."
+    what_it_deliberately_does_not_check: "whether the uncertainty IS a covariance -- numeric entry, rectangular, square, symmetric, positive-semidefinite are the compute layer's contract, and a ragged R of the right outer length is admitted here with a test saying so"
+    named_consuming_workload: "kalman_filter_linear, which this closes ONE of two DAQ-owned blocking rows for"
+    failure_mode: fail_closed
+
   - id: table_identity_is_typed_not_positional
     rule: "an observation joined into an aligned table carries a non-empty string sample identity and a non-empty string variable identity; row position is not an identity"
     status: partially_enforced
