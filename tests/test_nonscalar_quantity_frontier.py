@@ -45,6 +45,7 @@ are recorded in `architecture/nonscalar_quantity.yaml` and locked here.
 from __future__ import annotations
 
 import json
+import pathlib
 
 import pytest
 from evidence.identity import content_hash
@@ -189,6 +190,70 @@ def test_admitting_a_vector_value_alone_would_widen_the_hole():
     # ...which is the identical failure mode section 8 already has.
     with pytest.raises(TypeError, match="unhashable"):
         hash(COVARIANCE)
+
+
+# ================================ was the hole ever actually reached?
+
+def test_no_extractor_emits_a_nonscalar_uncertainty():
+    """Forensics, because the answer decides whether the fix is only
+    forward. If a covariance-bearing Observation had ever been
+    content-addressed and referenced, repair would have to reach back.
+
+    Measured: exactly one extractor emits `uncertainty` at all, and it
+    emits `sigma`, a scalar parsed by `_optional_float`."""
+    extractors = pathlib.Path(__file__).resolve().parent.parent / "daf" / "extractors"
+    emitters = [p.name for p in sorted(extractors.glob("*.py"))
+                if 'content["uncertainty"]' in p.read_text()]
+    assert emitters == ["noaa_water_level_measurements.py"], emitters
+    source = (extractors / "noaa_water_level_measurements.py").read_text()
+    assert 'content["uncertainty"] = sigma' in source
+    assert "_optional_float" in source, "sigma is parsed as a scalar float, not passed through"
+
+
+def test_no_committed_fixture_carries_a_nonscalar_uncertainty():
+    """The other half of the forensic question: nothing already stored
+    carries one either. Scanned across every committed JSON fixture."""
+    root = pathlib.Path(__file__).resolve().parent.parent
+    hits = []
+
+    def walk(node, where):
+        if isinstance(node, dict):
+            for key, value in node.items():
+                if key == "uncertainty" and value is not None and \
+                        not isinstance(value, (int, float)) or \
+                        (key == "uncertainty" and isinstance(value, bool)):
+                    hits.append(f"{where}:{key}={value!r}")
+                walk(value, where)
+        elif isinstance(node, list):
+            for item in node:
+                walk(item, where)
+
+    for path in sorted((root / "tests" / "fixtures").rglob("*.json")):
+        try:
+            walk(json.loads(path.read_text()), path.name)
+        except ValueError:
+            continue
+    assert not hits, f"a non-scalar uncertainty is already committed: {hits}"
+
+
+def test_but_the_pass_through_extractor_would_carry_one_verbatim():
+    """UNREACHED IS NOT UNREACHABLE, and this is the difference.
+
+    `graph_dataset` consumes `entities`/`relations` as structure and
+    passes EVERY other key into Observation.content unmodified, by
+    design. So a source record declaring a covariance would be carried
+    through, admitted by the gate, and content-addressed -- the hole is
+    closed today by what sources happen to send, not by any check.
+
+    This is the same shape as the Phase 35 finding for `conditions`,
+    where that extractor's verbatim pass-through produced a plain,
+    unhashable dict. Same extractor, same mechanism, different field."""
+    source = (pathlib.Path(__file__).resolve().parent.parent
+              / "daf" / "extractors" / "graph_dataset.py").read_text()
+    assert "passed through verbatim" in source or "unmodified" in source
+    # and the gate would not stop it, which is the measured half
+    content = {**BASE, "value": 1.83, "uncertainty": COVARIANCE}
+    assert no_context_free_property(content).admissible is True
 
 
 def test_both_gaps_share_one_constraint_surface():

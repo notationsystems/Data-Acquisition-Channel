@@ -5,7 +5,7 @@ authority:
 binding_rule: the two hashes above bind this PROPOSAL to the exact measured artifacts that produced it. If either artifact changes -- including through the coordinated canonicalization fix recorded in architecture/canonicalization_defect.yaml, which re-hashes both -- this proposal must be reissued rather than edited.
 capabilities_artifact: architecture/exchange/daq_capabilities.yaml
 capabilities_artifact_authority: authored here; DAQ is its owner and this is the origin copy
-capabilities_artifact_hash: sha256:9961596953ea67b3b65ca00082be38695c64770f1718e5d6d35fb693f210b3cb
+capabilities_artifact_hash: sha256:6e38c9cc6dd1ca6b17e355984260f94f9b92e54f1cd096aa0b60688c2781b8fd
 extends: core@1.0.0
 identity_requirements:
   - "input_kind: real | complex"
@@ -28,6 +28,16 @@ rationale:
   - daq_extension is none because the workload needs nothing DAQ lacks. Sample spacing is not stated by CO-OPS, and the correct consequence is a bin-index axis rather than a fabricated frequency axis -- an honest output, not a gap. Extending DAQ to carry a Delta t the source never provided would be fabrication, and extending it for any other modality would be representation work with no named consuming workload, which the joint rule forbids.
 recommended_daq_extension: none
 recommended_workload: fourier_transform_1d
+reissue:
+  did_the_decision_move: false
+  open_question_this_record_does_not_answer: the added coupling finding -- that multivariate value and structured uncertainty are ONE extension, and that closing the visible half first degrades the silent half -- is an argument about HOW a non-scalar extension would have to be built, not about whether to build one now. This record's rule admits only workloads DAQ ALREADY satisfies, which excludes every extension by construction. A decision to build an extension paired with a named consuming workload would be a DIFFERENT decision under a DIFFERENT rule, and would need its own record; it is not made here and this record does not foreclose it.
+  previous_capabilities_artifact_hash: sha256:9961596953ea67b3b65ca00082be38695c64770f1718e5d6d35fb693f210b3cb
+  reason: the capability artifact gained measured content after this record was first issued, so its recorded hash no longer bound to the bytes on disk -- caught by test_the_recorded_hashes_bind_to_the_bytes_on_disk, which is the guarantee this record exists to provide. Reissued rather than edited, per binding_rule.
+  what_changed_in_the_artifact:
+    - "forensic result: no covariance-bearing observation has ever been content-addressed, so a structured-uncertainty repair is forward-only -- but daf/extractors/graph_dataset.py would carry one through verbatim, so the hole is unreached rather than unreachable"
+    - "operation_id core-field constraint raised for the joint decision: the two execution-record kinds disagree about whether the implementation is part of operation identity"
+    - which half of the non-scalar extension must lead, and why
+  why_not: none of the added content bears on the selection rule. This record eliminated kalman_filter on the measured ground that covariance-bearing uncertainty is ABSENT; the added forensics REINFORCE that premise rather than disturb it -- absent, and additionally admitted without check. The multivariate modality is still absent, so least_squares/pca/viterbi remain eliminated by the rule, and fourier_transform_1d's requirements are still satisfied by the real NOAA series.
 requirements_artifact: architecture/exchange/scl_requirements.yaml
 requirements_artifact_authority:
   - READ-ONLY MIRROR. The origin is notationsystems/Scientific-Compute-Layer-SCL- architecture/exchange/scl_requirements.yaml at commit 5447df3. The copy held here is byte-identical to those committed bytes and was NOT regenerated in this repository.

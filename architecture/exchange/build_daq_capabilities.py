@@ -190,6 +190,17 @@ NONSCALAR_QUANTITY_FINDING = {
     },
     "why_one_extension": "relaxing the multivariate type check ON ITS OWN converts the structured-uncertainty failure from a loud gate refusal into a silent late TypeError, because a vector value is a Sequence and meets the same unhashable consumer a covariance meets. Closing the visible half first makes the invisible half worse, so neither can be closed alone.",
     "measured_not_inferred": "tests/test_nonscalar_quantity_frontier.py::test_admitting_a_vector_value_alone_would_widen_the_hole",
+    "was_the_hole_ever_reached": {
+        "answer": "no -- the repair is forward-only",
+        "measured_basis": "exactly one extractor emits `uncertainty` at all (noaa_water_level_measurements.py) and it emits sigma, a scalar parsed by _optional_float. No committed fixture carries a non-scalar uncertainty. So no covariance-bearing Observation has ever been content-addressed, and nothing downstream ever consumed such a hash.",
+        "why_it_was_asked": "a covariance that receives a stable content_hash before dying at the comparison layer has already been TREATED AS IDENTIFIED. Had one ever been referenced, repair would have had to reach backwards as well as forwards.",
+        "but_unreached_is_not_unreachable": "daf/extractors/graph_dataset.py consumes entities/relations as structure and passes EVERY other key into Observation.content unmodified, by design. A source record declaring a covariance would be carried through verbatim, admitted, and content-addressed. The hole is closed today by what sources happen to send, not by any check -- the same extractor and the same mechanism as the Phase 35 verbatim-pass-through finding for `conditions`, in a different field.",
+        "enforcement": "tests/test_nonscalar_quantity_frontier.py::test_no_extractor_emits_a_nonscalar_uncertainty, ::test_no_committed_fixture_carries_a_nonscalar_uncertainty, ::test_but_the_pass_through_extractor_would_carry_one_verbatim",
+    },
+    "which_half_must_lead": {
+        "answer": "the structured-uncertainty half",
+        "reason": "it is the silent one. Closing the multivariate half first converts the uncertainty failure from a loud gate refusal into a silent late TypeError, so the visible half cannot go first without making the invisible half worse. Ordering within a single extension, not two extensions.",
+    },
     "shared_constraint_surface": "any non-scalar quantity must satisfy content_hash (JSON-serializable), materials.analysis (natively hashable) and serialization round-trip (reconstructed value indistinguishable from constructed) AT ONCE. The Mapping half of this surface was solved once already, by FrozenMapping in Phase 34; the Sequence half has no counterpart and freeze_nested_mappings deliberately does not recurse into lists.",
     "still_open_after_a_container_fix": [
         "the unit of a vector-valued quantity",
@@ -221,6 +232,16 @@ EXECUTION_RECORD_RESOLUTION = {
         "computation_identity",
     ],
     "refused_merges": "adapter_version/backend_version, outcome/verification_status and output_fingerprint/computation_identity are analogies rather than identities and were deliberately NOT unified; unifying any of them would change what content_digest covers in exchange for a word",
+    "core_field_constraint_raised": {
+        "field": "operation_id",
+        "finding": "present in both kinds, but NOT meaning the same thing. DAF's operation_id is H(plan_id, source_id, parameters, mode) and deliberately EXCLUDES the adapter, because a coordinate is never an identity. The compute layer's operation identity INCLUDES the backend, so the same mathematics on a different backend is a different operation there.",
+        "why_it_matters": "a consumer reading operation_id from a core-typed record without knowing the kind would conclude that equal operation_id means the same logical request regardless of how it ran -- true for acquisition, false for computation. A silent, kind-dependent misreading of a field the core presents as uniform.",
+        "proposed_constraint": "the unified record's operation_id is implementation-independent for every kind; the implementation lives in the kind block, where both kinds already carry it (adapter_id/adapter_version, backend/backend_version). This is also the non-redundant reading: with backend already a computation_only field, folding it into operation_id states it twice.",
+        "scope": "constrains the unified RECORD's field only. It says nothing about how the compute layer computes its own internal identities.",
+        "status": "RAISED_FOR_THE_JOINT_DECISION",
+        "if_rejected": "operation_id leaves the shared core and moves into both kind blocks, which is the same answer the strict intersection test gives once the constraint is refused",
+        "how_it_was_found": "by re-reading every core field for kind-specific MEANING rather than kind-specific PRESENCE. It was the only field that failed, and it is the most load-bearing one in the core.",
+    },
     "rejected_shapes": {
         "abstract_contract_two_concretes": "collapses into the adopted shape at the persistence boundary, since execution_record_from_dict must recover the kind FROM THE PAYLOAD, which requires a discriminant anyway",
         "rename": "produces the two-records-side-by-side arrangement this file's own integration_dependency rules out; retained as the fallback only if the intersection were empty, which it is not",

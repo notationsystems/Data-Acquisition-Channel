@@ -223,12 +223,25 @@ for cross-parser *typed* agreement and for absence of any diverging scalar shape
 
 ## The concurrent session
 
-This phase also collided with a concurrent session on the same branch (`a0622f4`). Resolved by
-merge, on the merits: **their `daq_capabilities.yaml` was taken over mine** because they
-vendored SCL's actual `canonical_yaml.py` byte-identically and verified fixture agreement,
-which is what §2.1 requires and which a self-authored serializer cannot establish. **My
-serializer and its test were deleted** — two serializers would be the second system this
-project forbids.
+This phase ran alongside another session on the same branch, and merged with it three times.
+Resolved on the merits each time, never by force-push:
+
+- **Their `daq_capabilities.yaml` was taken over mine**, because they vendored SCL's actual
+  `canonical_yaml.py` byte-identically and verified fixture agreement — what §2.1 requires and
+  what a self-authored serializer cannot establish. **My serializer and its test were deleted**;
+  two serializers would be the second system this project forbids.
+- **They kept a decision record where I had demoted mine to a proposal.** The proposal wins:
+  one party with read-only access to the other must not author a two-party decision. Their
+  `reissue:` block is kept — it records that the capability artifact gained measured content
+  after first issue, so the recorded digest stopped binding, caught by the same
+  hash-binding test. The proposal now carries the current digest
+  (`sha256:6e38c9cc…`), reissued rather than edited.
+- Their depth correction and mine converged on the same result: `represented_unenforced`,
+  enforced by `tests/test_recursive_lineage_depth.py`.
+
+The reissue is worth noting on its own: the binding guarantee **fired in anger**. An artifact
+changed, a recorded hash stopped matching its bytes, and the test that exists for exactly that
+caught it rather than the drift going unnoticed.
 
 ## Independent corroboration of the selection
 
@@ -319,7 +332,7 @@ migration rules were needed and none were invented.
 | `tests/test_canonicalization_defect.py` | **35 passed** (new) |
 | `tests/test_daq_workload_proposal.py` | **22 passed** (new) |
 | `tests/test_recursive_lineage_depth.py` | **17 passed** (new) |
-| DAF full suite | **826 passed** |
+| DAF full suite | **829 passed** |
 | Vendored SCOUT suite | 1273 passed, unchanged |
 | Submodule | clean |
 | SCL clone | untouched, `git status --porcelain` empty |

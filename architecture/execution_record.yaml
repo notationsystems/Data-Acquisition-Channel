@@ -72,7 +72,7 @@ divergence_resolution:
   # supertype for two near-synonyms is the same error inverted.
   shared_core:
     - id: "execution identity, H(operation_id, runtime_id, started_at)"
-    - operation_id: "a stable content hash of what was asked for. The PAYLOAD differs by kind; the contract -- stable across runs, minted from the request -- does not."
+    - operation_id: "a stable content hash of what was asked for, INDEPENDENT OF THE IMPLEMENTATION THAT RAN IT. The payload differs by kind; the contract -- stable across runs, minted from the request, and unchanged by swapping the implementation -- does not. See core_field_constraints.operation_id_excludes_implementation: this field survived the intersection test only once that constraint was added to it."
     - runtime_id: "caller-supplied, never read from the environment behind the caller"
     - started_at
     - finished_at
@@ -100,6 +100,32 @@ divergence_resolution:
     - seed
     - verification_status
     - computation_identity
+
+  # A field being PRESENT in both kinds is not the same as its MEANING
+  # being shared. The junk-drawer failure at record level starts with
+  # fields that look shared, so each core field was re-read for
+  # kind-specific meaning rather than for kind-specific presence. One
+  # failed, and it is the most load-bearing field in the core.
+  core_field_constraints:
+    operation_id_excludes_implementation:
+      finding: "the two kinds DISAGREE about whether the implementation is part of operation identity. DAF's operation_id is H(plan_id, source_id, parameters, mode) -- the adapter is deliberately excluded, because adapter_id is a coordinate and this file already says a coordinate is never an identity. The compute layer's operation identity INCLUDES the backend, so the same mathematics dispatched to a different backend is a different operation there."
+      why_it_matters: "a consumer reading operation_id from a core-typed record, without knowing the kind, would conclude 'same operation_id means the same logical request regardless of how it ran' -- correct for acquisition, wrong for computation. That is a silent, kind-dependent misreading of a field the core presents as uniform."
+      resolution: "operation_id stays in the core WITH A CONSTRAINT: the record's operation_id is implementation-independent for every kind. The implementation belongs in the kind block, where both kinds already carry it -- adapter_id/adapter_version for acquisition, backend/backend_version for computation. This is also the non-redundant choice: with backend already a computation_only field, folding it into operation_id as well states it twice and makes the field mean two things."
+      scope_of_this_constraint: "it constrains the unified RECORD's operation_id field. It says nothing about how the compute layer computes its own internal identities, which are its own and are not this record."
+      status: RAISED_FOR_THE_JOINT_DECISION
+      note: "recorded rather than imposed: the constraint is DAF's reading of what the core requires to be honest, and the compute layer has not agreed to it. If it is rejected, operation_id leaves the core and moves into both kind blocks -- which is the same answer the intersection test would then give."
+
+    runtime_id_and_hardware_are_not_the_same_field:
+      finding: "runtime_id describes the ORCHESTRATING PROCESS (python version, platform, hostname, pid); the compute layer's `hardware` describes the COMPUTE DEVICE. A CPU-versus-GPU distinction lives in hardware and backend, never in runtime_id."
+      resolution: "both survive: runtime_id stays in the core meaning exactly what it means today, and hardware stays computation-only. Recorded because they look adjacent enough to be merged by someone tidying later."
+
+    fields_re_read_and_found_genuinely_shared:
+      started_at: "caller-supplied ISO-8601, and caller-supplied for the same reason in both kinds -- this repository never reads the clock behind a caller"
+      status: "a two-value closed vocabulary with identical meaning"
+      input_fingerprint: "hash of what was asked for, identical across a run and a retry"
+      output_fingerprint: "nullable, null on failure, never a hash of the empty set -- an absence discipline both kinds need identically"
+      parent_execution_id: "the previous execution of the same operation; the notion of 'same operation' is whatever operation_id says, so this inherits the constraint above rather than adding one"
+      content_digest: "integrity over the outcome, deliberately excluded from identity"
 
   # Merges that were considered and REFUSED, because the shared core is
   # the intersection and each of these is an analogy rather than an
