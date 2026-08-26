@@ -258,3 +258,142 @@ def test_the_partition_that_prevents_the_set_growing_silently_still_exists():
     source = gate.read_text()
     assert "test_every_declared_property_is_accounted_for_in_exactly_one_outcome_list" in source
     assert "test_every_declared_property_has_a_result" in source
+
+
+# ------------------------------------------------- 3. the core party's own set
+
+
+STE = loads((EXCHANGE / "ste_invariants.yaml").read_text())
+
+
+def test_the_reconstruction_never_calls_itself_a_declaration():
+    """The whole point of the artifact. A set written about a party by
+    another party is not that party's set, and this pair demoted a
+    decision to a proposal once for exactly this reason."""
+    assert STE["status"] == "RECONSTRUCTION_NOT_DECLARATION"
+    assert STE["owner"] == "ste"
+    assert STE["authored_by"] != STE["owner"]
+    assert "is not that party's set" in STE["what_status_means"]
+    assert STE["the_request_to_ste"][
+        "there_is_no_counterparty_response_and_this_file_does_not_pretend_one"]
+
+
+def test_the_reconstruction_is_a_fixed_point_of_its_generator():
+    path = EXCHANGE / "ste_invariants.yaml"
+    before = path.read_bytes()
+    result = subprocess.run(
+        ["python3", str(EXCHANGE / "build_ste_invariants.py")],
+        cwd=str(REPO_ROOT), capture_output=True, text=True, timeout=120,
+    )
+    after = path.read_bytes()
+    if after != before:
+        path.write_bytes(before)
+    assert result.returncode == 0, result.stderr
+    assert after == before, (
+        "the committed reconstruction differs from regeneration -- STE's documents changed, which "
+        "means the pin moved, which means `bent: zero` needs re-establishing"
+    )
+
+
+def test_every_reconstructed_invariant_states_what_would_refute_it():
+    """An inference presented without its defeater reads as a finding."""
+    for name, entry in STE["reconstruction"].items():
+        if entry["recoverable"] is False:
+            assert entry["reconstruction"] is None and entry["why_not"], name
+        else:
+            assert entry["reconstruction"], name
+            assert entry.get("what_would_refute_it"), (
+                f"{name} is an inference with no stated defeater"
+            )
+
+
+def test_the_two_unrecoverable_ones_really_are_cited_only_inside_a_range():
+    """Measured against the index the generator derived, not against the
+    prose beside it. This was WRONG on the first run: a bare `I1` inside
+    `I1-I8` was counted as an individual citation, so the invariant least
+    able to be recovered appeared to have evidence of its own."""
+    conflict = STE["the_cardinality_conflict"]
+    not_recoverable = {k for k, v in STE["reconstruction"].items() if v["recoverable"] is False}
+    only_in_range = {f"I{n}" for n in conflict["numbers_covered_only_by_a_range"]}
+    assert not_recoverable == only_in_range, (
+        f"the reconstruction calls {sorted(not_recoverable)} unrecoverable but the index says "
+        f"{sorted(only_in_range)} are the ones cited only inside a range"
+    )
+    for name in not_recoverable:
+        assert name not in STE["reference_index"], (
+            f"{name} has an individual citation; it is not unrecoverable"
+        )
+
+
+def test_the_larger_cardinality_names_invariants_no_document_mentions():
+    nowhere = STE["the_cardinality_conflict"]["referenced_nowhere_at_all"]
+    assert nowhere, (
+        "the competing count no longer implies any uncited invariant -- the conflict may be "
+        "resolved, and the reconstruction should be re-derived"
+    )
+
+
+# ------------------------------------------- 4. what bent: zero quantified over
+
+
+def test_every_bent_zero_claim_is_accounted_for_in_the_register():
+    """Derived by scanning, so a claim written tomorrow that nobody
+    accounted for fails here until someone re-derives -- which is the
+    point at which they have to say which property set they mean."""
+    block = REGISTER["bent_zero_claims_held_here"]
+    accounted = {(entry["document"], entry["line"]) for entry in block["occurrences"]}
+    found = set()
+    for path in sorted((REPO_ROOT / "docs").rglob("*.md")):
+        for number, line in enumerate(path.read_text(errors="replace").splitlines(), 1):
+            if re.search(r"(?<![\w])Bent: zero(?![\w])", line):
+                found.add((str(path.relative_to(REPO_ROOT)), number))
+    assert found == accounted, (
+        f"unaccounted claims: {sorted(found - accounted)}; "
+        f"accounted but no longer present: {sorted(accounted - found)}"
+    )
+    assert block["count"] == len(found)
+
+
+def test_the_ten_four_property_claims_and_the_one_five_property_claim_split_in_git():
+    """The register says ten were written against a four-property probe
+    and one against five. Checked against history."""
+    block = REGISTER["bent_zero_claims_held_here"]
+    documents = sorted({entry["document"] for entry in block["occurrences"]})
+    before, after = [], []
+    for document in documents:
+        added = subprocess.run(
+            ["git", "log", "--diff-filter=A", "--format=%H", "-1", "--", document],
+            cwd=str(REPO_ROOT), capture_output=True, text=True, timeout=60,
+        )
+        if added.returncode != 0 or not added.stdout.strip():
+            pytest.skip(f"no add-commit for {document} in this checkout")
+        commit = added.stdout.strip()
+        ancestor = subprocess.run(
+            ["git", "merge-base", "--is-ancestor", "c80a2f0", commit],
+            cwd=str(REPO_ROOT), capture_output=True, text=True, timeout=60,
+        )
+        (after if ancestor.returncode == 0 else before).append(document)
+
+    assert len(before) == 10 and len(after) == 1, (
+        f"expected ten documents predating the five-property probe and one after it; measured "
+        f"{len(before)} before, {len(after)} after"
+    )
+    assert "PHASE_36" in after[0]
+
+
+def test_the_verdicts_survive_the_wider_set_and_the_register_says_why():
+    """A verdict that happens to survive a change in what it quantifies
+    over is not a verdict that accounted for the change. The register has
+    to say which of the two it is."""
+    block = REGISTER["bent_zero_claims_held_here"]
+    assert block["does_the_fifth_property_change_any_of_the_ten"].startswith("NO")
+    assert "measured rather than assumed" in block[
+        "does_the_fifth_property_change_any_of_the_ten"]
+    assert "not a verdict that accounted for the change" in block[
+        "what_was_wrong_was_not_the_verdicts"]
+
+    probe = loads((REPO_ROOT / "architecture" / "_probes" / "generality.yaml").read_text())
+    assert probe["outcome"]["core_invariants_modified"] == 0, (
+        "the fifth property now reports a core-invariant modification, so the ten earlier claims "
+        "no longer survive the wider set and must be revisited individually"
+    )

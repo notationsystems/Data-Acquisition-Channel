@@ -1,6 +1,6 @@
 """What `core@1.0.0` refers to, checked against the thing it refers to.
 
-33 artifacts declare `extends: core@1.0.0`, the doctrine projection prints
+Artifacts across this pair declare `extends: core@1.0.0`, the doctrine projection prints
 it, and `bent: []` is a claim made RELATIVE to a core. Every one of those
 joined on the VERSION -- the one field upstream controls and can move --
 while `submodule_commit`, which cannot move without the vendored code
@@ -10,7 +10,7 @@ THE FAILURE THIS EXISTS FOR IS NOT A VERSION BUMP. A bump is loud: the
 substring check fails and someone looks. The silent case is a submodule
 bumped to a commit whose pyproject still says 1.0.0, which is what patch
 commits look like. Then the recorded commit is wrong, every check passes,
-and all 33 `extends` still agree with each other about a core that moved.
+and every `extends` still agrees with the others about a core that moved.
 
 Declared in architecture/core.yaml under `core_referent`: the commit is
 PARTICIPATING, the version is ANNOTATING, and a join on an annotating

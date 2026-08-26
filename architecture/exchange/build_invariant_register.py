@@ -184,6 +184,26 @@ def artifacts_declaring_extends():
 
 AGREEING, DISAGREEING = artifacts_declaring_extends()
 
+
+def bent_zero_claims():
+    """Every `Bent: zero` this repository holds, with its document.
+
+    Derived by scanning, so a claim written tomorrow and not accounted for
+    here moves this artifact's digest and fails its test."""
+    found = []
+    for path in sorted((REPO / "docs").rglob("*.md")):
+        for number, line in enumerate(path.read_text(errors="replace").splitlines(), 1):
+            if re.search(r"\*\*Bent: zero\.?\*\*|(?<![\w])Bent: zero(?![\w])", line):
+                found.append({
+                    "document": str(path.relative_to(REPO)),
+                    "line": number,
+                    "text": line.strip()[:180],
+                })
+    return found
+
+
+BENT_ZERO = bent_zero_claims()
+
 DOCUMENT = {
     "extends": f"core@{CORE['version']}",
     "artifact": "invariant_register",
@@ -306,6 +326,59 @@ DOCUMENT = {
             "declares appears in exactly one outcome list, and every outcome-list member is a "
             "declared property. A property added to either axis without a result and a placement "
             "now fails, so the set cannot grow silently underneath a `bent: zero` again."
+        ),
+    },
+    "bent_zero_claims_held_here": {
+        "what_they_are": (
+            "every `Bent: zero` written in this repository's phase reports is a claim that no CORE "
+            "invariant changed -- a claim about STE, the party with no enumeration."
+        ),
+        "occurrences": BENT_ZERO,
+        "count": len(BENT_ZERO),
+        "the_property_set_split": (
+            "ten of them were written when the generality probe declared FOUR properties; one was "
+            "written after it declared five. Same words, two assertions. Which set each quantified "
+            "over is verified against git in tests/test_invariant_register.py, not asserted here."
+        ),
+        "does_the_fifth_property_change_any_of_the_ten": (
+            "NO, and this is measured rather than assumed. recursive_computation's verdict was FAIL "
+            "and its subject was generation_depth_bounded -- an invariant of THIS repository, not "
+            "of the core. The probe recorded core_invariants_modified: 0 for it at the time and "
+            "still does: the invariant was declared and never implemented, which is a truthfulness "
+            "repair and then an implementation, never a core modification. So the ten verdicts "
+            "stand as verdicts."
+        ),
+        "what_was_wrong_was_not_the_verdicts": (
+            "it was that nothing recorded WHICH SET each claim quantified over. A verdict that "
+            "happens to survive a change in what it quantifies over is not a verdict that accounted "
+            "for the change. All eleven rest on the same byte-identity entailment named above, "
+            "which is what actually carries them."
+        ),
+        "what_stops_it_recurring": (
+            "this block is derived by scanning the documents, so a `Bent: zero` written tomorrow "
+            "and not accounted for here moves the register's digest and fails its test until "
+            "someone re-derives -- which is the point at which they have to say what set they mean."
+        ),
+    },
+    "ste_invariants_reconstruction": {
+        "artifact": "architecture/exchange/ste_invariants.yaml",
+        "status": "RECONSTRUCTION_NOT_DECLARATION",
+        "why_it_is_not_a_declaration": (
+            "STE has not declared its invariant set and cannot be made to from here. A set written "
+            "about a party by another party is not that party's set."
+        ),
+        "what_it_measured": (
+            "six of the numbers cited in the range are cited INDIVIDUALLY somewhere and can be "
+            "reconstructed to varying strength; two appear only inside the range `I1-I8` and cannot "
+            "be recovered at all; and the two implied by the competing count of ten are referenced "
+            "in no document in the tree."
+        ),
+        "why_it_cannot_be_written_into_the_core": (
+            "modifiable: false, and `bent: zero` is entailed by the core's bytes being unmodified "
+            "at the pin. Writing a declaration into the vendored tree would move the pin and "
+            "destroy the entailment carrying the claim. It has to come from upstream -- and when it "
+            "does, the pin bump re-opens `bent: zero` against a set that is enumerable for the "
+            "first time."
         ),
     },
     "extends_join": {
