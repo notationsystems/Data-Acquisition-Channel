@@ -82,9 +82,21 @@ papered over.
 
 ### Forensics: has anything already been persisted?
 
-The same check the covariance case earned, and for the same reason — an id
-minted over invalid JSON cannot be recomputed by a conformant reader, so a
-stored record carrying one would be *unrecoverable*, not merely wrong.
+The same check the covariance case earned. **The premise turned out to be
+wrong, and the truth is worse.** The question was framed as "such an id cannot
+be recomputed." Measured — by the concurrent session, verified here — it
+recomputes *perfectly*: `content_hash` is deterministic over the bytes it is
+handed, so a NaN-bearing observation re-mints to the identical id every time.
+
+What a hand-authored NaN store file actually did: `json.loads` read the bare
+`NaN` back without error, the id recomputed without error, the tamper check
+**passed**, and the value it certified was not equal to itself. The
+repository's corruption check did not fail to catch the corruption — it
+*certified* it, correctly by its own rules, over bytes no conformant JSON
+implementation in any language can parse. **Recomputable here, unverifiable by
+anyone else**, which is the one thing a content address exists to prevent.
+
+A check asking only "does recomputation succeed" scores that a clean pass.
 
 Searched every committed file in both repositories for a bare `NaN`/`Infinity`
 token, and counted committed evidence-store artifacts. **Committed evidence
@@ -434,7 +446,7 @@ Performing the join is the compute layer's work.
 
 ## Verification
 
-- full DAF suite: **970 passed**
+- full DAF suite: **1086 passed**
 - vendored SCOUT suite: **1273 passed**, unchanged; submodule tree clean
 - `mypy daf/ science/ boundary/ bridge/ epistemics/`: clean
 - doctrine regenerated from `architecture/*.yaml`; re-running the generator

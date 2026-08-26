@@ -160,7 +160,8 @@ writer_repair:
 
 forensic_check:
   question: "has anything already been persisted with a non-finite, and was any such id referenced?"
-  why_it_was_run: "the same class as a covariance content-addressed before the TypeError, and it earns the same check: an id minted over invalid JSON cannot be recomputed by a conformant reader, so a stored record carrying one would be unrecoverable rather than merely wrong."
+  why_it_was_run: "the same class as a covariance content-addressed before the TypeError, and it earns the same check."
+  the_premise_was_wrong_and_the_truth_is_worse: "the check was framed as 'such an id cannot be recomputed'. MEASURED, it recomputes perfectly -- content_hash is deterministic over the bytes it is handed, so a NaN-bearing observation re-mints to the identical id every time, and a check asking only 'does recomputation succeed' scores it a clean pass. The concurrent session measured what a hand-authored NaN store file actually did: json.loads read the bare NaN back without error, the id recomputed without error, the tamper check PASSED, and the value it certified was not equal to itself. The repository's corruption-and-tamper check did not fail to catch it -- it CERTIFIED it, correctly by its own rules, over bytes no conformant JSON implementation in any language can parse. Recomputable here, unverifiable by anyone else, which is the one thing a content address exists to prevent. That is sharper than the original framing and it is the version that stands."
   method: "searched every committed file in both repositories for a bare NaN or Infinity token, and counted committed evidence-store artifacts."
   result_committed_evidence_records: 0
   result_bare_non_finite_in_committed_files: "every hit is PROSE about this defect -- the gate sources, the tests and the records written in this phase. No emitted JSON, no artifact."
