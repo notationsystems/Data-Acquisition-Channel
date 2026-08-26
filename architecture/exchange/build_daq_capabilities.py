@@ -85,7 +85,7 @@ CAPABILITIES = {
     },
     "units_per_variable": {
         "classification": _EXISTING,
-        "evidence": "`unit` is required by quantity_is_typed and is refused as MISSING_UNIT when absent; carried per Observation",
+        "evidence": "`unit` is required by quantity_is_typed and is refused as MISSING_UNIT when the unit is missing; carried per Observation. WORDED THIS WAY DELIBERATELY: the earlier phrasing ended in a word that is also one of this repository's invariant STATUSES, and tests/test_cross_repository_claims.py cannot tell a status word used as a status from one used as English. The disposition is to reword rather than teach that check an exception -- see its docstring -- because an exception is a permanent hole in a check whose whole value is that it has none",
         "note": "one unit per scalar quantity. What `unit` means for a vector-valued quantity is an open semantic question in architecture/nonscalar_quantity.yaml",
     },
     "measurement_conditions": {
@@ -150,7 +150,7 @@ REQUIREMENT_RESPONSES = {
     "recursive_generation_depth": {
         "raised_by": "scl_requirements.yaml workloads.kalman_filter_linear",
         "daf_status": "UNSATISFIED",
-        "measured_basis": "architecture/recursive_depth.yaml; generation_depth_bounded has no implementation and an empty domain. Its status has since been corrected from vacuously_enforced to represented_unenforced, because the former evidence proved acyclicity rather than boundedness.",
+        "measured_basis": "architecture/recursive_depth.yaml; generation_depth_bounded had no implementation and an empty domain WHEN THIS WAS MEASURED, and its status was corrected from vacuously_enforced to represented_unenforced because the former evidence proved acyclicity rather than boundedness. STATUS NOW: enforced. science/lineage_depth.py implements both clauses -- a declared bound MAX_LINEAGE_DEPTH = 3 and a per-record depth verified against its own lineage, with a composition guard so a filter consuming another filter's output is not depth 0. The measurement above is retained as dated; this line is the current state.",
         "caveat": "routed as write-it-correctly-first, and determined NOT to be a bend provided the rule is authored before the first recursive result exists. The proposed rule is recorded as offered, not adopted.",
     },
     "stable_sample_and_variable_identity": {

@@ -33,6 +33,44 @@ DERIVED, NOT LISTED. The invariant ids come from this repository's own
 invariants.yaml, and the status vocabulary comes from the statuses those
 invariants actually carry -- so an invariant added later, or a status word
 used for the first time, is covered without anyone adding it here.
+
+AND THE DOCUMENTS ARE DERIVED TOO, since 2026-08-26. They were not. This
+file swept `scl_requirements.yaml` and `daq_requirement_response.yaml` --
+the two artifacts someone had thought of -- which is coverage specified by
+enumeration in the check written to end a coverage failure. Found by
+applying the general form the same day it was recorded: name the event the
+policy fires on, then ask what goes red when it happens.
+
+    architecture/decisions/2026-08-26-joint-workload-decision.yaml
+      carried_forward_not_resolved.recursive_depth:
+        "generation_depth_bounded's status was corrected this phase from
+         vacuously_enforced to represented_unenforced"
+
+That is a claim about this repository, standing alone, two corrections
+behind -- the identical defect, in an artifact the sweep did not look at,
+while the sweep reported green. The domain is now every YAML document the
+repository holds outside vendor/, so a hash-bearing decision record, a
+probe or an artifact nobody has invented yet is covered by being a file.
+
+Widening it flagged FOUR rows on the first run where the enumerated
+version reported green: three real stale claims -- the decision record
+above, architecture/exchange/daq_capabilities.yaml, and
+architecture/structured_uncertainty.yaml, all about the same invariant --
+and one false positive.
+
+THE PRECISION LIMIT, and the disposition chosen for it. The status
+vocabulary overlaps ordinary English: `absent` and `blocked` are statuses
+here AND words. daq_capabilities.yaml said `unit` is "refused as
+MISSING_UNIT when absent" beside the id `quantity_is_typed`, and this
+check cannot tell a status word used as a status from one used as
+English. Distance does not separate them either -- the false positive sat
+in one sentence while a real claim spanned two.
+
+The disposition is to REWORD THE PROSE, not to teach this check an
+exception. An exception is a permanent hole in a check whose entire value
+is that it has none, and it would be added by whoever is annoyed rather
+than by whoever measured. A false positive costs one wording change and
+stays visible; a false negative is the defect this file exists for.
 """
 
 from __future__ import annotations
@@ -50,6 +88,28 @@ INVARIANTS = loads((REPO_ROOT / "architecture" / "invariants.yaml").read_text())
 EXCHANGE = REPO_ROOT / "architecture" / "exchange"
 REQUIREMENTS = loads((EXCHANGE / "scl_requirements.yaml").read_text())
 RESPONSE = loads((EXCHANGE / "daq_requirement_response.yaml").read_text())
+
+
+def _documents():
+    """Every YAML document this repository holds, outside the vendored
+    substrate. Derived by walking the tree: a claim about the sibling can
+    live in any hand-authored file, and the ones that carried it were not
+    the ones anybody would have listed."""
+    found = []
+    for path in sorted(REPO_ROOT.rglob("*.yaml")):
+        relative = path.relative_to(REPO_ROOT)
+        if relative.parts and relative.parts[0] in ("vendor", ".git"):
+            continue
+        try:
+            document = loads(path.read_text())
+        except Exception:                                    # pragma: no cover
+            continue
+        if document is not None:
+            found.append((str(relative), document))
+    return found
+
+
+DOCUMENTS = _documents()
 
 #: id -> current status, from this repository's own ledger.
 CURRENT = {entry["id"]: entry["status"] for entry in INVARIANTS["invariants"]}
@@ -90,7 +150,8 @@ def _rows_with_status_claims():
             for index, value in enumerate(node):
                 visit(value, f"{path}[{index}]")
 
-    visit(REQUIREMENTS)
+    for name, document in DOCUMENTS:
+        visit(document, name)
     return found
 
 
@@ -99,9 +160,10 @@ def test_the_domain_is_non_empty_so_the_check_can_fail():
     claims reports no stale claims and means nothing."""
     assert CURRENT, "no invariants declared"
     assert VOCABULARY, "no status vocabulary in use"
+    assert DOCUMENTS, "no YAML documents found -- the sweep is not reaching the tree"
     assert _rows_with_status_claims(), (
-        "the requirements artifact makes no status claim about any invariant here -- "
-        "either the artifact changed shape or this check stopped reaching it")
+        "no document in this repository makes a status claim about any invariant here "
+        "-- either the artifacts changed shape or this check stopped reaching them")
 
 
 def test_no_superseded_status_claim_stands_alone():
