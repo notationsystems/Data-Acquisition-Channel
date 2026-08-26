@@ -1,0 +1,118 @@
+# THE POLYMER VERTICAL.
+#
+# The cohort-identity probe left two measured gaps and named this vertical
+# as where they get decided. This file DECIDES NOTHING. It carries what the
+# gaps COST, in numbers, so that the decision when it comes is made against
+# measurement rather than against argument -- which is the only thing this
+# pair's rules let a vertical do before a workload names its extension.
+#
+# STATUS IS LOAD-BEARING: measured_not_proposed. Nothing here asks for a
+# representation change. The probe recorded "a gap measured is not a change
+# proposed" and that holds after the measuring as much as before it.
+#
+# WHAT MOVED, THEN. The probe's two consequences were ARGUED:
+#   "a scalar uncertainty on a distribution moment is admitted even though
+#    the spread is the physically interesting part"
+#   "a consumer fitting over those columns, or propagating uncertainty
+#    across them, double-counts one measurement"
+# Both are now numbers. The second one changed shape under measurement,
+# which is the result worth having: see the_direction_is_not_determined.
+extends: core@1.0.0
+
+vertical: polymer
+status: measured_not_proposed
+owner: daf
+enforcement: tests/test_polymer_vertical.py
+motivated_by: architecture/_probes/cohort_identity_expectations.yaml
+
+# ----------------------------------------------------------------------
+# WHAT THE GATE SURFACE ACTUALLY IS. Measured before anything was claimed
+# about what it fails to record, because "no gate refuses it" means one
+# thing if the gates run and another if they do not.
+# ----------------------------------------------------------------------
+the_gate_surface:
+  content_gates_derived_by_signature: 5
+  how_derived: "public module-level functions in science/*.py whose first parameter is `content` and whose return annotation is Admissibility. Coverage is a property of the repository's code, not of a list somebody maintains."
+  gates:
+    - science/admissibility.py:78 quantity_is_typed
+    - science/admissibility.py:143 no_context_free_property
+    - science/lineage_depth.py:218 recursive_computation_is_depth_bounded
+    - science/structured_uncertainty.py:108 uncertainty_corresponds_to_value
+    - science/table.py:281 observation_is_table_alignable
+  non_test_call_sites:
+    quantity_is_typed: "1 -- science/admissibility.py:162, from inside no_context_free_property"
+    no_context_free_property: "1 -- assertion/property_admissibility.py:143"
+    recursive_computation_is_depth_bounded: 0
+    uncertainty_corresponds_to_value: 0
+    observation_is_table_alignable: 0
+  and_the_one_caller_has_no_caller: "assert_pool -> assess_property_candidate -> no_context_free_property is the only chain, and `assess_pool` itself has zero non-test call sites. So NO content gate runs automatically anywhere in this repository."
+  the_ingest_gate_does_not_inspect_content: "evidence.admission.admit_observation checks record_ids resolve, extraction_method is non-empty and content is NON-EMPTY. It never reads a key. EMPTY_CONTENT is a presence check, not a content check."
+  what_that_does_to_the_finding: "it makes it narrower and sharper. It is not that the gates permit a population moment -- it is that at ingest there is no content gate at all, and the five that exist are scientific-layer judgements applied to already-admitted evidence. architecture/invariants.yaml records this honestly on four of them as `gap: not wired into any admission path`; this vertical does not re-report it as new."
+
+# ----------------------------------------------------------------------
+# GAP 1: THE COHORT/OBJECT DISTINCTION, COSTED.
+# ----------------------------------------------------------------------
+gap_1_the_recorded_uncertainty_is_not_the_spread:
+  the_physics: "for ANY chain-length distribution, Var(M) = Mw*Mn - Mn^2, so SD(chains) = Mn*sqrt(PDI-1). Distribution-free: it needs no model, only the two moments the instrument already prints."
+  verified_two_ways: "derived from the log-normal moment integrals AND checked on the discrete Flory most-probable distribution summed term by term. Both agree to 1e-15 relative."
+
+  the_ratio_that_is_the_size_of_the_gap: "SD(chains)/u(Mn) = sqrt(PDI-1)/u_rel(Mn)"
+  measured_on_the_probe_s_own_batch:
+    Mn_g_per_mol: 104000.0
+    PDI: 1.05
+    provenance_of_those_two: "verbatim from architecture/_probes/cohort_identity_expectations.yaml -- the same batch the probe planted."
+    Mw_g_per_mol: 109200.0
+    provenance_of_Mw: "NOT planted. It is FORCED by the two values above -- Mw = PDI*Mn exactly -- and the string 109200 appears nowhere in this repository. Stated because a number that is derived and a number that is quoted are different evidence."
+    sd_of_the_chain_length_distribution: 23255.106966
+    ratios_of_spread_to_measurement_uncertainty:
+      u_1200_the_probes_planted_value: 19.38
+      u_2000: 11.63
+      u_3120_mid_range_sec_repeatability: 7.45
+
+  the_consumers_error_stated_as_a_consumer_makes_it:
+    reads: "Mn = 104000 +/- 2000 g/mol, taking +/-u as one sigma OF THE MATERIAL"
+    concludes: "about 68.27% of chains lie in [102000, 106000] g/mol"
+    actually_in_that_interval_percent: 6.90
+    overstatement_factor: 9.90
+    the_interval_that_really_holds_68_27_percent:
+      - 81378.0
+      - 126581.0
+    width_ratio: 11.30
+
+  where_the_two_gaps_touch: "the ratio depends only on PDI and the relative uncertainty -- and PDI is printed in the same instrument report as Mn. THE INFORMATION NEEDED TO COMPUTE THE GAP'S SIZE ARRIVES BESIDE THE NUMBER THAT HIDES IT. Gap 2's unowned relation is the relation that would carry it."
+
+  what_the_substrate_records: "measured by admitting a population moment and a genuine point property of one object with the same value, unit and uncertainty, then comparing the stored records field by field. They differ in the free-text label strings and in the content-address computed over them. Nothing else. No field names a subject kind, and the id carries no subject semantics -- swapping the labels reproduces the other id exactly."
+
+# ----------------------------------------------------------------------
+# GAP 2: PDI'S UNOWNED RELATION, COSTED -- AND THE RESULT THAT CHANGED.
+# ----------------------------------------------------------------------
+gap_2_a_column_that_is_a_function_of_two_others:
+  the_row_as_the_substrate_presents_it: "Mn, Mw and PDI on one batch share sample_id and conditions and join into one row as three independent columns. All three are admitted by all five content gates, zero refusals. Verified: the third column equals Mw/Mn to machine precision, so it carries no information the first two do not."
+
+  the_consumer: "least_squares, which architecture/aligned_observation_table.yaml:17 names as the table's own consuming workload. Not invented for this measurement. The algebra below is done by hand rather than through the SCL kernel, because using the implementation as its own oracle is forbidden here."
+
+  measured_at_u_rel_Mn_3_percent_and_u_rel_Mw_2_5_percent:
+    reported_over_correct_variance_ln_Mn: 0.704918
+    reported_over_correct_variance_ln_Mw: 0.795082
+    monte_carlo_check: "200000 draws of the true process (e3 = e2 - e1 exactly): the fit REPORTS Var(ln Mn) = 6.344e-04 while the estimator's ACTUAL variance is 8.92e-04, against a truth of 9.00e-04. The reported uncertainty is real, and it is too small."
+    inverse_variance_combination_sigma_ln_Mw: "0.022292 reported against 0.025000 correct"
+    chained_propagation_u_Mw: "5377.5 g/mol against 2730.0 correct, ratio 1.97 -- the opposite direction"
+    degrees_of_freedom: "nominal 3 observations - 2 parameters = 1. TRUE dof = 0, because the third row is the second minus the first by construction. Every residual is zero and chi-square is identically zero for ALL data, not only for this row -- so a goodness-of-fit test reads PERFECT AGREEMENT BETWEEN THREE INDEPENDENT MEASUREMENTS, and the reduced chi-square divides by a fiction."
+
+  the_direction_is_not_determined: "THE RESULT THAT CHANGED UNDER SCRUTINY, and the one worth carrying. The first measurement reported the confidence region as exactly 1/sqrt(2) of its correct area -- overconfident, the dangerous direction, always. That holds only when Cov(ln Mn, ln Mw) = 0, which was a CHOSEN input, never measured, and it is the one value a polymer consumer would not assume: Mn and Mw are moments of the same chromatogram through the same calibration curve. Writing rho for that correlation, det(Cov_3)/det(Cov_2) = 1/(2*(1-rho^2)) -- 0.5000 at rho=0, exactly 1.0000 at rho = 1/sqrt(2) = 0.7071, 2.63 at rho=0.9. THE DIRECTION FLIPS INSIDE THE PHYSICALLY PLAUSIBLE RANGE."
+  what_that_makes_the_finding: "not `the consumer is overconfident`. The consumer CANNOT KNOW WHICH WAY THEY ARE WRONG, because the substrate records neither the functional dependence nor the correlation that decides its sign. A gap that produces a known bias can be corrected downstream; a gap that produces an unsigned error cannot."
+
+  there_is_somewhere_to_put_it_and_that_is_the_point: "Observation.content is documented as an open, extraction-defined mapping deliberately not forced into one schema, and a counter-probe confirmed that keys named derived_from, functional_dependence and uncertainty_propagated_from are all ADMITTED -- on exactly the same terms as a key named complete_nonsense. So the gap is NOT a missing slot. It is an unnamed, unrequired, unchecked slot that no consumer can rely on or discover. That makes the extension cheap, which is a reason for MORE care about proposing it, not less: the thing standing between here and a schema nobody agreed is one commit."
+  the_one_field_that_gestures_at_it: "uncertainty_kind: propagated is in the vocabulary (science/admissibility.py:49) and names no source. The vocabulary can say `this came from other quantities` and cannot say WHICH."
+
+# ----------------------------------------------------------------------
+what_this_vertical_does_not_decide:
+  the_cohort_object_distinction: "whether the substrate SHOULD record that a subject is a population. Measured cost is above; no change is proposed. Note that the probe's criterion explicitly permits `qualification via per-vertical admissibility classes` -- so this is reachable WITHOUT bending a core invariant, and no such qualification exists anywhere yet, which would make polymer the first."
+  the_inter_observation_relation: "whether the substrate should carry functional dependence between observations. The shape is general -- any derived-at-source quantity arriving beside its inputs has it -- and generality is a reason to be slower, not faster."
+  why_neither_is_decided_here: "this pair's rule is that A WORKLOAD NAMES ITS EXTENSION. least_squares became a decision rather than a wish because a real consumer needed it. No polymer acquisition exists in this repository: there is no GPC source, no polymer extractor, and no consumer reading such a row. Everything above is a costed hypothetical on real code, and saying so is the difference between this file and a proposal."
+
+what_would_settle_each:
+  gap_1: "a polymer acquisition whose downstream consumer acts on the recorded uncertainty -- a formulation decision, a specification check, a model fit over the material. The moment a consumer treats u(Mn) as the spread, the 9.9x is a cost incurred rather than a cost computed."
+  gap_2: "a real GPC report supplying Mn, Mw and PDI together, consumed by least_squares through the aligned table. And, separately measurable and cheaper: the correlation rho between the moments as the instrument reports them, which decides the SIGN of the error and which nothing here can supply."
+
+the_cheapest_next_measurement: "rho. It needs one instrument's replicate data, it is the single input that flips the gap-2 conclusion, and it is the one number above that is a choice rather than a measurement. Until it exists, gap 2's magnitude is known and its direction is not."
