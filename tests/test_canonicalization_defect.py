@@ -164,3 +164,49 @@ def test_no_hash_bearing_artifact_uses_a_diverging_scalar_shape(path):
         f"{path.name} contains scalars that emit bare and resolve differently per parser: "
         f"{offenders[:5]}"
     )
+
+
+# ------------------- the two properties the fix must have, locked as tests
+
+
+def test_the_fix_is_emitter_side_not_reader_normalization():
+    """A reader that normalizes `datetime.date` back to `str` would make
+    the round-trip pass while leaving the ARTIFACT ambiguous -- any third
+    parser, and the other repository's reader, would still disagree. The
+    fix has to be that the bytes are unambiguous, which is an emitter
+    property."""
+    rule = DEFECT["corrected_rule"]
+    scalars = rule["scalars"].lower()
+    assert "emitted" in scalars, "the rule must constrain the emitter"
+    assert "double-quoted always" in scalars or "double-quoted ALWAYS".lower() in scalars
+    assert "implicit typing is forbidden" in scalars
+
+    blob = " ".join(str(v) for v in rule.values()).lower()
+    for reader_side in ("normaliz", "coerce", "post-process", "on read", "after parsing"):
+        assert reader_side not in blob, (
+            f"the corrected rule mentions {reader_side!r} -- a reader-side repair hides the "
+            "ambiguity rather than removing it"
+        )
+
+
+def test_byte_equality_alone_would_have_passed_the_date_bug():
+    """Why the verification step must compare typed structures. A single
+    emitter produces one byte string; comparing it to itself proves
+    nothing about how a second parser will TYPE it."""
+    text = canonical_dump({"k": "2026-08-25"})
+
+    # The check that would have passed, and did, for issue 1 of the spec.
+    assert text == canonical_dump({"k": "2026-08-25"}), "byte comparison is satisfied"
+
+    # The check that actually catches it.
+    assert loads(text) != yaml.safe_load(text), (
+        "typed comparison must see what byte comparison cannot"
+    )
+    assert not _round_trips_as_a_string(text, "2026-08-25")
+
+
+def test_the_recorded_verification_step_demands_typed_structures():
+    verification = DEFECT["corrected_rule"]["verification"].lower()
+    assert "typed structures" in verification
+    assert "not" in verification and "bytes" in verification
+    assert "required step" in verification, "it must be required, not advisory"
