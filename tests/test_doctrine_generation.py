@@ -59,15 +59,58 @@ def test_every_committed_architecture_file_parses():
         assert isinstance(document, dict), f"{path.name} is not a mapping"
 
 
+#: EVERY YAML file this repository holds, DERIVED rather than listed.
+#:
+#: CANONICAL_YAML above is an enumeration -- four globs and a documented
+#: exclusion -- and it was measured to miss two files, one of them the
+#: hash-bearing joint decision record. That is the same hole a previous
+#: phase already found and "fixed" in a DIFFERENT enumerated check, which
+#: is the whole argument against enumerated coverage: repairing one list
+#: leaves every other list untouched, and each reports green over its own
+#: gap. See architecture/proof_integrity.yaml,
+#: coverage_specified_by_enumeration.
+#:
+#: The property is simply: if it is YAML and it is ours, both parsers must
+#: read it the same. Nothing about which directory it lives in.
+ALL_YAML = tuple(sorted(
+    path for path in REPO_ROOT.rglob("*.yaml")
+    if "vendor" not in path.parts and ".git" not in path.parts
+))
+
+
+def test_the_two_parser_check_covers_every_yaml_file_we_hold():
+    """The COVERAGE property, asserted separately from the agreement it
+    guards -- so a file that escapes the check fails here loudly rather
+    than being silently unverified by the test below."""
+    assert ALL_YAML, "no YAML found -- the agreement check would pass vacuously"
+    enumerated = {p.resolve() for p in CANONICAL_YAML}
+    derived = {p.resolve() for p in ALL_YAML}
+    assert enumerated <= derived, (
+        "CANONICAL_YAML names files the derived sweep does not reach: "
+        f"{sorted(str(p) for p in enumerated - derived)}"
+    )
+
+
 def test_the_minimal_parser_agrees_with_the_reference_implementation():
     """`pyproject.toml` declares `dependencies = []`, so the architecture
     is read by `epistemics/_yaml.py` rather than PyYAML. That is only
     defensible if the two agree on the real files -- measured here when
-    PyYAML happens to be importable, skipped when it is not."""
+    PyYAML happens to be importable, skipped when it is not.
+
+    Over ALL_YAML, not CANONICAL_YAML. Measured when this was changed: the
+    joint decision record and the shared agreement fixture were both
+    outside the enumerated set. The fixture's exclusion carried a reason --
+    that test_exchange_artifact.py covers it -- and the reason did not
+    hold: that test parses `canonical_dump(cy.FIXTURE)`, the text the
+    emitter produces from the in-memory object, never the bytes on disk.
+    An artifact whose entire purpose is that two repositories agree on its
+    digest was not itself checked for two-parser agreement."""
     pyyaml = pytest.importorskip("yaml")
-    for path in CANONICAL_YAML:
+    for path in ALL_YAML:
         text = path.read_text()
-        assert _yaml.loads(text) == pyyaml.safe_load(text), f"{path.name} parses differently"
+        assert _yaml.loads(text) == pyyaml.safe_load(text), (
+            f"{path.relative_to(REPO_ROOT)} parses differently under the two readers"
+        )
 
 
 def test_every_architecture_artifact_declares_the_core_it_extends():
