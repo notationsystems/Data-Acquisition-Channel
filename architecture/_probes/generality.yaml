@@ -43,7 +43,9 @@ result:
     verdict: ALREADY_QUALIFIED
     detail: "NOAA CO-OPS revises preliminary readings into verified ones for the same timestamp, and no DAF-reachable source is a re-runnable materials experiment. The repository already treats re-runnability as a per-source property rather than a substrate guarantee: artifact identity is stable across revisions while version identity changes. No core invariant required modification."
   revocable_record:
-    verdict: UNTESTED
+    verdict: TESTED_2026_08_26_CAPABILITY_ABSENT_CONFIRMED
+    prior_verdict: UNTESTED
+    run: "architecture/_probes/revocable_record_expectations.yaml -- five plantings against expectations committed first. No removal path on the store's class surface, no supersession vocabulary anywhere, downstream references by id with no back-reference to repair. Content-addressing HOLDS: a forged same-id payload is never written. The publicly reachable finding is that FIRST WRITE WINS for non-identity fields, silently -- so a re-acquisition with better confidence is discarded without notice, and revocation is far outside what the store does rather than a near miss."
     detail: "Nothing in this repository can remove an admitted Observation. FilesystemEvidenceStore is append-only and content-addressed, and no tombstone or retraction path exists. A source compelling removal would today require deleting content-addressed blobs that materials ModelState Sample.observation_id still references, orphaning scientific state. This is the probe's clearest live finding and is recorded as a gap in architecture/invariants.yaml retraction."
   cohort_identity:
     verdict: TESTED_2026_08_26_REPRESENTATION_GAP_CONFIRMED
@@ -68,10 +70,10 @@ outcome:
     - non_reproducible
     - uncontrolled_conditions
   bent: []
-  untested:
-    - revocable_record
+  untested: []
   tested_since_the_verdict_below:
     - cohort_identity
+    - revocable_record
   failed:
     - recursive_computation
   verdict_superseded_2026_08_25: "the verdict below was recorded when the probe enumerated observation properties only. It is left verbatim rather than rewritten. It is superseded by the recursive_computation FAIL above, which is a correction to the VERIFICATION SUBSTRATE -- the probe's own coverage -- not a change to any core invariant. core_invariants_modified remains 0: generation_depth_bounded's status and evidence are corrected to match measured reality, which is a truthfulness repair, not a semantic weakening."

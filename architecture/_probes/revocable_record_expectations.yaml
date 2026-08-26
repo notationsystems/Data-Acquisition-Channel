@@ -89,3 +89,36 @@ how_this_probe_can_fail_honestly:
   - "the same-id rewrite SUCCEEDS -> a far larger finding than this probe was scoped for, and it invalidates content-addressing rather than merely confirming a gap."
 
 what_this_probe_does_not_decide: "whether to take the bend. Measuring that a capability is absent, and what its absence costs, is not proposing that it be built. bend_protocol governs that decision and this probe is an input to it."
+
+# ======================================================================
+# THE RUN. Appended after the expectations above were committed (bbd294a).
+# Expectations are not edited: what was predicted stands as predicted.
+# ======================================================================
+run:
+  performed_by: tests/test_revocable_record_probe.py
+  cases_run: 5
+  verdict: PREDICTION_HELD_WITH_ONE_CORRECTION_TO_THE_RUN
+
+  what_it_establishes:
+    no_removal_path: "FilesystemEvidenceStore's public surface, introspected on the CLASS rather than grepped, carries no delete, remove, retract, tombstone or purge. The invariant's ABSENT status is correct."
+    no_supersession_vocabulary: "nothing in evidence.types names supersede, replaces, retract or revoke, and the one relation type that exists -- ClaimedRelationship -- relates from_referent_id to to_referent_id, so it cannot carry an observation-to-observation claim. Supersession, deletion's weaker cousin, is as absent as deletion."
+    removal_would_orphan: "downstream types reference observations BY ID with no back-reference on Observation itself, so a removal cannot be repaired by walking the reference. The recorded consequence is structural, not hypothetical."
+    content_addressing_holds: "a forged same-id payload is NEVER WRITTEN. The store returns early, the original bytes are byte-identical afterwards, and the stored value is unchanged."
+
+  the_publicly_reachable_finding: "FIRST WRITE WINS FOR NON-IDENTITY FIELDS, SILENTLY. confidence and extracted_at are outside identity by design -- a re-acquisition of the same fact is the same fact -- so two observations differing only in those fields share an id, and the second put_observation is a no-op. Measured: confidence 0.60 written first, 0.95 written second, 0.60 stored. Returns None, raises nothing. No forgery, no private API. If a NON-IDENTITY field cannot be updated, revocation is not a near miss; it is far outside what this store does."
+
+  # ------------------------------------------------------------------
+  # THE PROBE NEARLY REPORTED A SERIOUS FALSE FINDING.
+  # ------------------------------------------------------------------
+  the_run_was_corrected_not_the_prediction:
+    what_happened: "the first version of the same-id case asserted ONLY that an exception was raised. None was, and the test reported that content-addressing is not enforced on write and every digest in the pair is unreliable."
+    why_that_was_wrong: "the recorded observable was 'the store refuses, OR the original bytes survive unchanged'. The bytes survived. The TEST was stricter than the PREDICTION it was written for -- so a prediction that held was reported as catastrophically failing."
+    and_the_stimulus_was_wrong_too: "the forgery required the PRIVATE _write. put_observation derives the id FROM the observation, so no caller can supply a mismatched pair. An outcome produced by bypassing the public surface is not evidence about the public surface."
+    the_documented_reason_it_behaves_this_way: "the module states it: re-verifying the EXISTING file's identity is strictly more correct than a payload-equality check, which would reject legitimate re-acquisitions -- exactly because confidence and extracted_at are outside identity."
+    what_caught_it: "checking the stimulus before reporting the finding, because the finding was flagged IN THE EXPECTATIONS as bigger than the probe's scope. A predicted catastrophic outcome is the one to re-examine hardest, not the one to publish fastest."
+    the_general_statement: "A TEST THAT ASSERTS MORE THAN ITS RECORDED EXPECTATION CAN FAIL WHILE THE PREDICTION HOLDS. The pre-registration is only binding if the run reads it faithfully -- reading it and then checking something narrower is the same defect as restating the thresholds."
+
+the_bend_is_real_and_its_cost_is_now_measured:
+  the_promise_that_cannot_be_kept: "a source that can compel revocation -- a retracted paper, a withdrawn dataset, a subject exercising erasure -- cannot be onboarded without promising removal the substrate cannot perform."
+  what_taking_it_would_require: "not a delete method. A tombstone or supersession representation, a rule for what a dangling downstream reference means, and a decision about whether an id whose content is gone remains a valid content address. The last is the one that reaches core: a content address whose content is absent is no longer a content address."
+  what_it_would_not_require: "changing any existing gate. Nothing refuses revocation today; there is simply nothing to refuse."
