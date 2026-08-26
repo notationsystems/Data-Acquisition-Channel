@@ -212,3 +212,80 @@ def test_unresolved_edges_say_why_they_are_not_solved_here():
     unowned = UNRESOLVED_EDGES["uniformity_is_unchecked"]
     assert unowned["owner"].startswith("unassigned")
     assert unowned["why_it_is_not_solved_here"]
+
+
+# ============ the COLLECTION half of the canonicalization class
+#
+# The always-quote fix closed the SCALAR half: two conformant parsers
+# agreeing on bytes and disagreeing on TYPE. Nothing held the collection
+# half, and the shared fixture pinned no collection shapes at all.
+#
+# Measured afterwards, two holes -- both LOUD rather than silent, and
+# neither reached by any live artifact at the time:
+#
+#   * an empty mapping inside a SEQUENCE made the emitter raise
+#     "unsupported scalar type": it could not represent a legal document
+#     shape. Now emitted as `- {}`.
+#   * a sequence directly inside a sequence emits the block form `- - 1`,
+#     which PyYAML reads and epistemics/_yaml.py REFUSES. One repository
+#     able to read an artifact the other cannot is the same failure as two
+#     repositories typing a scalar differently, so it is closed the same
+#     way: refused at the WRITER.
+#
+# This repository holds BOTH parsers, so it runs the stronger check --
+# typed comparison across two independent implementations, which is what
+# the canonicalization defect record requires and what byte comparison
+# cannot see.
+
+COLLECTION_SHAPES = [
+    {"k": []},
+    {"k": {}},
+    {"k": {"inner": []}},
+    {"k": {"inner": {}}},
+    {"k": [{}, {"a": 1}]},
+    {"k": [1, 2, 3]},
+    {"k": [{"a": 1}, {"b": 2}]},
+    {"k": [{"row": [1, 2]}, {"row": [3]}]},
+]
+
+
+@pytest.mark.parametrize("document", COLLECTION_SHAPES,
+                         ids=[str(sorted(d["k"]) if isinstance(d["k"], dict) else d["k"])[:28]
+                              for d in COLLECTION_SHAPES])
+def test_every_collection_shape_agrees_across_both_parsers(document):
+    """TYPED structures, two independent parsers -- not bytes."""
+    from epistemics._yaml import loads as repo_loads
+
+    text = cy.canonical_dump(document)
+    assert yaml.safe_load(text) == document
+    assert repo_loads(text) == document
+
+
+def test_a_sequence_inside_a_sequence_is_refused_at_the_writer():
+    """The measured divergence, and the reason it is closed at the writer
+    rather than by teaching one reader to cope."""
+    from epistemics._yaml import loads as repo_loads
+
+    with pytest.raises(TypeError, match="sequence directly inside a sequence"):
+        cy.canonical_dump({"k": [[1, 2], [3]]})
+
+    # the divergence itself, still demonstrable on a hand-authored document
+    bare = '"k":\n  - - 1\n    - 2\n'
+    assert yaml.safe_load(bare) == {"k": [[1, 2]]}
+    with pytest.raises(Exception):
+        repo_loads(bare)
+
+    # the documented alternative round-trips through both
+    wrapped = {"k": [{"row": [1, 2]}]}
+    text = cy.canonical_dump(wrapped)
+    assert yaml.safe_load(text) == repo_loads(text) == wrapped
+
+
+def test_the_fixture_pins_collection_shapes_across_both_parsers():
+    from epistemics._yaml import loads as repo_loads
+
+    shapes = cy.FIXTURE["collection_shapes"]
+    assert len(shapes) >= 8, "the fixture pinned no collection shapes before this"
+    text = cy.canonical_dump(cy.FIXTURE)
+    assert yaml.safe_load(text)["collection_shapes"] == shapes
+    assert repo_loads(text)["collection_shapes"] == shapes
