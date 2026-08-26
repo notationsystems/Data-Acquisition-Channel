@@ -1,0 +1,76 @@
+# WHAT WOULD HAPPEN TO THE REPLICATE GPC DATA IF IT ARRIVED TODAY.
+#
+# The polymer vertical named replicate GPC runs as the cheapest next
+# measurement: rho decides gap 2's sign, and only data says what rho is.
+# The question put before the data arrives was whether the ingest surface
+# is the state you want it arriving into -- since no content gate runs at
+# ingest.
+#
+# THE ANSWER IS THAT THE GATES ARE NOT THE CONSTRAINT. Wiring all five
+# would change nothing here: not one of them refuses a replicate, records
+# a replicate, or would refuse this data. The constraint is one layer
+# further on, in the analysis layer's grouping, and it is decisive: the
+# structure a correlation is MADE OF is discarded before any statistic is
+# computed.
+#
+# NO ACQUISITION WAS PERFORMED. There is no GPC instrument, no polymer
+# source and no replicate data in reach of this repository. Every result
+# below is the real code run against constructed replicate observations,
+# which establishes what the substrate WOULD DO and nothing about any
+# material.
+extends: core@1.0.0
+
+subject: polymer_replicate_gpc_acquisition
+status: blocked_on_representation_not_on_data
+owner: daf
+enforcement: tests/test_polymer_acquisition_readiness.py
+answers_a_question_posed_by: architecture/polymer_vertical.yaml
+
+# ----------------------------------------------------------------------
+the_question_that_was_asked: "no content gate runs at ingest -- is that the state you want the data arriving into?"
+the_question_that_decided_it: "can rho be computed from what the substrate produces, given perfect replicate data?"
+why_they_are_different: "the pair question, again. The ingest surface is the thing that was worried about; the grouping is the thing that determines the outcome. Measured before assuming: five replicates pass every gate that exists, so the gates could not have been the answer either way."
+
+# ----------------------------------------------------------------------
+# MEASURED, against the real modules.
+# ----------------------------------------------------------------------
+what_the_substrate_does_with_replicates:
+
+  they_are_admitted_and_distinct:
+    measured: "five GPC runs on one batch, each carrying its own Record, produce five distinct Observation ids and pass observation_is_table_alignable with zero reasons."
+    the_unstated_obligation: "distinctness rests ENTIRELY on each run carrying its own Record. Observation identity is over (record_ids, extraction_method, content), so two runs that report the same number from the same Record are ONE observation -- correctly, because that is a re-read rather than a new fact. An extractor emitting one Record per REPORT instead of per RUN would silently merge equal values and bias the estimated variance DOWNWARD, which is the overconfident direction. Nothing anywhere states this obligation."
+
+  the_grouping_machinery_exists_and_is_the_right_one:
+    measured: "materials.analysis._group_by_comparison_context puts all five replicates in ONE ComparisonGroup when content is identical apart from the measured value. This is the Phase 16/17 machinery, and its reasoning is exactly on point: an acquisition locator in content makes every observation its own single-member group so nothing is comparable, while a scientific conditioning variable belongs there. A GPC run identifier is an acquisition locator and must stay out of content."
+    which_settles_the_extractor_contract: "one Record per RUN; the run identifier NOT in content. Both halves are load-bearing and they fail in opposite directions -- run id in content makes every run its own group and rho unmeasurable; one Record per report merges equal values and understates the spread."
+
+  but_uncertainty_is_part_of_the_comparison_context:
+    measured: "_comparison_context keeps every content key except `property` and the value key -- which includes `uncertainty`. Five replicates whose per-run uncertainty differs by as little as 1 g/mol split into FIVE SINGLETON GROUPS, and _disagreement returns None for every one, because it is defined only for two or more values."
+    the_consequence: "a replicate set from an instrument that reports a per-run uncertainty -- which is what a real one does -- silently becomes five unrelated measurements. Not an error, not a refusal, not a warning: five groups of one."
+    it_is_vendored_and_not_touched: "materials/analysis.py is inside the unmodifiable core. This is recorded, not fixed. The docstring's stated intent is about ABSENCE ('a key present on one value and missing on another produces unequal contexts on purpose'); differing VALUES of uncertainty splitting a group is a consequence of that rule rather than a separate decision, and whether it was intended is a question for upstream."
+
+  the_statistic_computed_is_a_range_not_a_variance:
+    measured: "over a well-formed group of the five values, the substrate computes Disagreement(minimum, maximum, spread). spread = 490.0 where the sample standard deviation is 189.6."
+    why_it_matters: "a range is not a variance and cannot be converted into one without knowing the distribution and the sample size. Every downstream uncertainty statement needs the second moment; the substrate offers the extremes."
+
+  and_the_pairing_is_destroyed:
+    the_decisive_finding: true
+    measured: "ComparisonGroup carries exactly (context, values, disagreement), and `values` is a bare tuple of floats. No observation id, no Record, no run identity travels with a value into the group. So the Mn group and the Mw group are two independent tuples and NOTHING PAIRS THE i-th Mn WITH THE i-th Mw."
+    why_that_ends_it: "a correlation is precisely a statement about that pairing. rho cannot be computed from what the substrate produces even from perfect replicate data, because the grouping unpairs the observations before any statistic is reached. The data would be admitted, stored, grouped and summarised, and the number the vertical asked for would not be recoverable from the result."
+    what_would_still_hold_it: "the raw Observations. They are content-addressed, retained, and each names its Record, so the pairing survives IN THE EVIDENCE POOL and is lost only in the analysis projection. Recovering rho would mean joining on Record outside the grouping -- which is a consumer this repository does not have, not a capability it lacks."
+
+# ----------------------------------------------------------------------
+the_shape_this_repeats: "THE SUBSTRATE KEEPS SUMMARIES AND DROPS POPULATIONS, at three levels now, and it is the same move each time. Chains are summarised by a moment and the distribution is dropped (gap 1). Runs are summarised by a spread and the sample is dropped (here). Paired runs are summarised as two tuples and the pairing is dropped (here). Each summary is correct and each discards exactly what the next question needs."
+
+# ----------------------------------------------------------------------
+what_this_does_not_claim:
+  not_a_defect_finding: "every module measured did what its docstring says. The grouping is deliberately conservative and its conservatism is documented. Nothing here is a bug report."
+  not_a_proposal: "the polymer vertical's status stays measured_not_proposed and this record does not advance it. What changed is the BLOCKER: it was `no data`, and it is now `no data AND the projection would not carry the answer`."
+  not_an_acquisition: "no instrument, no source, no material. Constructed observations through real code."
+
+what_would_have_to_be_true_before_acquiring:
+  one: "the extractor emits one Record per RUN and keeps the run identifier out of content. Cheap, and unrecoverable if wrong -- which run produced which number cannot be reconstructed afterwards."
+  two: "a consumer that joins Mn and Mw on Record rather than reading them out of ComparisonGroups. It does not exist and would be written for this question."
+  three: "a decision about per-run uncertainty: reporting it splits the group under the current context rule. Suppressing it to keep the group intact would be discarding a measurement to make a check pass, which this pair forbids -- so the join in `two` has to be what carries it."
+  four: "`conditions` is a FrozenMapping. FOUND BY THIS RECORD'S OWN TESTS FAILING. The two layers pull opposite ways: the grouping needs every content value natively hashable, and the table gate needs `conditions` to be a Mapping with identifier keys. A plain dict passes the gate and breaks the grouping; a tuple of pairs passes the grouping and is refused as CONDITION_KEYS_ARE_NOT_IDENTIFIERS. Exactly one representation satisfies both and the repository already built it (daf/storage/frozen_mapping.py, Phase 34) -- so there is no choice to make, only a way to get it wrong silently in either direction."
+the_order_that_matters: "one is the only irreversible one, and it is the cheapest. Two and three can be built after the data exists; one cannot be repaired after the data exists."

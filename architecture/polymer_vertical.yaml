@@ -149,4 +149,7 @@ the_correlation_between_the_moments:
 
   what_would_still_settle_it: "replicate GPC runs on one batch, giving rho from the instrument rather than from a model of it. The model says what rho cannot be; only data says what it is."
 
+# The blocker moved once the pre-arrival question was measured. See
+# architecture/polymer_acquisition_readiness.yaml.
+the_blocker_is_no_longer_only_the_data: "measured before acquiring: the ingest gates are not the constraint -- five replicates pass every gate that exists. The analysis layer's grouping is, and decisively. ComparisonGroup carries (context, values, disagreement) with `values` a bare tuple of floats, so nothing pairs the i-th Mn with the i-th Mw, and a correlation is exactly a statement about that pairing. rho is not recoverable from the projection even from perfect replicate data. The pairing survives in the evidence pool, joinable on Record -- so this is a consumer that does not exist, not a capability the substrate lacks."
 the_cheapest_next_measurement: "replicate GPC runs on one batch. rho was the single input that decided gap 2's sign, and it has now been MODELLED rather than measured -- enough to establish that rho = 0 is structurally unreachable and the direction is the conservative one, not enough to give a number an instrument would recognise. The status above stays measured_not_proposed until real replicate data is in, because a model of an instrument is not the instrument."
