@@ -1,4 +1,13 @@
 "artifact": "selection_rule_defect"
+"corrected_in_the_same_phase":
+  "found_by": "the compute layer, in the joint decision record that elected least_squares"
+  "measured":
+    - "kalman_filter_linear DAQ-owned blockers: structured_measurement_uncertainty, recursive_generation_depth"
+    - "least_squares DAQ-owned blockers: stable_sample_and_variable_identity, explicit_missing_value_semantics"
+    - "pca DAQ-owned blockers: stable_sample_and_variable_identity, commensurable_units_or_explicit_scaling"
+  "the_correction": "the non-scalar quantity extension (covariance-bearing uncertainty) is required by Kalman and by NEITHER least_squares nor pca. What those two share is stable_sample_and_variable_identity -- an ALIGNED OBSERVATION TABLE with variable identity, which is a different extension from a covariance. Two extensions, two clusters: covariance unblocks Kalman alone; the observation table unblocks least_squares and pca."
+  "what_survives": "the rule defect itself is unaffected and is if anything sharper. Both clusters are invisible to a rule that gates on satisfied-ness before consulting leverage, and least_squares is now the better illustration than Kalman: it is the highest-leverage candidate and is excluded by construction."
+  "what_was_wrong": "this artifact claimed one extension clears the DAQ side of THREE workloads -- that the structured-uncertainty half unblocks Kalman and its other half carries least_squares and pca. That conflates two DIFFERENT extensions."
 "extends": "core@1.0.0"
 "owner": "joint -- the rule governs both repositories' shared gate"
 "process_finding":
@@ -13,6 +22,7 @@
 "proposed_correction":
   "not_yet_applied": "this is DAQ's finding about a rule both repositories share. Changing a joint selection rule is a joint act, and the same authorship constraint applies to it as to a decision record. Recorded for the next joint reissue, not applied unilaterally."
   "rule": "compare leverage-per-cost ACROSS BOTH BRANCHES rather than filtering to the already-satisfied set first. A blocked high-leverage workload may beat an unblocked low-leverage one when the unblocking extension is small."
+  "superseded_by": "the joint decision record's reading, which is cleaner and reaches the same place: the rule's SECOND CLAUSE -- extend only for a named consuming workload -- is not an exception to the first, it is the repair. A workload blocked only by a capability gap is admissible when it names itself as the consumer of that gap's closure. Read that way the rule reaches least_squares; read as first-clause-only it cannot. That framing needs no new leverage-per-cost arithmetic."
   "what_changes": "satisfied-ness stops dominating leverage. It becomes a COST term -- zero for an already satisfied workload, the size of the extension otherwise -- instead of a filter applied before leverage is consulted."
   "what_stays":
     - "an extension still requires a named consuming workload -- that constraint was never the defect and is what stops speculative representation work"
@@ -30,6 +40,7 @@
   "why_it_is_marginal": "zero blocking requirements on either side, and adjacent to the transform that was just built -- it shares the reduction shape of the existing kernel and is implementable THROUGH the transform via the convolution theorem. It advances neither generality (the substrate has now been exercised by two families and convolution adds no third) nor reuse (its primitives are the ones already paid for)."
 "the_rule_as_written": "select the highest-leverage workload whose observation requirements are ALREADY satisfied by DAQ, and extend DAQ only for a named consuming workload"
 "the_sharpest_case_against_the_rule":
+  "CORRECTED": "see corrected_in_the_same_phase. Kalman remains the only candidate with no compute-layer blocker, and its recursive_generation_depth blocker was still supplied this phase -- but it does NOT share its remaining extension with least_squares or pca."
   "and_the_same_extension_carries_two_more": "the other half, multivariate value with stable variable identity, is the shared DAQ blocker of BOTH least_squares and pca. So one extension clears the DAQ side of three workloads; Kalman needs nothing further, and the other two then need only the compute-layer linear-algebra family. That is a leverage argument the stale matrix could not produce and the current rule cannot act on."
   "measured":
     - "its blockers are BOTH DAQ-owned -- it is the only candidate with no compute-layer-side blocker at all, so no linear-algebra family has to be built for it to become admissible"

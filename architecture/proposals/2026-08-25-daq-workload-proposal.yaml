@@ -30,7 +30,9 @@
 "recommended_workload": "convolution_1d"
 "reissue":
   "did_the_decision_move": false
+  "how_it_moved": "away from fourier_transform_1d because it is BUILT -- withdrawn on completion, not on merit -- and to convolution_1d, the only remaining in-scope candidate the rule admits. The re-measure also revealed that the rule's answer and the highest-leverage answer have come apart: least_squares carries more value and cannot be elected by DAQ alone."
   "issue": 5
+  "open_question_this_record_does_not_answer": "the coupling finding -- that multivariate value and structured uncertainty are ONE extension, and that closing the visible half first degrades the silent half -- is an argument about HOW a non-scalar extension would have to be built, not whether to build one now. It bears directly on the least_squares pairing this issue frames but does not elect."
   "previous_issues":
     - "basis": "primitive matrix measured at compute-layer commit edfc2dc"
       "issue": 1
@@ -47,17 +49,18 @@
       "recommended": "fourier_transform_1d"
       "why_the_recommendation_did_not_move": "none of it bears on the selection rule. The elimination of kalman_filter rested on covariance-bearing uncertainty being ABSENT, and the added material reinforces that premise -- absent, admitted without check, and reachable through a verbatim pass-through no extractor change is needed to exercise."
     - "basis": "primitive matrix rebuilt at compute-layer commit 5447df3"
-      "did_the_recommendation_move": true
       "issue": 4
+      "reason": "the primitive matrix was rebuilt against the current compute-layer commit 5447df3 rather than the stale edfc2dc it was first measured at, and the capability artifact changed again under a concurrent session. The re-measure moved the recommendation, which is the outcome a re-measure is for."
       "recommended": "convolution_1d"
-  "reason": "the coordinated canonicalization reissue landed, so every digest moved; the compute layer published a joint decision record; and DAQ measured the selection rule itself to be defective. The proposal is reissued to bind the new digests and to frame the actual two-branch choice rather than present one branch with a caveat."
-  "what_changed": "the framing and the digests, not DAQ measured position on any workload"
+  "reason": "the coordinated canonicalization fix landed in BOTH repositories, re-emitting both exchange artifacts and the agreement fixture, so every bound digest moved at once. This issue is a RE-ENCODING ONLY: it changes no measured fact and does not move the recommendation, which last moved at issue 4 when the primitive matrix was rebuilt against compute-layer commit 5447df3 rather than the stale edfc2dc it was first measured at."
+  "what_did_not_change": "the recommendation, its basis, and every measured fact. Only the encoding changed. The issue-4 re-measure remains the last substantive movement."
 "requirements_artifact": "architecture/exchange/scl_requirements.yaml"
 "requirements_artifact_authority":
   - "READ-ONLY MIRROR. The origin is notationsystems/Scientific-Compute-Layer-SCL- architecture/exchange/scl_requirements.yaml at commit 5447df3."
   - "The copy held here is byte-identical to those committed bytes and hashes to the digest recorded in the ORIGIN repository's own scl_requirements.sha256 sidecar. Because both of those hold, it IS the compute layer's own emission rather than this repository's account of it, and the proposal may reference its hash directly."
   - "What the sidecar and the byte check protect against is a future session REGENERATING it locally and not noticing. That is why it is labelled a mirror with the upstream digest recorded, rather than left to look like an artifact this repository owns."
 "requirements_artifact_hash": "sha256:0ce4753c148de759f13c796c573def9c7f95c9d343f6b7b3d598a7d1e3f9d5ec"
+"requirements_artifact_origin": "notationsystems/Scientific-Compute-Layer-SCL- architecture/exchange/scl_requirements.yaml at 6b63c11, copied byte-identically; SCL is its canonical owner. 6b63c11 is the SCL half of the coordinated canonicalization reissue and is LANDED on the remote."
 "requirements_artifact_upstream_sha256": "sha256:0ce4753c148de759f13c796c573def9c7f95c9d343f6b7b3d598a7d1e3f9d5ec"
 "scope":
   "already_built_do_not_rebuild":
@@ -73,31 +76,8 @@
     - "viterbi"
   "note": "the universal gate the first issue required first -- variable-length array on the wire, generic configuration block, operation-generic result -- is BUILT as of 5447df3 and is no longer a term in any candidate's cost."
 "serializer_note": "a bare ISO date is NOT used as a value anywhere in this record. The vendored canonical_yaml.py leaves 2026-08-25 unquoted, which PyYAML resolves to datetime.date while this repository's own reader returns str -- so such a value would have a parser-dependent hash. The serializer is byte-identical across both repositories by agreement and must not be edited on one side, so the field was removed instead. decision_id carries the date and is not date-shaped. Recorded as a measured gap in the shared serializer."
-"status": "superseded_by_the_joint_decision_record"
-"superseded_by":
-  "daq_position_on_it": "DAQ does not contest the record, which is joint and committed. DAQ records two measured findings about it in architecture/selection_rule_defect.yaml: the workload it selects was already BUILT when it was selected, and the rule it applied orders on satisfied-ness before leverage. Both are inputs to the next reissue."
-  "owner": "authored in the compute-layer repository; the copy here is a byte-identical read-only mirror"
-  "record": "architecture/decisions/2026-08-26-joint-workload-decision.yaml"
-  "what_it_decided": "fourier_transform_1d, daq_extension none"
+"status": "proposed"
 "superseded_recommendation": "fourier_transform_1d, recommended in the first issue of this proposal. It is now BUILT in the compute layer, so recommending it is no longer a decision. Withdrawn on completion, not on merit."
-"the_actual_choice":
-  "branch_a_current_rule":
-    "admitted_because": "it is the only in-scope workload the rule as written admits"
-    "cost": "zero on both sides"
-    "daq_extension": "none"
-    "daq_gate": "A"
-    "what_it_buys": "little. Adjacent to the transform just built, sharing the existing kernel reduction shape and implementable through the transform via the convolution theorem. Adds no third computational family and no primitive not already paid for."
-    "workload": "convolution_1d"
-  "branch_b_corrected_rule":
-    "and_then": "the extension other half, multivariate value with stable variable identity, is the shared DAQ blocker of least_squares and pca. One extension clears the DAQ side of three workloads."
-    "cost": "one half of one DAQ extension; NO compute-layer work"
-    "daq_extension": "the structured-uncertainty half of the non-scalar extension"
-    "daq_gate": "F"
-    "what_it_buys": "Kalman is the only candidate with no compute-layer-side blocker, so that half alone makes it fully admissible. Its other blocker, recursive_generation_depth, was supplied this phase. And the same extension half is the one DAQ own coupling finding says must LEAD because it is the silent one -- so this is the extension DAQ would have to do first regardless."
-    "why_the_rule_as_written_cannot_pick_it": "Kalman is not in the already-satisfied set, and the extension branch is a fallback reachable only when nothing is satisfied. convolution_1d being satisfied forecloses it."
-    "workload": "kalman_filter_linear"
-  "daq_does_not_elect": "both branches are joint acts. DAQ measured the cost and the payoff of each and states them side by side; electing between them is not DAQ to do."
-  "framing": "presenting convolution_1d as the recommendation with a caveat attached understates it. The two branches are genuinely different decisions under two different rules, and DAQ frames both rather than burying one."
 "tradeoff_recorded":
   "generality_falsification_argument": "this argument has been partly SPENT. It selected a transform because the substrate had been exercised by exactly one kernel family. The transform is now built, so the substrate has been exercised by two. convolution_1d is adjacent to the transform rather than orthogonal to it, so it falsifies less than Fourier did -- which is why this reissue's recommendation is weaker than the first issue's rather than merely different."
   "resolution": "the rule admits convolution_1d and nothing else in scope, so that is what DAQ proposes. The reissue records honestly that the rule's answer and the highest-value answer have come apart, and that closing the gap requires a paired DAQ extension the joint decision must elect."
