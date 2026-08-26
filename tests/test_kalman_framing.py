@@ -253,14 +253,28 @@ def test_the_requirements_artifact_has_not_moved_during_the_reissues():
             versions.append(digest)
 
     stability = FRAMING["requirements_artifact_stability"]
-    assert stability["verdict"] == "CONFIRMED_STABLE"
-    assert versions[0] == stability["current_in_both"].split(",")[0], (
-        "the requirements artifact moved since the stability check was recorded; the joint record "
-        "no longer binds the set the decision was reasoned over")
 
+    # THE PROPERTY IS NOT "IT NEVER MOVES". An artifact that can never move
+    # cannot record that a requirement was met, and both Kalman rows have
+    # now closed. What must hold is that it never moves UNNOTICED: whatever
+    # its current value, the joint record binds THAT value, so any reading
+    # of what blocks Kalman rests on the bytes the decision was reasoned
+    # over. Asserting CONFIRMED_STABLE pinned a period, not a property, and
+    # the period ended as intended.
     decision = loads((REPO_ROOT / "architecture" / "decisions"
                       / "2026-08-26-joint-workload-decision.yaml").read_text())
-    assert decision["requirements_artifact_hash"] == versions[0]
+    assert decision["requirements_artifact_hash"] == versions[0], (
+        "the requirements artifact moved and the joint record was not reissued with it; "
+        "the record binds a set that no longer exists")
+
+    if stability["verdict"] != "CONFIRMED_STABLE":
+        # a period that ended must say what ended it and where it went,
+        # so "it moved" can never be recorded without the reason
+        assert stability.get("moved_to") == versions[0]
+        assert stability.get("the_period_ended_on")
+        assert stability.get("what_moved_in_it")
+    else:
+        assert versions[0] == stability["current_in_both"].split(",")[0]
 
 
 def test_the_artifact_lists_TWO_daq_owned_blocking_rows_not_one():
@@ -271,7 +285,16 @@ def test_the_artifact_lists_TWO_daq_owned_blocking_rows_not_one():
     assert len(daq_rows) == 2
     assert {r["requirement"] for r in daq_rows} == {
         "structured_measurement_uncertainty", "recursive_generation_depth"}
-    assert all(r["status"] == "UNSATISFIED" for r in daq_rows)
+    # STATUS IS NOT PINNED TO A VALUE. Both rows closed; a test naming
+    # UNSATISFIED would have had to be edited in the commit that made it
+    # false. What is pinned is that a SATISFIED row carries the evidence
+    # that closed it and how the counterparty verified it, so a status
+    # cannot move without the evidence moving with it.
+    for row in daq_rows:
+        assert row["status"] in ("UNSATISFIED", "SATISFIED")
+        if row["status"] == "SATISFIED":
+            assert row.get("satisfied_by"), f"{row['requirement']}: SATISFIED names nothing"
+            assert row.get("verified_how"), f"{row['requirement']}: SATISFIED shows no check"
 
     stability = FRAMING["requirements_artifact_stability"]
     assert "NOT the last row" in stability["and_what_it_immediately_showed"]
