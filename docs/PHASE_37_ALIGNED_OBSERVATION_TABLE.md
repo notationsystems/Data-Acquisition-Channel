@@ -118,6 +118,61 @@ bool in a covariance passes a positive-semidefiniteness check while meaning
 nothing. Recorded against the covariance extension rather than left to be
 rediscovered inside it.
 
+### The string cell: a decision, made rather than inherited
+
+A concurrent session probed this gate against its *own stated rule* — "checks
+the TYPE of every identity field, not its presence" — and asked whether that
+holds for the **cell**. It didn't, and they split what they found into two
+things, which was the right split:
+
+| | table gate | scalar gate | |
+|---|---|---|---|
+| `1.5` | admissible | admissible | |
+| `"1.5"` | **admissible** | `UNTYPED_QUANTITY` | ← decision |
+| `True` | **admissible** | `UNTYPED_QUANTITY` | ← defect |
+
+They left both to the gate's author. The bool half is the defect above. The
+string half was a real question: this gate answers *alignability*, not
+fittability, so a categorical column may well be alignable without being
+numerically fittable.
+
+Decided by measuring, not by taste:
+
+```
+True     float() -> 1.0   SILENT    sum -> 2   SILENT
+"1.5"    float() -> 1.5   SILENT    sum RAISES LOUD
+"B7"     float() RAISES   LOUD      sum RAISES LOUD
+```
+
+All three separate cleanly on the loud/silent axis this repository keeps
+measuring, and the line falls between the second and third. **A categorical
+string cell is admitted** — a categorical column is a real column, the
+requirement asks for identity rather than numerics, and `float()` raises on it
+loudly. Refusing it would make this gate answer fittability, which is not its
+question. **A numeric-looking string cell is refused** — it coerces *silently*,
+so a column holding `1.5` in one observation and `"1.5"` in another merges
+under a coercing consumer and splits under a strict one, and neither says
+anything. That is the implicit-typing defect one layer in: the same class the
+always-quote rule closed, where a value's type depended on who read it.
+
+The test is `float()` itself rather than a regex, because `float()` is what a
+consumer actually calls. `"nan"` and `"inf"` fall out as a consequence — a
+sentinel absence smuggled in as text is the same forbidden encoding wearing a
+different type.
+
+**The limit this gate cannot close**, named rather than assumed: it is
+per-observation and cannot see a column. A variable whose cells are `float` in
+one observation and a categorical string in another is admissible cell by cell
+and is still a broken column. Refusing numeric-looking strings removes the case
+where that inconsistency is silent; the rest raise at the consumer. Whoever
+assembles the table owns the cross-observation check.
+
+One departure worth recording: their bool test said "if this starts failing,
+the defect has been fixed — delete this test rather than updating it." It is
+**inverted** rather than deleted, because every other closed gap here kept its
+lock as the regression surface and a deleted test cannot catch the defect
+coming back.
+
 ## What was built
 
 | file | what it is |
@@ -357,7 +412,7 @@ Performing the join is the compute layer's work.
 
 ## Verification
 
-- full DAF suite: **955 passed**
+- full DAF suite: **960 passed**
 - vendored SCOUT suite: **1273 passed**, unchanged; submodule tree clean
 - `mypy daf/ science/ boundary/ bridge/ epistemics/`: clean
 - doctrine regenerated from `architecture/*.yaml`; re-running the generator

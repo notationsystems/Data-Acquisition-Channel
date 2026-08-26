@@ -838,3 +838,133 @@ def test_a_bool_is_not_a_quantity_is_enforced_as_the_ledger_claims():
     assert UNTYPED_UNCERTAINTY in quantity_is_typed(_typed_property(uncertainty=True)).reasons
     assert table.BOOLEAN_IS_NOT_A_QUANTITY in observation_is_table_alignable(
         dict(ALIGNED_CELL, value=True)).reasons
+
+
+# ========== 10. the value cell: one decision made, one defect fixed
+#
+# A concurrent session probed this gate against its OWN stated rule --
+# "the gate checks the TYPE of every identity field, not its presence" --
+# and asked whether that holds for the CELL as well. It did not, and the
+# session split what it found into two things rather than one, which was
+# the right split:
+#
+#     value = 1.5      table: admissible    scalar: admissible
+#     value = "1.5"    table: ADMISSIBLE    scalar: UNTYPED_QUANTITY   DECISION
+#     value = True     table: ADMISSIBLE    scalar: UNTYPED_QUANTITY   DEFECT
+#
+# Both were left to this gate's author, deliberately and correctly. Both
+# are now resolved, and the tests below are their characterization tests
+# turned over to the resolved state.
+#
+# A NOTE ON THE DEPARTURE. Their bool test said "if this starts failing,
+# the defect has been fixed -- delete this test rather than updating it."
+# It is inverted rather than deleted, because every other closed gap in
+# this repository kept its lock as the regression surface, and a deleted
+# test cannot catch the defect coming back. The instruction is recorded
+# here rather than silently overridden.
+
+
+def test_DECISION_a_categorical_string_cell_is_alignable_and_a_numeric_looking_one_is_not():
+    """THE DECISION, made rather than inherited.
+
+    The question was whether a string cell is alignable, given that this
+    gate answers ALIGNABILITY and not fittability. The answer splits, and
+    the dividing line is measured rather than chosen:
+
+        True     float() -> 1.0   SILENT    sum -> 2   SILENT
+        "1.5"    float() -> 1.5   SILENT    sum RAISES LOUD
+        "B7"     float() RAISES   LOUD      sum RAISES LOUD
+
+    A categorical column is a real column, and the workload's requirement
+    asks for identity rather than for numerics -- so "B7" is admitted. A
+    numeric-looking string is refused, because it coerces silently: a
+    column holding 1.5 in one observation and "1.5" in another MERGES
+    under a coercing consumer and SPLITS under a strict one, and neither
+    says anything. That is the implicit-typing defect one layer in, the
+    same class the always-quote rule closed where a value's type depended
+    on who read it."""
+    base = {"sample_id": "s1", "variable": "v1", "unit": "m", "value": 1.5}
+    assert observation_is_table_alignable(base).admissible
+
+    for categorical in ("B7", "low", "control", "north-east"):
+        assert observation_is_table_alignable({**base, "value": categorical}).admissible, categorical
+
+    for numeric_looking in ("1.5", "3", "1e5", "-0.2", "nan", "inf"):
+        verdict = observation_is_table_alignable({**base, "value": numeric_looking})
+        assert not verdict.admissible, numeric_looking
+        assert table.NUMERIC_LOOKING_STRING_CELL in verdict.reasons
+
+    # "nan" and "inf" as STRINGS are in that list deliberately: a sentinel
+    # absence smuggled in as text is the same forbidden encoding wearing a
+    # different type, and the absence rule does not care which type it wore.
+    assert table.NUMERIC_LOOKING_STRING_CELL in observation_is_table_alignable(
+        {**base, "value": "NaN"}).reasons
+
+
+def test_the_dividing_line_is_what_a_consumer_actually_calls():
+    """`float()` is the test rather than a regex, because `float()` is
+    what a consumer actually calls -- so the gate asks the real question
+    (would this coerce without complaint?) instead of approximating it."""
+    for value in ("B7", "low", "", "  ", "1.5.2", "one"):
+        try:
+            float(value)
+            coerces = True
+        except (TypeError, ValueError):
+            coerces = False
+        admitted = observation_is_table_alignable(
+            {"sample_id": "s", "variable": "v", "value": value}).admissible
+        assert admitted is not coerces, f"{value!r}: gate and float() disagree"
+
+
+def test_FIXED_the_bool_cell_defect_the_concurrent_session_named():
+    """INVERTED from their characterization test. Their argument was that
+    the file was contradicting itself: it already excluded bool from
+    IDENTITY fields on the rationale that `isinstance(True, int)` makes a
+    bool pass any numeric check that does not name it -- reasoning about
+    bool, not about identity -- and it applies with MORE force to the
+    cell:
+
+      * a bool JOIN KEY produces a visibly wrong two-row table;
+      * a bool CELL reaches a design matrix and is summed as 1.0, with no
+        error at any layer, and the fit looks entirely healthy.
+
+    That argument was correct and the exclusion now applies to both."""
+    base = {"sample_id": "s1", "variable": "v1", "unit": "m", "value": 1.5}
+    for value in (True, False):
+        verdict = observation_is_table_alignable({**base, "value": value})
+        assert not verdict.admissible
+        assert table.BOOLEAN_IS_NOT_A_QUANTITY in verdict.reasons
+
+
+def test_the_two_gates_now_agree_on_every_shape_that_split_them():
+    """`two_gates_that_must_agree` says neither gate subsumes the other
+    and neither call may be dropped. The finding was that they DISAGREED
+    about `value`, so a caller running only the table gate -- which is the
+    gate FOR this workload -- admitted what the scalar gate refused.
+
+    Asserted as agreement over the disputed shapes rather than as a fix to
+    one of them, because agreement is the property the file claims."""
+    from science.admissibility import UNTYPED_QUANTITY
+
+    for cell in ("1.5", True, False, "3"):
+        scalar = quantity_is_typed(
+            {"value": cell, "unit": "m", "uncertainty": 0.1, "uncertainty_kind": "stated"})
+        alignable = observation_is_table_alignable(
+            {"sample_id": "s1", "variable": "v1", "value": cell})
+        assert not scalar.admissible and UNTYPED_QUANTITY in scalar.reasons
+        assert not alignable.admissible, f"the table gate still admits {cell!r}"
+
+    # ...and they still answer DIFFERENT questions, which the agreement
+    # must not be mistaken for. A categorical cell is alignable and is not
+    # a typed quantity, and that is correct on both sides.
+    categorical = {"sample_id": "s1", "variable": "v1", "value": "B7"}
+    assert observation_is_table_alignable(categorical).admissible
+    assert not quantity_is_typed({"value": "B7", "unit": "m"}).admissible
+
+
+def test_the_bool_exclusion_is_now_applied_to_identity_AND_to_the_cell():
+    """The asymmetry they named, stated as closed."""
+    base = {"sample_id": "s1", "variable": "v1", "unit": "m", "value": 1.5}
+    assert not observation_is_table_alignable({**base, "sample_id": True}).admissible
+    assert not observation_is_table_alignable({**base, "variable": True}).admissible
+    assert not observation_is_table_alignable({**base, "value": True}).admissible

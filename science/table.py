@@ -81,12 +81,29 @@ CONDITION_KEY_SHADOWS_AN_IDENTITY = "CONDITION_KEY_SHADOWS_AN_IDENTITY"
 VALUE_AND_ABSENCE_BOTH_PRESENT = "VALUE_AND_ABSENCE_BOTH_PRESENT"
 SENTINEL_ENCODED_ABSENCE = "SENTINEL_ENCODED_ABSENCE"
 BOOLEAN_IS_NOT_A_QUANTITY = "BOOLEAN_IS_NOT_A_QUANTITY"
+NUMERIC_LOOKING_STRING_CELL = "NUMERIC_LOOKING_STRING_CELL"
 POSITIONAL_IDENTITY_IS_NOT_IDENTITY = "POSITIONAL_IDENTITY_IS_NOT_IDENTITY"
 
 SAMPLE_ID = "sample_id"
 VARIABLE = "variable"
 VALUE_ABSENCE = "value_absence"
 CONDITIONS = "conditions"
+
+
+def _looks_numeric(text: str) -> bool:
+    """Whether a string cell would coerce to a number silently.
+
+    The test is `float()` itself rather than a pattern, because `float()`
+    is what a consumer actually calls -- so this asks the real question
+    ("would this coerce without complaint?") instead of approximating it.
+    Non-finite spellings are included deliberately: `"nan"` and `"inf"`
+    coerce, and a sentinel absence smuggled in as a string is the same
+    forbidden encoding wearing a different type."""
+    try:
+        float(text)
+    except (TypeError, ValueError):
+        return False
+    return True
 
 
 def _identity_is_typed(content: Mapping[str, object], key: str, missing: str, untyped: str) -> Tuple[str, ...]:
@@ -189,6 +206,33 @@ def observation_is_table_alignable(content: Mapping[str, object]) -> Admissibili
             # covariance is a matrix of cells, and a bool cell passes a
             # positive-semidefiniteness check while meaning nothing.
             reasons.append(BOOLEAN_IS_NOT_A_QUANTITY)
+        elif isinstance(value, str) and _looks_numeric(value):
+            # THE DECISION a concurrent session left to this gate's author,
+            # made here rather than inherited. The question was whether a
+            # STRING cell is alignable, given that this gate answers
+            # alignability and not fittability.
+            #
+            # Answer: a categorical string cell IS alignable and is
+            # admitted -- a categorical column is a real column and the
+            # workload's own requirement asks for identity, not for
+            # numerics. But a NUMERIC-LOOKING string is refused, and the
+            # dividing line is measured rather than chosen by taste:
+            #
+            #     True     float() -> 1.0   SILENT   sum -> 2   SILENT
+            #     "1.5"    float() -> 1.5   SILENT   sum RAISES LOUD
+            #     "B7"     float() RAISES   LOUD     sum RAISES LOUD
+            #
+            # `True` is silent on both paths and is refused above. "B7" is
+            # loud on both and is admitted. "1.5" coerces silently under
+            # float() -- so a column holding 1.5 in one observation and
+            # "1.5" in another MERGES under a coercing consumer and SPLITS
+            # under a strict one, and neither says anything.
+            #
+            # That is the implicit-typing defect one layer in: the same
+            # class the canonical YAML rule closed by always-quoting, where
+            # a value's type depended on who read it. Refusing it here is
+            # the same repair applied to a cell.
+            reasons.append(NUMERIC_LOOKING_STRING_CELL)
         elif isinstance(value, (int, float)) and not math.isfinite(value):
             # The sentinel the requirement forbids, named as what it is.
             reasons.append(SENTINEL_ENCODED_ABSENCE)

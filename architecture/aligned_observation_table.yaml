@@ -166,3 +166,34 @@ forensic_check:
   result_bare_non_finite_in_committed_files: "every hit is PROSE about this defect -- the gate sources, the tests and the records written in this phase. No emitted JSON, no artifact."
   conclusion: "nothing was persisted, no id was minted over one, and there is nothing to recover. The finding is forward-only, which is the same answer the covariance check returned."
   consistent_with: "architecture/invariants.yaml migration, which recorded committed_records_in_repository as 0 by inspection -- re-verified here rather than assumed."
+
+# ============================== the value cell: one decision, one defect ==
+#
+# Found by a concurrent session probing this gate against its OWN stated
+# rule -- "the gate checks the TYPE of every identity field, not its
+# presence" -- and asking whether that also holds for the CELL. It did
+# not. That session split what it found into two things rather than one,
+# which was the right split, and left both to this gate's author. Both are
+# now resolved and this records how.
+value_cell_typing:
+  "how_it_was_found": "by probing the gate against its own stated rule rather than against its tests. Same method that found the fourier_transform_1d canonical-encoding defect in a fully-validated operation."
+  "the_measurement_that_opened_it": "value=1.5 admitted by both gates; value='1.5' and value=True admitted by observation_is_table_alignable and refused by quantity_is_typed as UNTYPED_QUANTITY"
+  "split_deliberately_and_correctly": "carrying them together would have handed the author two decisions when there was one decision and one defect"
+
+  "the_defect_the_bool_cell":
+    "status": FIXED
+    "the_contradiction_named": "this file already excluded bool from IDENTITY fields, on the rationale that isinstance(True, int) is True so a bool passes any numeric check that does not name it. That reasoning is about BOOL, not about identity, and applying it to identity and not to the cell was one design contradicting itself."
+    "it_applies_with_more_force_to_the_cell": "a bool JOIN KEY produces a two-row table, which is visibly wrong. A bool CELL reaches a design matrix and is summed as 1.0, with no error at any layer, and the fit looks entirely healthy."
+    "the_files_own_rule_it_broke": "two_gates_that_must_agree -- neither gate subsumes the other and neither call may be dropped, yet they disagreed here, so a caller running only the table gate (the gate FOR this workload) admitted it."
+    "fix": "BOOLEAN_IS_NOT_A_QUANTITY, and the matching UNTYPED_UNCERTAINTY in the scalar gate, where a bool uncertainty was also measured admissible."
+
+  "the_decision_the_string_cell":
+    "status": DECIDED
+    "question_as_posed": "is a categorical column alignable? A categorical column can be alignable without being numerically fittable, and this gate answers ALIGNABILITY rather than fittability."
+    "answer": "a categorical string cell IS alignable and is admitted. A NUMERIC-LOOKING string cell is refused."
+    "the_dividing_line_is_measured_not_chosen": "True coerces silently under float() AND sums silently. The string 1.5 coerces silently under float() but raises under sum. The string B7 raises under both. So the three separate cleanly on the loud-versus-silent axis this repository keeps measuring, and the line falls between the second and the third."
+    "why_a_numeric_looking_string_is_refused": "it coerces silently, so a column holding 1.5 in one observation and the string 1.5 in another MERGES under a coercing consumer and SPLITS under a strict one -- and neither says anything. That is the implicit-typing defect one layer in: the same class the always-quote rule closed, where a value's type depended on who read it."
+    "why_a_categorical_string_is_admitted": "a categorical column is a real column, the workload's requirement asks for identity rather than for numerics, and float() raises on it loudly. Refusing it would make this gate answer fittability, which is not its question and would quietly decide a modelling matter."
+    "the_test_is_float_itself_not_a_pattern": "float() is what a consumer actually calls, so the gate asks the real question -- would this coerce without complaint -- instead of approximating it with a regex. Non-finite spellings are caught as a consequence: the strings nan and inf coerce, and a sentinel absence smuggled in as text is the same forbidden encoding wearing a different type."
+
+  "the_limit_this_gate_cannot_close": "it is a PER-OBSERVATION gate and cannot see a column. A variable whose cells are float in one observation and a categorical string in another is admissible cell by cell and is still a broken column. Refusing numeric-looking strings removes the case where that inconsistency is SILENT; the remaining cases raise at the consumer. Whoever assembles the table owns the cross-observation check, and it is named here rather than assumed."
