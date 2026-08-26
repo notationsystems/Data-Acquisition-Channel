@@ -127,8 +127,10 @@ def test_the_reissue_chain_is_recorded_rather_than_overwritten():
     reissue = PROPOSAL["reissue"]
     assert reissue["issue"] >= 3
     assert len(reissue["previous_issues"]) == reissue["issue"] - 1
-    assert reissue["did_the_decision_move"] is True
-    assert "5447df3" in reissue["reason"] and "edfc2dc" in reissue["reason"]
+    assert isinstance(reissue["did_the_decision_move"], bool)
+    # Issue 4 was the one the re-measure moved; the chain must still show it.
+    moved = [i for i in reissue["previous_issues"] if i.get("did_the_recommendation_move")]
+    assert moved or reissue["did_the_decision_move"], "the chain must record where it moved"
 
 
 def test_the_recommendation_rests_on_the_remeasured_matrix():
@@ -139,11 +141,36 @@ def test_the_recommendation_rests_on_the_remeasured_matrix():
 def test_it_is_a_proposal_and_says_so():
     """The correction this file exists to lock: one party with read-only
     access to the other must not author a two-party decision."""
-    assert PROPOSAL["status"] == "proposed"
+    assert PROPOSAL["status"] in ("proposed", "superseded_by_the_joint_decision_record")
     authority = " ".join(PROPOSAL["authority"]).lower()
     assert "not the joint decision" in authority
     assert "read-only" in authority
     assert "what_would_make_this_a_decision" in PROPOSAL
+
+
+def test_when_superseded_it_names_the_record_and_daqs_position_on_it():
+    """A superseded proposal that does not say what superseded it, or
+    where DAQ disagrees, has been silently discarded rather than closed."""
+    if PROPOSAL["status"] != "superseded_by_the_joint_decision_record":
+        pytest.skip("not yet superseded")
+    superseded = PROPOSAL["superseded_by"]
+    record = REPO_ROOT / superseded["record"]
+    assert record.exists(), "the superseding record must be held here, not merely cited"
+    assert "read-only mirror" in superseded["owner"]
+    assert "selection_rule_defect" in superseded["daq_position_on_it"]
+
+
+def test_the_actual_choice_is_framed_as_two_branches_not_one_with_a_caveat():
+    """Presenting the near-zero-cost branch as the recommendation and the
+    high-leverage branch as a caveat understates the decision."""
+    choice = PROPOSAL["the_actual_choice"]
+    a, b = choice["branch_a_current_rule"], choice["branch_b_corrected_rule"]
+    assert a["workload"] != b["workload"]
+    assert a["daq_extension"] == "none" and b["daq_extension"] != "none"
+    assert a["daq_gate"] == "A" and b["daq_gate"] == "F"
+    assert "not daq to do" in choice["daq_does_not_elect"].lower()
+    # The high-leverage branch must state what makes it reachable at all.
+    assert "no compute-layer" in b["cost"].lower() or "NO compute-layer" in b["cost"]
 
 
 def test_the_requirements_artifact_is_declared_a_read_only_mirror():

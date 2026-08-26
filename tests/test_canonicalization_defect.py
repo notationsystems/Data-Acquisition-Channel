@@ -13,16 +13,15 @@ one member of a class, and the actual defect is the spec's scalar rule:
 "strings double-quoted ALWAYS". See
 `architecture/canonicalization_defect.yaml`.
 
-`architecture/exchange/canonical_yaml.py` is byte-identical to the
-compute layer's copy BY AGREEMENT, and that agreement is what makes any
-hash meaningful, so it is NOT patched here -- the fix must land in both
-repositories together and reissue every digest. These tests do two
-things in the meantime:
+RESOLVED. The coordinated reissue landed: the compute layer authored the
+corrected emitter citing this repository's measurement, and it was adopted
+here byte-identically rather than reimplemented. Every digest moved in one
+step -- both artifacts, both sidecars, the agreement fixture.
 
-  1. measure and lock the exact failure class, so it cannot be
-     misremembered as a date bug or silently widen;
-  2. enforce, over every committed artifact, that both parsers yield
-     identical TYPED structures -- not merely identical bytes.
+These tests were characterization locks on an OPEN defect. They fired when
+the serializer changed, which is what they were for, and are now inverted:
+they lock the class CLOSED, so a regression would be caught the same way
+the defect was.
 """
 
 from __future__ import annotations
@@ -48,10 +47,13 @@ DEFECT = loads((ARCHITECTURE / "canonicalization_defect.yaml").read_text())
 # Every committed artifact whose bytes a hash is, or will be, taken over.
 HASH_BEARING = sorted(EXCHANGE.glob("*.yaml")) + sorted((ARCHITECTURE / "proposals").glob("*.yaml"))
 
-# The scalars measured to diverge under the CURRENT shared serializer.
-DIVERGING = ("2026-08-25", "2026-08-25T12:00:00Z", "1:30:00", "0x1F", ".inf", ".nan")
+# The scalars that diverged under the PRE-FIX serializer. They are kept by
+# name because the class must stay closed for exactly these, not merely for
+# whatever a future test happens to think of.
+FORMERLY_DIVERGING = ("2026-08-25", "2026-08-25T12:00:00Z", "1:30:00", "0x1F", ".inf", ".nan")
 
-# Scalars that happen to survive today, several only incidentally.
+# Scalars that survived even before the fix -- several only incidentally,
+# which is why "they pass" was never evidence the class was closed.
 CURRENTLY_SAFE = (
     "yes", "no", "on", "off", "null", "~", "0o777", "1.2", "1.2.3",
     "007", "+5", "1_000", "", "True", "12345", "3.14", "false",
@@ -70,17 +72,18 @@ def _round_trips_as_a_string(text, original):
 # ------------------------------------------- the class, measured and locked
 
 
-@pytest.mark.parametrize("scalar", DIVERGING)
-def test_each_known_diverging_scalar_still_diverges(scalar):
-    """A characterization lock. If one of these starts passing, the
-    shared serializer changed -- which re-hashes every artifact and must
-    be a coordinated reissue, not a silent improvement."""
+@pytest.mark.parametrize("scalar", FORMERLY_DIVERGING)
+def test_each_formerly_diverging_scalar_now_round_trips(scalar):
+    """Inverted from a lock on the open defect to a lock on the closed
+    class. Each of these once parsed to a different TYPE under the two
+    parsers from identical bytes; under the corrected emitter each is
+    quoted and each round-trips as a string."""
     text = canonical_dump({"k": scalar})
-    assert not _round_trips_as_a_string(text, scalar), (
-        f"{scalar!r} no longer diverges -- the shared serializer changed. Every artifact digest "
-        "must be reissued in the same coordinated step; update "
-        "architecture/canonicalization_defect.yaml rather than this assertion."
+    assert _round_trips_as_a_string(text, scalar), (
+        f"{scalar!r} diverges again -- the corrected emitter regressed, or this repository's "
+        "serializer drifted from the compute layer's byte-identical copy"
     )
+    assert '"' in text, f"{scalar!r} must be emitted quoted, not bare"
 
 
 @pytest.mark.parametrize("scalar", CURRENTLY_SAFE)
@@ -89,13 +92,18 @@ def test_scalars_that_currently_survive_still_survive(scalar):
     assert _round_trips_as_a_string(text, scalar), f"{scalar!r} regressed into the divergence class"
 
 
-def test_the_divergence_class_is_exactly_what_is_recorded():
-    """The recorded count must match the measurement, so the artifact
-    cannot drift away from reality."""
-    measured = [s for s in DIVERGING + CURRENTLY_SAFE
+def test_no_scalar_diverges_under_the_corrected_serializer():
+    """The class, measured closed rather than asserted closed."""
+    measured = [s for s in FORMERLY_DIVERGING + CURRENTLY_SAFE
                 if not _round_trips_as_a_string(canonical_dump({"k": s}), s)]
-    assert sorted(measured) == sorted(DIVERGING)
-    assert DEFECT["measured_failure_class"]["scalars_that_diverge"] == len(DIVERGING)
+    assert measured == [], f"still diverging: {measured}"
+    assert DEFECT["resolution"]["divergences_after"] == 0
+
+
+def test_the_historical_class_is_still_recorded_at_its_measured_size():
+    """The defect artifact keeps what WAS measured. A resolved defect that
+    forgets its own size cannot be checked for regression."""
+    assert DEFECT["measured_failure_class"]["scalars_that_diverge"] == len(FORMERLY_DIVERGING)
 
 
 def test_the_prescribed_fix_closes_the_entire_class():
@@ -106,7 +114,7 @@ def test_the_prescribed_fix_closes_the_entire_class():
         escaped = value.replace("\\", "\\\\").replace('"', '\\"')
         return f'k: "{escaped}"\n'
 
-    unfixed = [s for s in DIVERGING + CURRENTLY_SAFE
+    unfixed = [s for s in FORMERLY_DIVERGING + CURRENTLY_SAFE
                if not _round_trips_as_a_string(always_quoted(s), s)]
     assert unfixed == [], f"always-quoting did not close: {unfixed}"
     assert DEFECT["fix_is_verified"]["divergences_after"] == 0
@@ -116,14 +124,36 @@ def test_it_is_recorded_as_a_class_not_as_a_date_bug():
     summary = DEFECT["summary"].lower()
     assert "class" in summary
     assert "always" in summary
-    assert DEFECT["status"] == "measured_open_requires_coordination"
+    assert DEFECT["status"] == "resolved_coordinated_reissue_landed"
 
 
-def test_the_shared_serializer_was_not_patched_unilaterally():
-    """Editing it on one side breaks the agreement that makes every hash
-    meaningful. The reason is recorded, not just the fact."""
+def test_the_reissue_moved_every_digest_in_one_step():
+    """The blast radius the artifact predicted, checked against what
+    actually happened."""
+    resolution = DEFECT["resolution"]
+    assert len(resolution["digests_reissued"]) == 3, "artifacts and the fixture all move together"
+    assert "byte-identical" in resolution["landed"]
+    assert "adopted here byte-identically rather than reimplemented" in resolution["authored_by"]
+
+
+def test_the_serializer_is_byte_identical_to_the_compute_layers_copy():
+    """The agreement that makes any hash mean anything, re-verified after
+    the reissue rather than assumed to have survived it."""
+    upstream = Path("/home/user/scientific-compute-layer-scl-/architecture/exchange/canonical_yaml.py")
+    if not upstream.exists():
+        pytest.skip("the compute-layer checkout is not present in this environment")
+    local = EXCHANGE / "canonical_yaml.py"
+    assert local.read_bytes() == upstream.read_bytes(), (
+        "the two repositories' serializers have drifted -- every digest on both sides is suspect"
+    )
+
+
+def test_the_fix_was_coordinated_rather_than_unilateral():
+    """Patching one side would have broken the agreement that makes every
+    hash meaningful. The record keeps why, now that the fix has landed."""
     assert "byte-identical" in DEFECT["why_not_patched_here"]
     assert DEFECT["blast_radius_if_applied"], "a coordinated fix must state what it re-hashes"
+    assert len(DEFECT["blast_radius_if_applied"]) >= len(DEFECT["resolution"]["digests_reissued"])
 
 
 # ------------------------------- every committed artifact, typed comparison
@@ -190,19 +220,19 @@ def test_the_fix_is_emitter_side_not_reader_normalization():
 
 
 def test_byte_equality_alone_would_have_passed_the_date_bug():
-    """Why the verification step must compare typed structures. A single
-    emitter produces one byte string; comparing it to itself proves
-    nothing about how a second parser will TYPE it."""
-    text = canonical_dump({"k": "2026-08-25"})
+    """Why the verification step compares typed structures. Reconstructed
+    against the PRE-FIX emission, since the corrected emitter no longer
+    produces it -- the demonstration has to outlive the defect."""
+    pre_fix_bytes = "k: 2026-08-25\n"          # what the old emitter produced
+    post_fix = canonical_dump({"k": "2026-08-25"})
+    assert post_fix != pre_fix_bytes, "the corrected emitter must quote it"
 
-    # The check that would have passed, and did, for issue 1 of the spec.
-    assert text == canonical_dump({"k": "2026-08-25"}), "byte comparison is satisfied"
+    # Byte comparison against itself: satisfied then, and useless.
+    assert pre_fix_bytes == "k: 2026-08-25\n"
 
-    # The check that actually catches it.
-    assert loads(text) != yaml.safe_load(text), (
-        "typed comparison must see what byte comparison cannot"
-    )
-    assert not _round_trips_as_a_string(text, "2026-08-25")
+    # Typed comparison: catches what byte comparison cannot.
+    assert loads(pre_fix_bytes) != yaml.safe_load(pre_fix_bytes)
+    assert _round_trips_as_a_string(post_fix, "2026-08-25"), "and the fix closes it"
 
 
 def test_the_recorded_verification_step_demands_typed_structures():

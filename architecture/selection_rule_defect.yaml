@@ -1,0 +1,44 @@
+"artifact": "selection_rule_defect"
+"extends": "core@1.0.0"
+"owner": "joint -- the rule governs both repositories' shared gate"
+"process_finding":
+  "mitigations_not_yet_chosen":
+    - "shorten gate latency so it is under the build latency of what it gates"
+    - "re-measure the other repository's head as the FIRST step of writing any decision, not as reconnaissance done once at phase start"
+    - "let a decision record name a commit it was measured against and refuse to bind when the head has moved -- the same discipline the artifact digests already enforce for content"
+  "observable_symptom": "the joint decision record at 2026-08-26 selects fourier_transform_1d, which is already built. Its rationale reasons about generality falsification and validation quality as though choosing among unbuilt options. The reasoning is sound and the referent is stale."
+  "summary": "the workload did not lose; the phase did"
+  "what_happened": "the gate was designed to select an UNBUILT workload. While it was blocked on exchange artifacts and their canonicalization, the compute layer built fourier_transform_1d. By the time the gate could run, its intended winner was complete."
+  "why_this_is_a_process_defect_not_an_accident": "nothing about the sequence was unusual. Reconnaissance, exchange, canonicalization repair and a decision record are all necessary, and their combined latency exceeded the time it took the other repository to build the thing being gated. A gate slower than the work it gates will be overtaken again, and the second time will look exactly like the first."
+"proposed_correction":
+  "not_yet_applied": "this is DAQ's finding about a rule both repositories share. Changing a joint selection rule is a joint act, and the same authorship constraint applies to it as to a decision record. Recorded for the next joint reissue, not applied unilaterally."
+  "rule": "compare leverage-per-cost ACROSS BOTH BRANCHES rather than filtering to the already-satisfied set first. A blocked high-leverage workload may beat an unblocked low-leverage one when the unblocking extension is small."
+  "what_changes": "satisfied-ness stops dominating leverage. It becomes a COST term -- zero for an already satisfied workload, the size of the extension otherwise -- instead of a filter applied before leverage is consulted."
+  "what_stays":
+    - "an extension still requires a named consuming workload -- that constraint was never the defect and is what stops speculative representation work"
+    - "a workload whose requirements DAQ marks absent still cannot be selected WITHOUT the paired extension that supplies them"
+"relationship_to_the_joint_decision_record": "this artifact does not overturn the compute layer's 2026-08-26 joint decision record, which is committed in its own repository and mirrored here. It records DAQ's measured position that the rule that record applied is defective and that the record's selected workload was already built when it was selected. Both are inputs to the next reissue, not unilateral corrections to a joint artifact."
+"status": "measured_open"
+"summary": "The joint selection rule is miscalibrated, and this phase is the evidence rather than an argument for it. A rule that reliably prefers a near-zero-cost adjacent workload over the one that advances the substrate is not merely in tension with leverage; it is ordering on the wrong quantity."
+"the_measured_instance":
+  "admitted_by_the_rule": "convolution_1d"
+  "excluded_by_the_rule":
+    - "kalman_filter_linear"
+    - "least_squares"
+    - "pca"
+  "what_the_exclusion_costs": "the entire linear-algebra family, which is the substrate's largest unexplored region and the one with the strongest primitive reuse"
+  "why_it_is_marginal": "zero blocking requirements on either side, and adjacent to the transform that was just built -- it shares the reduction shape of the existing kernel and is implementable THROUGH the transform via the convolution theorem. It advances neither generality (the substrate has now been exercised by two families and convolution adds no third) nor reuse (its primitives are the ones already paid for)."
+"the_rule_as_written": "select the highest-leverage workload whose observation requirements are ALREADY satisfied by DAQ, and extend DAQ only for a named consuming workload"
+"the_sharpest_case_against_the_rule":
+  "and_the_same_extension_carries_two_more": "the other half, multivariate value with stable variable identity, is the shared DAQ blocker of BOTH least_squares and pca. So one extension clears the DAQ side of three workloads; Kalman needs nothing further, and the other two then need only the compute-layer linear-algebra family. That is a leverage argument the stale matrix could not produce and the current rule cannot act on."
+  "measured":
+    - "its blockers are BOTH DAQ-owned -- it is the only candidate with no compute-layer-side blocker at all, so no linear-algebra family has to be built for it to become admissible"
+    - "one of its two blockers, recursive_generation_depth, was SUPPLIED this phase: generation_depth_bounded was corrected from vacuously_enforced to represented_unenforced with its semantic domain fixed to evidence lineage rather than iteration count"
+    - "its one remaining blocker is structured_measurement_uncertainty"
+    - "and that is exactly the half of the non-scalar extension DAQ's own coupling finding says must LEAD, because it is the silent half -- closing the multivariate half first converts a loud gate refusal into a silent late TypeError"
+  "the_result": "the half of the extension that must go first for reasons internal to DAQ's own measured coupling is precisely the half that makes Kalman fully admissible. One extension half, one workload fully unblocked, and no compute-layer work required. The rule cannot see this, because Kalman is not in the already-satisfied set and the extension branch is a fallback it never reaches."
+  "workload": "kalman_filter_linear"
+"why_it_is_backwards":
+  - "Satisfied-ness is a GATE and leverage is a TIE-BREAK. The rule filters to the already-satisfied set first and only ranks by leverage inside it, so a blocked high-leverage workload can never beat an unblocked low-leverage one no matter how small the unblocking extension is."
+  - "The extension branch is a FALLBACK, reachable only when nothing at all is satisfied. So the rule cannot compare a small extension against a marginal already-satisfied option -- it never puts them on the same axis."
+  - "The consequence is that the rule's answer degrades as the substrate improves: every workload built moves the frontier, leaving the already-satisfied set populated by whatever is adjacent to what was just done, which is by construction the option that generalizes least."

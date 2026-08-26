@@ -3,7 +3,8 @@
 *(Continues from `ca3d0aa`. Coordinated DAQ/SCL phase, run as the brief's three stages:
 parallel reconnaissance → requirement/capability exchange → one joint decision.)*
 
-**DAQ's proposal (issue 3): build `convolution_1d`; `daq_extension: none`.**
+**Joint decision (SCL-authored, mirrored here): `fourier_transform_1d`, `daq_extension: none`.**
+**DAQ's proposal is issue 5 and frames the choice the rule could not pose.**
 
 Recorded in `architecture/proposals/2026-08-25-daq-workload-proposal.yaml`, carrying the
 SHA-256 of both exchange artifacts.
@@ -196,43 +197,81 @@ leverage and DAQ cannot elect it alone: its blockers split across both repositor
 exactly the shape the joint rule's second clause addresses. Framing that choice is DAQ's job;
 making it is not.
 
-## Canonicalization — the defect is a class, not a date bug
+## Canonicalization — resolved by coordinated reissue
 
-My earlier report called this an ISO-date divergence. That was too narrow, and the actual
-defect is the spec's scalar rule. YAML implicit type resolution lets two conformant parsers
-agree on the bytes and disagree on the **type** — so a byte-identical artifact can hash-bind a
-different typed structure on each side, which is exactly what pinning was meant to prevent.
+The defect was a **class**, not the ISO-date bug I first reported: 6 of 20 scalars diverged
+(date, datetime, sexagesimal `1:30:00`, hex `0x1F`, `.inf`, `.nan`), and the passing ones passed
+*incidentally* — `0o777` only because PyYAML's 1.1 resolver doesn't know that form.
 
-Measured against the shared serializer, **6 of 20 scalars diverge**, not one:
+**The coordinated reissue landed.** SCL authored the corrected emitter citing this repository's
+measurement; DAQ adopted it **byte-identically rather than reimplementing it**. Every digest
+moved in one step, as the recorded blast radius predicted:
 
-| Scalar | This repo's reader | PyYAML |
-|---|---|---|
-| `2026-08-25` | `str` | `datetime.date` |
-| `2026-08-25T12:00:00Z` | `str` | `datetime.datetime` |
-| `1:30:00` | `str` | `int 5400` (sexagesimal) |
-| `0x1F` | `str` | `int 31` |
-| `.inf` | `str` | `float inf` |
-| `.nan` | `str` | `float nan` |
+| Artifact | New digest |
+|---|---|
+| `daq_capabilities.yaml` | `sha256:d985e1a3…` |
+| `scl_requirements.yaml` | `sha256:0ce4753c…` |
+| `canonicalization_fixture.yaml` | `sha256:11521f5b…` |
 
-`yes`/`no`/`on`/`off`, `null`, `~`, `007`, `1_000` pass **incidentally** — caught by the
-emitter's numeric-and-reserved-word checks, not by a rule closing the class. `0o777` passes
-only because PyYAML's 1.1 resolver doesn't recognise the `0o` form.
+Verified after the reissue: serializer, fixture, requirements mirror and decision mirror are all
+byte-identical across the two repositories, and **all 23 scalars round-trip with zero
+divergences**. The fix is emitter-side (`"k": "2026-08-25"`, quoted); a reader-side normalization
+would have made an artifact's meaning depend on which reader opened it.
 
-The corrected rule — **strings always double-quoted**, not "only where required" — was measured
-to close **all 23** tested scalars, every current divergence included. And the two-parser check
-is promoted from something I happened to do into a required step, compared on **typed
-structures rather than bytes**, because byte comparison cannot see this class at all.
+The characterization locks **fired as designed** when the serializer changed, with the message
+telling the next reader to update the artifact rather than the assertion. They are now inverted
+to lock the class *closed*, plus a new test asserting the two serializers stay byte-identical —
+if they ever drift, every digest on both sides is suspect.
 
-**The shared serializer was not patched.** `architecture/exchange/canonical_yaml.py` is
-byte-identical to SCL's copy *by agreement*, and that agreement is what makes any hash
-meaningful. Editing it on one side would break the agreement and silently re-hash every
-artifact already committed against it — both exchange artifacts, the agreement fixture itself,
-and every digest reference. Recorded in `architecture/canonicalization_defect.yaml` with its
-blast radius; the fix must land in both repositories in one coordinated reissue.
+## The rule is defective, not merely in tension
 
-Interim mitigation is enforced, not promised: `tests/test_canonicalization_defect.py` locks the
-exact class, proves the prescribed fix closes it, and checks every hash-bearing artifact both
-for cross-parser *typed* agreement and for absence of any diverging scalar shape.
+Recorded in `architecture/selection_rule_defect.yaml`.
+
+The rule reads: *select the highest-leverage workload whose requirements are ALREADY satisfied,
+extend only as fallback.* **Satisfied-ness is a gate; leverage is only a tie-break inside it.** So
+a blocked high-leverage workload can never beat an unblocked low-leverage one however small the
+unblocking extension is — the two are never on the same axis.
+
+Its answer *degrades as the substrate improves*: each build leaves the satisfied set populated by
+whatever is adjacent to what was just done, which is by construction what generalizes least.
+
+**The measured instance.** The rule admits `convolution_1d` — zero cost, adjacent to the transform
+just built, implementable *through* it, adding no third family and no unpaid primitive. It excludes
+the entire linear-algebra family.
+
+**The sharpest case against it** is Kalman, and it is sharper than a tension:
+
+- Both its blockers are **DAQ-owned** — the only candidate with *no* SCL-side blocker, so no
+  linear-algebra family need be built for it.
+- One blocker, `recursive_generation_depth`, **was supplied this phase**.
+- Its one remaining blocker is `structured_measurement_uncertainty` — which is exactly the half of
+  the non-scalar extension **DAQ's own coupling finding says must LEAD**, because it is the silent
+  half (closing the multivariate half first turns a loud gate refusal into a silent late `TypeError`).
+
+So the half that must go first for reasons internal to DAQ's own measurement is precisely the half
+that makes Kalman fully admissible — and the *other* half is the shared blocker of `least_squares`
+and `pca`. **One extension clears the DAQ side of three workloads.** The rule cannot act on this,
+because Kalman isn't in the satisfied set and the extension branch is a fallback it never reaches.
+
+**Proposed correction:** compare leverage-per-cost *across both branches*. Satisfied-ness becomes a
+cost term (zero when satisfied, the extension's size otherwise) rather than a filter applied before
+leverage is consulted. The named-consuming-workload constraint stays — that was never the defect.
+Not applied unilaterally: changing a joint rule is a joint act.
+
+## The workload didn't lose — the phase did
+
+The gate was built to select an **unbuilt** workload. While it was blocked on exchange artifacts
+and their canonicalization, SCL built `fourier_transform_1d`. By the time the gate could run, its
+intended winner was complete.
+
+The symptom is visible in the joint record: it selects `fourier_transform_1d` and reasons about
+generality falsification and validation quality *as though choosing among unbuilt options*. The
+reasoning is sound; the referent is stale.
+
+Nothing about the sequence was unusual — reconnaissance, exchange, canonicalization repair and a
+decision record are all necessary. Their combined latency simply exceeded the build latency of the
+thing being gated. **A gate slower than the work it gates will be overtaken again**, and the second
+time will look exactly like the first.
 
 ## The concurrent session
 
@@ -345,7 +384,7 @@ migration rules were needed and none were invented.
 | `tests/test_canonicalization_defect.py` | **38 passed** (new) |
 | `tests/test_daq_workload_proposal.py` | **25 passed** (new) |
 | `tests/test_recursive_lineage_depth.py` | **17 passed** (new) |
-| DAF full suite | **842 passed** |
+| DAF full suite | **847 passed** |
 | Vendored SCOUT suite | 1273 passed, unchanged |
 | Submodule | clean |
 | SCL clone | untouched, `git status --porcelain` empty |
