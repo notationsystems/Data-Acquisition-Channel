@@ -109,6 +109,7 @@ from evidence.types import (
 from daf.storage import serialization
 from daf.storage.blob_store import BlobStore
 from daf.storage.metadata_index import MetadataIndex
+from daf.storage.serialization import strict_json_loads
 
 T = TypeVar("T")
 
@@ -161,7 +162,7 @@ class FilesystemEvidenceStore:
             # payload-equality comparison would be wrong here. Propagates
             # serialization.ArtifactIdentityMismatch if the on-disk file was
             # corrupted or tampered with, independent of this write.
-            from_dict(json.loads(final_path.read_text()))
+            from_dict(strict_json_loads(final_path.read_text()))
             return  # existing file already validly represents this id -- nothing to do
 
         tmp_path = directory / f"{artifact_id}.json.tmp"
@@ -180,14 +181,14 @@ class FilesystemEvidenceStore:
     def _read_all(self, category: str) -> Tuple[dict, ...]:
         directory = self.root / category
         return tuple(
-            json.loads(path.read_text()) for path in sorted(directory.glob("*.json"))
+            strict_json_loads(path.read_text()) for path in sorted(directory.glob("*.json"))
         )
 
     def _read_one(self, category: str, artifact_id: str) -> dict:
         path = self.root / category / f"{artifact_id}.json"
         if not path.exists():
             raise KeyError(f"no {category[:-1]} persisted under id {artifact_id!r}")
-        return json.loads(path.read_text())
+        return strict_json_loads(path.read_text())
 
     def _has(self, category: str, artifact_id: str) -> bool:
         return (self.root / category / f"{artifact_id}.json").exists()

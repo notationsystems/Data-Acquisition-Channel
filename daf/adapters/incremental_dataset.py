@@ -31,6 +31,7 @@ from pathlib import Path
 from typing import Optional, Tuple
 
 from scout.interface import RawDocument
+from daf.storage.serialization import NonJsonConstantError, strict_json_loads
 
 _SEQUENCE_WIDTH = 12  # generous zero-padding -- string and numeric ordering
                        # agree for any realistic sequence range at this width
@@ -102,9 +103,16 @@ class IncrementalDatasetSourceAdapter:
             raise IncrementalDatasetFetchError(f"could not read dataset file {self.path}: {exc}") from exc
 
         try:
-            records = json.loads(raw_text)
+            records = strict_json_loads(raw_text)
         except json.JSONDecodeError as exc:
             raise IncrementalDatasetFetchError(f"{self.path} is not valid JSON") from exc
+        except NonJsonConstantError as exc:
+            # A bare NaN/Infinity. Refused HERE rather than at the
+            # json.dumps below, for two measured reasons: the dumps
+            # ValueError escapes this adapter's own error type and does
+            # not name the file, and a record filtered out before it
+            # reaches dumps never triggers it at all.
+            raise IncrementalDatasetFetchError(f"{self.path} is not valid JSON: {exc}") from exc
         if not isinstance(records, list):
             raise IncrementalDatasetFetchError(f"{self.path} must contain a JSON array of records")
 

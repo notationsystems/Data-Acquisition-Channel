@@ -26,6 +26,7 @@ from epistemics.evidence_class import (
     assignment_from_dict,
     assignment_to_dict,
 )
+from daf.storage.serialization import strict_json_loads
 
 _DIRECTORY = "evidence_classes"
 
@@ -43,7 +44,7 @@ class ClassAssignmentStore:
     def all_assignments(self) -> Tuple[EvidenceClassAssignment, ...]:
         found = []
         for path in sorted(self.root.glob("*.json")):
-            payload = json.loads(path.read_text())
+            payload = strict_json_loads(path.read_text())
             assignment = assignment_from_dict(payload)
             if path.stem != assignment.id:
                 raise ValueError(

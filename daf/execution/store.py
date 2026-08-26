@@ -38,6 +38,7 @@ from daf.execution.record import (
     execution_record_from_dict,
     execution_record_to_dict,
 )
+from daf.storage.serialization import strict_json_loads
 
 
 class ExecutionRecordStore:
@@ -51,7 +52,7 @@ class ExecutionRecordStore:
 
     def get(self, execution_id: str) -> ExecutionRecord:
         path = self.root / f"{execution_id}.json"
-        return execution_record_from_dict(json.loads(path.read_text()))
+        return execution_record_from_dict(strict_json_loads(path.read_text()))
 
     def has(self, execution_id: str) -> bool:
         return (self.root / f"{execution_id}.json").exists()
@@ -59,7 +60,7 @@ class ExecutionRecordStore:
     def all_records(self) -> Tuple[ExecutionRecord, ...]:
         records = []
         for path in sorted(self.root.glob("*.json")):
-            record = execution_record_from_dict(json.loads(path.read_text()))
+            record = execution_record_from_dict(strict_json_loads(path.read_text()))
             if path.stem != record.id:
                 raise ValueError(f"execution stored as {path.stem!r} identifies as {record.id!r}")
             records.append(record)
@@ -93,7 +94,7 @@ class QuarantineStore:
     def all_records(self) -> Tuple[QuarantineRecord, ...]:
         records = []
         for path in sorted(self.root.glob("*.json")):
-            record = quarantine_record_from_dict(json.loads(path.read_text()))
+            record = quarantine_record_from_dict(strict_json_loads(path.read_text()))
             if path.stem != record.id:
                 raise ValueError(f"quarantine stored as {path.stem!r} identifies as {record.id!r}")
             records.append(record)

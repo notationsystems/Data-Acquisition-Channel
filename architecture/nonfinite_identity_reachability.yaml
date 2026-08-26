@@ -1,0 +1,96 @@
+# Whether any Observation.id already stored was minted over bytes that are
+# not JSON -- and, separately, whether such an id could be recomputed and
+# whether anything referenced one. Both questions answered by measurement
+# against the running code and by an exhaustive scan of stored bytes, not
+# by inspection of the gate that was supposed to prevent them.
+#
+# THIS FILE RECORDS DETERMINATIONS, NOT A SCHEMA -- the same discipline as
+# architecture/condition_provenance_reachability.yaml and its siblings.
+#
+# THE QUESTION WAS ASKED IN A FORM THE ANSWER DID NOT FIT. It was put as
+# "does anything already stored have an id that CANNOT BE RECOMPUTED".
+# Measured, such an id recomputes perfectly and passes the repository's own
+# integrity check. The defect is not that recomputation fails. It is that
+# recomputation succeeds HERE and is impossible ANYWHERE ELSE, which the
+# original phrasing would have scored as a clean pass. Recorded in the form
+# the measurement took rather than the form the question took.
+extends: core@1.0.0
+
+verdicts:
+  reachable_and_stored: "a non-finite value reached identity minting AND its bytes are on disk now"
+  reachable_not_stored: "the path admits it today, but no stored bytes contain one"
+  closed_at_the_writer: "the emitting side refuses it"
+  closed_at_the_reader: "the consuming side refuses it"
+  half_gated: "one side of a read/write pair refuses and the other admits -- the shape this forensic was opened to look for"
+
+# ------------------------------------------------------- what was asked --
+
+question_as_posed: "a NaN value mints an Observation.id over invalid strict JSON and persists as literal NaN. Closing the gate is forward-only; the question is whether anything already stored has an id that cannot be recomputed, and whether any such id was referenced."
+
+# ------------------------------------------------- the forensic sweep --
+
+stored_bytes_sweep:
+  scope: "every .json/.jsonl/.ndjson file under the repository excluding vendor/, tracked and untracked alike"
+  files_scanned: 23
+  pattern: "a bare NaN, Infinity or -Infinity token in value position"
+  hits: 0
+  persisted_store_directories_found: 0
+  note: "no observations/, executions/, documents/ or records/ directory exists in the working tree at all. The domain is EMPTY, which is a stronger result than no-violations-found and is recorded as such: there is nothing stored, so nothing stored can be affected."
+
+referenced_ids_sweep:
+  result: not_applicable
+  reason: "vacuous on an empty domain. Recorded as vacuous rather than as a pass -- no id was referenced because no id exists, which is not evidence that referencing one would be safe."
+
+# ------------------------------------------------- what was measured --
+
+measurements:
+
+  - subject: "evidence.identity.canonical_json_bytes (vendored, pinned submodule)"
+    verdict: reachable_not_stored
+    evidence: "json.dumps with no allow_nan argument. Probed directly: content_hash({'value': float('nan')}) returns a digest over the literal bytes {\"value\":NaN}. Infinity and -Infinity likewise. The identity path was NOT closed when the storage writers were."
+
+  - subject: "evidence.types.make_observation (vendored, pinned submodule)"
+    verdict: reachable_not_stored
+    evidence: "an Observation carrying content {'property': 'water_level', 'value': nan, 'unit': 'm'} mints id 93216f6b1346e8a7... over bytes containing bare NaN. Re-minting the same content reproduces the same id exactly -- determinism holds, because the hash is over bytes and the bytes are stable."
+
+  - subject: "the storage writers (filesystem_store, class_store, execution/store, the three catalogs)"
+    verdict: closed_at_the_writer
+    evidence: "all pass allow_nan=False, closed by the concurrent half of this phase. Persisting the NaN-valued Observation above raises ValueError: Out of range float values are not JSON compliant."
+
+  - subject: "science.admissibility and science.table"
+    verdict: closed_at_the_writer
+    evidence: "both refuse non-finite quantities, with the NaN case named explicitly in admissibility.py's own comment. The admission gate is shut."
+
+  - subject: "the storage READERS, before this phase"
+    verdict: half_gated
+    evidence: "plain json.loads, which accepts bare NaN by Python extension. Every writer in the repository refused what every reader in the repository accepted."
+
+# ------------------------------------------------------- the finding --
+
+the_asymmetry_that_made_it_worth_closing:
+  shape: "minting is SILENT and permissive; persisting is LOUD and strict. So a non-finite Observation acquires a well-formed, referenceable id and only fails later, at the store. The id exists, can be passed around, compared and recorded, before anything refuses it."
+  same_class_as: "the section 7/8 asymmetry -- a gate that admits and a consumer that fails late. Third instance in this project."
+
+what_a_stored_nan_file_actually_did:
+  measured: "hand-authored, since the writers can no longer produce one, and fed through the read path as it stood."
+  step_1: "json.loads read the bare NaN back as a float, no error"
+  step_2: "observation_from_dict recomputed the id from the reconstructed fields"
+  step_3: "_verify PASSED -- content_hash is deterministic over the bytes it is handed, so the recomputed id matched the stored one exactly"
+  step_4: "the value so certified was not equal to itself"
+  conclusion: "the repository's own corruption-and-tamper check confirmed the identity, correctly by its own rules, over bytes no conformant JSON implementation in any language can parse. The module docstring of daf/storage/serialization.py claimed that on-disk corruption is caught on read rather than trusted. For this one class it was not caught; it was blessed. The docstring has been corrected to say so and to point at the guard that now makes it true."
+  why_this_is_the_real_answer: "the id IS recomputable -- by this implementation only. A content address whose sole purpose is to let an independent party reproduce it was reproducible by exactly one party. That is the defect, and it is invisible to any check that only asks whether recomputation succeeds."
+
+# --------------------------------------------------------- the repair --
+
+repair:
+  where: "daf/storage/serialization.strict_json_loads, used by every store and catalog reader whose writer already passes allow_nan=False"
+  what: "json.loads with a parse_constant that raises NonJsonConstantError on NaN, Infinity and -Infinity"
+  why_not_the_vendored_file: "vendor/scout-retrieval-agent is a pinned git submodule that daf/_vendor.py states is used without copying or modifying a single line. The identity function is not this repository's to change; the boundary at which its input arrives is."
+  why_a_refusal_and_not_a_coercion: "reading NaN as null, or as a sentinel, would relocate the ambiguity into the store -- the failure section 6.2 names. Refusing states that the file is not JSON, which is simply true. This is the same distinction the concurrent half drew for the escape class: repairing a non-conformant reader is not the reader-side normalization the canonical rule forbids."
+  forward_only: "yes, and stated plainly. This closes consumption of such a file. It does not and cannot repair one, and on this repository's measured state there is none to repair."
+
+# --------------------------------------------------------- residual --
+
+residual_exposure:
+  vendored_identity_path: "evidence.identity.canonical_json_bytes still mints over non-finite input if called directly, bypassing this repository's gates. Unreached rather than unreachable: no DAF code path reaches it without passing admissibility, the table gate, or a store reader, all three of which now refuse. Recorded rather than fixed, because the file is not this repository's to modify -- it belongs upstream, as an allow_nan=False in canonical_json_bytes."
+  posture: "the same posture as the covariance forensic: measured, named, and left visible rather than silently tolerated or silently patched across a boundary this repository does not own."

@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any, Dict, Tuple
 
 from daf.catalog.plan import AcquisitionPlan
+from daf.storage.serialization import strict_json_loads
 
 
 class PlanNotFoundError(KeyError):
@@ -45,7 +46,7 @@ class PlanCatalog:
         self.root.mkdir(parents=True, exist_ok=True)
         self._plans: Dict[str, AcquisitionPlan] = {}
         for path in sorted(self.root.glob("*.json")):
-            plan = _plan_from_dict(json.loads(path.read_text()))
+            plan = _plan_from_dict(strict_json_loads(path.read_text()))
             self._plans[plan.plan_id] = plan
 
     def register(self, plan: AcquisitionPlan) -> None:

@@ -6,8 +6,10 @@ the persisted raw fields (never from the persisted `id` directly), then
 verifies the recomputed id matches the id it was stored under. This is
 deliberate, not incidental: it means persistence can never silently
 diverge from `evidence.identity.content_hash`'s own definition of
-identity, and any on-disk corruption or tampering is caught on read
-rather than trusted.
+identity, and on-disk corruption or tampering is caught on read rather
+than trusted -- with ONE measured exception that `strict_json_loads`
+below exists to remove. See its docstring: recomputation is only as
+strong as the bytes it runs over.
 
 No new identity scheme is introduced anywhere in this module.
 
@@ -24,6 +26,7 @@ reason this is required on the read side, not just the write side.
 
 from __future__ import annotations
 
+import json
 from typing import Any, Dict
 
 from evidence.types import (
@@ -46,6 +49,59 @@ from evidence.types import (
 )
 
 from daf.storage.frozen_mapping import freeze_nested_mappings
+
+
+#: The three bare words `json.dumps` emits for non-finite floats and
+#: `json.loads` silently accepts. None of them is JSON (RFC 8259 section 6
+#: admits no such literal); all three are a Python extension.
+NON_JSON_CONSTANTS = ("NaN", "Infinity", "-Infinity")
+
+
+class NonJsonConstantError(ValueError):
+    """A stored file used a Python JSON extension, so it is not JSON."""
+
+
+def strict_json_loads(text: str) -> Any:
+    """`json.loads`, refusing the three constants that are not JSON.
+
+    WHY THIS EXISTS, MEASURED. The writers in this repository all pass
+    `allow_nan=False`, so none of them can emit a bare NaN. The readers
+    were plain `json.loads`, which accepts one. A writer-only gate is a
+    half-gate: it stops this repository producing the file and does
+    nothing about consuming one, and files arrive from elsewhere --
+    another tool, another language, an older commit, a hand edit.
+
+    What made it worth closing rather than noting is what happened to a
+    NaN-bearing file that DID arrive. It was not rejected and it was not
+    detected:
+
+      * `json.loads` read the bare `NaN` back as a float
+      * `observation_from_dict` recomputed the id from those fields
+      * `_verify` PASSED -- `content_hash` is deterministic over the
+        bytes it is handed, so the recomputed id matched the stored one
+      * and the value it certified was not equal to itself
+
+    So the integrity check confirmed an identity, correctly by its own
+    rules, over bytes that no conformant JSON implementation in any
+    language can parse. Recomputable here; unverifiable by anyone else.
+    That is the same divergence the canonical YAML emitter refuses a
+    nested sequence for -- two readers, same bytes, different outcomes --
+    arriving in the JSON identity path instead of the YAML one.
+
+    This is a REFUSAL, not a normalization, and the distinction is the
+    one section 6.2 turns on. Coercing NaN to null or to a sentinel on
+    read would relocate the ambiguity into the store. Refusing says the
+    file is not JSON, which is simply true."""
+    def _refuse(constant: str) -> Any:
+        raise NonJsonConstantError(
+            f"stored file contains the bare literal {constant!r}, which is a Python "
+            f"json extension and not JSON. Any id computed over these bytes is "
+            f"reproducible only by this implementation, so it cannot be verified "
+            f"independently -- which is the one thing a content address is for."
+        )
+
+    return json.loads(text, parse_constant=_refuse)
+
 
 
 class ArtifactIdentityMismatch(RuntimeError):
