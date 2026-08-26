@@ -196,9 +196,12 @@ gaps:
     summary: "Phase 34 imposed the representation at only the READ boundary (daf/storage/serialization.py) plus NOAA's own extractor by hand. daf.extractors.graph_dataset still constructs a plain dict for a declared conditions object."
     measured: "a graph_dataset record declaring both conditions and a relation raises TypeError: unhashable type: 'dict' from materials.analysis.analyze IN THE SAME PROCESS, and SUCCEEDS with a FrozenMapping after a reopen -- the exact mirror of the Phase 34 bug."
     why_latent: "it requires conditions AND a relation together. The shipped ADMISSIBLE_RECORD in tests/test_property_admission_integration.py declares conditions but relations=[], and retrieval.engine reaches an Observation only through a ClaimedRelationship, so no shipped test or production path triggers it."
-    locked_by: tests/test_persistent_condition_lifecycle.py::test_the_write_side_gap_is_the_exact_mirror_of_the_phase_34_bug
-    action_taken: recorded_not_fixed
-    action_taken_reason: "fixing it inside graph_dataset would be per-source patching of exactly the kind architecture/condition_representation.yaml deliberately avoided. The honest fix is a single generic choke point where DAF extractor output becomes Observation content -- a design decision requiring its own measurement, which section 7's 'do not modify them yet' explicitly defers."
+    locked_by: tests/test_persistent_condition_lifecycle.py::test_the_two_lifecycle_positions_no_longer_disagree
+    action_taken: closed_in_phase_37
+    action_taken_reason: "Phase 35 deferred it and stated the condition for fixing it: not inside graph_dataset, which would be per-source patching of exactly the kind architecture/condition_representation.yaml deliberately avoided, but at a single generic choke point where DAF extractor output becomes Observation content. Phase 37 built that choke point -- daf/extractors/_passthrough.py -- for an independent reason (the pass-through routes were the way to get a sentinel absence past the aligned-table gate), and the same seam closes this gap as a consequence. It is fixed there, once, not in either extractor."
+    closed_by: daf/extractors/_passthrough.py
+    closure_verified: "the two characterization tests that locked the gap OPEN both fired on the change and were INVERTED rather than deleted. Measured after: a graph_dataset record declaring conditions and a relation now yields a FrozenMapping in-process, analysis succeeds in-process AND after a reopen, and the Observation.id is identical on both sides of the process boundary."
+    not_a_substrate_closure: "the other three gaps in this list are unchanged and closure.substrate remains not_closed. One gap closing is not substrate closure."
 
   - id: list_valued_conditions
     severity: latent

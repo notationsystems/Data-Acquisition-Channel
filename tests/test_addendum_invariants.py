@@ -291,9 +291,32 @@ def test_admissibility_is_pure_and_deterministic():
             imported.update(a.name.split(".")[0] for a in node.names)
         elif isinstance(node, ast.ImportFrom) and node.module and node.level == 0:
             imported.add(node.module.split(".")[0])
-    assert imported <= {"__future__", "dataclasses", "typing"}, (
+    # `math` was added in Phase 37 for `math.isfinite`, which closed the
+    # sentinel-absence hole -- NaN and the infinities ARE floats, so every
+    # isinstance check in this file admitted them. Widening an allowlist is
+    # normally how a purity check dies, so the widening is paired with an
+    # explicit DENYLIST below: the allowlist now says which pure modules are
+    # permitted, and the denylist says what purity actually means here.
+    assert imported <= {"__future__", "dataclasses", "math", "typing"}, (
         f"admissibility must stay pure; it imports {sorted(imported)}"
     )
+
+    forbidden = {
+        # I/O, clock and network -- what "pure" excludes.
+        "os", "io", "sys", "time", "datetime", "random", "socket", "subprocess",
+        "pathlib", "shutil", "tempfile", "urllib", "http", "requests", "json",
+        # and the layers this one may never reach into.
+        "daf", "scout", "evidence", "materials", "retrieval", "epistemics",
+        "assertion", "bridge", "boundary",
+    }
+    assert not (imported & forbidden), (
+        f"admissibility reached outside its layer or did I/O: {sorted(imported & forbidden)}"
+    )
+
+    # Purity is a property of the code, not of an import list, so it is also
+    # measured: same input, same verdict, no clock and no mutation involved.
+    assert quantity_is_typed(content) == quantity_is_typed(dict(content))
+    assert content == snapshot
 
 
 # ====================================================================

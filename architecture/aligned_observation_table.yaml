@@ -1,0 +1,135 @@
+# The aligned observation table: the DAQ extension elected by the joint
+# decision record, built together with the workload it unblocks.
+#
+# THE PAIRING IS THE POINT. The joint decision did not elect a capability
+# and leave a consumer to be found later; it elected `least_squares` PAIRED
+# with the extension that unblocks it, under the repaired selection rule
+# whose second clause admits a workload blocked only by a capability gap
+# when that workload names itself as the consumer of the gap's closure.
+# The extension and its named consumer therefore land in the same phase.
+# An extension without a named consumer is a wish.
+extends: core@1.0.0
+
+phase: 37
+status: built
+
+named_consuming_workload:
+  id: least_squares
+  named_by: the joint decision record
+  requirements_this_closes:
+    - stable_sample_and_variable_identity
+    - explicit_missing_value_semantics
+  requirements_still_open: []
+  third_requirement_not_in_the_blocking_list: "conditions_that_distinguish_samples_must_be_recoverable_as_predictors_or_strata"
+  third_requirement_status: closed
+  third_requirement_was_nearly_missed: "it is recorded under condition_requirements rather than blocking_requirements, so reading only the blocking rows -- which is what the headline of this extension is -- would have shipped an extension claiming to unblock a workload while leaving one of its stated requirements unchecked. Caught by reading the workload entry whole."
+  daq_part_of_the_third_is_narrow: "whether a condition becomes a predictor column or a stratum is a MODELLING assertion, and the same artifact says so -- the choice of design matrix / basis functions is a modelling assertion, not an observation -- so DAQ must not decide it and the gate does not. What DAQ owes is that conditions are carried under stable identifiers a consumer can join on, and that no condition key silently shadows one of the table's own identity columns."
+  note: "PCA shares both requirements and is unblocked as a consequence, not as a claim made here. Kalman is NOT: it needs structured measurement uncertainty and recursive generation depth, which is a SEPARATE extension and a separate decision."
+
+# The requirements verbatim from the compute layer's own exchange
+# artifact. Quoted rather than paraphrased: a paraphrase of a
+# counterparty's requirement is DAQ's account of it, and the point of the
+# exchange protocol is that it is not.
+requirements_as_stated:
+  stable_sample_and_variable_identity: "Each observation must carry a sample identity sufficient to align a response with its predictors, and a variable identity sufficient to know which column is which. Row position is NOT an acceptable identity here, because ordering is explicitly not required by this modality."
+  explicit_missing_value_semantics: "Missing values must be explicitly represented and their semantics stated, not encoded as a sentinel number or elided by dropping rows."
+
+consequences_if_unmet_as_stated:
+  misalignment: "silently misaligned columns produce a well-formed fit of the wrong model; nothing in the numbers reveals it"
+  silent_dropping: "the residuals of a fit over a quietly smaller sample look entirely healthy"
+
+# ------------------------------------------------------ what was built --
+
+implementation:
+  gate: science/table.py
+  property_gate_addition: science/admissibility.py
+  pass_through_tightening: daf/extractors/_passthrough.py
+  tests: tests/test_aligned_observation_table.py
+
+no_table_artifact:
+  decision: "no Table type, no table identity, no table storage"
+  rationale: "a table is not a new evidence type; it is what a consumer BUILDS from observations that carry enough identity to be joined, one observation per (sample, variable) cell. Introducing a table artifact would add a second identity system for something Observation already carries, and every identity system in this repository has to be content-addressed, persisted and restart-verified."
+  what_is_stated_instead: "what an observation must carry to be alignable, and what is refused"
+
+# ------------------------------------ absence, the fourth instance of it --
+
+absence_rule:
+  rule: "absent must not be encodable as an in-range value, NaN included"
+  fourth_instance_of_the_same_pattern:
+    - "uncertainty_kind: absent -- the source reported no error is a different fact from we lost it during ingest"
+    - "the Fourier metrics DAQ refuses to fabricate rather than supply a plausible default"
+    - "delta-t as a sentinel -- refused rather than invented from record ordering"
+    - "a missing table cell -- this extension"
+  why_nan_is_the_tempting_encoding: "it is a float, so it satisfies every isinstance check a numeric field has, and it propagates through arithmetic without raising"
+  representation: "the `value` key is ABSENT and a `value_absence` reason is stated"
+  vocabulary:
+    - not_measured
+    - below_detection
+    - above_range
+    - withheld
+    - lost_in_acquisition
+  vocabulary_is_closed: true
+  vocabulary_is_closed_because: "an open free-text reason lets 'n/a', 'missing' and '' accumulate as three names for one fact, which is how a vocabulary stops meaning anything. The same argument closed uncertainty_kind."
+  each_member_states_a_different_fact:
+    not_measured: "the instrument was not run for this cell"
+    below_detection: "run, and the quantity was under the limit"
+    above_range: "run, and the quantity exceeded the instrument"
+    withheld: "the source has it and did not release it"
+    lost_in_acquisition: "DAQ had it and did not keep it"
+
+# The sentinel hole, MEASURED before it was closed. Every line here was
+# established by running it, not by reading the code.
+measured_before_the_fix:
+  nan_was_admissible: "NaN, +inf and -inf all passed the FULL property gate. Every isinstance(value, (int, float)) check in science/admissibility.py admitted them, because NaN and the infinities ARE floats. The type check was never the wrong check; it was not sufficient."
+  identity_over_invalid_json: "content_hash of a content mapping whose value is NaN serializes to bytes ending in value:NaN with the NaN unquoted. The bare NaN token is a Python extension, not JSON, so the Observation.id identified bytes no conformant reader in another language accepts -- in a project whose entire identity story is content addressing across processes. The exact bytes are asserted in tests/test_aligned_observation_table.py rather than quoted here, because embedding them would require an escaped double quote and epistemics/_yaml.py does not decode backslash escapes inside a double-quoted scalar; PyYAML does. That divergence was found by the two-parser agreement check, which is what it is for."
+  persisted_as_the_literal: "FilesystemEvidenceStore wrote the literal NaN to disk, so the stored artifact was not valid JSON either"
+  not_equal_to_itself: "after a round trip, back.content['value'] == back.content['value'] is False -- so an equality check that would catch a CORRUPTED round trip returns False for an INTACT one"
+  json_loads_accepts_it: "json.loads parses bare NaN/Infinity/-Infinity by default, so a source file containing a sentinel travelled the pass-through route end to end without one error"
+
+# ------------------------------------------- element types, not presence --
+
+element_types_not_presence:
+  rule: "the gate checks the TYPE of every identity field, not its presence"
+  applies_the_same_finding_as: "the section 7 / section 8 asymmetry"
+  finding: "a value refused at the gate fails loudly and early; one admitted at the gate and failing at a downstream consumer fails silently and late"
+  why_it_applies_here: "this is not the covariance finding, but it is the same SHAPE. A partially-typed table admitted at the gate and failing later is a silent late failure."
+  concrete_failure: "an int sample id in one observation and the str form of the same number in another are DIFFERENT join keys, so the table silently splits in two and the fit is computed over half the rows it should have been, with residuals that look entirely healthy"
+  bool_excluded_explicitly: "isinstance(True, int) is True in Python, so a bool passes any numeric-or-string check that does not exclude it by name"
+  positional_identity: "row_index and position are refused BY NAME rather than ignored, so a source that supplies one learns why it does not count instead of watching an otherwise well-formed record be rejected for a reason it cannot see"
+
+two_gates_that_must_agree:
+  gates:
+    - "science/admissibility.py quantity_is_typed"
+    - "science/table.py observation_is_table_alignable"
+  they_answer_different_questions: "an observation may be alignable and inadmissible as a canonical property assertion, and the reverse. Neither subsumes the other and neither call may be dropped in favour of the other."
+  the_one_rule_they_share: "nothing in the numeric range can ever mean missing"
+  why_it_is_locked_as_a_test: "if either admitted a sentinel, the extension's guarantee would hold only on whichever gate happened to run"
+
+# ---------------------------------------- the pass-through routes fixed --
+
+pass_through_routes:
+  finding: "a gate is enforceable only on the paths that reach it, and these two were the paths that did not"
+  local_dataset: "passed the entire parsed JSON object with no structural extraction"
+  graph_dataset: "passed any non-structural key verbatim"
+  consequence_if_left: "an aligned observation table arriving through either route bypassed whatever the extension enforced, so the extension would have been enforceable only on paths that did not need it"
+  fixed_at: daf/extractors/_passthrough.py
+  fixed_at_the_shared_seam_because: "fixing it inside either extractor would be per-source patching of exactly the kind architecture/condition_representation.yaml deliberately avoided"
+  what_is_refused: "a non-finite number at any nesting depth, naming the record and the path, and naming value_absence as the honest alternative"
+  what_is_normalized: "every dict-valued entry becomes a FrozenMapping, at every depth"
+  what_is_unchanged: "no key is added, renamed, dropped or interpreted; no schema is imposed. A record declaring nothing refused here passes through exactly as before, which is what keeps these extractors generic transports rather than typed ones."
+  lists_traversed_not_frozen: "matching freeze_nested_mappings, which does not recurse into lists either. Changing that here would make the two halves of the representation disagree, and the list-valued-conditions gap is recorded separately in architecture/condition_lifecycle.yaml rather than half-fixed here."
+  identity_is_unmoved: "FrozenMapping is a dict subclass, so json.dumps serializes it identically and content_hash is unchanged. Locked as a test, because if it ever stopped being true every Observation.id carrying a nested mapping would move silently."
+
+side_effect_closed:
+  gap: write_side_asymmetry
+  recorded_in: architecture/condition_lifecycle.yaml
+  how: "Phase 35 measured the gap and stated the condition for fixing it -- a single generic choke point, not a per-source patch. This phase built that choke point for an independent reason, and the same seam closes the gap."
+  verified: "the two characterization tests that locked the gap OPEN both fired on the change and were INVERTED rather than deleted. A graph_dataset record declaring conditions and a relation now yields a FrozenMapping in-process; analysis succeeds in-process AND after a reopen; and the Observation.id is identical on both sides of the process boundary."
+  not_a_substrate_closure: "the other three condition-lifecycle gaps are unchanged and closure.substrate remains not_closed"
+
+# ------------------------------------------------------- what is not done --
+
+deliberately_not_done:
+  covariance_extension: "structured measurement uncertainty plus recursive generation depth, which unblocks Kalman. It is the next DECISION, not a queue item, and it goes through the same joint record. Starting it here would be the conflated-extension error again in the opposite direction."
+  wiring_into_an_admission_path: "the table gate is a scientific-layer gate, exactly like quantity_is_typed and no_context_free_property before it. Ingest is scout.pipeline.run_scout, inside the vendored submodule that is never modified."
+  a_table_builder: "DAQ states what an observation must carry to be joined. Performing the join is the compute layer's work, and DAQ must not implement it."

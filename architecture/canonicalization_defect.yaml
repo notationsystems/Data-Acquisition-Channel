@@ -68,3 +68,24 @@
 "status": "corrected_applied_in_both_repositories"
 "summary": "The pinned encoding's scalar rule is wrong, and the ISO-date divergence reported earlier is one instance of a class rather than the defect. YAML implicit type resolution means two conformant parsers can disagree on a scalar's TYPE while agreeing on the bytes -- so a byte-identical artifact can still hash-bind a different typed structure on each side. The original rule, 'strings double-quoted only where required by the spec', is the error. It should be: strings ALWAYS double-quoted."
 "why_not_patched_here": "architecture/exchange/canonical_yaml.py is byte-identical to the compute layer's copy BY AGREEMENT, and that agreement is what makes either artifact's hash mean anything. Editing it on one side would break the agreement and silently re-hash every artifact already committed against it -- including architecture/exchange/daq_capabilities.yaml and the compute layer's own requirements artifact. The change must land in both repositories together, and every artifact and every hash reference must be reissued in the same coordinated step."
+
+# ------------------------------------------- enforcement in BOTH suites --
+#
+# The fixture-agreement check proves the two encodings AGREE IN BEHAVIOUR,
+# but only for the shapes the fixture covers, and only where both trees are
+# present. It cannot see an edit that leaves the fixture's output unchanged
+# -- a comment, a refactor, or behaviour for a shape the fixture does not
+# exercise -- and those edits still make the two copies differ, which is
+# exactly what byte-identity-by-agreement exists to prevent.
+enforcement_in_both_suites:
+  mechanism: "the serializer file's own SHA-256 is pinned, identically in both repositories, so either side's suite catches a local edit without needing the other tree present"
+  authored_by: scl
+  adopted_by_daq: "byte-identically -- the pin file, the digest sidecar and the cross-repo verifier were copied verbatim, not reimplemented. Reimplementing a check whose whole purpose is that both sides agree would restate the problem it solves."
+  files:
+    - architecture/exchange/canonical_yaml.sha256
+    - architecture/exchange/verify_pair_landed.py
+    - tests/test_shared_serializer_pin.py
+  the_pin_is_a_second_line_not_a_replacement: "the fixture is what proves the two encodings agree in behaviour; the pin only proves the source has not drifted"
+  never_the_right_fix: "updating the pinned digest alone. A legitimate serializer change is a COORDINATED REISSUE: change both repositories, regenerate every artifact, reissue every record carrying a digest, and confirm with verify_pair_landed.py that both REMOTES landed it."
+  measured_ci_asymmetry: "the pin now runs in BOTH SUITES, but not in both CI paths, because there is only one CI path. Measured: this repository has .github/workflows/conformance.yml, which runs the full suite on every push; the compute layer's tree contains no CI configuration at all -- no .github, no workflow file, no Makefile, no tox or nox. So on that side the pin runs only when someone runs the suite. Recorded rather than fixed here: authoring CI for the other repository would mean shipping a workflow this session cannot verify passes, since that suite's conftest builds a native CMake target whose nlohmann_json dependency is absent from this container."
+  measured_on: "2026-08-26"

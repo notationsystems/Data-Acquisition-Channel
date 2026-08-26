@@ -35,6 +35,7 @@ verdict; nothing acts on that verdict automatically.
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from typing import Mapping, Tuple
 
@@ -56,6 +57,8 @@ MISSING_UNIT = "MISSING_UNIT"
 MISSING_UNCERTAINTY = "MISSING_UNCERTAINTY"
 MISSING_UNCERTAINTY_KIND = "MISSING_UNCERTAINTY_KIND"
 UNKNOWN_UNCERTAINTY_KIND = "UNKNOWN_UNCERTAINTY_KIND"
+NON_FINITE_QUANTITY = "NON_FINITE_QUANTITY"
+NON_FINITE_UNCERTAINTY = "NON_FINITE_UNCERTAINTY"
 
 
 @dataclass(frozen=True)
@@ -86,6 +89,25 @@ def quantity_is_typed(content: Mapping[str, object]) -> Admissibility:
         reasons.append(MISSING_VALUE)
     elif not isinstance(value, (int, float)) or isinstance(value, bool):
         reasons.append(UNTYPED_QUANTITY)
+    elif not math.isfinite(value):
+        # A SENTINEL-ENCODED ABSENCE, refused here rather than downstream.
+        # NaN and the infinities are instances of float, so every
+        # isinstance check in this file passed them until now: measured,
+        # a NaN value was ADMISSIBLE through the full gate. Three things
+        # then went wrong quietly. `evidence.identity.content_hash`
+        # serialized it as bare `NaN`, which is not valid strict JSON, so
+        # the Observation's id was computed over bytes no conformant
+        # reader in another language accepts. `FilesystemEvidenceStore`
+        # persisted that literal to disk. And `nan != nan`, so the value
+        # was not equal to itself after a round trip, which silently
+        # breaks any comparison built on it.
+        #
+        # "Missing" must never be expressible as an in-range value. That
+        # is this repository's fourth instance of the same rule --
+        # uncertainty_kind's explicit `absent`, the transform's
+        # has_sample_spacing flag rather than a defaulted dt, and now
+        # this -- and it is the one place the rule was not yet enforced.
+        reasons.append(NON_FINITE_QUANTITY)
 
     if not content.get("unit"):
         reasons.append(MISSING_UNIT)
@@ -97,6 +119,20 @@ def quantity_is_typed(content: Mapping[str, object]) -> Admissibility:
         reasons.append(UNKNOWN_UNCERTAINTY_KIND)
     elif kind != ABSENT and content.get("uncertainty") is None:
         reasons.append(MISSING_UNCERTAINTY)
+
+    # An infinite uncertainty is not "unknown". `uncertainty_kind: absent`
+    # is how this repository says unknown, and has been since the phase
+    # that introduced it. Letting infinity mean it would be a competing,
+    # in-range encoding of exactly the fact the explicit vocabulary exists
+    # to carry -- so it gets its own reason code rather than being folded
+    # into NON_FINITE_QUANTITY, because it is a different claim.
+    uncertainty = content.get("uncertainty")
+    if (
+        isinstance(uncertainty, (int, float))
+        and not isinstance(uncertainty, bool)
+        and not math.isfinite(uncertainty)
+    ):
+        reasons.append(NON_FINITE_UNCERTAINTY)
 
     return Admissibility(admissible=not reasons, reasons=tuple(reasons))
 

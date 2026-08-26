@@ -60,6 +60,16 @@ endpoint check duplicates one `run_scout` also performs, deliberately:
 catching it here names the offending record and locator, where a caller
 can act on it, rather than surfacing as a pipeline admission failure
 several stages later.
+
+PASS-THROUGH IS VERBATIM BUT NOT UNCONDITIONAL. Every non-structural key
+is still carried uninterpreted, but two shapes are no longer carried
+silently: a non-finite number (a sentinel absence, which `json.loads`
+accepts as bare `NaN`/`Infinity`) is refused, and a dict-valued entry is
+frozen into the hashable representation Phase 34 imposed at the read
+boundary. The second closes the write-side asymmetry Phase 35 measured
+and deliberately left open -- a `conditions` mapping declared here used
+to raise `TypeError: unhashable type: 'dict'` in `materials.analysis`
+in-process, repaired only by a restart. See `daf.extractors._passthrough`.
 """
 
 from __future__ import annotations
@@ -68,6 +78,7 @@ import json
 from dataclasses import dataclass
 from typing import Any, Dict, List, Mapping, Tuple
 
+from daf.extractors._passthrough import tighten_passthrough_content
 from evidence.types import Record
 from scout.interface import ExtractedEntity, ExtractedRelation, ExtractionCandidate
 
@@ -170,7 +181,9 @@ class GraphDatasetExtractor:
 
         # Everything that is not declared graph structure is observation
         # content, passed through verbatim and uninterpreted.
-        content: Dict[str, Any] = {k: v for k, v in payload.items() if k not in STRUCTURAL_KEYS}
+        content: Dict[str, Any] = tighten_passthrough_content(
+            {k: v for k, v in payload.items() if k not in STRUCTURAL_KEYS}, record.id
+        )
 
         return (
             ExtractionCandidate(

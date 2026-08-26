@@ -16,6 +16,7 @@ output: docs/generated/DOCTRINE.md
 sources:
   - architecture/core.yaml
   - architecture/admission_reachability.yaml
+  - architecture/aligned_observation_table.yaml
   - architecture/condition_provenance_reachability.yaml
   - architecture/condition_lifecycle.yaml
   - architecture/condition_representation.yaml

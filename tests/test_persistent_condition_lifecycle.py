@@ -36,6 +36,16 @@ extractors are inventoried, not modified; per §9 no conflict policy is
 invented. The gaps are LOCKED as characterization tests so they cannot
 change silently, and recorded in
 `architecture/condition_lifecycle.yaml`.
+
+PHASE 37 UPDATE. `write_side_asymmetry` is now CLOSED, and closed the
+way Phase 35 said it would have to be: not inside `graph_dataset`, which
+would have been per-source patching, but at
+`daf/extractors/_passthrough.py` -- the one seam both verbatim
+pass-through extractors share. The two tests that locked the gap open
+are INVERTED rather than deleted, since the shapes they name are exactly
+the regression surface. The other three gaps stand unchanged, so
+`closure.substrate` is still `not_closed`; one gap closing is not
+substrate closure and the record does not claim it is.
 """
 
 from __future__ import annotations
@@ -655,44 +665,59 @@ def test_absent_conditions_is_refused_and_still_groups():
 # ============================ THE MEASURED GAP: write-side asymmetry (§7)
 
 
-def test_graph_dataset_still_produces_an_unhashable_plain_dict(tmp_path):
-    """THE Phase 35 finding, locked. `graph_dataset` passes every
-    non-structural key through verbatim by design, so a declared
-    `conditions` object becomes a plain dict -- Phase 34 fixed only the
-    READ side, and NOAA's write side by hand.
+def test_graph_dataset_now_freezes_the_conditions_it_passes_through(tmp_path):
+    """INVERTED IN PHASE 37, deliberately, and the inversion is the point.
 
-    This is a CHARACTERIZATION test of a real gap, not an endorsement.
-    Per Phase 35 §7 the extractors are inventoried, not modified."""
+    This began as a characterization lock asserting that `graph_dataset`
+    still produced a plain dict, with the instruction that closing the
+    gap must update `architecture/condition_lifecycle.yaml` rather than
+    this assertion. Phase 37 closed it -- not inside `graph_dataset`,
+    which is what Phase 35 refused, but at
+    `daf.extractors._passthrough`, the single seam both verbatim
+    pass-through extractors share. So the assertion is inverted rather
+    than deleted: this record is what the gap WAS, and it stays here as
+    the regression surface."""
     _, pool = _acquire_graph(tmp_path, GRAPH_RECORD_WITH_CONDITIONS)
     observation = pool.all_observations()[0]
 
     conditions = observation.content["conditions"]
-    assert isinstance(conditions, dict)
-    assert not isinstance(conditions, FrozenMapping), (
-        "graph_dataset now freezes its conditions -- the Phase 35 gap was closed; "
-        "update architecture/condition_lifecycle.yaml rather than this assertion"
+    assert isinstance(conditions, FrozenMapping), (
+        "the write-side asymmetry has reopened -- a pass-through extractor is emitting a plain dict "
+        "again, which fails in-process and is repaired only by a restart"
     )
+    assert dict(conditions) == {"specimen": "dogbone-A", "strain_rate_per_s": 0.001, "temperature_c": 23}
+    assert hash(conditions) == hash(FrozenMapping(dict(conditions)))
 
 
-def test_the_write_side_gap_is_the_exact_mirror_of_the_phase_34_bug(tmp_path):
-    """Same acquisition, two lifecycle positions, opposite outcomes:
-    in-process it RAISES, after a reopen it SUCCEEDS. Phase 34's bug was
-    the other way round. Both are the same root cause -- a Mapping-valued
-    content entry whose representation is imposed at only one of the two
-    boundaries."""
+def test_the_two_lifecycle_positions_no_longer_disagree(tmp_path):
+    """INVERTED IN PHASE 37. The gap WAS: same acquisition, two lifecycle
+    positions, opposite outcomes -- in-process it RAISED
+    `TypeError: unhashable type: 'dict'`, after a reopen it SUCCEEDED.
+    Phase 34's bug was the other way round; both were the same root
+    cause, a Mapping-valued content entry whose representation was
+    imposed at only one of the two boundaries.
+
+    Now BOTH positions succeed, and this test asserts the agreement
+    rather than the divergence -- because agreement between the two is
+    the property that actually matters. A one-sided fix would still pass
+    a test that only checked one side."""
     _, pool = _acquire_graph(tmp_path, GRAPH_RECORD_WITH_CONDITIONS)
     question = MaterialQuestion(material_natural_key="formulation-f1", property="tensile_strength")
 
-    with pytest.raises(TypeError, match="unhashable type: 'dict'"):
-        analyze(pool, DeterministicRetrievalEngine(), question)
+    in_process = analyze(pool, DeterministicRetrievalEngine(), question)
 
     reopened = ClassifiedPool(
         FilesystemEvidenceStore(tmp_path / "evidence"),
         SourceClassPolicy(id="p2", by_source_kind={"graph-dataset": MEASURED}),
     )
-    answer = analyze(reopened, DeterministicRetrievalEngine(), question)
-    assert len(answer.observed) == 1
-    assert isinstance(answer.observed[0].content["conditions"], FrozenMapping)
+    after_restart = analyze(reopened, DeterministicRetrievalEngine(), question)
+
+    assert len(in_process.observed) == len(after_restart.observed) == 1
+    for answer in (in_process, after_restart):
+        assert isinstance(answer.observed[0].content["conditions"], FrozenMapping)
+    assert in_process.observed[0].id == after_restart.observed[0].id, (
+        "identity must not depend on which side of a process boundary the observation was read"
+    )
 
 
 def test_the_gap_needs_conditions_and_a_relation_together(tmp_path):
@@ -826,8 +851,13 @@ def test_the_lifecycle_determination_matches_what_was_measured():
         "vacuous_condition_values",
         "phase_34_no_op_claim_incorrect",
     }
-    for gap in LIFECYCLE["gaps"]:
-        assert gap["action_taken"] == "recorded_not_fixed"
+    by_id = {gap["id"]: gap for gap in LIFECYCLE["gaps"]}
+    assert by_id["write_side_asymmetry"]["action_taken"] == "closed_in_phase_37", (
+        "the gap was closed at daf/extractors/_passthrough.py; the record must say so"
+    )
+    for gap_id in ("list_valued_conditions", "vacuous_condition_values",
+                   "phase_34_no_op_claim_incorrect"):
+        assert by_id[gap_id]["action_taken"] == "recorded_not_fixed"
 
 
 def test_every_lifecycle_boundary_is_recorded():

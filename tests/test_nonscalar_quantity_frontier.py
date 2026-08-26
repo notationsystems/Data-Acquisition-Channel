@@ -270,26 +270,45 @@ def test_both_gaps_share_one_constraint_surface():
     assert json.dumps(FrozenMapping({"a": 1})) == '{"a": 1}'
 
 
-def test_two_extractors_pass_arbitrary_content_through_verbatim():
-    """The exposure is not bounded by what extractors currently EMIT,
-    because two of them emit whatever they are given.
+def test_the_two_pass_through_routes_are_now_tightened_at_their_shared_seam():
+    """INVERTED IN PHASE 37, and this test asked for it in so many words.
 
-    `graph_dataset` consumes entities/relations as structure and passes
-    every other key through; `local_dataset` passes the entire parsed JSON
-    object through with no structural extraction at all -- broader still.
-    So the §8 repair has to tighten this route, not only add covariance
-    support, or the next unhashable shape arrives the same way. Recorded
-    in architecture/nonscalar_quantity.yaml pass_through_path."""
+    It recorded the finding that the exposure is not bounded by what
+    extractors currently EMIT, because two of them emit whatever they are
+    given -- and stated the consequence: "the §8 repair has to tighten
+    this route, not only add covariance support, or the next unhashable
+    shape arrives the same way."
+
+    Phase 37 is not the covariance repair; that is a separate extension
+    and a separate decision. But it IS the phase that tightened the
+    route, for the aligned observation table, and the requirement was
+    the same one either way. So the assertion is inverted rather than
+    deleted, and it now pins the two properties that must not regress:
+    the tightening exists, and it is at ONE shared seam rather than
+    copied into each extractor.
+
+    What has NOT changed, and is asserted here so a future reader does
+    not mistake tightening for typing: both routes still pass every key
+    through uninterpreted."""
     extractors = pathlib.Path(__file__).resolve().parent.parent / "daf" / "extractors"
 
     local = (extractors / "local_dataset.py").read_text()
-    assert "content = json.loads(record.raw_content)" in local
-    assert "content=content," in local, "local_dataset hands the parsed object straight to content"
-
     graph = (extractors / "graph_dataset.py").read_text()
-    assert "verbatim" in graph or "unmodified" in graph
 
-    # neither inspects a value's SHAPE on the way in
+    assert "content = json.loads(record.raw_content)" in local
+    assert "content=content," not in local, (
+        "local_dataset hands the parsed object straight to content again -- the route reopened")
+
     for source, name in ((local, "local_dataset"), (graph, "graph_dataset")):
+        assert "tighten_passthrough_content" in source, f"{name} bypasses the shared seam"
+        assert "verbatim" in source or "unmodified" in source, (
+            f"{name} must still say it passes content through uninterpreted")
+        # The tightening lives in _passthrough.py. If a value check appears
+        # HERE, the fix has been copied per-source, which is the shape
+        # architecture/condition_representation.yaml deliberately avoided
+        # and the shape that produced the Phase 35 write-side asymmetry.
         assert "isinstance(value, (int, float))" not in source, (
-            f"{name} appears to type-check content values; update this test if it now does")
+            f"{name} type-checks content values inline; the seam is daf/extractors/_passthrough.py")
+
+    seam = (extractors / "_passthrough.py").read_text()
+    assert "math.isfinite" in seam and "FrozenMapping" in seam

@@ -263,6 +263,29 @@ invariants:
     enforcement: tests/test_addendum_invariants.py
     gap: "not wired into any admission path"
 
+  - id: absence_is_never_an_in_range_value
+    rule: "a missing value is expressed structurally and never as a number; no member of the numeric range, NaN and the infinities included, may mean absent"
+    status: enforced
+    implementation: science/admissibility.py, science/table.py, daf/extractors/_passthrough.py
+    enforcement: tests/test_aligned_observation_table.py
+    fourth_instance_of: "uncertainty_kind absent, the Fourier metrics DAQ refuses to fabricate, delta-t as a sentinel, and now a missing table cell. The rule is identical in all four and is stated once here."
+    mechanisms:
+      - "science/admissibility.py refuses NON_FINITE_QUANTITY and NON_FINITE_UNCERTAINTY. Measured before the fix: NaN, +inf and -inf were ALL admissible through the full property gate, because they are instances of float and every isinstance check passed them."
+      - "science/table.py refuses SENTINEL_ENCODED_ABSENCE and requires a stated value_absence reason from a closed vocabulary"
+      - "daf/extractors/_passthrough.py refuses a non-finite number at any nesting depth on both verbatim pass-through routes, which were the paths that reached no gate"
+    measured_consequence_if_unenforced: "content_hash emits a bare NaN token, which is not valid strict JSON, so Observation.id is computed over bytes no conformant reader in another language accepts; the literal persists to disk; and the value does not compare equal to itself after a round trip, so an equality check that would catch a corrupted round trip returns False for an intact one"
+    limitation: "enforced where an aligned table is gated and where the two pass-through extractors read. A source-specific extractor that constructs content by hand is separately responsible; the seam covers the generic transports, not every author."
+    failure_mode: fail_closed
+
+  - id: table_identity_is_typed_not_positional
+    rule: "an observation joined into an aligned table carries a non-empty string sample identity and a non-empty string variable identity; row position is not an identity"
+    status: partially_enforced
+    implementation: science/table.py
+    enforcement: tests/test_aligned_observation_table.py
+    gap: "not wired into any admission path -- like quantity_is_typed and no_context_free_property, it is a gate the scientific layer applies to already-admitted evidence, not an ingest check"
+    element_types_not_presence: "the same asymmetry recorded in the section 7 / section 8 finding: a value refused at the gate fails loudly and early, one admitted and failing at a consumer fails silently and late. An int sample id and the str form of the same number are different join keys, so a partially-typed table splits in two and the fit runs over half its rows with healthy-looking residuals."
+    named_consuming_workload: "least_squares, per architecture/aligned_observation_table.yaml"
+
   - id: identity_policy_declared
     rule: "substance-level merge requires an explicit resolution policy on both records"
     status: absent
