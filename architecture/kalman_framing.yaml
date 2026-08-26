@@ -75,3 +75,30 @@ framing_for_the_next_decision:
   is_it_still_the_right_next_decision: "that is not DAQ's to answer, and this record does not. What DAQ can say is that the cost is larger than one extension -- structured uncertainty is a data-shape gap, but ordering and stream identity are IDENTITY gaps and elapsed time is a provenance gap, and the aligned-table extension does not carry over because Kalman's modality requires the ordering that least_squares' modality forbids."
   what_would_make_it_a_decision: "the joint record, with the workload named and its extension paired -- the rule that made least_squares a decision rather than a wish. The same rule applies here and nothing about it is weakened by the count being five instead of one."
   deliberately_not_started: "none of the five. This record frames; it does not build. Building one of them before the decision would be electing by momentum, which is the defect already recorded against the selection rule."
+
+# ---------------------------- what the table gate DECLINED, and who owns it --
+#
+# The gate refuses a cell whose LEAVES are not finite real numbers, at every
+# depth. It says nothing about the cell's SHAPE, and that silence is a
+# declared boundary rather than an omission. Recorded here because the
+# compute layer's Kalman half is being designed against it now, and a
+# boundary that is only implicit in a gate's source is a boundary nobody
+# can build against.
+shape_rules_the_gate_formally_declines:
+  measured_admitted_by_the_gate:
+    - "a ragged nested list -- [[1.0, 2.0], [3.0]]"
+    - "an asymmetric matrix -- [[1.0, 0.9], [0.1, 1.0]]"
+    - "a matrix that is not positive-semidefinite -- [[1.0, 2.0], [2.0, 1.0]]"
+    - "a 1-D vector where a 2-D matrix was expected"
+    - "an empty matrix -- [[], []]"
+    - "a matrix of categorical strings, which the leaf rule admits because a categorical cell is alignable"
+  what_the_gate_DOES_enforce_at_every_depth: "a leaf must BE a finite real number, with bool excluded before the int check because isinstance(True, int) is True. Stated as the property rather than as a denylist, after a denylist was measured to admit six unlisted types inside a 2x2 matrix."
+  therefore_owned_outright_by_the_covariance_extension:
+    numeric_entry: "whether a matrix ENTRY must be numeric at all. The table gate admits a categorical matrix because a categorical COLUMN is alignable -- that answer is right for a table and is not obviously right for a covariance."
+    dimensionality: "that a covariance for an n-vector measurement is n-by-n, and that it agrees with the measurement it accompanies"
+    raggedness: "that every row has the same length. A ragged nested list is not a matrix, and the gate does not say so."
+    symmetry: "that R equals its own transpose"
+    positive_semidefiniteness: "that R is PSD. This is the one where the bool finding bit: a bool entry passes a PSD check while meaning nothing, which is why the LEAF rule had to be closed first and why closing it does not close this."
+  why_daq_declined_them_rather_than_supplying_them: "each is a claim about what a covariance IS, and the covariance contract has not been decided. Supplying dimensionality or symmetry here would define that contract inside a gate built for a different modality, without going through the joint record -- which is the electing-by-momentum defect already recorded against the selection rule. The gate applies the rules already decided, at every depth, and stops."
+  what_this_gives_the_compute_layer: "a clean boundary rather than a partial one. Every cell reaching a covariance consumer has finite real leaves or was refused, so the consumer never has to defend against a bool or a NaN inside a matrix. Everything about SHAPE is unclaimed and undefended, and is stated as such rather than left to be discovered."
+  the_ordering_caveat_still_applies: "none of this makes the aligned observation table the right carrier for a Kalman measurement stream. That gate refuses positional identity by name, and Kalman requires ordering. The leaf rule is reusable; the gate around it is not."

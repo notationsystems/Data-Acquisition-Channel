@@ -446,7 +446,7 @@ Performing the join is the compute layer's work.
 
 ## Verification
 
-- full DAF suite: **1086 passed**
+- full DAF suite: **1133 passed**
 - vendored SCOUT suite: **1273 passed**, unchanged; submodule tree clean
 - `mypy daf/ science/ boundary/ bridge/ epistemics/`: clean
 - doctrine regenerated from `architecture/*.yaml`; re-running the generator
@@ -589,3 +589,122 @@ an incident: **read the workload entry whole.**
 Nothing of the five was started. This record frames; it does not elect —
 building one before the decision would be electing by momentum, which is the
 defect already recorded against the selection rule.
+
+## Addendum 2: the artifact that lied about how it was hashed
+
+### A shape no digest check can catch
+
+`daq_capabilities.yaml` carries a `canonicalization` block describing the
+rules it was emitted under. That block went stale through **two coordinated
+reissues** — the pre-always-quote string rule, and a fixture digest from
+before both.
+
+The reason nothing caught it is exact: **the content and the encoding
+disagreed, and the digest is over the content.** Both reissues recomputed the
+hash correctly. Both sidecars matched. Every integrity check in both
+repositories passed, over an artifact that was lying about how it was hashed.
+
+That is a gap in the *kind* of thing being checked, not in coverage of a known
+kind: **every mechanism built here verifies an artifact against its digest;
+none verified one against its own claims.**
+
+The check was writable, and nothing new had to be measured — only compared.
+A named file exists or doesn't; a quoted digest matches the sidecar or
+doesn't; a stated string rule matches emitter behaviour or doesn't.
+
+`tests/test_self_description_matches_the_artifact.py` binds each of the twelve
+claims to a verifier **by name**, and a claim with no verifier fails — so the
+next field added to the block cannot be silently unchecked. Hand-listing the
+assertions would have been the enumerated form, in the file that names it.
+Wherever possible a claim is checked against **the artifact's own bytes**:
+`strings: double-quoted ALWAYS` is verified by reading every key the artifact
+actually contains.
+
+Both real staleness cases are replayed against the verifiers that now cover
+them, plus a third the block would have hidden the same way. And a
+deliberately *lying* artifact is constructed and shown to be perfectly
+self-consistent under every digest check that exists — which is the
+demonstration that this needed its own check rather than a wider one.
+
+### The rate is itself the finding
+
+Filed in `proof_integrity.yaml`. Instances of the enumerated-coverage class
+are being found **by** the class, faster than they are being filed:
+generalizing the reissue chain check found two more unchained bindings *in the
+same commit that filed the principle*; closing the cell-leaf denylist found six
+admitted types nobody had listed.
+
+What that suggests: the enumerated form is not an occasional slip but the
+**default shape of a check written under time pressure** — naming what to look
+at is always easier than deriving it, and always works on the cases the author
+had in mind. The correct prior when reading any check here is that its
+coverage is a list until shown otherwise.
+
+The note states its own counter-evidence, or it would be unfalsifiable: a
+closed vocabulary where the list *is* the property (`uncertainty_kind`, the
+absence reasons) is not an instance. The distinction is whether the world can
+grow an item the list did not anticipate.
+
+### Correcting the class record about my own half
+
+`proof_integrity.yaml`'s `convergence_is_not_evidence` said both halves
+recorded the wrong reason. Re-checked: the compute half probed the
+multi-element form, which *does* raise, and recorded a loud refusal. My half
+probed single-element inner sequences, measured the silent mistyping
+correctly, and `canonicalization_defect.yaml` has carried that since `88248ac`
+— unchanged, and still does.
+
+What actually went wrong was **the merge**: adopting their serializer wholesale
+on a behavioural-equivalence check carried their prose reason into a
+repository that still held the correct one.
+
+The corrected lesson is stronger than the original. Not *two arrivals agreed
+on a wrong reason* — a coincidence. Rather: **a merge removed coverage that
+existed**, and no test anywhere covered the claim, because **a measured fact
+recorded in prose is bound to nothing.** Filed as its own instance.
+
+### The hand-authored YAML surface, inverted
+
+The two-parser check is the only thing between hand-written YAML and a digest
+the two repositories disagree on, and it was specified by directory glob in
+two places. Measured after the `decisions/` repair: the two globs together
+cover **29 of 30** tracked YAML files. Correct today — correct *the way a list
+is correct*.
+
+Now inverted: every tracked YAML file is **in** the surface by default and must
+be excluded explicitly with a stated reason. One exclusion exists
+(`conformance.yml` — consumed by GitHub Actions, so there is one reader and it
+isn't ours). A new architecture file, in any subdirectory, is checked the
+moment it is committed; under the globs it was unchecked until someone
+remembered to widen one.
+
+## Kalman: the shape rules the gate formally declines
+
+The gate refuses any cell whose **leaves** are not finite real numbers, at
+every depth. It says nothing about **shape**, and that silence is now a
+declared boundary rather than an omission — because the compute layer's Kalman
+half is being designed against it, and a boundary implicit in a gate's source
+is one nobody can build against.
+
+Measured as admitted: ragged, asymmetric, non-PSD, 1-D-where-2-D, empty, and
+categorical-entry matrices.
+
+**Owned outright by the covariance extension:** numeric entry, dimensionality,
+raggedness, symmetry, positive-semidefiniteness. Each is a claim about what a
+covariance *is*, and that contract hasn't been decided — supplying it inside a
+gate built for a different modality, without the joint record, is the
+electing-by-momentum defect already recorded against the selection rule.
+
+What the compute layer gets is a **clean** boundary rather than a partial one:
+every cell reaching a covariance consumer has finite real leaves or was
+refused, so the consumer never defends against a bool or a NaN inside a
+matrix. Everything about shape is unclaimed and undefended, and says so.
+
+PSD is where the bool finding bit, and why closing the leaf rule does not close
+it: **a bool entry passes a PSD check while meaning nothing.** The leaf rule
+had to be closed first; it is not the same rule.
+
+One caveat that survives: none of this makes the aligned observation table the
+right carrier for a Kalman stream. That gate refuses positional identity by
+name; Kalman requires ordering. **The leaf rule is reusable; the gate around it
+is not.**

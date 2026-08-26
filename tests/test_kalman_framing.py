@@ -176,3 +176,48 @@ def test_the_upstream_staleness_is_reported_and_not_edited():
     ours = next(e for e in invariants["invariants"] if e["id"] == "generation_depth_bounded")
     assert ours["status"] == "represented_unenforced", (
         "DAQ's status changed; the framing's staleness report needs re-measuring")
+
+
+# ------------------ the shape rules the gate declines, measured not asserted
+
+
+@pytest.mark.parametrize("cell", [
+    [[1.0, 2.0], [3.0]],            # ragged
+    [[1.0, 0.9], [0.1, 1.0]],       # asymmetric
+    [[1.0, 2.0], [2.0, 1.0]],       # not positive-semidefinite
+    [1.0, 2.0],                     # 1-D where 2-D expected
+    [[], []],                       # empty
+    [["low", "high"], ["high", "low"]],  # categorical entries
+])
+def test_the_gate_admits_every_shape_it_declines_to_rule_on(cell):
+    """A declared boundary, re-measured rather than quoted. If one of
+    these starts being refused, the gate has begun defining the covariance
+    contract, and that decision belongs in the joint record."""
+    assert observation_is_table_alignable(
+        {"sample_id": "s1", "variable": "x", "value": cell}).admissible, cell
+
+
+def test_the_leaf_rule_holds_at_every_depth_so_the_boundary_is_clean():
+    """What the compute layer gets is a CLEAN boundary rather than a
+    partial one: shape is entirely unclaimed, and leaf type is entirely
+    claimed. A half-enforced leaf rule would be worse than none, because
+    a consumer could not tell which half it had."""
+    from science.table import COMPOSITE_CELL_LEAF_IS_NOT_A_QUANTITY
+
+    for bad in (True, float("nan"), float("inf"), "1.5", None):
+        deep = {"sample_id": "s1", "variable": "x", "value": [[1.0, [bad]]]}
+        verdict = observation_is_table_alignable(deep)
+        assert not verdict.admissible, bad
+        assert COMPOSITE_CELL_LEAF_IS_NOT_A_QUANTITY in verdict.reasons
+
+
+def test_the_declined_rules_are_recorded_where_the_other_half_will_read_them():
+    declined = FRAMING["shape_rules_the_gate_formally_declines"]
+    owned = declined["therefore_owned_outright_by_the_covariance_extension"]
+    assert set(owned) == {"numeric_entry", "dimensionality", "raggedness", "symmetry",
+                          "positive_semidefiniteness"}
+    assert "electing-by-momentum" in declined["why_daq_declined_them_rather_than_supplying_them"]
+    assert "ordering" in declined["the_ordering_caveat_still_applies"]
+
+    # the PSD entry must carry why the bool finding does not close it
+    assert "does not close this" in owned["positive_semidefiniteness"]

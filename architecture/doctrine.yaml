@@ -26,6 +26,7 @@ sources:
   - architecture/property_admissibility.yaml
   - architecture/uncertainty_provenance_reachability.yaml
   - architecture/invariants.yaml
+  - architecture/kalman_framing.yaml
   - architecture/method_provenance_reachability.yaml
   - architecture/model_binding.yaml
   - architecture/nonscalar_quantity.yaml
