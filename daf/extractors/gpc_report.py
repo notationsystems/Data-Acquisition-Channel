@@ -58,7 +58,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from typing import Any, Dict, List, Mapping, Tuple
+from typing import Any, Dict, List, Mapping, Optional, Tuple
 
 from evidence.types import Record
 from scout.interface import ExtractedEntity, ExtractionCandidate
@@ -155,13 +155,39 @@ def _measurement_content(
             "dropped so the omission is visible to the caller."
         )
 
+    # ABSENCE AS STRUCTURE. Until a source stated one, this branch did not
+    # exist and every acquisition path emitted a value or refused -- which
+    # is why WO-4 measured the whole absence vocabulary unexercised. The
+    # reason is carried VERBATIM as the source's declared one; this layer
+    # neither supplies nor validates it, because membership of the closed
+    # vocabulary is science/table.py's judgement and an extractor deciding
+    # it would be the layer error the uncertainty posture already taught.
+    absence = measurement.get("value_absence")
     value = measurement.get("value")
-    if isinstance(value, bool) or not isinstance(value, (int, float)):
+    numeric_value: Optional[float] = None
+    if absence is not None:
+        if value is not None:
+            raise GpcReportExtractionError(
+                f"record {record_id!r} reports both a value and an absence for {variable!r}. "
+                "One of them is wrong and this layer cannot tell which."
+            )
+        if not isinstance(absence, str) or not absence:
+            raise GpcReportExtractionError(
+                f"record {record_id!r} declares a non-string absence reason for {variable!r}: "
+                f"{absence!r}"
+            )
+    elif isinstance(value, bool) or not isinstance(value, (int, float)):
         raise GpcReportExtractionError(
             f"record {record_id!r} reports a non-numeric value for {variable!r}: {value!r}. "
             "If the intent is a missing measurement, state it with science/table.py's "
             "value_absence reasons rather than as a value."
         )
+    else:
+        # Narrowed INSIDE the branch that established it. The first draft
+        # computed this after the if/elif with a `type: ignore`, which
+        # suppresses the checker rather than answering it -- and the
+        # checker was right that a reader has the same difficulty.
+        numeric_value = float(value)
 
     uncertainty = measurement.get("uncertainty")
     if uncertainty is not None and (isinstance(uncertainty, bool) or not isinstance(uncertainty, (int, float))):
@@ -197,7 +223,7 @@ def _measurement_content(
         # content vocabulary is exactly this layer's job, and is not the
         # same as carrying both.
         "property": variable,
-        "value": float(value),
+        "value": numeric_value,
         "unit": _require_str(measurement, "unit", record_id),
         "uncertainty": None if uncertainty is None else float(uncertainty),
         "uncertainty_kind": kind,
@@ -205,6 +231,8 @@ def _measurement_content(
         "conditions": payload["conditions"],
         "data_provenance": payload["data_provenance"],
     }
+    if absence is not None:
+        content["value_absence"] = absence
 
     # ACQUISITION PROVENANCE, CARRIED WHEN AN ADAPTER SUPPLIES IT.
     #

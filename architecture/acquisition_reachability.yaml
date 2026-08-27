@@ -72,6 +72,7 @@ unreachable_content_cannot_express_it:
     - "UNKNOWN_ABSENCE_REASON and VALUE_AND_ABSENCE_BOTH_PRESENT -- no acquisition path emits `value_absence` at all, so the whole absence vocabulary is unexercised by acquisition"
     - "POSITIONAL_IDENTITY_IS_NOT_IDENTITY and VARIABLE_IDENTITY_UNDER_A_RETIRED_NAME -- extra payload keys are dropped rather than carried"
     - "MISSING_PROPERTY and MISSING_VALUE -- the extractor always emits both or refuses"
+  moved_by_phase_b: "UNKNOWN_ABSENCE_REASON left this set on 2026-08-27. A source that states its own absence reasons now emits `value_absence`, and a caller mapping a flag onto a reason outside the closed vocabulary reaches the code. The set is 5, and reachable-from-acquisition is 11. The counts above are DATED rather than wrong: they were true of the paths that existed when they were taken, and the way they moved was new acquisition capability rather than a re-measurement contradicting the old one. VALUE_AND_ABSENCE_BOTH_PRESENT and MISSING_ABSENCE_REASON remain pre-empted -- the extractor refuses both by name before the gate is reached."
   the_finding: "these are not dead code. They guard HAND-BUILT content and content from a future extractor, which is what architecture/invariants.yaml already says of these gates -- they apply to already-admitted evidence rather than at ingest. What is new is the measurement: SIX codes are unreachable for that reason and the absence vocabulary is entirely among them."
 
 unreachable_by_construction:

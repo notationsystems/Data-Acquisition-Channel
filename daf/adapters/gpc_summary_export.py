@@ -54,6 +54,7 @@ detectable state; one extractor with two modes is a silent one.
 from __future__ import annotations
 
 import json
+import dataclasses
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Sequence, Tuple
@@ -102,6 +103,23 @@ class GpcSummaryExportSourceAdapter:
     #: and never assumed: assuming `measured` is precisely the error this
     #: source exposed in the extractor's name-based denylist.
     kind_by_column: Dict[str, str]
+    #: quantity column -> the column carrying its status flag, when the
+    #: export has one. A flag column is an ANNOTATION, not a quantity, and
+    #: the file does not say which is which.
+    flag_by_column: Dict[str, str] = dataclasses.field(default_factory=dict)
+    #: the source's own flag vocabulary -> science/table.py's absence
+    #: reasons. CALLER-DECLARED, and refused when a flag is unmapped.
+    #:
+    #: DAQ does not choose this mapping. `DETECTOR_SATURATED` means
+    #: `above_range` in this vendor's vocabulary and might mean something
+    #: else in another's; picking one here would be DAQ asserting a
+    #: semantics the file did not state. An unmapped flag stops the
+    #: acquisition rather than defaulting to `not_measured`, because
+    #: defaulting would be inventing the reason -- and the absence
+    #: vocabulary exists precisely so a reason is never guessed.
+    absence_reason_by_flag: Dict[str, str] = dataclasses.field(default_factory=dict)
+    #: flags that mean "this is a real measurement".
+    measured_flags: Tuple[str, ...] = ("OK",)
 
     def _declared(self) -> Tuple[str, ...]:
         return ("data_provenance", "measurement_kind", "method", "sample_kind", "unit")
@@ -148,9 +166,16 @@ class GpcSummaryExportSourceAdapter:
             )
 
         columns = [cell.strip() for cell in body[0].split(",")]
+        flag_columns = set(self.flag_by_column.values())
         quantity_columns = [
-            c for c in columns if c not in _IDENTITY_COLUMNS and c not in _NON_QUANTITY_COLUMNS
+            c for c in columns if c not in _IDENTITY_COLUMNS
+            and c not in _NON_QUANTITY_COLUMNS and c not in flag_columns
         ]
+        unknown_flag_columns = flag_columns - set(columns)
+        if unknown_flag_columns:
+            raise GpcSummaryExportFetchError(
+                f"flag column(s) {sorted(unknown_flag_columns)!r} are not in the export"
+            )
         if not quantity_columns:
             raise GpcSummaryExportFetchError(f"{self.path} declares no quantity columns")
         missing_units = [c for c in quantity_columns if c not in self.unit_by_column]
@@ -214,8 +239,43 @@ class GpcSummaryExportSourceAdapter:
                 if column in declined:
                     continue
                 raw = row.get(column, "")
+                flag = row.get(self.flag_by_column.get(column, ""), "")
+
+                # ABSENCE IS CARRIED AS STRUCTURE WHEN THE SOURCE STATES A
+                # REASON, and refused when it does not. A blank cell says
+                # THAT a value is missing and never WHY; the flag says why,
+                # in the vendor's vocabulary, and the caller maps that
+                # vocabulary onto the absence reasons. Neither half is
+                # invented here.
+                if flag and flag not in self.measured_flags:
+                    reason = self.absence_reason_by_flag.get(flag)
+                    if reason is None:
+                        raise GpcSummaryExportFetchError(
+                            f"{self.path} row {index} flags {column!r} as {flag!r} and no absence "
+                            "reason is declared for it. Refused rather than defaulted: a blank "
+                            "cell says THAT a value is missing and never WHY, and guessing the "
+                            "reason is the fabrication the absence vocabulary exists to prevent."
+                        )
+                    measurements.append({
+                        "variable": column,
+                        "value": None,
+                        "value_absence": reason,
+                        "unit": self.unit_by_column[column],
+                        "uncertainty": None,
+                        "uncertainty_kind": "absent",
+                        "kind": self.kind_by_column[column],
+                    })
+                    continue
+
                 if raw == "":
-                    continue           # a blank cell is not a measurement
+                    # Blank with no flag, or a flag meaning `measured`. The
+                    # source says a value is missing and says nothing about
+                    # why, so there is nothing honest to carry.
+                    raise GpcSummaryExportFetchError(
+                        f"{self.path} row {index} column {column!r} is blank with no absence "
+                        f"reason (flag {flag!r}). An unexplained blank cannot be carried as "
+                        "absence without inventing its reason, nor as a value."
+                    )
                 try:
                     value = float(raw)
                 except ValueError as exc:
