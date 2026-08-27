@@ -139,3 +139,124 @@ def test_the_second_attestation_is_attributed_rather_than_claimed():
         "a_direction_does_not_discriminate_when_the_property_also_has_a_magnitude"]["the_attestations"]
     assert "Attributed rather than re-measured" in attestations["the_earlier_one"]
     assert "has not seen that code" in attestations["the_earlier_one"]
+
+
+# =====================================================================
+# The second instance, and the class it exposed
+# =====================================================================
+
+SIBLING = pathlib.Path("/home/user/scientific-compute-layer-scl-")
+VERIFIER = REPO_ROOT / "architecture" / "exchange" / "verify_pair_landed.py"
+
+
+def test_the_malformed_invocation_really_produces_a_zero_that_means_nothing():
+    """THE MECHANISM, executed rather than described.
+
+    Two defects, both the same family: the script was given no arguments,
+    so it printed usage and returned 2; and `$?` after a pipeline is the
+    LAST command's status, so a pipe to `tail` reported 0. Neither is
+    about this repository's content and both are why a false claim was
+    committed."""
+
+
+    direct = subprocess.run([sys.executable, str(VERIFIER)], capture_output=True, text=True)
+    assert direct.returncode == 2, "no arguments must be a usage error, not a pass"
+    assert "Usage:" in direct.stdout, (
+        "and the usage text is what scrolled past under a `tail`, reading like check output"
+    )
+
+    piped = subprocess.run(
+        f'{sys.executable} {VERIFIER} 2>&1 | tail -2', shell=True,
+        capture_output=True, text=True)
+    assert piped.returncode == 0, (
+        "the pipeline reports the LAST command's status. This zero is the one that was read as "
+        "the check passing, and it is a fact about shells rather than about the pair."
+    )
+
+    instance = RECORD["the_second_instance"]
+    assert "status of the LAST command" in instance["how_the_check_was_malformed_in_this_session"]
+    assert "does not reconstruct" in instance["what_is_not_claimed_here"] or \
+        "is not reconstructed" in instance["what_is_not_claimed_here"]
+
+
+def test_the_record_does_not_claim_to_know_how_the_earlier_commit_was_run():
+    """The commit that carried the false claim is outside this session's
+    record. A class record that reconstructed it would be inventing the
+    evidence it is filed for lacking."""
+    instance = RECORD["the_second_instance"]
+    assert instance["was_the_claim_true"].startswith("NO")
+    assert "outside this session's record" in instance["what_is_not_claimed_here"]
+    assert "false as measured today" in instance["what_is_not_claimed_here"]
+
+
+def test_the_register_could_not_have_been_produced_by_the_other_side():
+    """THE DISCRIMINATOR THE CHECK DOES NOT ASK FOR, measured on the half
+    of it that lives here.
+
+    The stale-mirror reading rests on the compute layer not holding the
+    inputs. Half of that is checkable in this repository: the register's
+    bent-zero block is derived by scanning THIS repository's phase
+    reports, so a copy of it carrying those lines was produced here."""
+
+    register = loads((REPO_ROOT / "architecture" / "exchange"
+                      / "invariant_register.yaml").read_text())
+    assert register["owner"] == "daf"
+    occurrences = register["bent_zero_claims_held_here"]["occurrences"]
+    assert occurrences, "the block must be non-empty or it discriminates nothing"
+    for occurrence in occurrences:
+        document = REPO_ROOT / occurrence["document"]
+        assert document.exists(), (
+            f"{occurrence['document']} is cited by the register and is not in this tree"
+        )
+        assert occurrence["document"].startswith("docs/PHASE_")
+
+    klass = RECORD["a_diff_and_a_stale_mirror_are_the_same_observation_with_different_causes"]
+    assert "could have PRODUCED its own copy" in klass["what_the_discriminator_actually_was"]
+    assert "invites the wrong repair" in klass["what_its_own_docstring_already_says"]
+
+
+def test_the_verifiers_own_docstring_says_byte_identity_is_not_currency():
+    """The class credits the verifier with already naming half the gap.
+    Quoted from the file rather than from memory."""
+    text = VERIFIER.read_text()
+    assert "unfinished mirror" in text, (
+        "the class says the verifier's own docstring names the currency gap; if that text is "
+        "gone, the credit is stale and the class must be re-argued"
+    )
+
+
+@pytest.mark.skipif(not SIBLING.exists(), reason="the sibling repository is not checked out here")
+def test_the_stale_mirror_measurement_where_the_sibling_is_present():
+    """The cross-repository half. Skipped rather than assumed when the
+    sibling is absent -- a test that silently passed without it would be
+    the vacuous-evidence shape this module is about."""
+    theirs = SIBLING / "architecture" / "exchange" / "invariant_register.yaml"
+    if not theirs.exists():
+        pytest.skip("the sibling does not hold the register")
+
+    mine = loads((REPO_ROOT / "architecture" / "exchange"
+                  / "invariant_register.yaml").read_text())
+    other = loads(theirs.read_text())
+    assert other["bent_zero_claims_held_here"]["occurrences"] == \
+        mine["bent_zero_claims_held_here"]["occurrences"], (
+        "the two copies must agree on the block derived from THIS repository's documents; if "
+        "they do not, the other side is generating its own and the stale-mirror reading is wrong"
+    )
+
+    theirs_own_count = 0
+    for path in sorted(SIBLING.rglob("*.yaml")):
+        relative = path.relative_to(SIBLING)
+        if relative.parts and relative.parts[0] in ("vendor", ".git"):
+            continue
+        if path.name == "invariant_register.yaml":
+            continue
+        try:
+            document = loads(path.read_text())
+        except Exception:
+            continue
+        if isinstance(document, dict) and document.get("extends") == "core@1.0.0":
+            theirs_own_count += 1
+    assert theirs_own_count != other["extends_join"]["artifacts_declaring_the_core"], (
+        "the other side's census matches its own tree, so its copy is independently generated "
+        "and the DIFF is a genuine divergence rather than a stale mirror -- re-argue the class"
+    )

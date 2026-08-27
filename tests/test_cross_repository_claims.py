@@ -128,9 +128,51 @@ def _strings(node, path=""):
         yield path, node
 
 
-def _rows_with_status_claims():
+#: Sentence boundaries, for the predication rule below. Deliberately
+#: crude: splitting too eagerly only narrows further, and the narrowing
+#: is measured against every claim in the tree rather than reasoned about.
+_SENTENCE_BREAK = re.compile(r"(?<=[.;])\s+")
+
+
+def _predicated_of(value, invariant, word):
+    """Is `word` asserted AS THE STATUS OF `invariant`, or merely present
+    in the same string?
+
+    THE NARROWING THE DEFERRAL'S CONDITION REQUIRED. The sweep counted
+    any status-vocabulary word anywhere in a string that named an
+    invariant. `absent` is also ordinary English, so a sentence about an
+    invariant followed by a sentence using the word tripped it.
+
+    The rule is derived from every status claim actually in this tree,
+    not invented: each one either uses the word `status` explicitly, or
+    puts the status word in the SAME SENTENCE as the invariant it is
+    predicated of. A string doing neither is not making a status claim.
+
+    WHAT IT GIVES UP, stated rather than discovered later: a genuine
+    stale claim that spans two sentences without using the word `status`
+    -- "X was measured in Phase 3. It is vacuously_enforced." -- is no
+    longer caught. And it does NOT address the OTHER false-positive mode:
+    a string about the FUNCTION `no_context_free_property` still reads as
+    a string about the INVARIANT of that name, in the same sentence or
+    not. That mode is unrepaired and is measured by the collision test
+    below."""
+    if re.search(r"(?<![\w])status(?![\w])", value, re.IGNORECASE):
+        return True
+    for sentence in _SENTENCE_BREAK.split(value):
+        if invariant in sentence and re.search(rf"(?<![\w]){word}(?![\w])", sentence):
+            return True
+    return False
+
+
+def _rows_with_status_claims(predicate=_predicated_of):
     """Every mapping in the requirements artifact that names one of this
-    repository's invariants together with a status word."""
+    repository's invariants together with a status word PREDICATED of
+    it.
+
+    `predicate` is an argument so the narrowing can be measured against
+    the unnarrowed sweep by passing the rule that admits everything --
+    the comparison then runs the real path twice rather than comparing
+    the real one against a paraphrase of the old one."""
     found = []
 
     def visit(node, path=""):
@@ -141,7 +183,8 @@ def _rows_with_status_claims():
                         if invariant not in value:
                             continue
                         said = [w for w in VOCABULARY
-                                if re.search(rf"(?<![\w]){w}(?![\w])", value)]
+                                if re.search(rf"(?<![\w]){w}(?![\w])", value)
+                                and predicate(value, invariant, w)]
                         if said:
                             found.append((f"{path}.{key}", invariant, said, node))
                 else:
@@ -195,48 +238,63 @@ def test_the_sweep_can_confuse_an_invariant_with_a_function_of_the_same_name():
     )
 
 
-def test_no_superseded_status_claim_stands_alone():
-    """The property. A superseded status may be RETAINED -- this pair does
-    that deliberately -- but only where the current one is stated in the
-    same row, so the reader meets both. Standing alone, it is a claim
-    about the sibling that the sibling has already contradicted.
+def _unmarked_claims(predicate=_predicated_of):
+    """The check's VERDICT, extracted so the narrowing can be compared on
+    what it reports rather than on what it intermediately collects.
 
-    A MEASURED FALSE-POSITIVE MODE, and the DIAGNOSIS BELOW CORRECTS THIS
-    NOTE'S OWN FIRST VERSION. It fired twice on 2026-08-27 and the second
-    firing showed the first diagnosis was a symptom.
-
-    First diagnosis (wrong): `absent` is both an invariant status and an
-    ordinary domain word, so a row discussing absence near an invariant
-    name trips.
-
-    Actual root cause, measured: TWO NAMES ARE BOTH AN INVARIANT ID AND A
-    FUNCTION -- see the derivation in the test below. A string describing
-    what the FUNCTION `quantity_is_typed` does trips a sweep looking for
-    claims about the INVARIANT `quantity_is_typed`, and any such string
-    will naturally contain a status-vocabulary word. Both firings were
-    that shape; the `absent` overlap is the second half of an AND, not the
-    cause.
-
-    Both were reworded to name the module (`science/admissibility.py`)
-    rather than the colliding identifier, which is more precise prose
-    independently of this check. Recorded here rather than fixed because
-    the fix is a real narrowing of the sweep -- distinguishing `names the
-    invariant` from `names the function` -- and this is a build phase.
-
-    THE DEFERRAL HAS A CONDITION. A THIRD firing, or any firing against an
-    artifact that must not be edited (a pinned pre-registration, a shared
-    file), means rewording is no longer available and the sweep must be
-    narrowed. Both firings so far were reworded pre-commit; neither was
-    retrospective."""
+    A row whose status word merely moves between the two passing branches
+    -- `the field itself is current` and `superseded, and marked as such`
+    -- has not changed the answer, and comparing intermediates would call
+    that a difference."""
     unmarked = []
-    for path, invariant, said, row in _rows_with_status_claims():
+    for path, invariant, said, row in _rows_with_status_claims(predicate):
         now = CURRENT[invariant]
         if now in said:
             continue                       # the field itself is current
         siblings = " ".join(v for _, v in _strings(row)).lower()
         if re.search(rf"(?<![\w]){now}(?![\w])", siblings):
             continue                       # superseded, and marked as such
-        unmarked.append((path, invariant, said, now))
+        unmarked.append((path, invariant, tuple(sorted(said)), now))
+    return unmarked
+
+
+def test_no_superseded_status_claim_stands_alone():
+    """The property. A superseded status may be RETAINED -- this pair does
+    that deliberately -- but only where the current one is stated in the
+    same row, so the reader meets both. Standing alone, it is a claim
+    about the sibling that the sibling has already contradicted.
+
+    THE DEFERRAL WAS DISCHARGED ON ITS OWN CONDITION, and discharging it
+    corrected the diagnosis a second time.
+
+    It fired twice on 2026-08-27 and both were reworded. The note then
+    recorded a single root cause -- TWO NAMES ARE BOTH AN INVARIANT ID
+    AND A FUNCTION (derived in the test below) -- and demoted the earlier
+    `absent`-is-also-English reading to a symptom of it. The deferral
+    carried a condition: a THIRD firing, or any firing against an artifact
+    that must not be edited, and the sweep must be narrowed rather than
+    the prose reworded again.
+
+    IT FIRED A THIRD TIME, and it was not the function collision. The row
+    named the INVARIANT `no_context_free_property` explicitly -- "in a
+    stronger form than the invariant states" -- and the word `absent`
+    appeared in the NEXT SENTENCE as ordinary English. So the two modes
+    are independent and the earlier note was wrong to fold the first into
+    the second. There are two, and only one of them is now repaired.
+
+    REPAIRED: the predication rule in `_predicated_of`, derived from every
+    status claim in this tree rather than invented. Measured against the
+    unnarrowed sweep, it changes the flagged set by exactly one row -- the
+    false positive -- which is the evidence that it is a narrowing and not
+    a weakening.
+
+    UNREPAIRED, and no longer deferred behind a condition it has already
+    met: the function/invariant collision. It is stated in
+    `_predicated_of` and measured below. Distinguishing a string about the
+    function from a string about the invariant needs more than a text
+    sweep, and that is a different piece of work rather than a pending
+    one."""
+    unmarked = _unmarked_claims()
 
     assert not unmarked, "\n".join(
         f"{path}: says {said} about {invariant!r}, which this repository now "
@@ -367,3 +425,75 @@ def test_every_row_the_response_answers_still_exists_upstream():
         f"the artifact's DAQ-owned rows {sorted(upstream)}. A row in neither set is one nobody "
         f"looked at, and nothing else in this repository would notice it.")
     assert RESPONSE["row_accounting"]["daq_owned_rows_upstream"] == len(upstream)
+
+
+# ----------------------------------------------------------------------
+# The narrowing, measured rather than argued
+# ----------------------------------------------------------------------
+
+def _admits_everything(value, invariant, word):
+    """The rule this sweep used before the third firing."""
+    return True
+
+
+def test_the_narrowing_drops_the_false_positive_and_nothing_else():
+    """THE EVIDENCE THAT IT IS A NARROWING AND NOT A WEAKENING.
+
+    Both rules are run over the same tree through the same code path. The
+    unnarrowed one flags every row the narrowed one does, plus exactly the
+    rows where a status word sits in a different sentence from the
+    invariant and the string never says `status`. If that difference ever
+    contains a row that is a real claim, this test is the place it shows
+    up."""
+    rows = lambda predicate: {(path, invariant)
+                              for path, invariant, _, _ in _rows_with_status_claims(predicate)}
+    wide_rows, narrow_rows = rows(_admits_everything), rows(_predicated_of)
+    assert narrow_rows <= wide_rows, "the narrowed rule must not flag anything the wide one missed"
+    assert wide_rows - narrow_rows == {
+        ("architecture/post_anchor_predictions.yaml.predictions_for_a_second_anchor"
+         ".p2_a_per_slice_validity_flag_that_tracks_the_elution_window"
+         ".why_it_is_the_sharpest_of_the_four", "no_context_free_property")
+    }, (
+        f"rows dropped: {sorted(wide_rows - narrow_rows)}. Exactly one row must be dropped and "
+        "it must be the measured false positive; any other drop is a weakening."
+    )
+
+    wide_verdict = set(_unmarked_claims(_admits_everything))
+    narrow_verdict = set(_unmarked_claims(_predicated_of))
+    assert narrow_verdict == set(), "the check must be green under the narrowed rule"
+    assert {(path, invariant) for path, invariant, _, _ in wide_verdict} == wide_rows - narrow_rows, (
+        "and the only thing the narrowing changed about the VERDICT is that false positive -- "
+        "a row moving between the two passing branches is not a change in the answer"
+    )
+
+
+def test_a_genuine_stale_claim_is_still_caught_in_every_form_the_tree_uses():
+    """DETECTOR PROOF, planted in each shape the corpus actually
+    contains. A narrowing that also silenced the real claims would pass
+    the test above -- the flagged set would still only lose false
+    positives, because the true ones would have been in neither set."""
+    invariant = "generation_depth_bounded"
+    stale = "vacuously_enforced"
+    assert CURRENT[invariant] != stale, "the plant must be a status this repository has moved off"
+
+    same_sentence = f"{invariant} is {stale} and nothing checks it"
+    assert _predicated_of(same_sentence, invariant, stale)
+
+    with_the_marker = (f"{invariant} was measured in an earlier phase. "
+                       f"Its status is {stale}.")
+    assert _predicated_of(with_the_marker, invariant, stale), (
+        "a claim spanning two sentences must still be caught when it says `status`"
+    )
+
+    ordinary_english = (f"it is {invariant} in a stronger form. "
+                        "The context is not merely absent from the document.")
+    assert not _predicated_of(ordinary_english, invariant, "absent"), (
+        "and the measured false positive must NOT be caught, or nothing was narrowed"
+    )
+
+    and_the_limit = f"{invariant} was measured in an earlier phase. It is {stale}."
+    assert not _predicated_of(and_the_limit, invariant, stale), (
+        "the stated limit, asserted rather than described: a cross-sentence claim with no "
+        "`status` marker is now missed. If this ever starts passing, the docstring's "
+        "'what it gives up' is stale and must be corrected."
+    )
