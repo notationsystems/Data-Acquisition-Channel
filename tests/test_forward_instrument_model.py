@@ -182,9 +182,17 @@ def test_the_instrument_package_imports_nothing_from_the_product():
 
 from instrument.calibration import (NARROW_PMMA, NARROW_POLYSTYRENE,  # noqa: E402
                                     Calibration, POLYSTYRENE)
-from instrument.chromatogram import (Column, IntegrationParameters,  # noqa: E402
-                                     broaden, report_moments, slice_area_moments,
+from instrument.chromatogram import (AT_SLICE_END, AT_SLICE_MIDPOINT,  # noqa: E402
+                                     AT_SLICE_START, Column, EqualAreaSlicing,
+                                     EqualVolumeSlicing, IntegrationParameters,
+                                     SlicingError, admitted_region, broaden,
+                                     report_moments, slice_area_moments,
                                      true_chromatogram)
+
+#: Every measurement recorded before the Empower anchor was taken under
+#: equal-volume slicing. Named here rather than defaulted, so that the
+#: numbers below are convention-stamped rather than convention-blind.
+EQUAL_VOLUME = EqualVolumeSlicing()
 
 WIDE = Calibration("cal:wide", POLYSTYRENE, (12.0, -0.60, 0.010, -0.00012), (4.0, 26.0), 0.9997)
 FLORY = flory(1e5)
@@ -209,13 +217,13 @@ def test_acceptance_3_broadening_broadens_and_the_excess_grows_as_plates_fall():
     count, measured against the same calibration and the same limits so
     that only N varies."""
     parameters = IntegrationParameters()
-    unbroadened = slice_area_moments(true_chromatogram(FLORY, WIDE, 8001), WIDE, parameters)
+    unbroadened = slice_area_moments(true_chromatogram(FLORY, WIDE, 8001), WIDE, parameters, EQUAL_VOLUME)
 
     excesses = []
     for plates in (300000, 100000, 30000, 10000, 3000, 1000, 300):
         chromatogram = broaden(true_chromatogram(FLORY, WIDE, 8001),
                                Column("c", plates, 300.0, 5.0))
-        reported = slice_area_moments(chromatogram, WIDE, parameters)
+        reported = slice_area_moments(chromatogram, WIDE, parameters, EQUAL_VOLUME)
         assert reported.dispersity > unbroadened.dispersity, (
             f"broadening did not broaden at N={plates}"
         )
@@ -238,8 +246,8 @@ def test_the_permeation_limit_biases_the_report_with_a_perfect_column():
     truncation as the cause rather than the estimator."""
     parameters = IntegrationParameters()
     narrow = slice_area_moments(true_chromatogram(FLORY, NARROW_POLYSTYRENE, 8001),
-                                NARROW_POLYSTYRENE, parameters)
-    wide = slice_area_moments(true_chromatogram(FLORY, WIDE, 8001), WIDE, parameters)
+                                NARROW_POLYSTYRENE, parameters, EQUAL_VOLUME)
+    wide = slice_area_moments(true_chromatogram(FLORY, WIDE, 8001), WIDE, parameters, EQUAL_VOLUME)
 
     assert narrow.dispersity < 1.95, "the narrow range must bias dispersity DOWN"
     assert narrow.mn > 1.04e5, "and Mn UP"
@@ -253,8 +261,8 @@ def test_two_real_effects_push_dispersity_in_opposite_directions():
     """Which is why `reported PDI > true PDI, always` does not hold."""
     parameters = IntegrationParameters()
     column = Column("c", 10000, 300.0, 5.0)
-    narrow = report_moments(FLORY, NARROW_POLYSTYRENE, column, parameters, 8001)
-    wide = report_moments(FLORY, WIDE, column, parameters, 8001)
+    narrow = report_moments(FLORY, NARROW_POLYSTYRENE, column, parameters, EQUAL_VOLUME, 8001)
+    wide = report_moments(FLORY, WIDE, column, parameters, EQUAL_VOLUME, 8001)
     assert narrow.dispersity < 2.0 < wide.dispersity
 
 
@@ -265,7 +273,7 @@ def test_two_large_errors_cancel_into_a_correct_looking_dispersity():
     by more than three percent. The cancellation is in the RATIO and not
     in the SCALE, and no consumer reading the report can tell."""
     reported = report_moments(FLORY, NARROW_POLYSTYRENE, Column("c", 2500, 300.0, 5.0),
-                              IntegrationParameters(), 8001)
+                              IntegrationParameters(), EQUAL_VOLUME, 8001)
     assert reported.dispersity == pytest.approx(2.0, abs=0.01), (
         "this test exists because the dispersity looks RIGHT here"
     )
@@ -277,8 +285,8 @@ def test_two_large_errors_cancel_into_a_correct_looking_dispersity():
 def test_acceptance_4_the_discrepancy_is_reproducible_and_its_magnitude_is_stated():
     parameters = IntegrationParameters()
     column = Column("c", 10000, 300.0, 5.0)
-    first = report_moments(FLORY, NARROW_POLYSTYRENE, column, parameters, 4001)
-    second = report_moments(FLORY, NARROW_POLYSTYRENE, column, parameters, 4001)
+    first = report_moments(FLORY, NARROW_POLYSTYRENE, column, parameters, EQUAL_VOLUME, 4001)
+    second = report_moments(FLORY, NARROW_POLYSTYRENE, column, parameters, EQUAL_VOLUME, 4001)
     assert (first.mn, first.mw, first.mz) == (second.mn, second.mw, second.mz)
     assert first.mn / 1e5 - 1.0 == pytest.approx(0.0505, abs=0.002)
 
@@ -289,8 +297,8 @@ def test_acceptance_5_two_calibrations_over_one_truth_disagree_attributably():
     way."""
     column = Column("c", 10000, 300.0, 5.0)
     parameters = IntegrationParameters()
-    ps = report_moments(FLORY, NARROW_POLYSTYRENE, column, parameters, 8001)
-    pmma = report_moments(FLORY, NARROW_PMMA, column, parameters, 8001)
+    ps = report_moments(FLORY, NARROW_POLYSTYRENE, column, parameters, EQUAL_VOLUME, 8001)
+    pmma = report_moments(FLORY, NARROW_PMMA, column, parameters, EQUAL_VOLUME, 8001)
 
     assert ps.mn != pmma.mn
     assert abs(pmma.mn / ps.mn - 1.0) > 0.005
@@ -305,12 +313,12 @@ def test_acceptance_6_integration_limits_change_the_reported_moments():
     no_context_free_property's argument executable rather than
     asserted."""
     column = Column("c", 10000, 300.0, 5.0)
-    full = report_moments(FLORY, NARROW_POLYSTYRENE, column, IntegrationParameters(), 8001)
+    full = report_moments(FLORY, NARROW_POLYSTYRENE, column, IntegrationParameters(), EQUAL_VOLUME, 8001)
     thresholded = report_moments(FLORY, NARROW_POLYSTYRENE, column,
-                                 IntegrationParameters(baseline_threshold=0.05), 8001)
+                                 IntegrationParameters(baseline_threshold=0.05), EQUAL_VOLUME, 8001)
     windowed = report_moments(FLORY, NARROW_POLYSTYRENE, column,
                               IntegrationParameters(peak_start_volume=10.0,
-                                                    peak_end_volume=15.0), 8001)
+                                                    peak_end_volume=15.0), EQUAL_VOLUME, 8001)
 
     assert thresholded.mn > full.mn * 1.05
     assert windowed.mn > full.mn * 1.5, (
@@ -348,22 +356,22 @@ def test_the_records_numbers_are_the_numbers_this_module_produces():
     column = Column("c", 10000, 300.0, 5.0)
 
     unbroadened_narrow = slice_area_moments(
-        true_chromatogram(FLORY, NARROW_POLYSTYRENE, 8001), NARROW_POLYSTYRENE, parameters)
+        true_chromatogram(FLORY, NARROW_POLYSTYRENE, 8001), NARROW_POLYSTYRENE, parameters, EQUAL_VOLUME)
     assert f"{unbroadened_narrow.dispersity:.3f}" == "1.899"
 
     unbroadened_wide = slice_area_moments(
-        true_chromatogram(FLORY, WIDE, 8001), WIDE, parameters)
+        true_chromatogram(FLORY, WIDE, 8001), WIDE, parameters, EQUAL_VOLUME)
     assert f"{unbroadened_wide.dispersity:.6f}" == "1.999775"
 
     cancelling = report_moments(FLORY, NARROW_POLYSTYRENE, Column("c", 2500, 300.0, 5.0),
-                                parameters, 8001)
+                                parameters, EQUAL_VOLUME, 8001)
     assert f"{cancelling.dispersity:.3f}" == "2.004"
     assert f"{cancelling.mn / 1e5 - 1.0:+.4f}" == "+0.0328"
 
     windowed = report_moments(FLORY, NARROW_POLYSTYRENE, column,
                               IntegrationParameters(peak_start_volume=10.0,
-                                                    peak_end_volume=15.0), 8001)
-    full = report_moments(FLORY, NARROW_POLYSTYRENE, column, parameters, 8001)
+                                                    peak_end_volume=15.0), EQUAL_VOLUME, 8001)
+    full = report_moments(FLORY, NARROW_POLYSTYRENE, column, parameters, EQUAL_VOLUME, 8001)
     assert f"{windowed.mn / full.mn - 1.0:.0%}" == "62%"
 
 
@@ -434,13 +442,13 @@ def test_tailing_makes_the_cancellation_worse_and_flips_the_sign_of_the_residual
     parameters = IntegrationParameters()
 
     symmetric = report_moments(FLORY, NARROW_POLYSTYRENE,
-                               Column("c", 2600, 300.0, 5.0), parameters, 4001)
+                               Column("c", 2600, 300.0, 5.0), parameters, EQUAL_VOLUME, 4001)
     assert symmetric.dispersity == pytest.approx(2.0, abs=0.01)
     assert symmetric.mn > 1e5, "the symmetric model puts Mn ABOVE the truth"
 
     tailed = report_moments(FLORY, NARROW_POLYSTYRENE,
                             Column("c", 8250, 300.0, 5.0, tailing_tau_over_sigma=2.0),
-                            parameters, 4001)
+                            parameters, EQUAL_VOLUME, 4001)
     assert tailed.dispersity == pytest.approx(2.0, abs=0.01), (
         "the report still reads a correct-looking dispersity with realistic tailing"
     )
@@ -459,8 +467,273 @@ def test_tailing_alone_raises_dispersity_and_lowers_mn():
     for ratio in (0.0, 0.5, 1.0, 2.0):
         reported = report_moments(FLORY, WIDE, Column("c", 10000, 300.0, 5.0,
                                                       tailing_tau_over_sigma=ratio),
-                                  parameters, 4001)
+                                  parameters, EQUAL_VOLUME, 4001)
         if previous_dispersity is not None:
             assert reported.dispersity > previous_dispersity
             assert reported.mn < previous_mn
         previous_dispersity, previous_mn = reported.dispersity, reported.mn
+
+
+# =====================================================================
+# EQUAL-AREA SLICING -- the correction a real report forced
+#
+# Everything above was measured with one slice per acquisition point:
+# equal WIDTH in volume. A Waters Empower contract-lab report shows the
+# software slices by equal AREA. The estimator was not wrong about the
+# formula; it was wrong about what a slice is, and that assumption was
+# invisible because it was a default.
+# =====================================================================
+
+EQUAL_AREA_END = EqualAreaSlicing(100, AT_SLICE_END)
+EQUAL_AREA_MID = EqualAreaSlicing(100, AT_SLICE_MIDPOINT)
+
+
+def _slice_edges(chromatogram, parameters, count):
+    """The volume boundaries an equal-area slicer would print."""
+    from instrument.chromatogram import _volume_at_cumulative
+
+    admitted = admitted_region(chromatogram, parameters)
+    cumulative = [0.0]
+    for index in range(1, len(admitted.volumes)):
+        width = admitted.volumes[index] - admitted.volumes[index - 1]
+        mean_height = 0.5 * (admitted.concentrations[index]
+                             + admitted.concentrations[index - 1])
+        cumulative.append(cumulative[-1] + mean_height * width)
+    total = cumulative[-1]
+    return [_volume_at_cumulative(admitted.volumes, cumulative, k * total / count)
+            for k in range(count + 1)]
+
+
+def test_the_slice_table_reproduces_the_anchors_structural_signature():
+    """THE DISCRIMINATING CASE, and it is the anchor's own columns.
+
+    A real report's slice table shows a constant `Slice Area` on every
+    row, a cumulative-percent column running 1 to 100, and elution steps
+    that narrow through the peak and widen in the tails. An equal-volume
+    slicer produces the exact opposite signature -- constant step,
+    varying area -- so this separates the two conventions rather than
+    merely confirming one runs."""
+    chromatogram = broaden(true_chromatogram(FLORY, NARROW_POLYSTYRENE, 8001),
+                           Column("c", 10000, 300.0, 5.0))
+    parameters = IntegrationParameters()
+
+    pieces = EQUAL_AREA_END.slices(admitted_region(chromatogram, parameters),
+                                   NARROW_POLYSTYRENE)
+    assert len(pieces) == 100
+    assert len({round(piece.area, 9) for piece in pieces}) == 1, (
+        "every row of the anchor's slice table reads the same Slice Area"
+    )
+
+    edges = _slice_edges(chromatogram, parameters, 100)
+    widths = [edges[k + 1] - edges[k] for k in range(100)]
+    peak_volume = chromatogram.peak_volume()
+    containing_peak = max(k for k in range(100) if edges[k] <= peak_volume)
+    assert widths.index(min(widths)) == containing_peak, (
+        "the narrowest slice must be the one holding the peak; that is what 'the steps narrow "
+        "through the peak' means, and it is what an equal-volume slicer cannot do"
+    )
+    assert widths[-1] > 50.0 * min(widths), "and the tail slices must be far wider"
+
+    volume_pieces = EqualVolumeSlicing().slices(
+        admitted_region(chromatogram, parameters), NARROW_POLYSTYRENE)
+    assert len({round(piece.area, 9) for piece in volume_pieces}) > 1, (
+        "if the equal-volume slicer also produced a constant area, this test would pass on "
+        "either convention and separate nothing"
+    )
+
+
+def test_equal_area_and_equal_volume_converge_as_the_slice_count_grows():
+    """Equal area is a change of variable, not a different integral, so
+    the two must agree in the limit. That is what makes the disagreement
+    at a hundred slices a DISCRETISATION error attributable to the real
+    slice count, rather than a second defect in the estimator."""
+    chromatogram = true_chromatogram(FLORY, NARROW_POLYSTYRENE, 8001)
+    parameters = IntegrationParameters()
+    reference = slice_area_moments(chromatogram, NARROW_POLYSTYRENE, parameters, EQUAL_VOLUME)
+
+    errors = []
+    for count in (100, 1000, 10000):
+        equal_area = slice_area_moments(chromatogram, NARROW_POLYSTYRENE, parameters,
+                                        EqualAreaSlicing(count, AT_SLICE_MIDPOINT))
+        errors.append(abs(equal_area.mn / reference.mn - 1.0))
+    assert errors == sorted(errors, reverse=True), f"must converge; got {errors}"
+    assert errors[0] > 1e-2, "and must NOT already agree at the real slice count of one hundred"
+    assert errors[-1] < 1e-4
+
+
+def test_the_slicing_convention_alone_flips_the_sign_of_the_mn_error():
+    """THE CORRECTION'S OWN FINDING.
+
+    One chromatogram, one column, one calibration, one set of integration
+    limits. Only what the software calls a slice differs -- and the
+    report's Mn goes from five percent ABOVE the truth to seven percent
+    BELOW it. The convention is the vendor's, not the analyst's, and the
+    report carries it nowhere."""
+    column = Column("c", 10000, 300.0, 5.0)
+    parameters = IntegrationParameters()
+
+    by_volume = report_moments(FLORY, NARROW_POLYSTYRENE, column, parameters, EQUAL_VOLUME, 8001)
+    by_area_end = report_moments(FLORY, NARROW_POLYSTYRENE, column, parameters,
+                                 EQUAL_AREA_END, 8001)
+    by_area_mid = report_moments(FLORY, NARROW_POLYSTYRENE, column, parameters,
+                                 EQUAL_AREA_MID, 8001)
+
+    assert by_volume.mn > 1e5 > by_area_end.mn, "the sign of the Mn residual must flip"
+    assert f"{by_volume.mn / 1e5 - 1.0:+.4f}" == "+0.0505"
+    assert f"{by_area_end.mn / 1e5 - 1.0:+.4f}" == "-0.0684"
+    assert f"{by_area_mid.mn / 1e5 - 1.0:+.4f}" == "+0.0616"
+    assert by_area_mid.mn - by_area_end.mn > 0.11 * 1e5, (
+        "and the two equal-area conventions -- which differ only in WHERE inside a slice the "
+        "mass is read, something the anchor does not pin -- differ by more than eleven percent "
+        "of the true Mn"
+    )
+
+
+def test_the_cancellation_does_not_survive_the_convention_the_anchor_indicates():
+    """THE RESULT THIS CORRECTION CHANGES.
+
+    Under equal-volume slicing, truncation and broadening cancel at
+    N = 2600 into a report reading D = 2.00 while Mn is 3.4% wrong. Under
+    equal-area slicing read at the slice END -- which is what a
+    cumulative column running 1 to 100 indicates -- there is NO plate
+    count at which the report reads 2.00: the endpoint rule's own bias
+    exceeds truncation's and pushes dispersity the other way, so the
+    reported D stays above 2.09 however good the column is.
+
+    The cancellation is therefore a property of an estimator convention
+    and not of the instrument. It is still a real failure mode -- a
+    consumer cannot tell a correct dispersity from two cancelling errors
+    -- but the plate count at which it happens, and whether it happens at
+    all, is not knowable from a report that omits the convention."""
+    parameters = IntegrationParameters()
+    dispersities = [
+        report_moments(FLORY, NARROW_POLYSTYRENE, Column("c", plates, 300.0, 5.0),
+                       parameters, EQUAL_AREA_END, 8001).dispersity
+        for plates in (500, 1000, 2000, 5000, 20000, 100000, 1000000)
+    ]
+    assert min(dispersities) > 2.09, (
+        f"the endpoint rule must never reach a correct-looking dispersity; got {dispersities}"
+    )
+
+    cancelling = report_moments(FLORY, NARROW_POLYSTYRENE, Column("c", 2600, 300.0, 5.0),
+                                parameters, EQUAL_VOLUME, 8001)
+    assert cancelling.dispersity == pytest.approx(2.0, abs=0.01), (
+        "and equal-volume must still cancel, or this test is comparing two broken estimators "
+        "rather than one convention against another"
+    )
+
+
+def test_one_slice_in_a_hundred_carries_a_sixth_of_the_denominator_that_sets_mn():
+    """THE MECHANISM, so the sign flip above is attributable rather than
+    observed. Mn is a harmonic mean, the last equal-area slice spans the
+    widest volume range of any row, and the endpoint rule reads it at its
+    lowest-mass edge -- which is the column's permeation limit."""
+    chromatogram = broaden(true_chromatogram(FLORY, NARROW_POLYSTYRENE, 8001),
+                           Column("c", 2500, 300.0, 5.0))
+    pieces = EQUAL_AREA_END.slices(admitted_region(chromatogram, IntegrationParameters()),
+                                   NARROW_POLYSTYRENE)
+    inverse_total = sum(piece.area / piece.mass for piece in pieces)
+    last = pieces[-1]
+    assert (last.area / last.mass) / inverse_total > 0.15, (
+        "one row in a hundred, holding one percent of the area, must carry more than a sixth "
+        "of the sum that sets Mn"
+    )
+    assert last.mass == pytest.approx(NARROW_POLYSTYRENE.mass(
+        NARROW_POLYSTYRENE.valid_volume_range[1]), rel=1e-6), (
+        "and the mass it is read at is the permeation limit itself"
+    )
+
+
+def test_the_conventions_blast_radius_depends_on_the_limits_the_report_also_omits():
+    """TWO OMISSIONS THAT INTERACT.
+
+    The integration limits are the analyst's and absent from the report;
+    the slicing convention is the vendor's and also absent. They are not
+    independent: integrated to the calibration's own edges the three
+    conventions spread Mn across twelve points and disagree on its SIGN,
+    while under a tight analyst window they agree to three points and on
+    the sign. So how much the missing convention matters cannot be
+    bounded without the missing limits."""
+    column = Column("c", 10000, 300.0, 5.0)
+
+    def spread(parameters):
+        values = [report_moments(FLORY, NARROW_POLYSTYRENE, column, parameters, slicing,
+                                 8001).mn / 1e5 - 1.0
+                  for slicing in (EQUAL_VOLUME, EQUAL_AREA_END, EQUAL_AREA_MID)]
+        return values
+
+    unwindowed = spread(IntegrationParameters())
+    windowed = spread(IntegrationParameters(peak_start_volume=8.0, peak_end_volume=16.0))
+
+    assert max(unwindowed) - min(unwindowed) > 0.11
+    assert min(unwindowed) < 0.0 < max(unwindowed), "unwindowed, they disagree on the sign"
+    assert max(windowed) - min(windowed) < 0.03
+    assert min(windowed) > 0.0, "windowed, they agree on the sign and nearly on the value"
+
+
+def test_the_slicing_convention_is_a_required_argument_like_the_integration_parameters():
+    """It carried a default of equal-volume, and that default is exactly
+    why nothing here noticed the convention was wrong until a real report
+    showed it. The representative point is required for the same reason:
+    the anchor pins the slice count and the cumulative column, and does
+    not pin where inside a slice the mass is read."""
+    import inspect
+
+    signature = inspect.signature(slice_area_moments)
+    assert signature.parameters["slicing"].default is inspect.Parameter.empty
+    assert signature.parameters["parameters"].default is inspect.Parameter.empty
+    assert inspect.signature(report_moments).parameters["slicing"].default is \
+        inspect.Parameter.empty
+
+    fields = {field.name: field for field in dataclasses.fields(EqualAreaSlicing)}
+    for name in ("slice_count", "representative"):
+        assert fields[name].default is dataclasses.MISSING, (
+            f"{name} must be stated, not defaulted"
+        )
+
+
+def test_equal_area_slicing_refuses_a_split_peak_rather_than_stepping_over_the_gap():
+    """DETECTOR PROOF for the contiguity carried on the admitted region.
+
+    A running area total across a gap attributes the missing area to the
+    slice that spans it. Equal-volume slicing has no running total and is
+    unaffected, which is why the check lives on the one convention that
+    needs it rather than on the limits."""
+    from instrument.chromatogram import Chromatogram
+
+    volumes = tuple(8.0 + 0.01 * index for index in range(601))
+    concentrations = tuple(
+        1.0 if index < 200 else (0.0 if index < 400 else 1.0) for index in range(601))
+    split = Chromatogram(volumes, concentrations)
+    parameters = IntegrationParameters(baseline_threshold=0.5)
+
+    assert not admitted_region(split, parameters).contiguous
+    with pytest.raises(SlicingError, match="not contiguous"):
+        slice_area_moments(split, NARROW_POLYSTYRENE, parameters, EQUAL_AREA_MID)
+
+    unsplit = Chromatogram(volumes, tuple(1.0 for _ in volumes))
+    assert admitted_region(unsplit, parameters).contiguous
+    assert slice_area_moments(unsplit, NARROW_POLYSTYRENE, parameters, EQUAL_AREA_MID).mn > 0.0
+    assert slice_area_moments(split, NARROW_POLYSTYRENE, parameters, EQUAL_VOLUME).mn > 0.0, (
+        "equal-volume must still compute, or the check is refusing the limits rather than the "
+        "convention that cannot survive them"
+    )
+
+
+def test_a_slicing_that_could_not_be_a_slice_table_is_refused_at_construction():
+    with pytest.raises(SlicingError, match="at least 2"):
+        EqualAreaSlicing(1, AT_SLICE_MIDPOINT)
+    with pytest.raises(SlicingError, match="representative must be one of"):
+        EqualAreaSlicing(100, "wherever")
+    assert EqualAreaSlicing(100, AT_SLICE_START).representative == AT_SLICE_START
+
+
+def test_the_record_carries_the_correction_rather_than_a_restated_result():
+    """A record that quietly re-derived its numbers under the new
+    convention would hide that the old ones were taken under a wrong
+    one."""
+    correction = RECORD["corrections"]["slicing_was_assumed_equal_volume_and_empower_is_equal_area"]
+    assert correction["source"].startswith("ANCHOR 1")
+    assert "no plate count" in correction["what_it_changes"]
+    assert "was a default" in correction["why_it_was_invisible"]
+    assert RECORD["acceptance"]["the_sharpest_result"]["superseded_scope"]
