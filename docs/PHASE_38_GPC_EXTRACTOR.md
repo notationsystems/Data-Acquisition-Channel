@@ -313,6 +313,59 @@ Four things, after the phase first landed.
   `extends: core@1.0.0`, so it is counted. Exactly one line and its digest changed, and no
   other artifact referenced the superseded hash.
 
+## 8c. Binding the defect record, and what the pair boundary turned out to be
+
+`selection_rule_defect.yaml` bound first, because a stale defect record is worse than a
+stale pre-registration: the pre-registration's thresholds are dated by construction, and
+a defect record makes claims about a live rule with no such marking. The rule had moved.
+
+**Four stale claims, one of them the record's own headline.**
+
+| Dated claim | Measured |
+|---|---|
+| the joint record *"selects fourier_transform_1d"* | it elected **option_b, least_squares**; fourier was *withdrawn on completion*, never selected |
+| correction *"not_yet_applied"* | the joint record carries it and **decided a workload under it** |
+| Kalman's *"one remaining blocker"* | **both** its DAQ blockers are `SATISFIED` at the pinned hash |
+| `generation_depth_bounded` *"represented_unenforced"* | **`enforced`**, two corrections on |
+
+The dated sentences are kept beside the corrections rather than rewritten. What survives
+untouched: the process finding (a gate slower than the work it gates was overtaken — that
+is unchanged, and the symptom was mis-stated as a *selection* when it was a *withdrawal*),
+and the least_squares/pca blocker sets, which measure exactly as recorded. The rule
+critique is an argument, and the binding deliberately does **not** certify it — a test
+asserting an argument is true is the self-consistent-and-wrong shape.
+
+**Then I edited a shared artifact and had to revert it.** Recording the
+knowing-the-class-does-not-inoculate property in `proof_integrity.yaml` was a unilateral
+edit to a file the pair holds byte-identically. Caught by reading the file's own header
+after writing, and reverted; `proof_integrity.yaml` is byte-identical across the pair
+again, verified. The property is not lost — it is the user's, and stating it in a joint
+artifact is a joint act.
+
+**And measuring the pair boundary corrected my own record from the previous pass.** I had
+written that `kalman_validation_preregistration.yaml` is *covered by nothing*. Measured:
+SCL's `architecture/` holds exactly two files — `kalman_validation_preregistration.yaml`
+and `proof_integrity.yaml` — so the remaining unbound artifact is **shared**, and
+`verify_pair_landed.py` compares it byte for byte. Both are byte-identical today.
+
+That is coverage for **divergence**, not for **currency**: a byte-identical pair of equally
+stale artifacts passes every check either repository has. Those are different properties
+and the first version conflated them — and the distinction supplies a stronger reason for
+the ordering than the one either of us gave. Binding the pre-registration means
+re-measuring it, re-measuring may find a correction, and a correction changes bytes the
+pair verifier holds identical. `selection_rule_defect.yaml` is DAQ-only and was
+correctable alone; **the pre-registration is shared and its correction is a joint reissue.**
+
+The divergence check is detector-proved by planting a one-byte change in SCL's copy and
+watching it fail by name; SCL's tree was restored and verified clean. The check skips
+rather than passes when the counterparty is absent — a claim about an intersection
+measured against a missing repository is the vacuous pass this repository has filed
+repeatedly.
+
+**The trigger tightened its own baseline.** It fired on the *shrink* direction naming
+`selection_rule_defect.yaml`, which is the direction a baseline quietly rots in if it only
+ever fires on growth.
+
 ## 9. The next executable frontier
 
 Exactly one:

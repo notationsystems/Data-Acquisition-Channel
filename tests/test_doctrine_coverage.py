@@ -30,9 +30,12 @@ DEFERRAL = COVERAGE["the_deferral"]
 # The two artifacts covered by neither the projection nor a test, pinned
 # as of 2026-08-27. This is a BASELINE OF A KNOWN GAP, never a permission:
 # the trigger below fires the moment a third joins them.
+# TIGHTENED 2026-08-27, by the trigger firing on the SHRINK direction:
+# selection_rule_defect.yaml was re-measured and bound
+# (tests/test_selection_rule_defect.py), and leaving it in this baseline
+# would have been the stale allowance the message warns about.
 KNOWN_UNBOUND = frozenset({
     "kalman_validation_preregistration.yaml",
-    "selection_rule_defect.yaml",
 })
 
 
@@ -101,7 +104,7 @@ def test_the_deferral_on_the_doctrine_source_list_still_holds():
         "baseline down; a stale allowance is how a gap becomes permanent."
     )
     for artifact in KNOWN_UNBOUND:
-        assert artifact in COVERAGE["two_artifacts_are_covered_by_nothing"]["measured"], (
+        assert artifact in COVERAGE["one_artifact_is_not_covered_for_currency"]["measured"], (
             f"{artifact} is unbound and the record does not name it"
         )
 
@@ -141,6 +144,49 @@ def test_this_records_own_artifact_is_bound_and_the_recursion_is_stated():
     # _named_by_a_test claims on its behalf.
     assert COVERAGE["subject"] == "doctrine_coverage"
     assert DEFERRAL is COVERAGE["the_deferral"]
+
+
+def test_the_remaining_unbound_artifact_is_shared_and_covered_for_divergence():
+    """CORRECTION to this record's first version, which said the artifact
+    was covered by NOTHING.
+
+    It is one of exactly two files in architecture/ that BOTH repositories
+    hold, so architecture/exchange/verify_pair_landed.py compares it byte
+    for byte. That is coverage for DIVERGENCE and not for CURRENCY -- a
+    byte-identical pair of equally stale artifacts passes every check
+    either repository has -- but it is not nothing, and the distinction is
+    why binding it is a joint act rather than DAQ's to do alone.
+
+    SKIPPED rather than assumed when the counterparty is not on disk: a
+    claim about the intersection measured against a missing repository is
+    the vacuous pass this repository has filed repeatedly."""
+    scl = pathlib.Path("/home/user/scientific-compute-layer-scl-")
+    if not (scl / "architecture").is_dir():
+        import pytest
+        pytest.skip("counterparty not present; the intersection cannot be measured here")
+
+    ours = {p.name for p in ARCHITECTURE.glob("*.yaml")}
+    theirs = {p.name for p in (scl / "architecture").glob("*.yaml")}
+    shared = ours & theirs
+    assert shared, "the intersection is empty; nothing below is a measurement"
+    assert KNOWN_UNBOUND <= shared, (
+        f"the unbound artifact is no longer shared: {sorted(KNOWN_UNBOUND - shared)}. It is then "
+        "covered by neither the projection, nor a test, nor the pair verifier -- and DAQ can bind "
+        "it unilaterally, which the record says it cannot"
+    )
+
+    import hashlib
+    for name in sorted(shared):
+        ours_bytes = (ARCHITECTURE / name).read_bytes()
+        theirs_bytes = (scl / "architecture" / name).read_bytes()
+        assert hashlib.sha256(ours_bytes).digest() == hashlib.sha256(theirs_bytes).digest(), (
+            f"architecture/{name} has DIVERGED across the pair. A shared artifact edited on one "
+            "side is exactly the rule the two sides can come to disagree about."
+        )
+
+    section = COVERAGE["one_artifact_is_not_covered_for_currency"]
+    assert "DIVERGENCE, not CURRENCY" in section["what_it_is_covered_FOR_and_what_it_is_not"]
+    assert "JOINT ACT" in section["and_this_is_why_binding_it_is_not_daqs_to_do_alone"]
 
 
 def test_the_check_states_its_own_limit_rather_than_overclaiming():
