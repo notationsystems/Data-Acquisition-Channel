@@ -38,10 +38,15 @@ Measured in `architecture/invariants.yaml`:
     applicability_domain_declared       status: absent
       gap (all four): "no chemistry representation exists in this repository at all"
 
-There is no gate to satisfy. Building one would be building the chemistry
-representation, which §7 of the brief explicitly forbids. **Nothing was built for §2.6
-and nothing was proposed.** It is reported as a tension between the brief and the
-repository, not resolved.
+There is no gate to satisfy **in DAQ**, and building one would be building the chemistry
+representation §7 explicitly forbids. **Nothing was built for §2.6 and nothing was
+proposed.**
+
+**Sharpened after the first draft: the rules are not absent, they are STE's.** All four
+are implemented and enforced in `structures/` at the pin — see §4. So the row's word
+`absent` is true and the inference a reader draws from it is wrong, because the row
+answers *absent where?* with a scope nobody wrote down. §2.6 was misfiled in the brief,
+not mistaken. Recorded in `architecture/chemistry_rule_ownership.yaml`.
 
 **A third thing, found by measurement and in neither the brief nor the program record:
 the two DAF-owned content gates disagree on the column key, and one requires a key the
@@ -123,8 +128,31 @@ no entry path can reach the gate. NOT a measurement; the metric is silent, not c
 
 DAQ's report is therefore only this: **an acquisition path now exists that enters at the
 adapter, carries a property with method, conditions, units and an uncertainty posture,
-and lands in the pool with a referent.** Whether that changes any of the 20 codes is
-STE's probe to re-run. DAQ has not re-measured it and does not claim it moved.
+and lands in the pool with a referent.** DAQ has not re-run the probe and does not claim
+any code moved.
+
+**CORRECTED after this report's first draft, which left open whether the new path moves
+STE's number.** Measured, it cannot on its own. Across the whole vendored tree at the pin,
+the only callers of the four chemistry guards outside `structures/` and `tests/` are
+`scripts/chemistry_reachability.py` and `scripts/mutate_reachability_checks.py` — the
+probe itself and its mutation harness. **Nothing in any admission or acquisition path
+calls any of them.** Reachability needs a call site, not richer content: an acquisition
+path carrying chemistry-shaped content past a guard nobody calls is still zero reachable,
+and that call site would be inside the unmodifiable submodule. STE's own summary carries
+the field that would move — `exercised_by_real_acquisition: 0` — and DAQ now asserts it
+is still zero rather than leaving the inference open.
+
+**And §2.6 was misfiled, not absent.** All four rules the brief filed to DAQ are
+implemented and enforced in STE's `structures/` at the pin: `assert_identity_policy` and
+`assert_distribution_identity` in `structures/substance.py`, `assert_method_block` and
+`assert_applicability` in `structures/method_blocks.py`. DAQ's four `status: absent` rows
+are true *of DAQ* and say nothing about the pair — a row reading `absent` answers *absent
+where?*, and the scope was never written down, so the row was true and unfalsifiable at
+once. The rows are left as they are, because one that started describing another
+repository's state would be a worse record; what is added is
+`architecture/chemistry_rule_ownership.yaml`, naming the owner and the pin, enforced by
+`tests/test_chemistry_rule_ownership.py`. Nothing was built to satisfy the clause and the
+clause was not dropped.
 
 ## 5. Discriminating
 
@@ -251,6 +279,31 @@ extractor asserts they can never drift, and
 `test_the_two_science_gates_disagree_on_the_column_key` binds the finding to a mechanism
 rather than to this paragraph — if either gate is ever reconciled with the other, that
 test fails and the duplication can be removed.
+
+## 8b. What the follow-up pass added
+
+Four things, after the phase first landed.
+
+- **The §20 repair was re-run against the probe that motivated it.** A repair is an
+  untested assertion until that happens, and the suite is green on both sides of it. The
+  old check's predicate still fires on `gpc_report.py` (it does contain the string) — which
+  is why the fix was a repair and not a ninth allowlist entry — and the repaired check
+  refuses **that same file** the moment it constructs a condition instead of carrying one
+  (`['solvent', 'column_temperature_c']`). Bound as
+  `test_the_repair_is_re_run_against_the_probe_that_motivated_it`, with the mutation
+  asserted to have applied, so a diff that cannot reach the property counts as malformed
+  rather than as caught.
+- **§2.6 recorded as a misfiling**, in `architecture/chemistry_rule_ownership.yaml` with
+  `tests/test_chemistry_rule_ownership.py`. The rules are STE's, live at the pin; the
+  record re-measures the vendored tree rather than restating it, and its coverage is
+  derived from `invariants.yaml` so a fifth row acquiring the same gap cannot sit
+  unrecorded. The four DAQ rows are left reading `absent`.
+- **§4's reachability claim corrected.** The acquisition path cannot move STE's number on
+  its own; reachability needs a call site inside the unmodifiable submodule, and there is
+  none.
+- **The register census moved 36 → 37** and was regenerated: the new artifact declares
+  `extends: core@1.0.0`, so it is counted. Exactly one line and its digest changed, and no
+  other artifact referenced the superseded hash.
 
 ## 9. The next executable frontier
 

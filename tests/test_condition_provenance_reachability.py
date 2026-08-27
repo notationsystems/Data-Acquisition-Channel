@@ -445,6 +445,46 @@ def test_the_conditions_check_catches_a_fabricated_condition():
         assert _fabricated_condition_keys(planted), f"not caught: {planted!r}"
 
 
+def test_the_repair_is_re_run_against_the_probe_that_motivated_it():
+    """A REPAIR IS AN UNTESTED ASSERTION UNTIL THE MOTIVATING PROBE IS
+    RE-RUN. The suite is green before this repair and green after it, and
+    the two greens mean different things; only the probe separates them.
+
+    The probe was `daf/extractors/gpc_report.py`, which the old check --
+    a search for the literal `"conditions"` against a hard-coded file
+    list -- refused for passing the SOURCE's own conditions through. Both
+    halves are asserted against that same real file, so a pass here
+    cannot be incidental:
+
+      * the old check's predicate still fires on it (it does contain the
+        string), which is why the repair was needed rather than an
+        allowlist entry; and
+      * the new check refuses that same file the moment it CONSTRUCTS a
+        condition instead of carrying one.
+    """
+    source = (REPO_ROOT / "daf" / "extractors" / "gpc_report.py").read_text()
+
+    assert '"conditions"' in source, (
+        "the old check's predicate -- and the reason a ninth allowlist entry looked like the fix"
+    )
+    assert not _fabricated_condition_keys(source), (
+        "and the property that makes it not a violation: the extractor carries, never constructs"
+    )
+
+    fabricating = source.replace(
+        '"conditions": payload["conditions"],',
+        '"conditions": {"solvent": "THF", "column_temperature_c": 35.0},',
+    )
+    assert fabricating != source, (
+        "the planted mutation did not apply -- a diff that cannot reach the property is malformed, "
+        "counted neither as caught nor as surviving (architecture/proof_integrity.yaml)"
+    )
+    assert set(_fabricated_condition_keys(fabricating)) == {"solvent", "column_temperature_c"}, (
+        "the repaired check must refuse the MOTIVATING file itself when it fabricates. If this "
+        "stops firing, the check passes gpc_report.py incidentally rather than structurally"
+    )
+
+
 def test_the_conditions_check_passes_a_source_supplied_condition():
     """The other half: carrying a mapping the source declared must NOT be
     flagged, or the check is just the grep again under a new name."""
