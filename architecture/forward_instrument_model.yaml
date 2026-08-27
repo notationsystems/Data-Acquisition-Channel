@@ -1,0 +1,67 @@
+# A SIMULATED GPC WHOSE REPORTED MOMENTS ARE KNOWABLY WRONG.
+#
+# Not a chromatography simulator. An ORACLE: the truth is closed form and
+# the report is not equal to it, and the difference is the product. A
+# clean simulator would teach nothing the analytic moments already state.
+#
+# STEPS 1-4 OF THE BUILD ORDER. Steps 5 and 6 -- report emission in the
+# shape Phase B.1 measured, and running the extractor against emitted
+# reports -- are NOT built, because B.1 has not run: this session does not
+# have the corpus anchors. Emitting a report shape nobody has measured is
+# the third-fixture problem the brief names in its own first paragraph.
+extends: core@1.0.0
+
+subject: forward_instrument_model
+status: steps_1_to_4_built_5_and_6_blocked_on_the_anchors
+owner: daf
+enforcement: tests/test_forward_instrument_model.py
+
+# ----------------------------------------------------------------------
+the_layer_rule: "nothing in the product imports `instrument`, and `instrument` imports nothing from the product. A product path that can reach the forward model is ground truth leaking into the measurement; a fixture generator that depends on the code under test is not an independent oracle. Both directions asserted by AST over every authored package, derived rather than listed -- and the bent:zero package derivation picked the new package up with no change, which is what the property form is for."
+
+# ----------------------------------------------------------------------
+acceptance:
+  one_analytic_equals_integrated:
+    verdict: PASSES
+    measured: "all three families to better than 1e-10 relative, across three decades of Mn, z from 0 to 19, and dispersity from 1.05 to 3.0."
+    and_it_earned_itself_immediately: "the first run showed Flory's Mn off by 1.0e-06 while the z > 0 families agreed to 1e-14. The cause was a FIXED six-decade lower integration bound. Mn is (integral of w) over (integral of w/M), the second is the number integral, and for small M the number density goes as M^z -- so at z = 0 it is FLAT and six decades leaves 1e-6 of it outside the grid. The bound is now derived: solving (L/b)^(z+1) = epsilon gives twelve decades at z = 0. The residual error then matched the chosen epsilon, which is the derivation confirmed by measurement rather than by the pass."
+    why_that_matters_beyond_the_fix: "the strongest anchor was also the case that exposed the defect, and it did so before anything downstream was built -- which is exactly what the build order's `stop here and verify` is for."
+  two_flory_dispersity_is_exactly_two:
+    verdict: PASSES
+    measured: "2.000000000 at Mn = 1e3 through 1e7. The 3 : 2 : 1 invariant is a property of the most-probable distribution, not of this code."
+  three_reported_pdi_exceeds_true_pdi:
+    verdict: FALSE AS STATED, and the reason is a finding
+    what_was_asked: "reported PDI > true PDI, always, and the excess grows as plate count falls. If the model does not produce a reported PDI larger than the true PDI, the broadening is wrong."
+    what_was_measured: "the broadening is RIGHT and a second effect the brief did not model dominates at realistic plate counts, in the opposite direction."
+    broadening_in_isolation: "holds exactly as specified. Against a wide calibration with only N varying, the excess over the unbroadened report is +0.001 at N = 300000 and +1.32 at N = 300, strictly monotonic across seven plate counts, always positive."
+    the_effect_that_was_missing: "THE COLUMN'S PERMEATION LIMIT. A real calibration spans a finite mass range; the column cannot see chains below it. Truncating the low-M tail biases Mn UP and dispersity DOWN with no broadening at all -- measured at D = 1.899 against a true 2.000 on an UNBROADENED chromatogram. Widening the calibration recovers D = 1.999999, which is what identifies truncation as the cause rather than the estimator."
+    so_the_acceptance_criterion_was_underspecified: "not wrong about broadening. It assumed broadening was the only error source, and a report is wrong even with a perfect column because the column cannot see the whole distribution."
+
+  the_sharpest_result:
+    what_it_is: "TWO LARGE ERRORS CANCEL INTO A CORRECT-LOOKING DISPERSITY. At N = 2500 against a realistic permeation limit, truncation and broadening balance: the report states D = 2.004, indistinguishable from a correct measurement, while Mn is wrong by +3.28%."
+    why_it_matters_more_than_the_acceptance_test: "the cancellation is in the RATIO and not in the SCALE. A consumer reading a dispersity of 2.00 off a report has no way to tell a correct measurement from two large errors that happened to balance -- and the number that is still wrong is the one a formulation would be built on."
+    it_was_not_predicted: "nothing in the brief anticipated it. It fell out of measuring why acceptance 3 failed."
+
+  four_reproducible: 
+    verdict: PASSES
+    measured: "identical parameters give bit-identical moments. The magnitude is stated rather than discovered per run: Mn +5.05%, Mw +0.97%, dispersity -0.078 at N = 10000 against the narrow calibration."
+  five_two_calibrations_one_truth:
+    verdict: PASSES
+    measured: "the same distribution through polystyrene and PMMA calibrations reports Mn differing by 1.13%. The difference is attributable to a STATED property -- standard_chemistry on the calibration object -- rather than merely observed, which is why the calibration is an object and not a function."
+  six_integration_limits_change_the_report:
+    verdict: PASSES, and it is the deliverable
+    measured: "against one chromatogram, one column and one calibration, the analyst's integration choices alone move the reported Mn from 105048 to 170186 -- SIXTY-TWO PERCENT -- and the dispersity from 1.92 to 1.36. A 5% baseline threshold alone moves Mn by 12%."
+    what_it_demonstrates: "no_context_free_property's argument executable rather than asserted. The reported values depend on information the report does not carry, on fabricated data, at zero instrument cost."
+    the_parameters_are_required_arguments: "not defaults. A default that silently applies would be the omission this measures, repeated in the instrument."
+
+# ----------------------------------------------------------------------
+what_is_not_built_and_why:
+  report_emission: "step 5. The brief requires the shape Phase B.1 measured, and B.1 has not run because this session does not have the OMNISEC or WinGPC anchors. A report shape invented here would be the third fixture."
+  extractor_against_emitted_reports: "step 6, which depends on step 5. It is the first time this programme could say HOW WRONG an ingested observation is rather than whether it was refused, and it waits on the anchors."
+  the_truth_record: "specified in the brief as a separate artifact structurally incapable of entering the pool. Not built, because nothing emits a report yet for it to accompany. The layer rule above is the enforcement that will carry it: `instrument` is unreachable from the product, so a truth record living there cannot reach an adapter."
+  a_general_rate_solver: "explicitly out of scope. The broadening width is derived from a stated plate count, which is a physical claim that can be wrong informatively; a fitted sigma would be a knob."
+
+known_limits_of_the_model:
+  uniform_broadening: "sigma_V = V_peak / sqrt(N) applied across the whole peak. A general rate model would give a width varying with retention. Stated because the acceptance criterion is about the SIGN and DEPENDENCE of the discrepancy rather than its exact magnitude, and a varying width would change the magnitude without changing either."
+  gaussian_not_emg: "real SEC peaks tail. The brief names an exponentially modified Gaussian as the better choice and it is not built; a symmetric kernel understates the low-M side, which biases in the same direction as truncation rather than against it."
+  fabricated_calibration_coefficients: "the two calibrations are chosen to be monotonic and physically ordered over their range. They are NOT transcribed from any instrument and nothing here claims they are."
