@@ -1,0 +1,149 @@
+{
+  "conditions": {
+    "calibration": "narrow_polystyrene_standards",
+    "column_set": "PLgel_5um_MIXED-C_x2",
+    "column_temperature_c": 35.0,
+    "concentration_mg_per_ml": 2.0,
+    "detector": "refractive_index",
+    "flow_rate_ml_per_min": 1.0,
+    "injection_volume_ul": 100.0,
+    "solvent": "THF"
+  },
+  "data_provenance": "fabricated_fixture",
+  "method": "sec_thf_35c_polystyrene_calibrated",
+  "report_id": "GPC-2026-0432",
+  "runs": [
+    {
+      "measurements": [
+        {
+          "uncertainty": 1250.0,
+          "uncertainty_kind": "stated",
+          "unit": "g/mol",
+          "value": 104200.0,
+          "variable": "number_average_molar_mass"
+        },
+        {
+          "uncertainty": 2600.0,
+          "uncertainty_kind": "stated",
+          "unit": "g/mol",
+          "value": 211400.0,
+          "variable": "weight_average_molar_mass"
+        },
+        {
+          "uncertainty": 0.02,
+          "uncertainty_kind": "propagated",
+          "unit": "dimensionless",
+          "value": 2.029,
+          "variable": "dispersity"
+        }
+      ],
+      "run_id": "inj-01"
+    },
+    {
+      "measurements": [
+        {
+          "uncertainty": 1180.0,
+          "uncertainty_kind": "stated",
+          "unit": "g/mol",
+          "value": 98300.0,
+          "variable": "number_average_molar_mass"
+        },
+        {
+          "uncertainty": 2530.0,
+          "uncertainty_kind": "stated",
+          "unit": "g/mol",
+          "value": 205900.0,
+          "variable": "weight_average_molar_mass"
+        },
+        {
+          "uncertainty": 0.02,
+          "uncertainty_kind": "propagated",
+          "unit": "dimensionless",
+          "value": 2.095,
+          "variable": "dispersity"
+        }
+      ],
+      "run_id": "inj-02"
+    },
+    {
+      "measurements": [
+        {
+          "uncertainty": 1220.0,
+          "uncertainty_kind": "stated",
+          "unit": "g/mol",
+          "value": 101900.0,
+          "variable": "number_average_molar_mass"
+        },
+        {
+          "uncertainty": 2500.0,
+          "uncertainty_kind": "stated",
+          "unit": "g/mol",
+          "value": 203100.0,
+          "variable": "weight_average_molar_mass"
+        },
+        {
+          "uncertainty": 0.02,
+          "uncertainty_kind": "propagated",
+          "unit": "dimensionless",
+          "value": 1.993,
+          "variable": "dispersity"
+        }
+      ],
+      "run_id": "inj-03"
+    },
+    {
+      "measurements": [
+        {
+          "uncertainty": 1300.0,
+          "uncertainty_kind": "stated",
+          "unit": "g/mol",
+          "value": 108600.0,
+          "variable": "number_average_molar_mass"
+        },
+        {
+          "uncertainty": 2640.0,
+          "uncertainty_kind": "stated",
+          "unit": "g/mol",
+          "value": 214800.0,
+          "variable": "weight_average_molar_mass"
+        },
+        {
+          "uncertainty": 0.02,
+          "uncertainty_kind": "propagated",
+          "unit": "dimensionless",
+          "value": 1.978,
+          "variable": "dispersity"
+        }
+      ],
+      "run_id": "inj-04"
+    },
+    {
+      "measurements": [
+        {
+          "uncertainty": 1160.0,
+          "uncertainty_kind": "stated",
+          "unit": "g/mol",
+          "value": 96800.0,
+          "variable": "number_average_molar_mass"
+        },
+        {
+          "uncertainty": 2450.0,
+          "uncertainty_kind": "stated",
+          "unit": "g/mol",
+          "value": 199200.0,
+          "variable": "weight_average_molar_mass"
+        },
+        {
+          "uncertainty": 0.02,
+          "uncertainty_kind": "propagated",
+          "unit": "dimensionless",
+          "value": 2.058,
+          "variable": "dispersity"
+        }
+      ],
+      "run_id": "inj-05"
+    }
+  ],
+  "sample_id": "PS-lot-4471",
+  "sample_kind": "sample"
+}

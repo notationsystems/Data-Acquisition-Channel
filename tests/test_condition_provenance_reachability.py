@@ -33,7 +33,9 @@ gate.
 
 from __future__ import annotations
 
+import ast
 import json
+import re
 from pathlib import Path
 
 import pytest
@@ -332,27 +334,126 @@ def test_the_incompatibility_is_general_not_noaa_specific(tmp_path):
 # ------------------------------------------- no fabricated condition path
 
 
+# §20 is a property, and this used to be a grep. See
+# `_fabricated_condition_keys` below and the two detector proofs that
+# follow it.
+#
+# An extractor that CONSTRUCTS a conditions mapping from keys it names
+# itself. The one recorded exception, not an allowlist of files that may
+# mention the word: `noaa_water_level_measurements` builds
+# `FrozenMapping({"datum": self.datum})`, which Phase 33 found to be a
+# genuine measurement condition and Phase 34 gave a shared representation.
+CONDITION_CONSTRUCTING_EXTRACTORS = ("noaa_water_level_measurements.py",)
+
+
+def _fabricated_condition_keys(source: str):
+    """Every string-literal key an extractor puts INTO a conditions
+    mapping -- which is what "source-specific condition schema" and
+    "fabricated condition" both reduce to.
+
+    Derived from the syntax rather than enumerated, because the previous
+    form of this check was a grep for the literal `"conditions"` with a
+    hard-coded list of files allowed to contain it. That form failed on
+    the first extractor to pass a source's OWN conditions through
+    verbatim -- the behaviour §20 most wants -- while a bespoke
+    fabricated mapping in a file already on the list would have passed.
+    It read a proxy for its target: `architecture/proof_integrity.yaml`.
+    """
+    keys = []
+
+    def literal_keys(node):
+        if isinstance(node, ast.Call) and node.args:
+            # FrozenMapping({...}) and friends.
+            return literal_keys(node.args[0])
+        if isinstance(node, ast.Dict):
+            return [k.value for k in node.keys
+                    if isinstance(k, ast.Constant) and isinstance(k.value, str)]
+        return []
+
+    for node in ast.walk(ast.parse(source)):
+        if isinstance(node, ast.Dict):
+            for key, value in zip(node.keys, node.values):
+                if isinstance(key, ast.Constant) and key.value == "conditions":
+                    keys.extend(literal_keys(value))
+        elif isinstance(node, (ast.Assign, ast.AnnAssign)):
+            targets = node.targets if isinstance(node, ast.Assign) else [node.target]
+            named = any(isinstance(t, ast.Name) and t.id == "conditions" for t in targets)
+            if named and node.value is not None:
+                keys.extend(literal_keys(node.value))
+    return keys
+
+
 def test_no_extractor_declares_a_conditions_key():
     """§20: no source-specific condition schema, no fabricated condition,
     anywhere in the shipped extractors.
 
-    CORRECTED IN PHASE 34: NOAA is now the one exception, and it is
-    exactly that -- an exception, not a reopening of §20. Phase 33 found
-    `datum` a genuine measurement condition; Phase 34 found a
-    representation that could carry it (`daf.storage.frozen_mapping.
-    FrozenMapping`, a generic, shared, non-NOAA-specific type) without
-    breaking materials.analysis. Every OTHER extractor still declares
-    none, and NOAA's own declaration uses the shared representation, not
-    a bespoke `NOAAConditions`-shaped schema."""
-    noaa_path = REPO_ROOT / "daf" / "extractors" / "noaa_water_level_measurements.py"
+    CORRECTED IN PHASE 34: NOAA is the one exception, and it is exactly
+    that -- Phase 33 found `datum` a genuine measurement condition, and
+    Phase 34 found a shared, non-NOAA-specific representation
+    (`daf.storage.frozen_mapping.FrozenMapping`) that could carry it
+    without breaking materials.analysis.
+
+    CORRECTED AGAIN IN THE GPC PHASE, and the correction is to this
+    CHECK rather than to §20. The check was a grep for the literal string
+    `"conditions"` against a hard-coded list of files allowed to contain
+    it, and the GPC extractor made the difference visible: it declares a
+    `conditions` key and fabricates nothing, because the value is the
+    source report's own mapping passed through the shared tightening
+    seam. Under the grep that is a violation; under §20 it is the
+    intended behaviour. Adding a ninth filename to the allowlist would
+    have been the enumerated-coverage repair again --
+    architecture/proof_integrity.yaml records TWENTY-FOUR instances of a
+    check reading a proxy for its target. So the property is derived
+    instead: an extractor may CARRY conditions freely and may not
+    CONSTRUCT them."""
     for path in sorted((REPO_ROOT / "daf" / "extractors").glob("*.py")):
-        if path == noaa_path:
+        source = path.read_text()
+        fabricated = _fabricated_condition_keys(source)
+        if path.name in CONDITION_CONSTRUCTING_EXTRACTORS:
+            assert fabricated, (
+                f"{path.name} is recorded as the exception that constructs a condition; if it no "
+                "longer does, the exception should be removed rather than left standing"
+            )
+            assert "FrozenMapping" in source, "the exception must use the shared representation"
             continue
-        assert '"conditions"' not in path.read_text(), f"{path.name} declares conditions"
-    noaa_source = noaa_path.read_text()
+        assert not fabricated, (
+            f"{path.name} fabricates condition key(s) {fabricated!r}. §20: a condition must come "
+            "from the source, never from the extractor."
+        )
+        assert not re.search(r"class \w*Conditions\b", source), (
+            f"{path.name} defines a source-specific condition schema"
+        )
+        if '"conditions"' in source:
+            assert "FrozenMapping" in source or "tighten_passthrough_content" in source, (
+                f"{path.name} carries conditions without the shared hashable representation, which "
+                "breaks materials.analysis's comparison context in-process"
+            )
+
+    noaa_source = (REPO_ROOT / "daf" / "extractors" / "noaa_water_level_measurements.py").read_text()
     assert '"conditions"' in noaa_source
-    assert "FrozenMapping" in noaa_source, "NOAA's conditions must use the shared representation"
     assert "NOAAConditions" not in noaa_source, "no source-specific condition schema was created"
+
+
+def test_the_conditions_check_catches_a_fabricated_condition():
+    """DETECTOR PROOF. The defect §20 exists to catch, planted, in both
+    the shapes an extractor would actually write it."""
+    for planted in (
+        'content = {"value": 1.0, "conditions": FrozenMapping({"datum": "MLLW"})}',
+        'conditions = {"datum": "MLLW"}\ncontent = {"conditions": conditions}',
+        'content = {"conditions": {"solvent": "THF", "temperature_c": 35.0}}',
+    ):
+        assert _fabricated_condition_keys(planted), f"not caught: {planted!r}"
+
+
+def test_the_conditions_check_passes_a_source_supplied_condition():
+    """The other half: carrying a mapping the source declared must NOT be
+    flagged, or the check is just the grep again under a new name."""
+    for carried in (
+        'content = {"conditions": payload["conditions"]}',
+        'content = {"conditions": FrozenMapping(record["conditions"])}',
+        'conditions = payload["conditions"]\ncontent = {"conditions": conditions}',
+    ):
+        assert not _fabricated_condition_keys(carried), f"wrongly flagged: {carried!r}"
 
 
 def test_the_noaa_extractor_was_left_exactly_as_phase_32_produced_it():
