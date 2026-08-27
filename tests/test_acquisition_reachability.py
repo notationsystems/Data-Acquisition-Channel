@@ -268,6 +268,11 @@ def test_the_verified_measurement_kind_is_not_recorded_anywhere():
         assert "kind" not in o.content
     assert "nothing records the result" in RECORD["the_drop_set"]["kind"]["the_part_worth_stating"]
 
+    # CORRECTED IN PHASE A. The first two clauses hold; the third --
+    # "this path does not use ClassifiedPool" -- described the harness,
+    # not the path, and the correction must stay attached to the claim.
+    assert "misattributed" in RECORD["the_drop_set"]["kind"]["corrected_in_phase_a"]
+
 
 def test_the_self_check_limit_and_the_sibling_number_are_both_stated():
     assert "weakest evidence shape" in RECORD["the_self_check_limit"]

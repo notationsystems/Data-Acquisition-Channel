@@ -1,0 +1,55 @@
+# THE CLASS THE EXTRACTOR VERIFIES, AND WHERE IT IS ACTUALLY RECORDED.
+#
+# WO-4 recorded that the extractor verifies the evidence class and nothing
+# carries the result -- that Observation has no class field, that
+# scout.pipeline creates no EvidenceClassAssignment, and that "this
+# acquisition path does not use ClassifiedPool".
+#
+# THE LAST OF THOSE WAS A STATEMENT ABOUT THE HARNESS, NOT THE PATH, and
+# framing it as a property of the path was the error. ClassifiedPool
+# exists, is the designed ingest gate, and is an EvidencePool -- so
+# run_scout accepts it unmodified. The GPC tests passed a bare
+# EvidencePool() fifteen times, and the measurement reported that absence
+# as though the capability were unwired.
+extends: core@1.0.0
+
+subject: evidence_class_at_ingest
+status: measured
+owner: daf
+enforcement: tests/test_evidence_class_at_ingest.py
+
+# ----------------------------------------------------------------------
+the_correction_to_wo4:
+  what_wo4_said: "`scout.pipeline creates no EvidenceClassAssignment, and this path does not use ClassifiedPool` -- reported among the drop-set findings as a capability nobody wired."
+  what_is_actually_the_case: "the first half is true and is by design: the vendored pipeline is not touched and does not need to be, because it accepts any EvidencePool and ClassifiedPool is one. The assignment happens in ClassifiedPool's put_* overrides, which is the only evidence write path in this repository. The second half was about the GPC TEST HARNESS, which constructed EvidencePool() rather than ClassifiedPool."
+  why_the_error_is_worth_recording: "a measurement of what a PATH can do was taken against a harness that chose not to use the capability, and reported the harness's choice as the path's limit. Nothing downstream was wrong -- the class genuinely was not recorded in those runs -- but the CAUSE was misattributed, which is the same shape as crediting the wrong mechanism for a true claim."
+
+# ----------------------------------------------------------------------
+# MEASURED through the real path, both adapters.
+# ----------------------------------------------------------------------
+what_is_recorded:
+  measured: "with ClassifiedPool and SourceClassPolicy(by_source_kind={instrument_report: measured}), the GPC report source yields 21 assignments over 10 observations, 5 documents, 5 records and 1 source. Every observation is classified."
+  recoverable_from_a_pooled_observation: "YES. pool.classes.all_assignments() carries EvidenceClassAssignment(evidence_id, evidence_kind='observation', evidence_class='measured', assigned_by='source_policy:gpc'). The declaring policy travels with the class, so two policies disagreeing produce two claims rather than one silently winning."
+  classified_and_unclassified_are_distinguishable: "YES, and this is the discriminating case rather than a demonstration that it works. With an EMPTY policy the same acquisition produces 10 observations and ZERO assignments -- the evidence is admitted and UNCLASSIFIED, which is inadmissible for canonical assertion. A source nobody has classified is exactly a source whose evidence nobody may assert; it is not guessed at."
+
+the_disagreement_detector:
+  planted: "the same evidence id assigned a second, different class."
+  refused_by_name: "ClassReassignment -- `was classified 'measured' by 'policy_one' at ingest; refusing to reclassify it 'computed' by 'policy_two'`."
+  and_a_sharper_case: "the SAME class from a DIFFERENT declaring policy is ALSO refused, because assigned_by participates in identity. That is stronger than it first looks: it refuses a second policy quietly agreeing, which would otherwise erase the fact that two declarations were in play."
+  idempotent: "an identical assignment is allowed, so re-ingest is not a reclassification."
+
+# ----------------------------------------------------------------------
+the_pdi_clause_cannot_be_satisfied_as_stated:
+  what_was_asked: "an observation whose class was verified as computed is recoverable AS computed, not merely refused at the gate."
+  measured: "epistemics.evidence_class ALLOWS make_class_assignment(kind='observation', class='computed') -- it does not refuse the combination. So the blocker is not the class representation."
+  the_actual_blocker: "no such Observation exists to classify. The extractor refuses a measurement declaring kind `derived` before any candidate is produced, and architecture/evidence_class.yaml maps computed evidence onto evidence.types.DerivedValue rather than Observation. There is no path from Extractor to DerivedValue -- extract() returns ExtractionCandidates, which run_scout admits as Observations."
+  so_the_honest_answer: "a computed quantity arriving through an acquisition interface is REFUSED, and the record of the refusal is the adapter's `not_acquired_because_not_measured` key in the content of the observations that were acquired. Making it recoverable as computed would mean routing derived quantities into DerivedValue, which is a new acquisition path and not a class-recording fix."
+  what_this_does_not_propose: "nothing. The gap is named and left; building an Extractor-to-DerivedValue route is a design decision about what acquisition MAKES, not an implementation detail of recording a class."
+
+# ----------------------------------------------------------------------
+the_boundary_question_answered:
+  asked: "would using ClassifiedPool on this path change the pool interface, the Observation type, or anything the sibling reads?"
+  answer: "NO, on all three, and this was checked rather than assumed. ClassifiedPool subclasses DurablePool which is an EvidencePool; the vendored scout/pipeline.py is untouched and accepts it by type; Observation gains no field -- the class is carried BESIDE the object, which is what architecture/evidence_class.yaml already specifies; and nothing in the shared set moves."
+  so_no_stop_was_triggered: "the work order's STOP condition for Phase A did not fire."
+
+what_remains_unwired_and_is_a_choice_not_a_gap: "the GPC acquisition entry point is the test harness, and a harness may legitimately use a bare pool when the thing under test is not classification. What was wrong was reporting that choice as the path's limit. The tests that make claims ABOUT classification now use ClassifiedPool; the rest do not, and that is deliberate."

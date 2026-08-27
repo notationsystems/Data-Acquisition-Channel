@@ -1,0 +1,12 @@
+# GPC/SEC SUMMARY REPORT
+# Instrument: Model 1260 Infinity II GPC / SEC
+# Column: PLgel 5um MIXED-C x2; Solvent: THF; Temp: 35 C; Flow: 1.0 mL/min
+# Detector: RI; Calibration: narrow polystyrene standards; Inj vol: 100 uL
+# NOTE: values in this file are FABRICATED. No instrument produced them.
+Sample,Inj,Mw,Mw_Flag,Mn,Mn_Flag
+PS-lot-9001,1,198400,OK,96200,OK
+PS-lot-9001,2,201100,OK,,DETECTOR_SATURATED
+PS-lot-9001,3,,RUN_FAILED,,RUN_FAILED
+PS-lot-9001,4,196800,OK,-999,MISSING
+PS-lot-9001,5,199900,OK,94800,BELOW_QUANT_LIMIT
+PS-lot-9001,6,197200,OK,-999,OK
