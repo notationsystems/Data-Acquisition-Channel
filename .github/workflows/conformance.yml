@@ -21,13 +21,34 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+          # FULL HISTORY. Five probes prove their expectations PREDATE the
+          # run they judge, by asking git which commit added each file
+          # (`test_the_expectations_predate_this_run` and its siblings).
+          # Under checkout's default depth of 1 every file appears to have
+          # been added in the single fetched commit, so the probes fail on
+          # an identity comparison against themselves -- a verdict about
+          # the checkout rather than about the tree. Reproduced locally on
+          # a --depth 1 clone: 5 failed / 1606 passed; unshallowed on the
+          # same commit: 1621 passed. Latent until now only because
+          # collection died first.
+          fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
       - name: Install checkers
-        run: python -m pip install --upgrade pytest mypy ruff
+        # pyyaml is a TEST-TIME REFERENCE IMPLEMENTATION, not a runtime
+        # dependency, and `[project] dependencies = []` stays empty. Three
+        # modules check the repository's own YAML subset parser against it
+        # -- `assert loads(text) == yaml.safe_load(text)` and, as the
+        # discriminating half, `assert loads(bare) != yaml.safe_load(bare)`.
+        # Substituting the in-repo loader would compare the parser with
+        # itself and assert nothing. Without it, three modules fail to
+        # IMPORT, pytest exits 2 during collection, and the Tests and Types
+        # steps never run: the gate has been red on at least the last five
+        # commits for a missing checker, not for anything in the tree.
+        run: python -m pip install --upgrade pytest mypy ruff pyyaml
 
       - name: Doctrine regenerates identically
         run: |
