@@ -8,6 +8,7 @@ stop.
 from __future__ import annotations
 
 import dataclasses
+import math
 import pathlib
 import sys
 
@@ -374,4 +375,92 @@ def test_the_record_says_what_is_not_built_and_why():
 
     limits = RECORD["known_limits_of_the_model"]
     assert "NOT transcribed from any instrument" in limits["fabricated_calibration_coefficients"]
-    assert "understates the low-M side" in limits["gaussian_not_emg"]
+    emg = limits["gaussian_not_emg_MEASURED_AND_THE_LIMIT_WAS_UNDERSTATED"]
+    assert "gets its SIGN wrong" in emg
+    assert "strengthened by its own stated limit" in emg
+    assert "agreed with the negation" in limits["a_direction_test_was_not_a_discriminating_case"]
+
+
+# =====================================================================
+# Tailing: the limit that made the cancellation LOOK SMALLER than it is
+# =====================================================================
+
+def test_the_tail_kernel_shifts_the_centroid_by_its_discrete_mean_not_merely_later():
+    """DIRECTION WAS NOT A DISCRIMINATING CASE.
+
+    A reversed exponential also moves mass to later volume -- it
+    TRANSLATES the peak instead of tailing it -- so a sign check passed
+    on a kernel indexed backwards. What caught it was the MAGNITUDE: the
+    shift must equal the kernel's own discrete mean, r/(1-r) steps with
+    r = exp(-step/tau), and the reversed kernel shifted six times
+    further."""
+    from instrument.chromatogram import Chromatogram
+
+    step, peak_index, n = 0.06, 100, 401
+    volumes = tuple(6.0 + step * i for i in range(n))
+    delta = Chromatogram(volumes, tuple(1.0 if i == peak_index else 0.0 for i in range(n)))
+
+    def centroid(chromatogram):
+        total = sum(chromatogram.concentrations)
+        return sum(v * c for v, c in zip(chromatogram.volumes, chromatogram.concentrations)) / total
+
+    gaussian = broaden(delta, Column("g", 10000, 300.0, 5.0))
+    sigma = volumes[peak_index] / math.sqrt(10000)
+
+    for ratio in (1.0, 2.0):
+        tau = ratio * sigma
+        tailed = broaden(delta, Column("e", 10000, 300.0, 5.0, tailing_tau_over_sigma=ratio))
+        r = math.exp(-step / tau)
+        expected = (r / (1.0 - r)) * step
+        assert centroid(tailed) - centroid(gaussian) == pytest.approx(expected, rel=0.02), (
+            "the centroid shift must be the kernel's discrete mean; a reversed kernel gives "
+            "span*step - tau instead, which is also 'later' and is wrong"
+        )
+
+
+def test_tailing_makes_the_cancellation_worse_and_flips_the_sign_of_the_residual():
+    """THE LIMIT, MEASURED RATHER THAN CONCEDED.
+
+    The Gaussian was recorded as understating the low-M side, biasing the
+    same way as truncation. Measured, it understates the CONSEQUENCE by
+    about six-fold and gets the residual's SIGN wrong:
+
+        tau/sigma = 0    cancels near N=2600   Mn error  +3.4%
+        tau/sigma = 2    cancels near N=8250   Mn error -20.3%
+
+    So a consumer calibrating against the symmetric model would correct
+    Mn in the wrong direction. The cancellation finding is strengthened
+    by its own stated limit, not weakened."""
+    parameters = IntegrationParameters()
+
+    symmetric = report_moments(FLORY, NARROW_POLYSTYRENE,
+                               Column("c", 2600, 300.0, 5.0), parameters, 4001)
+    assert symmetric.dispersity == pytest.approx(2.0, abs=0.01)
+    assert symmetric.mn > 1e5, "the symmetric model puts Mn ABOVE the truth"
+
+    tailed = report_moments(FLORY, NARROW_POLYSTYRENE,
+                            Column("c", 8250, 300.0, 5.0, tailing_tau_over_sigma=2.0),
+                            parameters, 4001)
+    assert tailed.dispersity == pytest.approx(2.0, abs=0.01), (
+        "the report still reads a correct-looking dispersity with realistic tailing"
+    )
+    assert tailed.mn < 1e5, "and with tailing Mn falls BELOW the truth -- the sign flips"
+    assert abs(tailed.mn / 1e5 - 1.0) > 4.0 * abs(symmetric.mn / 1e5 - 1.0), (
+        "the tailed residual must be several times the symmetric one, or the recorded limit "
+        "overstates its own effect"
+    )
+
+
+def test_tailing_alone_raises_dispersity_and_lowers_mn():
+    """Isolated against the wide calibration, so truncation is absent and
+    only the kernel shape acts."""
+    parameters = IntegrationParameters()
+    previous_dispersity, previous_mn = None, None
+    for ratio in (0.0, 0.5, 1.0, 2.0):
+        reported = report_moments(FLORY, WIDE, Column("c", 10000, 300.0, 5.0,
+                                                      tailing_tau_over_sigma=ratio),
+                                  parameters, 4001)
+        if previous_dispersity is not None:
+            assert reported.dispersity > previous_dispersity
+            assert reported.mn < previous_mn
+        previous_dispersity, previous_mn = reported.dispersity, reported.mn

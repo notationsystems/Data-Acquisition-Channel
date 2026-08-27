@@ -1,0 +1,50 @@
+# PREDICTIONS FOR B.1, RECORDED BEFORE THE ANCHORS ARE IN THE TREE.
+#
+# B.1 runs the OMNISEC/PolyAnalytik and PSS WinGPC reports through the
+# existing adapter path unchanged and records read / dropped / MISREAD.
+# Neither anchor is in this repository yet. These predictions are
+# committed now so that a clause which breaks is a RESULT rather than a
+# surprise explained afterwards -- the same discipline as the second-source
+# pre-registration, and a separate artifact because that one is pinned to
+# a phase that has already run.
+#
+# A MISREAD IS WORTH MORE THAN A DROP. A drop is visible in the drop-set
+# check. A misread produces a pooled observation that is wrong and looks
+# right, which is the PDI failure exactly.
+extends: core@1.0.0
+
+subject: corpus_anchor_preregistration
+status: predictions_recorded_before_the_anchors_exist
+owner: daf
+enforcement: tests/test_corpus_anchor_preregistration.py
+
+# ----------------------------------------------------------------------
+predictions:
+
+  the_permeation_bound_is_computable_or_it_is_not:
+    where_it_came_from: "the forward model, not the corpus. Truncation at the column's permeation limit biases Mn UP and dispersity DOWN with no broadening at all -- measured at D = 1.899 against a true 2.000. So a report's error depends on a bound the report may or may not let a reader compute."
+    the_question: "does either anchor's method block carry enough to compute what the column could have SEEN -- a column set, a pore size, an exclusion or permeation volume, or the calibration's standard range?"
+    prediction: "the CALIBRATION RANGE is recoverable from at least one anchor and the PERMEATION LIMIT is not. Real reports name the standards used and often their molar masses, which bounds the calibrated range; a column's pore-size exclusion limit is a column-catalogue property rather than a report field."
+    basis: OPEN
+    why_it_matters_either_way: "if the bound IS computable, a consumer can at least know which part of the distribution the report could not see, and the substrate should carry it. If it is NOT, then every reported moment rests on a truncation whose size is unknowable from the report -- which is no_context_free_property again, with a quantity attached."
+    what_would_falsify_it: "an anchor stating an exclusion or permeation volume outright, or stating no standard masses at all."
+
+  the_aggregate_block_is_read_as_measurements:
+    prediction: "the existing adapter path, handed a table of three injections followed by Average / sigma / % RSD, ingests SIX measurements rather than three. The derived rows are numerically plausible and sit in the same columns, and nothing in the current path distinguishes them."
+    basis: PARTLY MEASURED -- the extractor's declared-kind requirement refuses an UNDECLARED kind, so the failure mode is that the ADAPTER declares all rows measured rather than that the extractor is fooled
+    the_sharper_form: "the question is not whether it breaks but WHERE. If the adapter refuses because a flag column is unmapped, that is a different result from ingesting six measurements, and only one of them is the PDI failure in a new position."
+
+  sigma_and_rsd_are_not_uncertainty:
+    prediction: "if the adapter is pointed at the sigma column as `uncertainty`, every gate passes. A repeatability statistic computed ACROSS replicates and a measurement uncertainty describing ONE measurement's confidence are different claims, and no gate in this repository distinguishes them -- there is no basis field on the uncertainty at all."
+    basis: OPEN
+    the_measurement_that_settles_it: "read the uncertainty vocabulary: `stated | estimated | propagated | absent`. None of those names a repeatability statistic across runs, so mapping sigma onto any of them is a category error the substrate would then carry as a typed field."
+
+  vendor_spellings_reach_the_declared_kind_and_not_the_denylist:
+    prediction: "whichever PDI spelling an anchor uses, the acquisition either refuses it for an undeclared kind or admits it because the adapter declared one. The normalised denylist catches three of seven observed spellings and is not the protection -- already measured in architecture/vendor_vocabulary.yaml -- so a spelling walking through it is expected and is not the finding."
+    basis: MEASURED
+    what_would_be_a_finding: "an anchor spelling that the adapter must declare and that DAQ has no canonical id for at all."
+
+# ----------------------------------------------------------------------
+the_prediction_most_likely_to_be_wrong: "the_permeation_bound_is_computable_or_it_is_not. It is a claim about what real method blocks contain, made by a session that has read no real method block. It is recorded as OPEN and named here so being wrong about it is visible rather than absorbed."
+
+what_this_document_must_not_become: "a description of what the anchors turned out to contain. It is a prediction, its digest is pinned, and if a prediction is wrong the RESULT says so -- this file is not corrected to match."
