@@ -1,0 +1,95 @@
+# ANCHOR 1, READ IN FULL -- AND THE FIRST READING OF ITS SLICE TABLE WAS
+# WRONG IN A WAY THAT INFLATED THE HEADLINE NUMBER SIX-FOLD.
+#
+# A real Waters Empower GPC report, EPA ChemView, TSCA premanufacture
+# notice P-22-0051. Transcribed in instrument/anchor_one.py and verified
+# in tests/test_anchor_one.py. The slice table came out of the PDF's text
+# layer and is reproducible by anyone with the file; the calibration
+# table and the reported moments are raster images and were read from
+# rendered pages -- read, not verified by a second party. Page 4, which
+# carries every headline result, extracts to zero characters.
+#
+# THIS IS A RESULT, NOT A PREDICTION. The predictions it resolves are in
+# architecture/post_anchor_predictions.yaml, whose digest is pinned and
+# which is NOT edited to match. Where a prediction was right the result
+# says so here; where the reasoning behind it was wrong, it says that
+# too, and that is the case below.
+extends: core@1.0.0
+
+subject: anchor_one_result
+status: resolved_against_the_full_report_no_fixture_transcribed
+owner: daf
+enforcement: tests/test_anchor_one.py
+
+# ----------------------------------------------------------------------
+the_correction:
+  what_was_first_reported: "that recomputing from the report's own hundred printed rows gives Mn 3251 against a reported 3466 -- a gap of 6.19% -- and dispersity 2.544 against 2.412."
+  the_reading_that_produced_it: "each printed row treated as a slice REPRESENTATIVE carrying one percent of the total area at its own printed mass. Both parties read it that way."
+  what_the_density_column_shows: "the rows are slice BOUNDARIES. The report prints dwt/d(logM) per row, and the trapezoid between consecutive rows is uniform to a coefficient of variation of 1.3% while either endpoint reading scatters by 10 to 12 percent. The ninety-nine trapezoids sum to 1.00002 -- the whole distribution. Ninety-nine equal-weight intervals bounded by a hundred printed points."
+  what_it_means: "most of the six percent was the reading, not the report. Read as boundaries with each interval at the midpoint of its bounds, Mn is off by 0.85%, Mw by 1.55%, Mz by 2.73% and dispersity by 0.73%."
+  the_prediction_still_holds_and_for_a_better_reason: "it said the printed moments would NOT reproduce from the printed table, and would differ by of order one percent rather than zero. Under the corrected geometry every moment differs, and every one of them is of order one percent. Under the first reading Mn was six percent and would have had to be reported as the prediction understating itself."
+  how_it_was_caught: "by asking what the dwt/d(logM) column is for. It is the one column neither reading needed, which is why neither reading checked it."
+
+# ----------------------------------------------------------------------
+the_finding_that_survives_the_correction:
+  what_it_is: "NO REPRESENTATIVE POINT REPRODUCES BOTH REPORTED MOMENTS. If the printed moments came from the printed rows under some convention nobody guessed, one interpolation fraction between the bounds would reproduce them all. Scanned across the whole family in thousandths: Mn is matched near f = 0.39, Mw near f = 0.02, and the two ranges do not overlap. The best simultaneous fit still leaves about two percent on the worst moment, and Mz is never better than 1.3%."
+  why_that_is_stronger_than_a_disagreement: "a disagreement invites the answer `you used the wrong convention`. This rules the whole family out. The reported moments are computed from the full chromatogram -- thousands of acquisition points over a forty-five minute run -- and the printed table is a hundred-row summary that cannot be inverted back to them."
+  what_a_consumer_gets: "a reader recomputing from the printed distribution table, correctly, gets Mn about one percent out and Mz about three. Not catastrophic and not zero, and nothing in the report says which number came from where."
+
+# ----------------------------------------------------------------------
+the_calibration_is_now_real:
+  what_replaced_what: "instrument/calibration.py's two calibrations were FABRICATED coefficients chosen to be monotonic. WATERS_STYRAGEL_HR1_HR2_PS is transcribed: eleven American Polymer Standards polystyrene standards from 162 to 14000 Da, each injected twice, on a Waters Alliance 2695 with two Styragel HR1 and one HR2 in stabilized THF at 40 C and 1.0 mL/min."
+  there_are_two_cubics_and_they_are_different_objects: "fitting log10 M against retention time reads on the report's `Calculated Weight` column or on its nominal `Mol Wt` column. The first IS the instrument's function -- the calculated column is that function evaluated at each standard -- and recovering it reproduces the column to 0.135%. The second measures calibration QUALITY and gives R^2 0.9987. They differ in the fourth significant figure, and taking the quality fit for the function reproduces the instrument's own column to 0.30% against 0.135% -- a factor of two, with nothing in either fit's own residuals to say which is which."
+  the_confirmation_that_settles_the_transcription: "CROSS-TABLE. The cubic fitted only to the RASTER-read calibration table predicts the TEXT-LAYER slice table's mass column to 0.080% across all hundred rows, with no free parameters. Two tables read by two different routes, one function. A transcription error in either would break it."
+  ten_decimal_places_and_the_reason: "rounded to six, the same fit reproduces the report's column to 0.38% instead of 0.135% and the slice table to 0.22% instead of 0.080%. A factor of three thrown away by a display convention. The precision needed was measured."
+  the_cross_table_check_refused_a_better_looking_fit: "the Calculated Weight column is rounded to whole numbers -- at 162 Da that is a 0.3% quantisation -- and an unrounded version can be recovered through the residual column, since nominal / (1 + residual) lands within half a unit of every printed integer. Fitting THAT reproduces its own column three times better, to 0.030%, and predicts the slice table WORSE, 0.095% against 0.080%. A fit that improves where it was trained and degrades where it was not is fitting the rounding. The printed-integer fit was kept on the strength of the only check not contaminated by the table being fitted."
+  what_it_does_not_make_real: "the DISTRIBUTIONS in instrument/distributions.py are still analytic families and the broadening is still a stated plate-count model. One real calibration does not make the forward model a measurement of this instrument."
+
+# ----------------------------------------------------------------------
+the_calibration_carries_a_drift_the_report_does_not_propagate:
+  what_was_measured: "every one of the eleven standards was injected twice, and in ELEVEN OF ELEVEN pairs the second injection elutes later. One in 2048 under a random sign."
+  it_is_a_stretch_and_not_an_offset: "a proportional stretch of the time axis fits with a coefficient of variation of 14.7% against 28.2% for a constant offset. Mean stretch 0.151%, which is the signature of a small flow or equilibration drift across the calibration run rather than scatter on the standards."
+  why_it_is_not_an_uncertainty_to_average_out: "it is systematic and it is MASS-DEPENDENT. Applied through the recovered calibration a 0.151% stretch reads 1.9% lower at the high-mass end and 1.2% lower at the low-mass end, so it does not cancel in a ratio: it moves Mn and Mw by different amounts and changes the dispersity. Averaging the duplicate injections estimates the midpoint of a drift, not the value."
+  and_it_applies_to_the_sample: "the sample was run in the same sequence on the same instrument. The report carries no uncertainty on any moment, so this is error the artifact contains and does not state."
+  what_is_not_claimed: "not that the drift's direction relative to the sample's own injection is known -- the calibration's injection order is inferred from the table's row order and the sample's position in the sequence is not recorded here. What is established is the magnitude and that it is systematic."
+
+# ----------------------------------------------------------------------
+the_validity_contradiction:
+  the_documents_own_words: "any molecular weight information on the part of the polymer that exceeds 14000 Dalton is not valid"
+  what_the_same_document_reports: "Mp 15334 and Mz+1 15577, both above the limit, with no field marking either. Twenty of the hundred slices exceed 14000 Da and four exceed the column's stated 20000 Da exclusion limit. Twenty-one slices are extrapolations of the calibration by the recovered function's own range."
+  the_arithmetic: "dropping the invalid slices moves Mn from 3251 to 2703 and Mw from 8271 to 5918 under the first reading -- a fifth of the area carrying roughly a third of Mw."
+  three_boundaries_one_of_them_machine_readable: "a calibration range, a column exclusion limit, and a prose sentence. The only per-row machine-readable flag is `Outside Vo-Vt`, it tracks the elution window, and it reads `No` on every row of both distribution tables. The only boundary a parser can reach is the only one that did not fire."
+  where_that_is_measured_against_daq: "architecture/present_and_invalidated.yaml, on a synthetic export carrying the same structure. DAQ admits every row with no reason, carries the invalidating sentence verbatim into every observation, and has no representation for a value that is present and unsound."
+
+# ----------------------------------------------------------------------
+what_the_text_layer_does_and_does_not_give:
+  measured: "page 4 carries the sample information block and Table 2 -- Mn, Mw, Mp, polydispersity, Mz, Mz+1, Mv -- and extracts to ZERO characters. Page 3's calibration table is likewise raster. The hundred-row slice table and the whole method block extract cleanly."
+  the_consequence: "a text-extraction pipeline run over this report recovers the method, the conditions and the distribution table, and silently misses every headline result. Not an error it can detect: the pages it cannot read are the pages it reports nothing about."
+  and_the_absence_convention_it_hides: "`Mv` is an EMPTY CELL beside populated ones. The first absence convention this corpus has seen that is not a sentinel, a word, or a zero -- and it is on a page no parser reads."
+
+# ----------------------------------------------------------------------
+# Recorded AFTER the full reading. Weaker again than
+# post_anchor_predictions.yaml's, which were recorded after a partial
+# one, and weaker than corpus_anchor_preregistration.yaml's, which were
+# recorded before any anchor existed. Three generations, kept apart.
+further_predictions_for_a_second_anchor:
+  p4_moments_do_not_reproduce:
+    prediction: "a second anchor's reported moments will again fail to reproduce from its printed distribution table, by of order one percent on Mw and more on Mn, under any representative rule."
+    basis: MEASURED on one anchor, OPEN as a claim about a second
+    what_would_falsify_it: "a report whose printed table reproduces its printed moments exactly, which would mean the table IS the computation for that vendor."
+  p5_headline_results_raster:
+    prediction: "a second vendor's headline results will again be raster rather than text, so what a text pipeline recovers is the method block and not the results."
+    basis: OPEN
+    it_is_the_one_most_expected_to_be_wrong: "recorded as such. One report is one product's export template, and this is the prediction with the largest consequence for an extractor if it holds."
+  p3_refined_by_the_anchor:
+    prediction: "integration parameters will again be named by reference or absent -- and NAMED BY REFERENCE is a distinct absence class from `not reported`. Anchor 1 carries `Processing Method: GPC_LOWMW_031921`: the parameters that move Mn by tens of percent are present, in a system the artifact does not include."
+    basis: MEASURED on one anchor
+    why_the_refinement_matters: "`absent from the record` and `absent from this artifact and resolvable elsewhere` call for different things from a substrate. The first is unknowable; the second is a reference DAQ could carry and does not."
+
+# ----------------------------------------------------------------------
+still_owed_and_not_by_this_session:
+  a_replicate_anchor: "Injection # reads 1 and the field exists, so single injection is established structurally rather than inferred. The aggregate-row question -- whether Average / sigma / % RSD rows enter a pool as measurements -- remains untestable and is not answered from this anchor."
+  a_second_party_on_the_transcription: "the raster tables were read by one reader. The cross-table check is what stands behind them and it is strong; it is not the same as a second reading."
+  withheld: "still the one absence reason no fixture exercises. `Mv`'s empty cell is a real convention and it is not `withheld` -- nothing says the value was held back."
+
+what_this_document_must_not_become: "a place where a prediction is edited after the fact. The three prediction artifacts are separate and pinned separately, and this one records what was measured against them."

@@ -142,3 +142,59 @@ NARROW_PMMA = Calibration(
     valid_volume_range=(6.0, 18.0),
     r_squared=0.9994,
 )
+
+
+# ----------------------------------------------------------------------
+# A REAL CALIBRATION, from a real instrument. The two above are not.
+# ----------------------------------------------------------------------
+
+#: Waters Alliance 2695, two Styragel HR1 and one HR2, stabilized THF at
+#: 40 C and 1.0 mL/min, calibrated against eleven American Polymer
+#: Standards polystyrene standards from 162 to 14000 Da, each injected
+#: twice. Transcribed in `instrument.anchor_one`; the coefficients here
+#: are a third-order fit to that table, and the tests re-derive them.
+#:
+#: THERE ARE TWO CUBICS AND THEY ARE DIFFERENT OBJECTS. Fitting log10 M
+#: against retention time reads on the report's `Calculated Weight`
+#: column or on its nominal `Mol Wt` column, and the two fits do not
+#: agree in the fourth significant figure:
+#:
+#:   vs Calculated Weight  (18.3712133214, -1.590686219, 0.0565734153, -0.0007300652)
+#:   vs nominal Mol Wt     (18.3606691906, -1.589070073, 0.0564910669, -0.0007286686)
+#:
+#: TEN DECIMAL PLACES, and that is not decoration. Rounded to six the
+#: same fit reproduces the report's column to 0.38% instead of 0.135% and
+#: the slice table to 0.22% instead of 0.080% -- a factor of three thrown
+#: away by a display convention. The precision needed was measured, not
+#: chosen.
+#:
+#: The FIRST is the instrument's own function: the calculated column IS
+#: that function evaluated at each standard's retention time, so
+#: recovering it is a transcription check rather than a model fit, and it
+#: reproduces the column to 0.135%. The SECOND measures calibration
+#: QUALITY -- how far the standards sit from the curve -- and gives the
+#: R^2 of 0.9987 recorded below.
+#:
+#: The confirmation that settles the transcription is a CROSS-TABLE one:
+#: the first cubic, fitted only to the raster-read calibration table,
+#: reproduces the TEXT-LAYER slice table's mass column to 0.080% across
+#: all one hundred rows. Two tables read by two different routes, one
+#: function, no free parameters.
+#:
+#: `valid_volume_range` is the span of the STANDARDS, which is what the
+#: calibration is valid over -- not the span the report evaluates it
+#: across. Nineteen of the anchor's hundred slices elute before the
+#: highest standard, so `is_extrapolation` is True for them. That is the
+#: report's own stated limit made mechanical.
+WATERS_STYRAGEL_HR1_HR2_PS = Calibration(
+    identifier="cal:anchor-1-waters-styragel-hr1-hr2-polystyrene",
+    standard_chemistry=POLYSTYRENE,
+    coefficients=(18.3712133214, -1.590686219, 0.0565734153, -0.0007300652),
+    valid_volume_range=(16.858, 27.631),
+    r_squared=0.9987,
+)
+
+#: The other fit, kept because the distinction above is only checkable if
+#: both are present. NOT the instrument's function.
+ANCHOR_1_QUALITY_FIT_COEFFICIENTS = (18.3606691906, -1.589070073,
+                                    0.0564910669, -0.0007286686)
