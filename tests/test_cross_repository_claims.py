@@ -170,7 +170,24 @@ def test_no_superseded_status_claim_stands_alone():
     """The property. A superseded status may be RETAINED -- this pair does
     that deliberately -- but only where the current one is stated in the
     same row, so the reader meets both. Standing alone, it is a claim
-    about the sibling that the sibling has already contradicted."""
+    about the sibling that the sibling has already contradicted.
+
+    A MEASURED FALSE-POSITIVE MODE, recorded rather than silently worked
+    around. This sweep is TEXT PROXIMITY: a row naming an invariant and a
+    status-vocabulary word must also name the current status. But `absent`
+    is both a status in that vocabulary AND an ordinary domain word in this
+    repository -- `uncertainty_kind: absent`, `value_absence`, a missing
+    unit. A row discussing absence near an invariant name trips this with
+    no status claim in it.
+
+    It fired that way once, on 2026-08-27, against a requirement-response
+    row describing a missing unit beside `quantity_is_typed`. The wording
+    was changed to `missing`, which is clearer anyway -- and the collision
+    is recorded HERE because rewording to get past a check, without saying
+    the check misread, is how a proxy's failure mode gets buried by the
+    person best placed to report it. The sweep is not weakened: a genuine
+    stale claim using the word `absent` is still caught, and the cost of
+    this mode is a reworded sentence rather than a missed claim."""
     unmarked = []
     for path, invariant, said, row in _rows_with_status_claims():
         now = CURRENT[invariant]
@@ -195,21 +212,35 @@ def test_a_quoted_requirement_is_verbatim():
 
     The requirement was to read the text programmatically. This is the
     check that the reading stayed a reading."""
-    workload = RESPONSE["responds_to_workload"]
-    rows = {row["requirement"]: row
-            for row in REQUIREMENTS["workloads"][workload]["blocking_requirements"]}
+    # KEYED BY (workload, requirement), because a requirement NAME is not a
+    # row identity: `stable_sample_and_variable_identity` is a row in both
+    # least_squares and pca with DIFFERENT statement text. Keyed by name,
+    # the two collide and one quote silently answers the other's question
+    # -- and this check would have compared the surviving quote against the
+    # surviving row and passed.
+    rows = {(workload, row["requirement"]): row
+            for workload, entry in REQUIREMENTS["workloads"].items()
+            for row in entry.get("blocking_requirements", ())}
     assert RESPONSE["responses"], "no responses to check"
-    for name, body in RESPONSE["responses"].items():
-        assert name in rows, f"{name} responds to a requirement the artifact does not list"
-        assert body["what_the_requirement_asked"].strip() == rows[name]["statement"].strip(), (
-            f"{name}: the quoted requirement has drifted from the original")
+
+    collisions = [name for name in {r for _, r in rows}
+                  if len({rows[k]["statement"] for k in rows if k[1] == name}) > 1]
+    assert collisions, (
+        "no requirement name appears in two workloads with different text, so this check cannot "
+        "distinguish keying by name from keying by row -- re-measure before trusting it")
+
+    for key, body in RESPONSE["responses"].items():
+        workload, _, name = key.partition("::")
+        assert name, f"{key} is not a workload::requirement key"
+        assert (workload, name) in rows, f"{key} responds to a row the artifact does not list"
+        assert body["what_the_requirement_asked"].strip() == rows[(workload, name)]["statement"].strip(), (
+            f"{key}: the quoted requirement has drifted from the original")
 
 
 def test_every_row_the_response_answers_still_exists_upstream():
     """A response to a requirement that has since been withdrawn is a
     different failure from a stale status, and would otherwise pass
     silently: the row simply would not be looked at."""
-    workload = RESPONSE["responds_to_workload"]
     # THE OWNER TOKEN DIFFERS ACROSS THE BOUNDARY and this check is what
     # found it: this repository calls itself `daf`, the compute layer
     # addresses its rows to `daq`. Both consistent internally, so nothing
@@ -270,13 +301,29 @@ def test_every_row_the_response_answers_still_exists_upstream():
         f"OWN artifact ownership. An alias naming the wrong party still selects a "
         f"self-consistent set of rows, so set equality below cannot catch it.")
 
-    upstream = {row["requirement"]
-                for row in REQUIREMENTS["workloads"][workload]["blocking_requirements"]
+    # SCOPED TO THE ARTIFACT'S OWN PARTITION, not to a workload named in
+    # the response. The previous version read RESPONSE["responds_to_workload"]
+    # -- a single hardcoded string -- so a DAQ-owned row in any other
+    # workload was not unanswered here, it was INVISIBLE. The row derivation
+    # was genuine and its scope was an enumeration of one, which is the
+    # shape that looks complete while covering one partition of seven.
+    upstream = {f"{workload}::{row['requirement']}"
+                for workload, entry in REQUIREMENTS["workloads"].items()
+                for row in entry.get("blocking_requirements", ())
                 if row["owner"] in tokens}
     assert upstream, (
         f"no row in the artifact is owned by any of {sorted(tokens)} -- an empty upstream "
         f"set would compare equal to an empty answered set and pass vacuously")
+    assert len({key.split("::")[0] for key in upstream}) > 1, (
+        "every DAQ-owned row is in one workload, so this check cannot distinguish a partition-wide "
+        "scope from a single-workload one -- the condition that made the old version look right")
+
     answered = set(RESPONSE["responses"])
-    assert answered == upstream, (
-        f"answered {sorted(answered)} but the artifact lists {sorted(upstream)} "
-        f"as owned by {RESPONSE['owner']}")
+    accounted = set(RESPONSE["row_accounting"]["not_answered_and_why"])
+    overlap = answered & accounted
+    assert not overlap, f"a row is both answered and recorded as unanswered: {sorted(overlap)}"
+    assert answered | accounted == upstream, (
+        f"answered {sorted(answered)} and accounted-for {sorted(accounted)} do not together cover "
+        f"the artifact's DAQ-owned rows {sorted(upstream)}. A row in neither set is one nobody "
+        f"looked at, and nothing else in this repository would notice it.")
+    assert RESPONSE["row_accounting"]["daq_owned_rows_upstream"] == len(upstream)

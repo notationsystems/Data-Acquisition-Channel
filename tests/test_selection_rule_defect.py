@@ -139,12 +139,31 @@ def test_daq_has_not_reported_the_table_against_the_requirement_it_answers():
     DAQ's, and it has not."""
     assert (REPO_ROOT / "science" / "table.py").exists()
     assert _daq_blockers("least_squares")["stable_sample_and_variable_identity"] == "UNSATISFIED"
-    response = (ARCHITECTURE / "exchange" / "daq_requirement_response.yaml").read_text()
-    assert "stable_sample_and_variable_identity" not in response, (
-        "DAQ now names the requirement in its response artifact; the record's `DAQ not having "
-        "reported` is discharged and should be updated rather than left standing"
-    )
     assert "not having reported" in REMEASURED["and_one_thing_daq_has_not_reported"]
+
+    # DISCHARGED 2026-08-27, and this assertion INVERTED rather than
+    # deleted. It previously asserted the requirement was ABSENT from the
+    # response artifact, and it fired the moment DAQ reported -- which is
+    # what it was for. The dated sentence stays; what changed is that the
+    # obligation it names is now met, and the check moved to asserting the
+    # discharge is real rather than that the gap persists.
+    response = loads((ARCHITECTURE / "exchange" / "daq_requirement_response.yaml").read_text())
+    answered = set(response["responses"])
+    assert "least_squares::stable_sample_and_variable_identity" in answered, (
+        "the discharge recorded below is not in the artifact"
+    )
+    assert "pca::stable_sample_and_variable_identity" in answered, (
+        "the pca row carries DIFFERENT statement text and is a different row; answering only the "
+        "least_squares one leaves it looking unanswered"
+    )
+    assert "discharged_2026_08_27" in REMEASURED["and_one_thing_daq_has_not_reported"] or \
+        "discharged_2026_08_27" in REMEASURED, "the discharge must be recorded beside the claim"
+
+    # And DAQ still asserts no status for a row it does not own.
+    for key in ("least_squares::stable_sample_and_variable_identity",
+                "pca::stable_sample_and_variable_identity"):
+        blob = " ".join(str(v) for v in response["responses"][key].values())
+        assert "SATISFIED" not in blob, f"{key} asserts a status that is SCL's to set"
 
 
 def test_the_record_does_not_certify_its_own_argument():
