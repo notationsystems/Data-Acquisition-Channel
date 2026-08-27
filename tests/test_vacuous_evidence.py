@@ -260,3 +260,27 @@ def test_the_stale_mirror_measurement_where_the_sibling_is_present():
         "the other side's census matches its own tree, so its copy is independently generated "
         "and the DIFF is a genuine divergence rather than a stale mirror -- re-argue the class"
     )
+
+
+def test_the_propagation_class_carries_its_measurement_and_its_inversion():
+    klass = RECORD[
+        "a_figure_propagated_through_a_nonlinear_function_is_not_a_measurement_of_it"]
+    assert "0.07 points, not 0.69" in klass["the_measured_instance"]
+    assert "the conclusion inverted" in klass["what_the_error_cost"]
+    assert "MEASURE IT" in klass["the_practical_form"]
+    assert "not by this repository" in klass["how_it_was_caught"], (
+        "the class must attribute the catch; a record that quietly took credit for an outside "
+        "correction would be the attribution failure this file already files"
+    )
+
+
+def test_the_propagation_class_distinguishes_itself_from_jensen():
+    """A class that restated a textbook inequality would not be worth a
+    record. What makes it one is that the discarded variation was
+    STRUCTURED and ran against the curvature."""
+    klass = RECORD[
+        "a_figure_propagated_through_a_nonlinear_function_is_not_a_measurement_of_it"]
+    assert "not merely Jensen" in klass["why_it_is_not_merely_jensens_inequality"] or \
+        "Jensen says" in klass["why_it_is_not_merely_jensens_inequality"]
+    assert "structured, not noise" in klass["why_it_is_not_merely_jensens_inequality"]
+    assert "no counterpart in the data" in klass["why_it_is_not_merely_jensens_inequality"]

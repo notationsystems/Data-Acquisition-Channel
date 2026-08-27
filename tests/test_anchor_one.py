@@ -192,20 +192,92 @@ def test_the_duplicate_spread_is_systematic_and_is_a_stretch_not_an_offset():
     )
 
 
-def test_the_drift_does_not_cancel_in_a_ratio_so_averaging_will_not_remove_it():
-    """WHY IT MATTERS. A random error on a calibrant averages out and
-    leaves a ratio alone. This one is mass-dependent, so it moves Mn and
-    Mw by different amounts and changes the dispersity."""
+def _duplicate_mass_shifts(unrounded):
+    """(log10 nominal, percent mass shift) for each of the eleven pairs,
+    from the report's OWN calculated column. No fit involved."""
+    pairs = defaultdict(list)
+    for nominal, time, calculated, residual in A.CALIBRATION_STANDARDS:
+        value = nominal / (1 + residual / 100.0) if unrounded else float(calculated)
+        pairs[nominal].append((time, value))
+    points = []
+    for nominal, entries in pairs.items():
+        (_, first), (_, second) = sorted(entries)
+        points.append((math.log10(nominal), (second / first - 1.0) * 100.0))
+    return sorted(points)
+
+
+def _slope(points):
+    count = len(points)
+    sx = sum(x for x, _ in points)
+    sy = sum(y for _, y in points)
+    sxx = sum(x * x for x, _ in points)
+    sxy = sum(x * y for x, y in points)
+    slope = (count * sxy - sx * sy) / (count * sxx - sx * sx)
+    intercept = (sy - slope * sx) / count
+    scatter = math.sqrt(sum((y - (intercept + slope * x)) ** 2 for x, y in points) / (count - 2))
+    return slope, scatter / math.sqrt(sxx - sx * sx / count)
+
+
+def test_the_drift_has_no_measurable_mass_dependence_and_so_cancels_in_a_ratio():
+    """THE CLAIM THAT WAS WITHDRAWN, and the measurement that withdrew it.
+
+    First recorded: the drift reads 1.9% at the high-mass end against 1.2%
+    at the low, therefore does not cancel in a ratio and changes the
+    dispersity. Those figures came from pushing the MEAN stretch through
+    the recovered calibration, and a mean propagated through a nonlinear
+    function is not a measurement of the thing propagated.
+
+    Measured directly off the report's own calculated column, across two
+    decades of mass, the slope is not distinguishable from zero -- and the
+    rounded and unrounded readings disagree on its SIGN, which is what
+    settles it."""
+    rounded = _duplicate_mass_shifts(unrounded=False)
+    unrounded = _duplicate_mass_shifts(unrounded=True)
+
+    slope_r, se_r = _slope(rounded)
+    slope_u, se_u = _slope(unrounded)
+    assert abs(slope_r / se_r) < 2.0, f"rounded slope is significant: t = {slope_r / se_r:.2f}"
+    assert abs(slope_u / se_u) < 2.0, f"unrounded slope is significant: t = {slope_u / se_u:.2f}"
+    assert slope_r * slope_u < 0.0, (
+        "the two readings must disagree on the sign of the slope; agreeing on a sign would be "
+        "weak evidence FOR a trend and this test would be asserting the wrong thing"
+    )
+
+    for points in (rounded, unrounded):
+        shifts = [y for _, y in points]
+        assert all(shift < 0 for shift in shifts), "a later elution must read a LOWER mass"
+        assert -1.6 < statistics.mean(shifts) < -1.2
+
+
+def test_the_propagated_figures_overstate_the_spread_threefold():
+    """DETECTOR PROOF for the withdrawal. The superseded calculation is
+    run here beside the direct one, so the correction cannot silently
+    revert -- if the propagation ever agrees with the measurement, one of
+    them changed and the record must be re-argued."""
     pairs = defaultdict(list)
     for nominal, time, _, _ in A.CALIBRATION_STANDARDS:
         pairs[nominal].append(time)
-    stretch = statistics.mean(max(v) / min(v) - 1.0 for v in pairs.values())
+    mean_stretch = statistics.mean(max(v) / min(v) - 1.0 for v in pairs.values())
 
-    shifts = [CAL.mass(rt * (1 + stretch)) / CAL.mass(rt) - 1.0 for rt in (16.5, 20.0, 25.0)]
-    assert all(shift < 0 for shift in shifts), "a later elution must read a LOWER mass"
-    assert abs(shifts[0]) > 1.3 * abs(shifts[-1]), (
-        "the shift must be larger at high mass than at low, or it cancels in a ratio and this "
-        "test names a consequence that does not follow"
+    propagated_high = (CAL.mass(16.5 * (1 + mean_stretch)) / CAL.mass(16.5) - 1) * 100
+    propagated_low = (CAL.mass(25.0 * (1 + mean_stretch)) / CAL.mass(25.0) - 1) * 100
+    propagated_spread = abs(propagated_high - propagated_low)
+
+    points = _duplicate_mass_shifts(unrounded=False)
+    slope, _ = _slope(points)
+    measured_spread = abs(slope * (points[-1][0] - points[0][0]))
+
+    assert propagated_spread > 0.6
+    assert measured_spread < 0.2
+    assert propagated_spread > 3.0 * measured_spread, (
+        f"propagation gives a {propagated_spread:.2f}-point spread and direct measurement "
+        f"{measured_spread:.2f}. If these converge, re-measure before trusting either."
+    )
+
+    stretches = [max(v) / min(v) - 1.0 for v in pairs.values()]
+    assert max(stretches) / min(stretches) > 1.4, (
+        "the per-pair stretches must vary substantially, or `applying the mean discards a "
+        "compensating variation` names a mechanism that is not there"
     )
 
 
@@ -423,3 +495,24 @@ def test_the_cross_table_check_refuses_the_fit_that_looks_better_on_its_own_colu
         "instrument/calibration.py is the wrong one and must be changed."
     )
     assert tuple(round(c, 10) for c in _fit(3, lambda row: row[2])) == CAL.coefficients
+
+
+def test_the_record_withdraws_the_mass_dependence_rather_than_softening_it():
+    drift = RECORD["the_calibration_carries_a_drift_the_report_does_not_propagate"]
+    withdrawn = drift["the_mass_dependence_was_WITHDRAWN_after_a_direct_measurement"]
+    assert "THAT WAS WRONG" in withdrawn
+    assert "not a measurement of the thing propagated" in withdrawn
+    assert "CANCELS EXACTLY" in drift["what_that_does_to_the_conclusion"]
+    assert "scale offset, not a distortion of shape" in drift["what_survives"]
+
+
+def test_the_record_scopes_the_drift_to_one_session_and_says_what_would_widen_it():
+    """Eleven of eleven is 1 in 2048 against a random sign, and column
+    equilibration produces exactly that signature within any one
+    sequence. The p-value tests something that was never in doubt."""
+    drift = RECORD["the_calibration_carries_a_drift_the_report_does_not_propagate"]
+    scope = drift["the_scope_is_ONE_SESSION_AND_NOT_THE_INSTRUMENT"]
+    assert "does not establish an instrument property" in scope
+    assert "equilibration" in scope
+    assert "SAME run tests nothing" in scope
+    assert "different day or column" in drift["what_would_discriminate"]
