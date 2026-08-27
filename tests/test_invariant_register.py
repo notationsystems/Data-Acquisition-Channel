@@ -531,3 +531,45 @@ def _test_source(name: str) -> str:
     start = source.index(f"def {name}(")
     end = source.find("\ndef ", start + 1)
     return source[start:end if end != -1 else len(source)]
+
+
+def test_the_deferral_on_the_half_frozen_reconstruction_still_holds():
+    """THE TRIGGER, not a note. The half-frozen reconstruction is parked
+    with a stated condition: the deferral is valid WHILE nothing but this
+    test reads its reference_index. A stale index feeding a live consumer
+    is the shape this pair has spent several phases removing, so the
+    moment the index is consumed the divergence becomes load-bearing and
+    the decision has to be made rather than carried.
+
+    DAQ has kept its parked items in prose until now, and prose is how two
+    of the counterparty's faded. A deferral with no condition attached is
+    indistinguishable from an omission once the session that made it
+    ends."""
+    deferral = STE["the_deferral"]
+    assert deferral["not_a_decision"].startswith("recorded as UNDECIDED")
+    assert pathlib.Path(__file__).name in deferral["trigger_enforced_by"]
+
+    # The PRODUCER is not a consumer. build_ste_invariants.py writes the
+    # index; excluding it is not weakening the trigger, because a
+    # generator writing its own field is what the deferral describes, not
+    # what would end it.
+    producer = "architecture/exchange/build_ste_invariants.py"
+    consumers = []
+    for path in sorted(REPO_ROOT.rglob("*.py")):
+        parts = path.parts
+        if "vendor" in parts or "__pycache__" in parts or path.name == pathlib.Path(__file__).name:
+            continue
+        relative = str(path.relative_to(REPO_ROOT))
+        if relative == producer:
+            continue
+        if "reference_index" in path.read_text():
+            consumers.append(relative)
+    assert (REPO_ROOT / producer).exists(), (
+        "the producer moved; the exclusion above now hides a real consumer")
+
+    assert consumers == [], (
+        f"{consumers} now read the reconstruction's reference_index. The deferral recorded in "
+        "architecture/exchange/ste_invariants.yaml was valid only while the half-frozen state was "
+        "inert; it is load-bearing now. Decide: freeze the index too, or retire the file for the "
+        "declaration."
+    )

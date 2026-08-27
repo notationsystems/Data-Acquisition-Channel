@@ -342,10 +342,40 @@ DOCUMENT = {
             "working_tree_matches_the_pin": UNMODIFIED,
             "modifiable": CORE["modifiable"],
         },
+        "checked_as_worded_for_the_first_time": {
+            "when": "the pin moved to 5e146d5 and the core party declared its set",
+            "the_declared_set": (
+                "five canonical-state invariants stated as rules, eleven rows in the "
+                "counterparty's exchange register, none contested"
+            ),
+            "the_result": (
+                "SILENCE, NOT CLEANLINESS. Every declared invariant names a subject under core.*, "
+                "and no authored package here imports core.* at all. By this repository's own rule "
+                "-- admission_reachability.yaml's zero_rate_when_unreachable -- a zero over a "
+                "subject nothing reaches is not a measurement."
+            ),
+            "why_it_is_still_a_real_improvement": (
+                "the claim moved from UNFALSIFIABLE to FALSIFIABLE. Before, the set had no members, "
+                "so nothing could make it fail. Now it has members and one becomes reachable the "
+                "moment any authored module imports its subject. It can fail; today it does not."
+            ),
+            "what_the_check_found_that_was_not_enforced": (
+                "unreachability was only PARTLY checked. epistemics/ had a leaf-layer test "
+                "forbidding core, three adapter files had their own, and daf/, science/, bridge/, "
+                "boundary/ and assertion/ had none -- so the zero was structural for some packages "
+                "and incidental for the rest, with nothing saying which. Coverage specified by "
+                "enumeration, inside the check the claim now depends on. Closed as a property over "
+                "every authored package, derived rather than listed, and detector-proved."
+            ),
+            "enforcement": "tests/test_bent_zero_is_checkable.py",
+        },
         "what_would_break_the_entailment": (
-            "a submodule bump. The moment the pin moves, `bent: zero` stops being entailed by "
-            "byte-identity and has to be re-established against a set still nobody has enumerated. "
-            "That is the register's standing recommendation: a core bump is not a routine update."
+            "this said a submodule bump, and BOTH HALVES of that turned out differently. The pin "
+            "moved 68 commits and the bytes are STILL unmodified -- core/ is byte-identical across "
+            "the whole range -- so the entailment did not lapse. And the set is no longer "
+            "unenumerated: the core party declared it. What actually breaks the entailment is a "
+            "bump that CHANGES core/; what breaks the as-worded check is an authored module "
+            "importing core.*. Both are measured now rather than predicted."
         ),
         "what_is_NOT_claimed": (
             "that STE's invariants hold. Nothing here inspects them, because nothing here can. The "

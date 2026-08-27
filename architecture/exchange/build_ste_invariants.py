@@ -214,6 +214,34 @@ DOCUMENT = {
         "agree with the declaration that is agreement and not confirmation, and where the "
         "declaration goes further this file simply had less to go on."
     ),
+    "the_deferral": {
+        "what_is_undecided": (
+            "whether to freeze the reference index alongside the verdicts, or retire this file "
+            "entirely for the counterparty's declaration. Both are defensible and they are "
+            "different answers to what a SUPERSEDED RECONSTRUCTION is."
+        ),
+        "deferred_while": (
+            "nothing but its own test reads this artifact's reference_index. While the half-frozen "
+            "state is inert, the cost of deciding wrongly exceeds the cost of waiting. The moment "
+            "anything CONSUMES the index, the divergence becomes load-bearing and the deferral "
+            "lapses -- a stale index feeding a live consumer is the shape this pair has spent "
+            "several phases removing."
+        ),
+        "trigger_enforced_by": (
+            "tests/test_invariant_register.py::"
+            "test_the_deferral_on_the_half_frozen_reconstruction_still_holds"
+        ),
+        "why_a_trigger_and_not_a_note": (
+            "DAQ has carried its parked items in prose, and prose is how two of the counterparty's "
+            "faded. A deferral with no condition attached is indistinguishable from an omission "
+            "after the session that made it ends. This one states what keeps it valid and fails "
+            "when that stops being true."
+        ),
+        "not_a_decision": (
+            "recorded as UNDECIDED. It is not a preference, a lean, or a plan -- either resolution "
+            "may be right and neither has been chosen."
+        ),
+    },
     "a_known_defect_this_file_carries": (
         "it is HALF-FROZEN. The per-invariant verdicts are hand-written and frozen; the reference "
         "index is re-scanned from the vendored tree on every generation. At the new pin the index "
