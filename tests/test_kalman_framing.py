@@ -220,7 +220,15 @@ def test_the_declined_rules_are_recorded_where_the_other_half_will_read_them():
     assert set(owned) == {"numeric_entry", "dimensionality", "raggedness", "symmetry",
                           "positive_semidefiniteness"}
     assert "electing-by-momentum" in declined["why_daq_declined_them_rather_than_supplying_them"]
-    assert "ordering" in declined["the_ordering_caveat_still_applies"]
+    # Asserted on the CLAIM, not on a word the key already carries.
+    # `"ordering" in declined["the_ordering_caveat_still_applies"]` passed
+    # on almost any text about ordering and proved nothing -- found by
+    # tests/test_assertions_read_values_not_keys.py, which is what that
+    # check is for.
+    caveat = declined["the_ordering_caveat_still_applies"]
+    assert "refuses positional identity by name" in caveat
+    assert "Kalman requires ordering" in caveat
+    assert "The leaf rule is reusable; the gate around it is not." in caveat
 
     # the PSD entry must carry why the bool finding does not close it
     assert "does not close this" in owned["positive_semidefiniteness"]
