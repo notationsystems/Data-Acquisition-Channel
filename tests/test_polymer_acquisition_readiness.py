@@ -252,3 +252,18 @@ def test_exactly_one_conditions_representation_satisfies_both_constraints():
 
     named = READINESS["what_would_have_to_be_true_before_acquiring"]["four"]
     assert "FrozenMapping" in named
+
+
+def test_the_irreversible_precondition_is_enforced_rather_than_merely_written():
+    """The lesson this repository keeps relearning: a policy line in a
+    document is not a gate."""
+    gate = READINESS["the_irreversible_precondition_is_now_a_gate_rather_than_a_sentence"]
+    assert "SILENT" in gate["what_was_wrong_with_leaving_it_as_a_sentence"]
+    assert "EVERY_RUN_DIFFERS_IN" in gate["it_is_named_and_not_diagnosed"]
+    assert "NOT flagged" in gate["the_discriminating_case"]
+    assert "still irreversible" in gate["what_it_changes_about_precondition_one"], (
+        "the gate must not be read as having discharged the precondition"
+    )
+
+    from science.replicate_pairing import EVERY_RUN_DIFFERS_IN
+    assert EVERY_RUN_DIFFERS_IN == "EVERY_RUN_DIFFERS_IN"

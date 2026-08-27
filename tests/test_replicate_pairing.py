@@ -34,6 +34,7 @@ import daf  # noqa: F401,E402
 from daf.storage.frozen_mapping import FrozenMapping  # noqa: E402
 from evidence.types import make_observation  # noqa: E402
 from science.replicate_pairing import (AMBIGUOUS_RUN_IDENTITY,  # noqa: E402
+                                       EVERY_RUN_DIFFERS_IN,
                                        CONFLICTING_VALUE_FOR_A_RUN,
                                        DEGENERATE_VARIABLE,
                                        RAGGED_REPLICATE_SET,
@@ -272,3 +273,96 @@ def test_no_refusal_code_is_declared_and_unused():
     for code in declared:
         uses = len(re.findall(rf"(?<![\w\"]){code}(?![\w\"])", source))
         assert uses >= 2, f"{code} is declared and never raised"
+
+
+# ------------------------------------- the irreversible precondition, as a gate
+
+
+def observations_with(runs, extra=None, conditions=CONDITIONS):
+    out = []
+    for index, (mn, mw) in enumerate(runs):
+        for variable, value in (("number_average_molar_mass", mn),
+                                ("weight_average_molar_mass", mw)):
+            content_extra = extra(index) if extra else {}
+            obs = make_observation(
+                record_ids=(f"gpc-run-{index}",), extraction_method="gpc_report_v1",
+                content={"sample_id": "PS-lot-4471", "variable": variable, "value": value,
+                         "unit": "g/mol", "uncertainty": 1200.0,
+                         "uncertainty_kind": "stated", "conditions": conditions,
+                         **content_extra},
+                confidence=1.0, extracted_at=WHEN)
+            out.append(obs)
+    return out
+
+
+def test_a_run_identifier_in_content_is_named_not_silent():
+    """THE DEFECT THIS FILE'S FIRST VERSION SHIPPED. A run id in content
+    gives every observation its own context, so five runs become five
+    singleton sets each reporting TOO_FEW_RUNS_FOR_A_COVARIANCE -- exactly
+    what a genuine one-run pool reports. The failure the irreversible
+    precondition exists to prevent produced NO refusal at all."""
+    runs = correlated_runs(5, 0.9)
+    pairing = pair_replicates(
+        observations_with(runs, extra=lambda i: {"run_id": f"gpc-run-{i}"}))
+    assert (EVERY_RUN_DIFFERS_IN, "run_id") in pairing.refusals, (
+        "a run identifier in content must be named; silence here is unrecoverable later"
+    )
+    assert len(pairing.sets) == 5, "the sets are still singletons -- the refusal is the signal"
+
+
+def test_the_honoured_contract_raises_nothing():
+    pairing = pair_replicates(observations_with(correlated_runs(5, 0.9)))
+    assert not pairing.refusals
+    assert len(pairing.sets) == 1
+
+
+def test_a_condition_that_really_changed_every_run_is_named_too():
+    """And correctly. If temperature genuinely differs on every run these
+    are NOT REPLICATES, and pooling them would be wrong. The module names
+    the observable and does not decide which of the two it is."""
+    runs = correlated_runs(5, 0.9)
+    pairing = pair_replicates(
+        observations_with(runs, extra=lambda i: {"temperature_C": 30.0 + i}))
+    assert (EVERY_RUN_DIFFERS_IN, "temperature_C") in pairing.refusals
+
+
+def test_a_real_condition_with_repeated_levels_is_not_flagged():
+    """THE DISCRIMINATING CASE. Without it the check could be nothing more
+    than 'complain whenever there is more than one set'."""
+    runs = correlated_runs(6, 0.9)
+    pairing = pair_replicates(
+        observations_with(runs, extra=lambda i: {"temperature_C": 30.0 + (i % 2)}))
+    assert not pairing.refusals, (
+        f"a two-level condition was flagged: {pairing.refusals}. It splits the pool into two "
+        "genuine groups, which is correct behaviour, not a leaked locator."
+    )
+    assert len(pairing.sets) == 2
+    assert all(len(s.run_ids) == 3 for s in pairing.sets)
+
+
+def test_the_code_does_not_claim_which_of_the_two_it_found():
+    """Naming it RUN_ID_IN_CONTENT would assert the locator case and be
+    wrong whenever the condition case holds -- the overclaim this project
+    has filed before."""
+    import re
+    source = (REPO_ROOT / "science" / "replicate_pairing.py").read_text()
+
+    # Check the DECLARED CODES, not the raw text. A first version asserted
+    # the string "RUN_ID_IN_CONTENT" was absent from the file and failed on
+    # the docstring that explains why the name was rejected -- which is the
+    # documentation working, not a violation. A check that punishes its own
+    # rationale is checking the wrong thing.
+    declared = set(re.findall(r"^([A-Z][A-Z_]+) = \"", source, re.M))
+    assert EVERY_RUN_DIFFERS_IN in declared
+    # EXACT names, not substrings. The version before this asked whether
+    # any code CONTAINS "RUN_ID" and caught AMBIGUOUS_RUN_IDENTITY, which
+    # contains it and means something else entirely -- the aggregate/
+    # substring class filed as the 22nd instance in
+    # architecture/proof_integrity.yaml, recurring one commit after it was
+    # written down, in a test written by the person who wrote it down.
+    assert "RUN_ID_IN_CONTENT" not in declared, (
+        f"a code names the locator case as though it were established: {sorted(declared)}"
+    )
+    assert "NOT REPLICATES" in source and "acquisition locator leaked" in source, (
+        "both readings must stay recorded, or the code reads as diagnosing one of them"
+    )

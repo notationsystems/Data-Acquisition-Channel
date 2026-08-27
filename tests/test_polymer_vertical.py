@@ -85,12 +85,28 @@ def test_it_uses_the_probes_own_batch_and_says_which_numbers_are_derived():
     probe_text = (REPO_ROOT / "architecture" / "_probes"
                   / "cohort_identity_expectations.yaml").read_text()
     assert "104000" in probe_text, "the vertical claims Mn is verbatim from the probe"
-    hits = subprocess.run(
-        ["git", "grep", "-l", "109200"], cwd=str(REPO_ROOT),
-        capture_output=True, text=True, timeout=60,
-    ).stdout.split()
-    assert [h for h in hits if "polymer_vertical" not in h and "test_polymer_vertical" not in h] == [], (
-        "109200 now appears elsewhere in the repository; the provenance note must be re-measured"
+    # NARROWED 2026-08-26, and narrowed to the RIGHT FILE rather than
+    # loosened. The claim is about PROVENANCE FROM THE PROBE: Mw is derived
+    # from the two planted values, not itself planted. This originally
+    # swept the whole repository, which held while 109200 had exactly one
+    # derived use -- and then fired when tests/test_replicate_pairing.py
+    # took the same number as a generator parameter. That is a second
+    # derived use, not a second planting, so the guard was asking a
+    # question wider than the claim. It now reads the probe, which is
+    # where a planted value would live and the only place that can falsify
+    # the claim.
+    probe = subprocess.run(
+        ["git", "grep", "-c", "109200", "--",
+         "architecture/_probes/cohort_identity_expectations.yaml"],
+        cwd=str(REPO_ROOT), capture_output=True, text=True, timeout=60)
+    assert probe.returncode != 0 and not probe.stdout.strip(), (
+        f"109200 now appears in the probe record ({probe.stdout.strip()}); it would be a PLANTED "
+        "value and the vertical's provenance note is wrong"
+    )
+    planted = (REPO_ROOT / "architecture" / "_probes"
+               / "cohort_identity_expectations.yaml").read_text()
+    assert "104000" in planted and "1.05" in planted, (
+        "the two values the vertical DOES quote as verbatim must still be in the probe"
     )
 
 

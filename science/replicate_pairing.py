@@ -71,6 +71,43 @@ DEGENERATE_VARIABLE is reported alongside a covariance rather than
 refusing it: a variable that did not move across runs has zero variance,
 so its correlations are undefined (0/0) rather than wrong. The set is
 still paired and the other correlations are still real.
+
+--------------------------------------------------------------------
+EVERY_RUN_DIFFERS_IN, AND WHY IT IS NOT CALLED "RUN ID IN CONTENT".
+
+The polymer acquisition's one irreversible precondition is that each GPC
+run carries its own Record with the run identifier OUT of content. Get it
+wrong and there is no repair: which run produced which number cannot be
+reconstructed afterwards.
+
+MEASURED, on the first version of this module: getting it wrong was
+SILENT. A run identifier in content gives every observation its own
+comparison context, so five runs become five singleton sets, each
+reporting TOO_FEW_RUNS_FOR_A_COVARIANCE -- indistinguishable from a pool
+that genuinely holds one run. The exact failure the precondition exists
+to prevent produced no refusal at all. A contract that fails silently is
+a sentence in a document, which is the shape this repository keeps
+finding.
+
+THE DETECTION IS PHASE 16'S OWN RULE, RUN FORWARD: "a field unique to
+each record makes every observation its own single-member group." So drop
+each context key in turn and see whether the groups merge. If they do,
+and that key's values are in bijection with the runs, it is the key
+splitting them.
+
+IT IS NAMED AND NOT DIAGNOSED, deliberately. Two different things produce
+it and this module cannot tell them apart:
+
+    an acquisition locator leaked into content -- the precondition
+        violated, and the data is unusable for a covariance
+    a genuine condition that really did change every run -- in which case
+        these are NOT REPLICATES, and pooling them would be wrong
+
+Both are things the caller must be told, and neither is this module's
+call to make. Calling the code RUN_ID_IN_CONTENT would assert the first
+and be wrong whenever the second holds -- the same overclaim this project
+has filed before. What is certain is the observable, and the observable
+is what it is named after.
 """
 
 from __future__ import annotations
@@ -89,6 +126,10 @@ RAGGED_REPLICATE_SET = "RAGGED_REPLICATE_SET"
 TOO_FEW_RUNS_FOR_A_COVARIANCE = "TOO_FEW_RUNS_FOR_A_COVARIANCE"
 #: A variable with zero sample variance: correlations against it are 0/0.
 DEGENERATE_VARIABLE = "DEGENERATE_VARIABLE"
+#: A context key that takes a different value on every run, so every run is
+#: its own group. Either an acquisition locator leaked into content, or these
+#: runs are not replicates. Named rather than decided -- see the docstring.
+EVERY_RUN_DIFFERS_IN = "EVERY_RUN_DIFFERS_IN"
 
 #: Keys that describe the MEASUREMENT rather than the conditions it was
 #: made under. They travel with the cell and never group.
@@ -240,7 +281,42 @@ def pair_replicates(observations: Iterable[object]) -> Pairing:
         ))
 
     sets.sort(key=lambda s: repr(s.context))
+    refusals.extend(_keys_that_split_every_run(grouped))
     return Pairing(sets=tuple(sets), refusals=tuple(refusals))
+
+
+def _keys_that_split_every_run(grouped: Mapping) -> Sequence[Tuple[str, str]]:
+    """Context keys whose removal merges the groups AND which take a
+    distinct value on every run.
+
+    Phase 16's rule run forward. Only meaningful when the grouping
+    actually produced singletons: with one group there is nothing split,
+    and with genuine multi-run groups the split is doing real work.
+    """
+    if len(grouped) < 2 or not any(len(runs) == 1 for runs in grouped.values()):
+        return ()
+
+    observed = [(dict(context), run) for context, runs in grouped.items() for run in runs]
+    keys = set()
+    for context, _ in observed:
+        keys.update(context)
+
+    found = []
+    for key in sorted(keys):
+        if not all(key in context for context, _ in observed):
+            continue
+        merged = {tuple(sorted((k, v) for k, v in context.items() if k != key))
+                  for context, _ in observed}
+        if len(merged) >= len(grouped):
+            continue                      # dropping it merges nothing
+        by_run = {run: context.get(key) for context, run in observed}
+        try:
+            distinct = len(set(by_run.values()))
+        except TypeError:                 # unhashable value: cannot be a locator
+            continue
+        if distinct == len(by_run) and distinct > 1:
+            found.append((EVERY_RUN_DIFFERS_IN, key))
+    return tuple(found)
 
 
 def sample_covariance(replicates: ReplicateSet) -> Optional[SampleCovariance]:
