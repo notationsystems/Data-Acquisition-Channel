@@ -141,6 +141,14 @@ class GpcReportSourceAdapter:
             seen.add(run_id)
 
             payload: Dict[str, Any] = {key: report[key] for key in _REPORT_KEYS}
+            # EMITTED EMPTY, NOT OMITTED. This source states every required
+            # field in the document, so the acquirer declares none -- and
+            # saying that explicitly is not the same as saying nothing.
+            # Measured in WO-4: with the key absent, a source that stated
+            # everything is indistinguishable from an adapter that forgot to
+            # report what it declared, which is absence-as-signal and the
+            # shape this pair files as a vacuous pass.
+            payload["acquisition_declared"] = ""
             payload.update({k: v for k, v in run.items() if k != "run_id"})
             documents.append(
                 RawDocument(

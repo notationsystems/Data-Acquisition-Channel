@@ -1,0 +1,129 @@
+# WHAT AN ACQUISITION PATH CAN ACTUALLY REACH.
+#
+# A MEASUREMENT, NOT A STATUS REPORT. Every verdict below was produced by
+# planting a violation IN A FIXTURE and running the real path -- adapter,
+# run_scout, extractor, pool, gates -- not by injecting content past
+# acquisition. A plant that reaches a gate by a route the data cannot take
+# proves the gate exists, not that it is reached.
+#
+# THE HEADLINE IS BAD AND IT IS TRUE. 10 of 42 refusal codes are reachable
+# from acquisition. The other 32 are silent, and silence is not
+# cleanliness: architecture/admission_reachability.yaml's rule applies
+# unchanged -- a zero rate for an unreachable code is not a measurement.
+# This is the honest baseline against which a real instrument's rejection
+# rate could later mean anything, and it is worth having precisely because
+# it looks bad.
+extends: core@1.0.0
+
+subject: acquisition_reachability
+status: measured
+owner: daf
+enforcement: tests/test_acquisition_reachability.py
+measured_at: "2026-08-27"
+sources_exercised:
+  source_1: "tests/fixtures/gpc_report_synthetic_ps4471.json via daf/adapters/gpc_report.py"
+  source_2: "tests/fixtures/gpc_summary_export_synthetic_vendor.csv via daf/adapters/gpc_summary_export.py"
+both_through: "daf/extractors/gpc_report.py -- one extractor, two adapters"
+
+# ----------------------------------------------------------------------
+summary:
+  codes_total: 42
+  reachable_from_acquisition: 10
+  unreachable_pre_empted_by_an_earlier_refusal: 25
+  unreachable_because_content_cannot_express_the_violation: 6
+  unreachable_by_pipeline_construction: 1
+  fired_on_clean_data_source_1: 0
+  fired_on_clean_data_source_2: 1
+
+the_one_that_fires_on_clean_data: "TOO_FEW_VARIABLES_FOR_A_CORRELATION, on source 2, on every replicate set it produces. Not a defect in the source: the export reports Mw and a derived PDI, so exactly one measured variable survives and a correlation needs two. It is the only non-zero count in this measurement and it is a real one."
+
+# ----------------------------------------------------------------------
+# THE VERDICTS.
+# ----------------------------------------------------------------------
+reachable:
+  what_it_means: "a violation planted in a FIXTURE, carried through the real adapter and extractor, produced this code by name."
+  codes:
+    CONDITION_KEYS_ARE_NOT_IDENTIFIERS: "an empty condition key in the report"
+    CONDITION_KEY_SHADOWS_AN_IDENTITY: "a condition named sample_id"
+    MISSING_UNCERTAINTY: "a null uncertainty declared with posture `stated` -- the extractor requires a posture, not that it agrees with the figure"
+    UNKNOWN_UNCERTAINTY_KIND: "a posture outside the vocabulary; the extractor checks presence and the science gate checks membership, which is the layer split, not a hole"
+    RAGGED_REPLICATE_SET: "one run reporting fewer variables than its siblings"
+    TOO_FEW_RUNS_FOR_A_COVARIANCE: "a report carrying one run"
+    DEGENERATE_VARIABLE: "every run reporting the same value"
+    TOO_FEW_VARIABLES_FOR_A_CORRELATION: "a report carrying one variable -- and it fires on source 2 unplanted"
+    EVERY_RUN_DIFFERS_IN: "per-run conditions, which source 1's run-level keys can express"
+    CONFLICTING_VALUE_FOR_A_RUN: "one Record per REPORT instead of per run"
+  the_two_that_matter_most: "EVERY_RUN_DIFFERS_IN and CONFLICTING_VALUE_FOR_A_RUN are the detectors for the one precondition the readiness record calls unrepairable. Both are REACHABLE from a real acquisition path, which is the first time that has been shown rather than assumed."
+
+unreachable_pre_empted:
+  what_it_means: "the plant tripped a CORRECT, EARLIER refusal in the adapter or the extractor and never reached the gate. Recorded as MALFORMED rather than as a hit -- a plant that measures the plant is not evidence."
+  why_this_is_not_a_gap: "the earlier refusal is the protection. A non-finite value is refused by the writer-side JSON guard before it can reach an Observation id; a non-numeric value is refused by the extractor. The science gate behind it is a SECOND line that acquisition never gets to, and reporting its zero as a measurement would be the exact error this file exists to avoid."
+  count: 25
+  examples:
+    SENTINEL_ENCODED_ABSENCE: "refused upstream as a bare NaN literal by daf/storage/serialization.py"
+    NON_FINITE_QUANTITY: "same guard"
+    BOOLEAN_IS_NOT_A_QUANTITY: "refused by the extractor as a non-numeric value"
+    MISSING_CONDITIONS: "refused by the adapter, which will not default conditions"
+
+unreachable_content_cannot_express_it:
+  what_it_means: "the extractor's content is a CLOSED VOCABULARY of eleven keys with types it has already validated, so the violation has nowhere to live."
+  count: 6
+  codes:
+    - "UNKNOWN_ABSENCE_REASON and VALUE_AND_ABSENCE_BOTH_PRESENT -- no acquisition path emits `value_absence` at all, so the whole absence vocabulary is unexercised by acquisition"
+    - "POSITIONAL_IDENTITY_IS_NOT_IDENTITY and VARIABLE_IDENTITY_UNDER_A_RETIRED_NAME -- extra payload keys are dropped rather than carried"
+    - "MISSING_PROPERTY and MISSING_VALUE -- the extractor always emits both or refuses"
+  the_finding: "these are not dead code. They guard HAND-BUILT content and content from a future extractor, which is what architecture/invariants.yaml already says of these gates -- they apply to already-admitted evidence rather than at ingest. What is new is the measurement: SIX codes are unreachable for that reason and the absence vocabulary is entirely among them."
+
+unreachable_by_construction:
+  count: 1
+  AMBIGUOUS_RUN_IDENTITY:
+    traced: "scout/pipeline.py line 146 builds every Observation with record_ids=(record.id,) -- exactly one, always. No acquisition through run_scout can produce an observation naming zero or two Records."
+    terminates_at: "the vendored pipeline, which is unmodifiable"
+    the_verdict_is_not_nobody_found_one: "the path was traced to the line that fixes it, and the line is inside the core. A prior phase's unreachable verdict was wrong in the direction that made the metric look meaningful, and it was found by tracing and then executing; this one was traced first."
+
+# ----------------------------------------------------------------------
+# THE THREE ITEMS WO-3 ADDED.
+# ----------------------------------------------------------------------
+the_drop_set:
+  what_was_asked: "every key any adapter emits, against every key the extractor writes into content. The difference, and whether each is dropped deliberately or silently."
+  measured: "three keys, identically for both sources: `variable`, `sample_kind`, `kind`."
+  variable:
+    verdict: DELIBERATE
+    reason: "renamed to `property` in content by the WO-2 reconciliation. One-for-one; `property` is the only content-only key and is its image."
+  sample_kind:
+    verdict: DELIBERATE
+    reason: "consumed as structure into ExtractedEntity, and RECOVERABLE from the pool as Referent.kind. Not in content because it describes the referent rather than the measurement."
+  kind:
+    verdict: DELIBERATE_BUT_THE_RESULT_IS_NOT_RECORDED
+    reason: "consumed as a gate -- only `measured` passes -- then discarded. The invariant holds by construction, so the value is constant across admitted content and carries no information."
+    the_part_worth_stating: "MEASURED: evidence.types.Observation has no class field, scout.pipeline creates no EvidenceClassAssignment, and this acquisition path does not use ClassifiedPool. So the extractor VERIFIES the class and nothing records the result. `measured` is implied by admission rather than carried, and a consumer holding a pooled Observation cannot tell the check was made. Contrast acquisition_declared, which IS carried for exactly that reason -- two facts of the same kind treated differently, and only one recoverable."
+  the_property_asserted: "no adapter-emitted key is absent from content without a declared reason, derived by running both adapters rather than from a list. A new adapter key fails the check until it is carried or excluded by name."
+
+absence_classes:
+  SOURCE_STATED: "source 1: sample_id, method, conditions, unit, uncertainty, uncertainty_kind, data_provenance, variable, kind -- all in the document."
+  SOURCE_CAPABLE: "none measured. Neither fixture omits a field it could have carried."
+  CALLER_DECLARED:
+    fields: "source 2: data_provenance, sample_kind, method, unit, measurement_kind"
+    why_structural: "no chromatography software writes whether its own output is fabricated, what kind of entity a sample is, or what unit a column headed `Mw` is in. Their absence is a property of the SOURCE KIND, not of this file, and counting it the same way as a field a source could have provided would be measuring two different things in one column."
+    is_the_declaration_distinguishable_in_the_pool: "YES, demonstrated by reading a pooled observation back: content['acquisition_declared'] names exactly which fields came from the acquirer, and no adapter is needed to recover it."
+    a_gap_this_measurement_closed: "source 1 previously omitted the key entirely, so `the source stated everything` was signalled by ABSENCE -- indistinguishable from an adapter that never reported what it declared. It now emits the key EMPTY. Present-and-empty means nothing was declared; absent means the adapter did not say. Absence-as-signal is the vacuous-pass shape and it was in the discriminator itself."
+
+the_new_codes:
+  TOO_FEW_VARIABLES_FOR_A_CORRELATION:
+    verdict: REACHABLE
+    evidence: "fires unplanted on source 2, on every replicate set. It did not exist at the last measurement; before it, a single-variable set returned a 1x1 correlation of 1.0 with zero reasons."
+  the_undeclared_kind_refusal:
+    verdict: REACHABLE
+    evidence: "planted on the real path by removing `kind` from every measurement in the source 1 fixture; the extractor refused by name. The declared-derived case was planted the same way and also refused."
+    why_this_one_needed_care: "it REPLACED an enumeration that was silently failing -- DERIVED_VARIABLES is case-sensitive and a vendor's `PDI` walked through it. A REACHABLE verdict backed by a plant is the evidence that the repair is real rather than a rename."
+
+# ----------------------------------------------------------------------
+the_self_check_limit: "the precondition gate is DAQ's module checking DAQ's extractor, and this whole measurement is DAQ planting violations in DAQ's own fixtures. That is the weakest evidence shape in this program -- weaker than the cross-repository cases, weaker than a violation arriving from outside. A pass here is consistent with the gate and the extractor sharing a misreading, which is exactly what WO-3 demonstrated happens when one author writes both: the derived-column check and the fixture agreed with each other for a whole phase. Stated here rather than in a footnote."
+
+not_daqs_number: "chemistry gate reachability is the sibling's. The four guards have no caller on any admission or acquisition path, the call site would be inside the unmodifiable submodule, and DAQ has not re-run the probe. exercised_by_real_acquisition is asserted to still be 0 rather than left open -- an acquisition path existing does not exercise a gate nothing calls."
+
+what_would_make_this_measurement_wrong:
+  counting_rather_than_naming: "every expectation here names a code. A prior probe drew the opposite of the truth from four correct refusals by four correct gates because it counted."
+  a_plant_that_measures_the_plant: "25 verdicts are MALFORMED rather than hits, and that is the point: a payload tripping an earlier refusal is not evidence about the gate behind it."
+  uniform_inputs: "both sources sit on the same side of most predicates, which is why the reachable set is small. Where a code fires for only one source it is recorded per source."
+  a_verdict_that_survives_its_own_justification: "recorded where it happened. WO-3's one-Record-per-run clause survived while its derivation did not, and that distinction was worth more than the pass."
