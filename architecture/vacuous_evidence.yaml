@@ -1,0 +1,36 @@
+# A TRUE CLAIM SUPPORTED BY A CHECK THAT COULD NOT HAVE DETECTED ITS FALSITY.
+#
+# DAQ-LOCAL, AND PROPOSED RATHER THAN APPLIED. This belongs in
+# architecture/proof_integrity.yaml, which both repositories hold
+# byte-identically and whose own header says a rule one side can edit
+# alone is a rule the two sides can come to disagree about. Recorded here
+# for the next joint reissue. The class was named by the counterparty
+# reading DAQ's own self-correction; DAQ measured the instance.
+extends: core@1.0.0
+
+subject: vacuous_evidence
+status: proposed_for_the_next_joint_reissue_of_proof_integrity
+owner: daf
+enforcement: tests/test_vacuous_evidence.py
+
+# ----------------------------------------------------------------------
+the_class: "a check is quoted as evidence for a claim; the claim is TRUE; and the check could not have detected its falsity. The conclusion is correct, the evidence is vacuous, and nothing in the report distinguishes the two."
+why_it_is_not_already_filed: "every instance in proof_integrity.yaml has a FALSE claim behind it -- grep_for_fatal reported the opposite of the truth, the enumerated sweep reported green over a hole, the mutation harness reported a test gap that did not exist. Each was found BECAUSE the conclusion was wrong. This one cannot be found that way: the conclusion is right, so nothing downstream misbehaves, and the vacuous check goes on being cited."
+why_it_is_worse_than_the_exit_code_rule_it_instantiates: "the discarded-exit-code rule says a check that did not run is not evidence. That is about detection. This is about ATTRIBUTION: the property held, so the report was accurate, and the only thing wrong was WHICH MECHANISM was credited. A reader auditing the claim finds it true and stops."
+
+# ----------------------------------------------------------------------
+the_measured_instance:
+  what_was_claimed: "doctrine regeneration diff zero -- reported in five consecutive commit messages."
+  was_the_claim_true: "YES, throughout. tests/test_doctrine_generation.py::test_committed_doctrine_matches_regeneration regenerates and compares, and was green in every one of those runs."
+  what_was_actually_run: "python epistemics/doctrine.py >/dev/null 2>&1, which had been exiting 1 on ModuleNotFoundError: No module named 'evidence' from the first invocation. The generator never ran. `git diff docs/generated/DOCTRINE.md` was then empty because NOTHING HAD BEEN WRITTEN, and the empty diff was read as agreement."
+  what_the_correct_invocation_is: "python -c 'import epistemics.doctrine as d; d.write()', which the failing test's own message states."
+  how_it_was_found: "not by the claim being wrong. By editing a doctrine SOURCE (architecture/invariants.yaml), seeing a zero diff, and finding that suspicious enough to recompute the source-digest by hand. The digests disagreed."
+  the_idiom_is_the_mechanism: "`>/dev/null 2>&1` silences exactly the diagnostic that would have said so. A traceback is not noise to be suppressed; it is the only thing distinguishing `no change` from `no run`."
+
+# ----------------------------------------------------------------------
+what_distinguishes_the_two_greens: "an EMPTY DIFF and a VERIFIED AGREEMENT are the same observation with different causes, and a check that reports only the observation cannot tell them apart. The discriminator is whether the producing step is known to have run -- its exit status, or an artifact it must have written."
+the_general_repair: "a check whose evidence is an ABSENCE (no diff, no violation, no output) must independently establish that the producing step ran. This is the same shape as absence_of_violation_mistaken_for_emptiness in proof_integrity.yaml -- assert the domain is non-empty before asserting it is clean -- applied to the PRODUCER rather than to the domain."
+what_it_does_not_say: "not that a redundant check is useless. tests/test_doctrine_generation.py was doing the work the whole time and the repository was never at risk. What is filed is that the wrong mechanism was CREDITED, five times, and that no amount of re-reading the report would have shown it."
+
+# ----------------------------------------------------------------------
+the_aggravating_detail: "the author was quoting the standing rule about discarded exit codes in the same phase, in commit messages, while committing this. That is the fourth time this phase a class has recurred inside or beside the instrument built for it. It is consistent with the property the counterparty stated: knowing a class does not inoculate the next instance, because the instance never looks like the class while you are writing it."

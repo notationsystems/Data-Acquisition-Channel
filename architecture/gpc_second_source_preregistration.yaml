@@ -1,0 +1,90 @@
+# WRITTEN BEFORE THE SECOND SOURCE WAS BUILT. Committed before any
+# adapter, extractor or fixture for it exists, so that a clause which
+# fails is a RESULT rather than a surprise to be explained afterwards.
+#
+# WHY A SECOND SOURCE AT ALL. One extractor against one fixture, both
+# written by the same author from the same reading of the contract, is
+# the reference-implementation problem: it reproduces the misreading and
+# agrees with itself. Every clause below was derived from a measurement
+# against a single fixture and none has ever met a source of a different
+# shape.
+#
+# THE PERMITTED OUTCOME IS FAILURE. If a clause cannot be satisfied, that
+# is a finding about the CONTRACT, not a defect in the source, and it is
+# the result this phase is for. A contract only one source shape can
+# satisfy is a fixture contract. No clause may be widened so the second
+# source passes -- every one of them was derived from a measurement a
+# widening would silently discard.
+extends: core@1.0.0
+
+subject: gpc_second_source_preregistration
+status: predictions_recorded_before_building
+owner: daf
+enforcement: tests/test_gpc_second_source_preregistration.yaml_is_not_edited_after_the_fact
+
+# ----------------------------------------------------------------------
+the_source_chosen: "a vendor SEC/GPC software summary export -- the CSV-with-a-free-text-header shape that Waters- and Agilent-class chromatography software actually writes. Chosen for maximum structural divergence from the first fixture, not for convenience."
+how_it_differs_structurally: "six of the seven divergence properties the work order lists, in one artifact that is a real thing rather than a contrivance"
+  # spelled out so a reader can check the claim of divergence
+divergence_properties_present:
+  replicates_are_rows: "each injection is a ROW in one table, not a separate document"
+  multi_sample: "several materials in one file"
+  positional_columns: "columns are ordered and named only by a vendor header line"
+  moments_not_given_in_full: "Mw and PDI are reported; Mn is NOT"
+  no_uncertainty_at_all: "there is no uncertainty column"
+  conditions_in_prose: "a free-text header block, not fields"
+what_is_deliberately_absent: "per-slice chromatogram data. It is the one listed property this source does not have; leaving it out keeps the fixture a real vendor export rather than a superset nothing produces."
+
+# ----------------------------------------------------------------------
+# THE PREDICTIONS. Each names the clause, what it predicts, and -- the
+# part that keeps this honest -- whether the prediction rests on
+# behaviour already measured or is genuinely open.
+# ----------------------------------------------------------------------
+predictions:
+
+  one_record_per_run_when_runs_are_rows:
+    clause: "one Record per run, run identifier out of content"
+    the_structural_difference: "the clause was derived from a source where runs are DOCUMENTS. Here a run is a row."
+    prediction: "SATISFIABLE, and the clause's DERIVATION does not survive. The adapter must emit one RawDocument per ROW, and the locator becomes positional -- file#sample/row-N -- because a vendor export has no per-row identifier. A POSITIONAL LOCATOR IS NOT A POSITIONAL IDENTITY IN CONTENT: locator is acquisition identity and content is scientific identity, and the table gate refuses the second, not the first. Predicting no conflict."
+    basis: OPEN -- this is the prediction most likely to be wrong
+    what_would_falsify_it: "the table gate or the pairing consumer refusing content that came from a positionally-located Record; or the locator turning out to need something from content to be unique."
+    the_deeper_thing_it_tests: "whether `run` is a source-shape word or a contract word. If the contract can only say `run` by pointing at a document, it is a fixture contract."
+
+  uncertainty_absent_from_a_real_source:
+    clause: "uncertainty travels per cell; uncertainty_kind explicit"
+    prediction: "SATISFIED, and the answer is the explicit no-uncertainty posture. science/admissibility.py admits a null uncertainty exactly when the posture field names it, so that vocabulary member is reachable from a real source for the first time. The extractor must NOT invent an uncertainty."
+    basis: MEASURED -- science/admissibility.py already documents the None/absent pairing, so this is a confirmation rather than a discovery, and is marked as such
+    the_finding_if_it_holds: "the clause is satisfiable and VACUOUS for this source. `uncertainty travels per cell` is trivially true when there is no uncertainty, and a covariance consumer gets nothing. Satisfying a clause is not the same as the clause doing work."
+
+  conditions_stated_in_prose:
+    clause: "conditions as FrozenMapping; no_context_free_property requires a non-empty Mapping"
+    prediction: "SATISFIED ONLY BY REFUSING TO PARSE. Turning `Temp: 35 C` into {column_temperature_c: 35.0} invents a field name, a unit and a numeric type the source stated as none of those -- that is fabrication, and it is the failure mode this source exists to tempt. Predicting the extractor carries the header VERBATIM as a single condition under one identifier key, which satisfies non-empty-Mapping and identifier-keys and fabricates nothing."
+    basis: OPEN
+    the_cost_predicted: "conditions become UNCOMPARABLE across the two sources. The first fixture's conditions are structured fields; this one's are one opaque string. Two observations of the same material under the same physical conditions will land in different comparison contexts. Predicting this is a real and unavoidable limit, reportable as a contract finding rather than repairable at the extractor."
+
+  a_derived_column_and_a_missing_moment:
+    clause: "do not fabricate; distribution identity"
+    prediction: "PDI IS REFUSED as a derived column by the existing check. Mn is NOT emitted, because Mn = Mw / PDI is a DERIVATION -- architecture/evidence_class.yaml classes computed evidence as DerivedValue and there is no path from Extractor to DerivedValue, so emitting Mn here would assign it the measured class. Predicting exactly ONE variable survives: Mw."
+    basis: PARTLY MEASURED -- the derived-column refusal is already implemented and tested; whether Mn is tempting enough to be fabricated is the open half
+    the_consequence_predicted: "rho is UNREACHABLE from this source. The pairing consumer needs at least two variables per run and this source yields one. That is not a defect in the consumer or the source -- it is what a report that omits a moment can support."
+
+  positional_column_identity:
+    clause: "stable_sample_and_variable_identity"
+    prediction: "SATISFIED WHEN THE HEADER IS PRESENT -- the adapter maps ordered columns to the names the file's own header line gives, which is transport, not invention. REFUSED when the header is absent: assuming column order would be inventing identity. Predicting both branches, with the refusal named."
+    basis: OPEN
+    what_would_falsify_it: "a header whose names collide with DAQ's own content keys, or a vendor code that is not a variable name at all"
+
+  several_samples_in_one_file:
+    clause: "one Record per run; sample identity"
+    prediction: "SATISFIED with nothing new required. sample_id is per row, and the comparison context separates samples without the extractor doing anything about it."
+    basis: PARTLY MEASURED -- the grouping behaviour is known; its behaviour on THIS shape is not
+
+# ----------------------------------------------------------------------
+the_clause_predicted_most_likely_to_fail: "conditions as FrozenMapping. Not because the type is wrong, but because satisfying it honestly costs comparability -- and the tempting repair is to parse the prose, which fabricates. If the extractor is found to have parsed anything out of that header block, the prediction failed and the contract did not."
+
+the_prediction_i_expect_to_be_wrong: "one_record_per_run_when_runs_are_rows. It is the only one where the clause's WORDING and its DERIVATION come apart, and the work order flagged it independently. Recorded so that being wrong about it is visible rather than absorbed."
+
+what_would_make_this_phase_a_success_even_if_everything_fails: "a clause that cannot be satisfied by a second real source shape, named, with the measurement that produced it. That is cheaper to learn now than after an instrument exists."
+
+# ----------------------------------------------------------------------
+what_this_document_must_not_become: "a description of what was built. It is a prediction, it is committed before the build, and the test bound to it asserts its content has not changed since. If a prediction turns out wrong the RESULT says so; this file does not get corrected to match."

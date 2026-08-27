@@ -166,28 +166,68 @@ def test_the_domain_is_non_empty_so_the_check_can_fail():
         "-- either the artifacts changed shape or this check stopped reaching them")
 
 
+def test_the_sweep_can_confuse_an_invariant_with_a_function_of_the_same_name():
+    """The measured root cause of this sweep's false-positive mode,
+    DERIVED rather than listed so it cannot go stale by a name being
+    added or removed.
+
+    Not a weakening and not a repair -- it makes the collision a fact the
+    next person meets rather than a surprise they diagnose again."""
+    import ast
+
+    invariant_ids = set(CURRENT)
+    function_names = set()
+    for module in sorted((REPO_ROOT / "science").glob("*.py")):
+        function_names |= {
+            node.name for node in ast.walk(ast.parse(module.read_text()))
+            if isinstance(node, ast.FunctionDef)
+        }
+
+    collisions = invariant_ids & function_names
+    assert collisions, (
+        "no invariant id is also a function name, so this sweep can no longer confuse the two "
+        "and the deferral recorded in the docstring above is moot -- retire it rather than "
+        "leaving it standing"
+    )
+    assert collisions == {"quantity_is_typed", "no_context_free_property"}, (
+        f"the collision set moved to {sorted(collisions)}. A new name that is both an invariant "
+        "and a function is a new way for this sweep to misread; re-measure before trusting it."
+    )
+
+
 def test_no_superseded_status_claim_stands_alone():
     """The property. A superseded status may be RETAINED -- this pair does
     that deliberately -- but only where the current one is stated in the
     same row, so the reader meets both. Standing alone, it is a claim
     about the sibling that the sibling has already contradicted.
 
-    A MEASURED FALSE-POSITIVE MODE, recorded rather than silently worked
-    around. This sweep is TEXT PROXIMITY: a row naming an invariant and a
-    status-vocabulary word must also name the current status. But `absent`
-    is both a status in that vocabulary AND an ordinary domain word in this
-    repository -- `uncertainty_kind: absent`, `value_absence`, a missing
-    unit. A row discussing absence near an invariant name trips this with
-    no status claim in it.
+    A MEASURED FALSE-POSITIVE MODE, and the DIAGNOSIS BELOW CORRECTS THIS
+    NOTE'S OWN FIRST VERSION. It fired twice on 2026-08-27 and the second
+    firing showed the first diagnosis was a symptom.
 
-    It fired that way once, on 2026-08-27, against a requirement-response
-    row describing a missing unit beside `quantity_is_typed`. The wording
-    was changed to `missing`, which is clearer anyway -- and the collision
-    is recorded HERE because rewording to get past a check, without saying
-    the check misread, is how a proxy's failure mode gets buried by the
-    person best placed to report it. The sweep is not weakened: a genuine
-    stale claim using the word `absent` is still caught, and the cost of
-    this mode is a reworded sentence rather than a missed claim."""
+    First diagnosis (wrong): `absent` is both an invariant status and an
+    ordinary domain word, so a row discussing absence near an invariant
+    name trips.
+
+    Actual root cause, measured: TWO NAMES ARE BOTH AN INVARIANT ID AND A
+    FUNCTION -- see the derivation in the test below. A string describing
+    what the FUNCTION `quantity_is_typed` does trips a sweep looking for
+    claims about the INVARIANT `quantity_is_typed`, and any such string
+    will naturally contain a status-vocabulary word. Both firings were
+    that shape; the `absent` overlap is the second half of an AND, not the
+    cause.
+
+    Both were reworded to name the module (`science/admissibility.py`)
+    rather than the colliding identifier, which is more precise prose
+    independently of this check. Recorded here rather than fixed because
+    the fix is a real narrowing of the sweep -- distinguishing `names the
+    invariant` from `names the function` -- and this is a build phase.
+
+    THE DEFERRAL HAS A CONDITION. A THIRD firing, or any firing against an
+    artifact that must not be edited (a pinned pre-registration, a shared
+    file), means rewording is no longer available and the sweep must be
+    narrowed. Both firings so far were reworded pre-commit; neither was
+    retrospective."""
     unmarked = []
     for path, invariant, said, row in _rows_with_status_claims():
         now = CURRENT[invariant]
