@@ -1,0 +1,46 @@
+# THE 25 PRE-EMPTED CODES: SHADOWED, NOT DEAD.
+#
+# WO-4 measured 25 refusal codes unreachable from acquisition because an
+# EARLIER refusal fires first. That is a correct verdict about
+# reachability and says nothing about the codes themselves. A code
+# shadowed by a correct earlier refusal and a code that could never fire
+# even if reached are different states, and that measurement could not
+# tell them apart.
+#
+# Measured by driving each predicate DIRECTLY -- the gate function called
+# with content exhibiting the violation. No bypass was added to the
+# product so a harness could reach a regime.
+extends: core@1.0.0
+
+subject: shadowed_refusals
+status: measured
+owner: daf
+enforcement: tests/test_shadowed_refusals.py
+
+# ----------------------------------------------------------------------
+result:
+  codes_examined: 25
+  fires_if_reached: 25
+  never_fires: 0
+  the_stop_condition_did_not_fire: "the work order halts if more than a third are NEVER_FIRES, which would mean the refusal vocabulary is substantially decorative and the repair is a design question. None are. Every shadowed code is real defence in depth: the earlier refusal is the protection today, and each of these would catch its violation if content ever reached it by another route."
+
+what_that_settles: "the pre-empted verdict in architecture/acquisition_reachability.yaml is about the PATH and not about the vocabulary. Nothing in the 25 is dead code, nothing is guarding a condition the type system already excludes, and nothing should be retired."
+
+# ----------------------------------------------------------------------
+# THE SELF-CORRECTION, which is the more useful half.
+# ----------------------------------------------------------------------
+four_plants_were_wrong_before_any_code_was:
+  what_happened: "the first pass reported 4 of 25 NOT HIT. All four were bad plants, and the way they were bad is the finding: each was designed from the code's NAME rather than from its PREDICATE."
+  the_three_that_hit_a_deliberate_decision:
+    plant: "value = [1.0, \"a\"] for COMPOSITE_CELL_LEAF_IS_NOT_A_QUANTITY, and value = [\"a\", \"b\"] for VALUE_LEAF_IS_NOT_A_QUANTITY."
+    why_they_produced_nothing: "a CATEGORICAL STRING LEAF IS ADMITTED ON PURPOSE. leaf_is_a_quantity(\"a\") returns the empty string. That is a decision recorded in science/table.py with the coercion table justifying it -- a categorical column is a real column -- and only a NUMERIC-LOOKING string is refused. The plants were measuring that decision and reporting it as a dead code."
+    re_planted: "value = [1.0, True]. A bool leaf IS refused, and both codes fire."
+  the_one_that_took_the_wrong_branch:
+    plant: "value = {\"a\": 1} for CELL_TYPE_IS_NOT_A_QUANTITY."
+    why_it_produced_nothing: "a Mapping routes to the COMPOSITE branch and never reaches the type branch, which handles non-composite values only. The plant could not arrive where the code lives."
+    re_planted: "bytes and a complex number, neither composite nor numeric nor str. Both fire."
+  the_class_this_belongs_to: "`a plant that measures the plant`, already filed in architecture/proof_integrity.yaml, arriving in a new form. There the payload tripped an EARLIER refusal than the one aimed at; here it tripped a DELIBERATE ADMISSION. Both report a gap that does not exist, and both come from writing the plant against what the code is called rather than against what it tests."
+  what_would_have_hidden_it: "reporting 4 of 25 NEVER_FIRES and moving on. It is below the STOP threshold, so nothing would have halted, and a `21 of 25` headline reads as a reasonable result. The four were only found by taking C.2's instruction literally -- do not retire a code because it never fires, measure why first."
+
+# ----------------------------------------------------------------------
+the_limit_of_this_measurement: "driving a predicate directly proves a code CAN fire. It says nothing about whether any real content would ever take that shape, and the answer for these 25 is that no acquisition path produces it -- which is precisely what acquisition_reachability.yaml already records. The two measurements are complementary and neither substitutes for the other: this one says the vocabulary is alive, that one says the path does not reach it."
