@@ -114,7 +114,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from typing import Iterable, Mapping, Optional, Sequence, Tuple
+from typing import Iterable, List, Mapping, Optional, Sequence, Set, Tuple
 
 #: An observation that names no single Record has no row to occupy.
 AMBIGUOUS_RUN_IDENTITY = "AMBIGUOUS_RUN_IDENTITY"
@@ -297,7 +297,7 @@ def _keys_that_split_every_run(grouped: Mapping) -> Sequence[Tuple[str, str]]:
         return ()
 
     observed = [(dict(context), run) for context, runs in grouped.items() for run in runs]
-    keys = set()
+    keys: Set[str] = set()
     for context, _ in observed:
         keys.update(context)
 
@@ -336,25 +336,27 @@ def sample_covariance(replicates: ReplicateSet) -> Optional[SampleCovariance]:
 
     covariance = []
     for i, column_i in enumerate(columns):
-        row = []
+        covariance_row: List[float] = []
         for j, column_j in enumerate(columns):
-            row.append(sum((a - means[i]) * (b - means[j])
-                           for a, b in zip(column_i, column_j)) / (n - 1))
-        covariance.append(tuple(row))
+            covariance_row.append(sum((a - means[i]) * (b - means[j])
+                                      for a, b in zip(column_i, column_j)) / (n - 1))
+        covariance.append(tuple(covariance_row))
 
     reasons = []
     correlation = []
     for i in range(len(variables)):
-        row = []
+        # Optional[float]: a degenerate variable has no correlation to report,
+        # and None says so rather than a number standing in for absence.
+        correlation_row: List[Optional[float]] = []
         for j in range(len(variables)):
             denominator = math.sqrt(covariance[i][i] * covariance[j][j])
             if denominator == 0.0:
-                row.append(None)
+                correlation_row.append(None)
                 if covariance[i][i] == 0.0:
                     reasons.append(DEGENERATE_VARIABLE)
             else:
-                row.append(covariance[i][j] / denominator)
-        correlation.append(tuple(row))
+                correlation_row.append(covariance[i][j] / denominator)
+        correlation.append(tuple(correlation_row))
 
     return SampleCovariance(
         variables=variables,

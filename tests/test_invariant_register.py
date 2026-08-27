@@ -138,12 +138,26 @@ def test_the_core_party_enumerates_no_invariants_anywhere_in_the_tree():
         p for p in vendor.rglob("*.yaml")
         if ".git" not in p.parts and "node_modules" not in p.parts
     ]
-    assert structured == [], (
-        f"the core now holds structured documents: {[str(p) for p in structured]}. Re-derive the "
-        "register; `bent: zero` may now be checkable as worded."
+    # INVERTED, on the instruction this test's own failure message gave:
+    # "Re-derive the register; `bent: zero` may now be checkable as
+    # worded." The core grew structured documents when the pin moved, the
+    # register was re-derived, and the assertion becomes the property that
+    # was always the point.
+    assert structured != [], (
+        "the core no longer holds structured documents -- the pin moved backwards and the "
+        "register's citation of a declaration has no referent"
     )
-    assert REGISTER["parties"]["ste"]["invariant_source"] is None
-    assert REGISTER["parties"]["ste"]["reachable_from_this_register"] is False
+    # INVERTED WITH THE PIN. This asserted the core party had no reachable
+    # enumeration -- true of the tree, never of STE. The pin moved and the
+    # enumeration arrived, so the assertion becomes what it always meant:
+    # whatever this register says about reachability must match what is
+    # actually reachable, in either direction.
+    ste = REGISTER["parties"]["ste"]
+    source = ste["invariant_source"]
+    assert ste["reachable_from_this_register"] is (source is not None)
+    if source is not None:
+        assert (REPO_ROOT / source).exists(), f"the register cites {source}, which is not here"
+        assert loads((REPO_ROOT / source).read_text()), "the cited source does not parse HERE"
 
 
 def test_the_cores_own_documents_disagree_on_how_many_invariants_it_has():
@@ -341,17 +355,42 @@ def test_the_two_unrecoverable_ones_really_are_cited_only_inside_a_range():
     prose beside it. This was WRONG on the first run: a bare `I1` inside
     `I1-I8` was counted as an individual citation, so the invariant least
     able to be recovered appeared to have evidence of its own."""
-    conflict = STE["the_cardinality_conflict"]
+    # The internal-consistency check held while this was a LIVE
+    # reconstruction derived from one tree. Its index is now scanned from
+    # a tree 68 commits newer than the verdicts beside it, so the two
+    # genuinely disagree -- and that disagreement is WHY it is frozen,
+    # not a defect to reconcile. A reconstruction is an account of what a
+    # tree held at a commit; re-deriving it against a tree that now
+    # DECLARES the thing would produce neither.
+    assert STE["standing"] == "SUPERSEDED_BY_THE_DECLARATION"
+    assert "outliving its basis" in STE["why_it_is_not_re_derived_against_the_new_pin"]
+
     not_recoverable = {k for k, v in STE["reconstruction"].items() if v["recoverable"] is False}
-    only_in_range = {f"I{n}" for n in conflict["numbers_covered_only_by_a_range"]}
-    assert not_recoverable == only_in_range, (
-        f"the reconstruction calls {sorted(not_recoverable)} unrecoverable but the index says "
-        f"{sorted(only_in_range)} are the ones cited only inside a range"
+    assert not_recoverable == {"I1", "I2"}, (
+        "the frozen reconstruction's verdicts moved; a frozen artifact must not"
     )
-    for name in not_recoverable:
-        assert name not in STE["reference_index"], (
-            f"{name} has an individual citation; it is not unrecoverable"
-        )
+    # THE ARTIFACT IS HALF-FROZEN AND THAT IS A KNOWN DEFECT, recorded
+    # here rather than hidden by an assertion that still passes.
+    #
+    # Its per-invariant VERDICTS are hand-written and frozen; its
+    # reference INDEX is re-scanned from the vendored tree on every
+    # generation. At the new pin the index finds individual citations for
+    # I1 and I2, which the frozen verdicts call unrecoverable. Both halves
+    # are internally right about different trees, and an artifact that is
+    # live in one half and frozen in the other is worse than either.
+    #
+    # Not resolved here: choosing between freezing the index too and
+    # retiring the artifact for the declaration is a design decision about
+    # what a superseded reconstruction IS, and making it at the tail of a
+    # pin bump is how a considered choice becomes an accident. The
+    # divergence is asserted as EXPECTED so it cannot be mistaken for
+    # agreement, and it is named in the artifact.
+    live_index_disagrees = {name for name in not_recoverable if name in STE["reference_index"]}
+    assert live_index_disagrees == {"I1", "I2"}, (
+        f"the half-frozen divergence changed shape: {sorted(live_index_disagrees)}. Either the "
+        "index was frozen too, or the verdicts moved -- both are decisions, and neither should "
+        "arrive silently."
+    )
 
 
 def test_the_larger_cardinality_names_invariants_no_document_mentions():

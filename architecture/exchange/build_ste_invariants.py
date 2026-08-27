@@ -206,6 +206,34 @@ DOCUMENT = {
     "owner": "ste",
     "authored_by": "daf",
     "status": "RECONSTRUCTION_NOT_DECLARATION",
+    "standing": "SUPERSEDED_BY_THE_DECLARATION",
+    "superseded_by": "vendor/scout-retrieval-agent/architecture/canonical_state_invariants.yaml, declared by its owner and bound into that repository's exchange register",
+    "what_supersession_means_here": (
+        "this file stops being the best available account and becomes the record of what one party "
+        "could recover before the other declared. Its readings are NOT retracted -- where they "
+        "agree with the declaration that is agreement and not confirmation, and where the "
+        "declaration goes further this file simply had less to go on."
+    ),
+    "a_known_defect_this_file_carries": (
+        "it is HALF-FROZEN. The per-invariant verdicts are hand-written and frozen; the reference "
+        "index is re-scanned from the vendored tree on every generation. At the new pin the index "
+        "finds individual citations for I1 and I2 that the frozen verdicts call unrecoverable. "
+        "Both halves are right about different trees, and an artifact live in one half and frozen "
+        "in the other is worse than either. Choosing between freezing the index and retiring this "
+        "file for the declaration is a decision about what a superseded reconstruction IS, and it "
+        "is left as one rather than settled in passing. The divergence is pinned as EXPECTED in "
+        "tests/test_invariant_register.py so it cannot be mistaken for agreement."
+    ),
+    "why_it_is_not_re_derived_against_the_new_pin": (
+        "measured: re-scanning at the new pin changes the reading. I1 and I2 are cited "
+        "individually somewhere in the 68 commits of documents that arrived, so the index no "
+        "longer reports them as range-only, while this file's per-invariant verdicts still say "
+        "unrecoverable. That divergence is not a defect to reconcile -- it is a reconstruction "
+        "outliving its basis. A reconstruction is an account of what a tree held at a commit; "
+        "re-deriving it against a tree that now DECLARES the thing would produce neither a "
+        "reconstruction nor a declaration. It is frozen at what it measured, and the declaration "
+        "is cited for what is true now."
+    ),
     "what_status_means": (
         "STE has not declared its invariant set. This is what its own documents CONSTRAIN, "
         "reconstructed by another party, and it must never be cited as STE's own statement. A set "
@@ -264,9 +292,46 @@ DOCUMENT = {
             "pair before c80a2f0 quantified over four."
         ),
         "there_is_no_counterparty_response_and_this_file_does_not_pretend_one": (
-            "scl_requirements.yaml has daq_requirement_response.yaml beside it because there was a "
-            "party to answer. There is none here. This request stands unanswered and is recorded as "
-            "unanswered rather than as an agreement."
+            "SUPERSEDED, and the premise was the part that was wrong. This read: there was no party "
+            "to answer, so the request stood unanswered. There was a party; it was outside the tree "
+            "this repository could see, because the pin predated the directory its declaration "
+            "lives in. The declaration was not missing, it was out of view -- which is why the "
+            "absence recorded here was never a claim about what STE's invariants ARE, only about "
+            "what this tree held."
+        ),
+        "the_answer": {
+            "at": "vendor/scout-retrieval-agent/architecture/exchange/ste_invariant_declaration.yaml",
+            "arrived_by": "moving the pin from 3e5bea9 to 5e146d5, 68 commits",
+            "one_declare_the_invariant_set": (
+                "ANSWERED. Declared in architecture/canonical_state_invariants.yaml, and bound into "
+                "the counterparty's exchange register -- three parties, 58 rows -- which is the "
+                "artifact this repository now cites."
+            ),
+            "two_resolve_the_cardinality": (
+                "ANSWERED, and better than either option offered. NEITHER eight nor ten: the "
+                "range's referent is a brief outside the tree, so eight is unrecoverable, and ten "
+                "is unsupported. Both retracted rather than one swapped for the other, on the "
+                "stated grounds that swapping one unsupported number for another would look like a "
+                "fix. Six constrained, five statable -- a floor, not a total."
+            ),
+            "three_rerun_the_probe_against_five_properties": (
+                "ANSWERED, and it was treated as OPEN until measured rather than assumed answered "
+                "because its two siblings were -- which would have been the subset-read-as-the-set "
+                "error a third time. Verdict none_at_the_execution_boundary, deliberately not the "
+                "word the four observation rows carry, and explicitly SILENT on the "
+                "evidence-lineage half of recursion, which is DAQ's half and is now enforced here."
+            ),
+        },
+        "the_call_this_repository_makes": (
+            "ANSWERED. The counterparty's declaration explicitly left the call open -- answered, "
+            "disputed, or partially answered -- and did not make it on this repository's behalf. "
+            "All three asks are met and the third is met with a distinction this side did not ask "
+            "for and should have. Recorded as answered."
+        ),
+        "what_is_NOT_thereby_confirmed": (
+            "the reconstruction. Where this file's readings agree with the declaration, that is "
+            "agreement and not confirmation -- same source documents, same method, no "
+            "independence. The declaration says so first and this file does not soften it."
         ),
     },
 }

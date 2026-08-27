@@ -48,9 +48,9 @@
   "why_that_matters_here": "core.yaml recorded 26. Parsed, it is 32. A search for `extends: core@1.0.0` cannot see `\"extends\": \"core@1.0.0\"`, which is exactly what the shared canonical emitter writes -- so the artifacts invisible to the count were the canonically-emitted ones, the most carefully produced files in the pair."
 "joined_on":
   "annotating_label_carried": "core@1.0.0"
-  "gitlink_at_generation": "3e5bea973d0e801eadfb9d472aa3d07c930616c3"
+  "gitlink_at_generation": "5e146d5924675cd7b6e1d1ed44fb39f5da012610"
   "referent": "submodule_commit"
-  "value": "3e5bea9"
+  "value": "5e146d5"
   "why_not_the_label": "the version is ANNOTATING -- upstream controls it and it can move without the vendored code changing. This register would otherwise join three parties on a string one of them can rewrite. See architecture/core.yaml core_referent."
 "owner": "daf"
 "parties":
@@ -175,9 +175,9 @@
   "the_brief_is_not_in_the_tree": "ARCHITECTURE_SPEC.md says 'Invariants I1-I8 (see brief)'. There is no brief in the vendored tree, and no YAML of any kind in it."
 "what_bent_zero_actually_rests_on":
   "measured_at_generation":
-    "gitlink": "3e5bea973d0e801eadfb9d472aa3d07c930616c3"
+    "gitlink": "5e146d5924675cd7b6e1d1ed44fb39f5da012610"
     "modifiable": false
-    "recorded_submodule_commit": "3e5bea9"
+    "recorded_submodule_commit": "5e146d5"
     "working_tree_matches_the_pin": true
   "the_claim_as_worded": "zero core invariants required modification"
   "the_stronger_observable_that_entails_it": "the core's bytes are unmodified at the participating referent. Zero files changed entails zero invariants changed, whatever they are and however many -- so the claim is SUPPORTED, by a different route than its wording implies."
