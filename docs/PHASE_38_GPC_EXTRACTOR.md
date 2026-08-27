@@ -251,7 +251,15 @@ The curation looks deliberate rather than drifted — the doctrine projection co
 control loop, evidence classes, roles, invariants and unresolved items, and a defect
 record or a readiness record is not doctrine. **No change is proposed here**, because
 rewriting the source list would move the source digest and every hash reference bound to
-it, and that is not this phase's call. What is recorded is narrower and is the
+it, and that is not this phase's call. It is now recorded as an explicit UNDECIDED with a
+trigger rather than as this paragraph — `architecture/doctrine_coverage.yaml`, enforced by
+`tests/test_doctrine_coverage.py` — because two parked items have already faded from
+prose. Measuring it for the record turned up something worse than the vacuous green:
+**two artifacts, `kalman_validation_preregistration.yaml` and `selection_rule_defect.yaml`,
+are covered by neither the projection nor any test at all.** They could be arbitrarily
+stale and the whole suite stays green. Named as executable work rather than bound in
+passing, since binding an artifact whose claims have not been re-measured is worse than
+marking it honestly unbound. What is recorded is narrower and is the
 `zero_rate_when_unreachable` rule turned on the repository's own process: for 7 of 27
 architecture files, a zero doctrine diff is not evidence that nothing broke. It is the
 metric being silent, not clean. The artifact change in this phase is instead bound by
