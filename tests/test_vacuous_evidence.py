@@ -284,3 +284,78 @@ def test_the_propagation_class_distinguishes_itself_from_jensen():
         "Jensen says" in klass["why_it_is_not_merely_jensens_inequality"]
     assert "structured, not noise" in klass["why_it_is_not_merely_jensens_inequality"]
     assert "no counterpart in the data" in klass["why_it_is_not_merely_jensens_inequality"]
+
+
+# =====================================================================
+# The fifth class: a verdict about the checker, not about the artifact
+# =====================================================================
+
+CHECKER_CLASS = "a_verdict_about_the_checker_rather_than_about_the_artifact"
+
+
+def test_the_class_carries_the_column_that_matters():
+    """A defect record without a `what does not generalise` column is a
+    fix report. The order that asked for this class named that column as
+    the one that matters, and it is the one a reader skips."""
+    klass = RECORD[CHECKER_CLASS]
+    ungeneralised = klass["WHAT_DOES_NOT_GENERALISE_FROM_THE_FIX"]
+    assert set(ungeneralised) == {
+        "the_green_is_not_the_evidence",
+        "two_causes_found_is_not_two_causes_existing",
+        "the_empty_dependency_list_reproduces_this_exactly",
+        "fetch_depth_zero_fixes_depth_and_nothing_adjacent",
+    }
+    assert "green was precisely the state that carried no information" in \
+        ungeneralised["the_green_is_not_the_evidence"]
+    assert "PLANTED FAILURE" in ungeneralised["the_green_is_not_the_evidence"], (
+        "the class must say what actually distinguished the two greens"
+    )
+
+
+def test_the_class_applies_its_own_rule_to_its_own_fix():
+    """The sharpest half. The workflow's checker-install list is itself an
+    enumeration standing for a set nobody derives -- the same shape as the
+    defect it repairs."""
+    ungeneralised = RECORD[CHECKER_CLASS]["WHAT_DOES_NOT_GENERALISE_FROM_THE_FIX"]
+    assert "an enumeration standing for a set nobody checks it against" in \
+        ungeneralised["the_empty_dependency_list_reproduces_this_exactly"]
+
+    workflow = (REPO_ROOT / ".github" / "workflows" / "conformance.yml").read_text()
+    assert "pyyaml" in workflow, "the fix must still be in place for the class to describe it"
+    assert "fetch-depth: 0" in workflow
+
+    third_party = set()
+    for path in sorted((REPO_ROOT / "tests").glob("*.py")):
+        for line in path.read_text().splitlines():
+            if line.startswith("import yaml") or line.strip().startswith("import yaml"):
+                third_party.add("pyyaml")
+    assert third_party == {"pyyaml"}, (
+        f"the test corpus imports {sorted(third_party)} at test time; if that set has grown, the "
+        "workflow's literal install list is now short and the class's own warning has fired"
+    )
+
+
+def test_the_sweep_is_recorded_with_its_method_and_its_clean_result():
+    """An unexecuted sweep and a clean one look identical in a report, so
+    the method is recorded alongside the verdict -- including for the
+    shape that found nothing."""
+    sweep = RECORD[CHECKER_CLASS]["the_sweep_the_class_demands"]
+    assert "not by recollection" in sweep["method"]
+    assert "NONE is an instance" in sweep["shape_b_comparing_an_artifact_to_a_copy_of_itself"]
+    assert "a clean sweep and no sweep are the same sentence" in \
+        sweep["shape_b_comparing_an_artifact_to_a_copy_of_itself"]
+    assert "LATENT RATHER THAN FIRED" in sweep["shape_c_an_enumeration_standing_for_a_derived_set"]
+    assert "not a partition of the class" in sweep["what_the_sweep_did_not_cover"], (
+        "three shapes named from one instance are not a partition, and saying so is the "
+        "difference between a sweep and a claim of completeness"
+    )
+
+
+def test_the_sixty_one_run_window_is_stated_as_measured_not_as_five():
+    """The order that commissioned this class described five commits. The
+    measured window is sixty-one runs, and the record carries the
+    measurement rather than the brief."""
+    klass = RECORD[CHECKER_CLASS]
+    assert "SIXTY-ONE consecutive runs" in klass["the_measured_instance"]
+    assert "7b7c257" in klass["the_measured_instance"]
+    assert "COLLECTION" in klass["the_measured_instance"]

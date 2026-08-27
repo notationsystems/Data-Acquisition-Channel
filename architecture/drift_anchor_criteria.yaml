@@ -1,0 +1,68 @@
+# WHAT A CANDIDATE REPORT MUST CONTAIN TO SETTLE THE CALIBRATION-DRIFT
+# QUESTION. RECORDED BEFORE ANY CANDIDATE IS READ.
+#
+# The thresholds below are stated in advance so a candidate can be judged
+# before effort is spent on it, and so a report that ALMOST qualifies
+# cannot be talked into qualifying afterwards.
+#
+# TWO DIFFERENT QUESTIONS HAVE BEEN RIDING ON THE WORD "REPLICATE", and
+# separating them is the first thing this document does. Anchor 2 was
+# obtained as "the replicate anchor" and it answers one of them and is
+# silent on the other:
+#
+#   B.2.4      two injections of the SAMPLE, followed by an aggregate
+#              block. ANSWERED by Anchor 2, which carries Average /
+#              Standard Deviation / % RSD.
+#   THE DRIFT  duplicate injections of the STANDARDS inside one
+#              calibration. Anchor 1 has eleven such pairs. ANCHOR 2 HAS
+#              NONE -- its ten standards are ten distinct masses, each
+#              injected once -- so it bears on this question not at all.
+#
+# A candidate judged against the wrong one of these will be accepted for
+# answering a question nobody asked.
+extends: core@1.0.0
+
+subject: drift_anchor_criteria
+status: criteria_recorded_before_any_candidate_is_read
+owner: daf
+enforcement: tests/test_drift_anchor_criteria.py
+recorded: "2026-08-27"
+
+# ----------------------------------------------------------------------
+the_finding_this_would_settle:
+  what_was_measured: "in Anchor 1, all ELEVEN duplicate pairs have their second injection eluting later, a proportional stretch of the retention axis of 0.151%, worth about 1.4% in mass."
+  what_it_does_NOT_establish: "an instrument property. A single report is a single injection sequence, and column equilibration, thermal settling and solvent degassing all produce monotone retention drift across a sequence. The eleven-of-eleven p-value tests whether THIS SEQUENCE drifted, which was never in doubt."
+  the_claim_already_withdrawn: "a mass-dependence was reported and is withdrawn -- see architecture/anchor_one_result.yaml. Directly measured, the slope against log M is not distinguishable from zero and the rounded and unrounded readings disagree on its sign. So the drift moves the SCALE and cancels in a ratio."
+  what_remains_open: "whether the drift reproduces across runs. That decides whether the critique of duplicate-averaging is about a practice or about one afternoon."
+
+# ----------------------------------------------------------------------
+a_candidate_must_contain:
+  per_injection_retention_data: "the retention time of EACH injection of each standard, not an averaged one. A calibration table printing one row per standard cannot answer this whatever else it carries."
+  recorded_sequence_order: "which injection came first, established from the artifact rather than assumed from row order. A timestamp per injection is the strong form; an injection number is acceptable ONLY where the report does not also contradict it -- Anchor 2 carries three identifiers for two runs and the instrument's own disagrees with the other two, so a row label alone is not order."
+  at_least_five_duplicate_pairs: "five pairs all drifting the same way is p = 0.031 on a one-tailed sign test, which is the threshold for the candidate to stand ALONE. Fewer than five may still combine with Anchor 1 but cannot settle anything by itself, and a candidate with four pairs must be reported as insufficient rather than argued up."
+  run_metadata_establishing_a_DIFFERENT_run: "a calibration date, a sequence name or an instrument identifier distinguishing it from Anchor 1's 2021-03-19 Waters Alliance 2695 session. A second sequence on the same instrument on the same day is weaker than a different day, and a different column is stronger than either."
+
+what_disqualifies_a_candidate:
+  the_same_sequence: "duplicate pairs from the run already measured. A sixth pair from Anchor 1's own calibration adds nothing: the question is not whether that sequence drifted."
+  order_absent: "duplicates with no way to tell which came first. The direction is the whole measurement."
+  averaged_duplicates: "a report printing the mean of its duplicate injections has destroyed the quantity."
+  moments_only: "a report giving Mn, Mw and a calibration curve but no per-standard retention table. This is the common case and is the reason the search is hard."
+
+# ----------------------------------------------------------------------
+# Three outcomes, each with its prediction fixed now.
+predictions_by_outcome:
+  it_reproduces_as_an_instrument_property:
+    what_would_be_seen: "five or more pairs in a second, different run, drifting the same direction, with a stretch of the same order (0.05% to 0.5%)."
+    then: "the critique generalises. Duplicate-averaging estimates the midpoint of a drift as a matter of practice rather than in one session, and a calibration's replicate spread must not be reported as a random uncertainty. The forward model should carry a sequence-position term."
+    prediction_of_magnitude: "if it reproduces, the stretch will be WITHIN A FACTOR OF THREE of 0.151% -- pinned, because a reproduction two orders of magnitude away would be a different phenomenon wearing the same sign."
+  it_is_session_specific:
+    what_would_be_seen: "a second run with pairs distributed either way, or a drift of the opposite sign."
+    then: "the finding narrows to `Anchor 1's sequence drifted` and says nothing about the practice. The record must be edited to say so, and the practical advice about duplicate-averaging is withdrawn rather than softened."
+  the_third_case_sign_reproduces_and_magnitude_does_not:
+    why_it_is_the_likely_one: "equilibration is a real and general effect, so the SIGN reproducing is close to expected; its size depends on column history, how long the system was flushed, and ambient temperature, none of which a report states. So the most probable outcome is a direction that holds and a magnitude that does not."
+    prediction: "sign reproduces; the stretch differs from 0.151% by more than a factor of three."
+    then: "the drift is an instrument-class property with a session-specific size, which is the WORST case for a consumer: a bias known to exist, known to be systematic, and not knowable in magnitude from the artifact. The correct disposition then is neither `average the duplicates` nor `ignore the spread` but `the report does not carry enough to correct it`, which is a statement about the substrate rather than about the instrument."
+    and_it_is_named_as_most_likely_here: "so that if it happens, it was predicted, and if one of the other two happens, this document was wrong in a recorded way."
+
+# ----------------------------------------------------------------------
+what_this_document_must_not_become: "a description of a candidate that was found. Its digest is pinned by its enforcement, the thresholds above were set before any candidate was read, and a candidate that fails one of them fails -- the criterion is not adjusted to admit it."
