@@ -136,7 +136,52 @@ def ste_invariant_references():
     }
 
 
+
+def ste_exchange_register():
+    """STE's own EXCHANGE register, if the pinned tree holds one.
+
+    THE INTEROP SURFACE IS THE EXCHANGE DIRECTORY, and that is the whole
+    reason this reads there rather than at STE's hand-authored
+    architecture files. Measured when the pin moved: of STE's four
+    architecture documents, this reader can read exactly one -- the
+    exchange register, which the SHARED CANONICAL EMITTER produces. The
+    other three use folded block scalars and plain multi-line scalars
+    that `epistemics/_yaml.py` does not implement, so a citation pointing
+    at them would be a citation nobody here could follow.
+
+    That is not a defect to patch under time pressure. Teaching this
+    reader enough YAML to read another repository's hand-authored prose
+    was attempted and abandoned: two constructs in, it read two of four
+    files correctly and two incorrectly, with nothing to say which --
+    partial correctness with silent disagreement, which is the failure
+    mode this pair's whole canonicalization effort exists to prevent.
+    Recorded in architecture/proof_integrity.yaml instead.
+
+    The exchange surface was built to be byte-agreed between parties.
+    Hand-authored internal architecture never was, and citing it would
+    quietly widen the contract to documents nobody agreed to keep
+    readable."""
+    path = HERE.parent.parent / "vendor/scout-retrieval-agent/architecture/exchange/invariant_register.yaml"
+    if not path.exists():
+        return None
+    document = loads(path.read_text())
+    rows = document.get("invariants") or []
+    return {
+        "path": "vendor/scout-retrieval-agent/architecture/exchange/invariant_register.yaml",
+        "invariant_count": document.get("invariant_count"),
+        "bound_parties": document.get("bound_parties"),
+        "rows_present": len(rows),
+        "readable_by_this_repositorys_reader": True,
+        "why_this_path_and_not_the_architecture_files": (
+            "the exchange directory is the interop surface and its artifacts are emitted by the "
+            "shared canonical emitter, which both readers agree on. Of STE's four architecture "
+            "documents this reader reads exactly one, and it is this one."
+        ),
+    }
+
+
 STE = ste_invariant_references()
+STE_EXCHANGE = ste_exchange_register()
 GITLINK = gitlink_commit()
 UNMODIFIED = core_tree_is_unmodified()
 
@@ -248,12 +293,24 @@ DOCUMENT = {
         },
         "ste": {
             "role": "the core; deterministic-state-architecture, vendored and unmodifiable",
-            "invariant_source": None,
-            "source_kind": "referenced_by_number_defined_in_a_brief_this_tree_does_not_hold",
-            "invariant_count": None,
+            "invariant_source": (STE_EXCHANGE or {}).get("path"),
+            "source_kind": (
+                "declared_in_the_counterpartys_exchange_register"
+                if STE_EXCHANGE
+                else "referenced_by_number_defined_in_a_brief_this_tree_does_not_hold"
+            ),
+            "invariant_count": (STE_EXCHANGE or {}).get("invariant_count"),
             "status_histogram": None,
-            "reachable_from_this_register": False,
+            "reachable_from_this_register": bool(STE_EXCHANGE),
             "evidence": STE,
+            "exchange_register": STE_EXCHANGE,
+            "what_changed_when_the_pin_moved": (
+                "at the previous pin this party had no enumeration reachable from here and this "
+                "entry recorded that as a measured absence. The pin moved and the enumeration "
+                "arrived. The absence was never a claim about what STE's invariants ARE -- only "
+                "about what this tree held -- which is why the entry changes without anything "
+                "recorded here turning out to have been wrong."
+            ) if STE_EXCHANGE else None,
         },
     },
     "the_core_partys_invariants_are_not_enumerated_anywhere_here": {
@@ -402,7 +459,53 @@ DOCUMENT = {
     ),
 }
 
+
+def _refuse_if_the_pin_and_the_tree_disagree() -> None:
+    """A generator that READS the vendored tree may not run while that
+    tree and the index disagree about which commit it is.
+
+    WHY, measured rather than anticipated. This generator's output is a
+    function of the vendored tree. Running it with the submodule checked
+    out at one commit while the index pins another produces an artifact
+    derived from a tree state the pin does not name -- self-consistent,
+    correctly hashed, and wrong. That state occurred: a suite run against
+    an unpinned checkout rewrote both sidecars in this directory, and the
+    fixed-point test restored only the artifact, leaving the digests
+    bound to bytes no committed pin identifies.
+
+    The general shape is that a VERIFICATION WITH A WRITE SIDE EFFECT
+    cannot witness the thing it verifies, because running it changes the
+    subject. See architecture/proof_integrity.yaml. This guard closes the
+    half that matters here: the generator refuses rather than producing
+    an artifact whose provenance nobody can state.
+
+    It fails CLOSED and it fails LOUD, because the alternative -- reading
+    the pinned commit's bytes out of git rather than the worktree -- would
+    let the generator succeed while silently disagreeing with the tree a
+    reader is looking at.
+    """
+    import subprocess
+
+    repo_root = HERE.parent.parent
+    status = subprocess.run(
+        ["git", "submodule", "status", "vendor/scout-retrieval-agent"],
+        cwd=str(repo_root), capture_output=True, text=True, timeout=60,
+    )
+    if status.returncode != 0 or not status.stdout:
+        return  # no git here; nothing to disagree with
+    marker = status.stdout[0]
+    if marker in "+-U":
+        raise SystemExit(
+            f"REFUSING to generate: the vendored tree and the index disagree "
+            f"({status.stdout.strip()!r}).\n"
+            "This generator reads that tree, so running now would produce an artifact derived "
+            "from a commit the pin does not name -- correctly hashed and wrong.\n"
+            "Check the submodule out at the pinned commit, or bump the pin deliberately, then "
+            "re-run."
+        )
+
 if __name__ == "__main__":
+    _refuse_if_the_pin_and_the_tree_disagree()
     payload = canonical_bytes(DOCUMENT)
     (HERE / "invariant_register.yaml").write_bytes(payload)
     digest = "sha256:" + hashlib.sha256(payload).hexdigest()

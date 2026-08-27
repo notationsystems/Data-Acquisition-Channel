@@ -271,7 +271,53 @@ DOCUMENT = {
     },
 }
 
+
+def _refuse_if_the_pin_and_the_tree_disagree() -> None:
+    """A generator that READS the vendored tree may not run while that
+    tree and the index disagree about which commit it is.
+
+    WHY, measured rather than anticipated. This generator's output is a
+    function of the vendored tree. Running it with the submodule checked
+    out at one commit while the index pins another produces an artifact
+    derived from a tree state the pin does not name -- self-consistent,
+    correctly hashed, and wrong. That state occurred: a suite run against
+    an unpinned checkout rewrote both sidecars in this directory, and the
+    fixed-point test restored only the artifact, leaving the digests
+    bound to bytes no committed pin identifies.
+
+    The general shape is that a VERIFICATION WITH A WRITE SIDE EFFECT
+    cannot witness the thing it verifies, because running it changes the
+    subject. See architecture/proof_integrity.yaml. This guard closes the
+    half that matters here: the generator refuses rather than producing
+    an artifact whose provenance nobody can state.
+
+    It fails CLOSED and it fails LOUD, because the alternative -- reading
+    the pinned commit's bytes out of git rather than the worktree -- would
+    let the generator succeed while silently disagreeing with the tree a
+    reader is looking at.
+    """
+    import subprocess
+
+    repo_root = HERE.parent.parent
+    status = subprocess.run(
+        ["git", "submodule", "status", "vendor/scout-retrieval-agent"],
+        cwd=str(repo_root), capture_output=True, text=True, timeout=60,
+    )
+    if status.returncode != 0 or not status.stdout:
+        return  # no git here; nothing to disagree with
+    marker = status.stdout[0]
+    if marker in "+-U":
+        raise SystemExit(
+            f"REFUSING to generate: the vendored tree and the index disagree "
+            f"({status.stdout.strip()!r}).\n"
+            "This generator reads that tree, so running now would produce an artifact derived "
+            "from a commit the pin does not name -- correctly hashed and wrong.\n"
+            "Check the submodule out at the pinned commit, or bump the pin deliberately, then "
+            "re-run."
+        )
+
 if __name__ == "__main__":
+    _refuse_if_the_pin_and_the_tree_disagree()
     payload = canonical_bytes(DOCUMENT)
     (HERE / "ste_invariants.yaml").write_bytes(payload)
     digest = "sha256:" + hashlib.sha256(payload).hexdigest()

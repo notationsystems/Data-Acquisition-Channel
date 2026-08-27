@@ -114,9 +114,19 @@ def result_for(pool, campaign, entry, locator, value):
     document_id = pool.get_record(pool.all_observations()[0].record_ids[0]).document_id
     record = make_record(document_id=document_id, locator=locator, raw_content=locator)
     pool.put_record(record)
+    # `extraction_method` is stated rather than defaulted, and the
+    # explicitness is the point. The vendored factory dropped its default
+    # of "measurement:campaign_execution" because that default was the
+    # only one in that codebase converting a caller's SILENCE into a
+    # positive assertion that a measurement occurred in the external
+    # world. That is DAQ's own rule -- source-authentic method
+    # provenance, absent is not a default -- arriving from upstream, so
+    # the 50 failures it caused here were this repository being held to
+    # its own doctrine by a party that had adopted it.
     result = make_experimental_result(
         campaign, entry, content={"property": "tensile_strength", "value": value, "unit": "MPa"},
         record_id=record.id, extracted_at="2026-08-25T02:00:00Z",
+        extraction_method="measurement:campaign_execution",
     )
     observation, _relationship = admit_experimental_result(pool, result, confidence=1.0)
     return result, observation

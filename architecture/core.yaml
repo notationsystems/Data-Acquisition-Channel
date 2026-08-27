@@ -15,7 +15,7 @@
 name: deterministic-state-architecture
 version: 1.0.0
 specification: Frozen Specification v1.0.0
-submodule_commit: 3e5bea9
+submodule_commit: 5e146d5
 submodule_path: vendor/scout-retrieval-agent
 modifiable: false
 modifiable_reason: "daf/_vendor.py -- the vendored system is used without copying or modifying a single line"
@@ -42,7 +42,7 @@ modifiable_reason: "daf/_vendor.py -- the vendored system is used without copyin
 #     The count is now derived by PARSING, in
 #     architecture/exchange/build_invariant_register.py, and asserted
 #     against an independent parse in tests/test_invariant_register.py.
-#   * `submodule_commit: 3e5bea9` is recorded above and NOTHING verifies it
+#   * `submodule_commit: 5e146d5` is recorded above and NOTHING verifies it
 #     against the gitlink the repository actually points at.
 #   * the one check on the version is `f'version = "{v}"' in pyproject_text`
 #     -- a SUBSTRING match over the whole file, which cannot tell the
