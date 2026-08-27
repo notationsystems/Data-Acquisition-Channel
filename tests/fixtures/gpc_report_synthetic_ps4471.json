@@ -16,6 +16,7 @@
     {
       "measurements": [
         {
+          "kind": "measured",
           "uncertainty": 1250.0,
           "uncertainty_kind": "stated",
           "unit": "g/mol",
@@ -23,6 +24,7 @@
           "variable": "number_average_molar_mass"
         },
         {
+          "kind": "measured",
           "uncertainty": 2600.0,
           "uncertainty_kind": "stated",
           "unit": "g/mol",
@@ -35,6 +37,7 @@
     {
       "measurements": [
         {
+          "kind": "measured",
           "uncertainty": 1180.0,
           "uncertainty_kind": "stated",
           "unit": "g/mol",
@@ -42,6 +45,7 @@
           "variable": "number_average_molar_mass"
         },
         {
+          "kind": "measured",
           "uncertainty": 2530.0,
           "uncertainty_kind": "stated",
           "unit": "g/mol",
@@ -54,6 +58,7 @@
     {
       "measurements": [
         {
+          "kind": "measured",
           "uncertainty": 1220.0,
           "uncertainty_kind": "stated",
           "unit": "g/mol",
@@ -61,6 +66,7 @@
           "variable": "number_average_molar_mass"
         },
         {
+          "kind": "measured",
           "uncertainty": 2500.0,
           "uncertainty_kind": "stated",
           "unit": "g/mol",
@@ -73,6 +79,7 @@
     {
       "measurements": [
         {
+          "kind": "measured",
           "uncertainty": 1300.0,
           "uncertainty_kind": "stated",
           "unit": "g/mol",
@@ -80,6 +87,7 @@
           "variable": "number_average_molar_mass"
         },
         {
+          "kind": "measured",
           "uncertainty": 2640.0,
           "uncertainty_kind": "stated",
           "unit": "g/mol",
@@ -92,6 +100,7 @@
     {
       "measurements": [
         {
+          "kind": "measured",
           "uncertainty": 1160.0,
           "uncertainty_kind": "stated",
           "unit": "g/mol",
@@ -99,6 +108,7 @@
           "variable": "number_average_molar_mass"
         },
         {
+          "kind": "measured",
           "uncertainty": 2450.0,
           "uncertainty_kind": "stated",
           "unit": "g/mol",

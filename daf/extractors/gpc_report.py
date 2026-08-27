@@ -68,11 +68,43 @@ from daf.extractors._passthrough import tighten_passthrough_content
 
 EXTRACTION_METHOD = "gpc_report_v1"
 
-# Names under which a GPC report reports Mw/Mn. Refused rather than
-# emitted: it is computed evidence and this interface only makes
-# measured evidence. Matched on the declared variable name, which is the
-# only thing the report tells us about it.
+# EVERY MEASUREMENT MUST DECLARE ITS KIND, AND ONLY `measured` PASSES.
+#
+# This is the property. The enumeration below is NOT, and the difference
+# was found by a second source rather than by review: DERIVED_VARIABLES
+# is a case-sensitive list, the first fixture wrote `dispersity` because
+# the same author wrote the fixture and the check, and a real vendor
+# export writes `PDI` -- the standard acronym -- and walked straight
+# through it. Eight derived quantities entered the pool wearing the
+# `measured` class, with every gate green.
+#
+# A name cannot answer this question. DAQ has no way to know from a
+# column header whether a quantity was measured or computed from other
+# reported ones, and any list of names it writes will be missing the one
+# the next vendor uses. So the SOURCE declares it, per measurement, and
+# an undeclared kind is refused rather than assumed measured -- which is
+# the direction that fails safe, because assuming `measured` is exactly
+# the error that occurred.
+#: Optional keys an adapter may declare about the ACQUISITION rather than
+#: about the measurement. A closed set, because content keys become
+#: comparison-context keys and an open door here would let an adapter
+#: silently split every group.
+ACQUISITION_PROVENANCE_KEYS = ("acquisition_declared", "not_acquired_because_not_measured")
+
+MEASURED_KIND = "measured"
+MEASUREMENT_KIND_KEY = "kind"
+
+# SUPPLEMENTARY AND NOT THE PROTECTION. Kept because a source that
+# declares `measured` for a column plainly named `PDI` is worth refusing
+# twice, and because it names the specific quantity in the message. It is
+# matched case- and separator-insensitively now, and it is still an
+# enumeration: the declaration above is what closes the class. Recorded
+# as such so nobody reads a pass here as coverage.
 DERIVED_VARIABLES = ("dispersity", "polydispersity_index", "pdi", "mw_over_mn", "molar_mass_dispersity")
+
+
+def _normalised(name: str) -> str:
+    return name.strip().lower().replace(" ", "_").replace("-", "_").replace("/", "_over_")
 
 # Keys an acquisition layer must never let into content -- they are
 # locators, and a locator in content makes every run its own comparison
@@ -103,7 +135,18 @@ def _measurement_content(
         raise GpcReportExtractionError(f"record {record_id!r} has a non-object measurement: {measurement!r}")
 
     variable = _require_str(measurement, "variable", record_id)
-    if variable in DERIVED_VARIABLES:
+
+    kind = measurement.get(MEASUREMENT_KIND_KEY)
+    if kind != MEASURED_KIND:
+        raise GpcReportExtractionError(
+            f"record {record_id!r} reports {variable!r} with kind {kind!r}. This interface produces "
+            f"evidence.types.Observation, which architecture/evidence_class.yaml classes as "
+            f"`{MEASURED_KIND}`; every measurement must declare that kind explicitly. An undeclared "
+            "kind is refused rather than assumed measured -- assuming it is the error a second "
+            "source found, where a derived column named PDI passed a case-sensitive denylist."
+        )
+
+    if _normalised(variable) in DERIVED_VARIABLES:
         raise GpcReportExtractionError(
             f"record {record_id!r} declares {variable!r}, which is computed from other reported "
             "quantities rather than measured. This interface produces evidence.types.Observation, "
@@ -162,6 +205,25 @@ def _measurement_content(
         "conditions": payload["conditions"],
         "data_provenance": payload["data_provenance"],
     }
+
+    # ACQUISITION PROVENANCE, CARRIED WHEN AN ADAPTER SUPPLIES IT.
+    #
+    # Found by the second source: this content was a CLOSED vocabulary, so
+    # anything an adapter knew that this dict did not name was silently
+    # dropped between the payload and the pool. The vendor export's adapter
+    # declares four fields the document cannot state and records which
+    # columns it declined as not-measured -- and none of it reached an
+    # Observation, which would have made a caller-declared unit
+    # indistinguishable from a source-stated one exactly where the
+    # distinction matters.
+    #
+    # Named explicitly rather than passed through wholesale: a general
+    # pass-through would let any adapter put anything into the comparison
+    # context, which is the genericity the typed extractors exist to avoid.
+    for key in ACQUISITION_PROVENANCE_KEYS:
+        if key in payload:
+            content[key] = payload[key]
+
     return tighten_passthrough_content(content, record_id)
 
 

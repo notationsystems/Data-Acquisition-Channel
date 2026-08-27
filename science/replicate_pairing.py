@@ -126,6 +126,17 @@ RAGGED_REPLICATE_SET = "RAGGED_REPLICATE_SET"
 TOO_FEW_RUNS_FOR_A_COVARIANCE = "TOO_FEW_RUNS_FOR_A_COVARIANCE"
 #: A variable with zero sample variance: correlations against it are 0/0.
 DEGENERATE_VARIABLE = "DEGENERATE_VARIABLE"
+
+#: A replicate set carrying ONE variable. The covariance is a 1x1 matrix
+#: and the correlation is 1.0 -- structurally, not measurably: a variable
+#: correlates with itself whatever the data says. Named because a second
+#: real source produced exactly this and the result came back with ZERO
+#: reasons, which reads as a computed correlation. A number that is true
+#: by construction and a number that was measured must not be
+#: indistinguishable in the same field; that is the shape recorded in
+#: architecture/admission_reachability.yaml as silence mistaken for
+#: cleanliness.
+TOO_FEW_VARIABLES_FOR_A_CORRELATION = "TOO_FEW_VARIABLES_FOR_A_CORRELATION"
 #: A context key that takes a different value on every run, so every run is
 #: its own group. Either an acquisition locator leaked into content, or these
 #: runs are not replicates. Named rather than decided -- see the docstring.
@@ -352,6 +363,11 @@ def sample_covariance(replicates: ReplicateSet) -> Optional[SampleCovariance]:
         covariance.append(tuple(covariance_row))
 
     reasons = []
+    if len(variables) < 2:
+        # The set is still returned -- the means and the 1x1 covariance are
+        # real and a caller may want them -- but the correlation it carries
+        # is 1.0 by construction and the reason says so.
+        reasons.append(TOO_FEW_VARIABLES_FOR_A_CORRELATION)
     correlation = []
     for i in range(len(variables)):
         # Optional[float]: a degenerate variable has no correlation to report,

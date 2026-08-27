@@ -56,12 +56,12 @@ from scout.interface import RawDocument
 
 from daf.storage.serialization import NonJsonConstantError, strict_json_loads
 
-# A closed vocabulary on purpose. `fabricated_fixture` is not a hedge --
-# it is the only honest label for every GPC payload this repository can
-# currently produce, and it must be as declarable as the other one.
-INSTRUMENT_MEASUREMENT = "instrument_measurement"
-FABRICATED_FIXTURE = "fabricated_fixture"
-DATA_PROVENANCE_KINDS = (INSTRUMENT_MEASUREMENT, FABRICATED_FIXTURE)
+# Factored into daf.adapters._provenance when a second GPC source needed
+# it: one adapter importing another is a coupling nothing reports, while
+# two adapters that drift is a state a check can see. Re-exported here so
+# existing callers and tests keep working.
+from daf.adapters._provenance import (DATA_PROVENANCE_KINDS,  # noqa: F401
+                                      FABRICATED_FIXTURE, INSTRUMENT_MEASUREMENT)
 
 # Report-level keys copied onto every run's payload. `report_id` is
 # deliberately NOT among them: like `run_id` it is an acquisition

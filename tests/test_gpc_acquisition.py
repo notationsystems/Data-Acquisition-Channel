@@ -337,7 +337,12 @@ def test_a_derived_column_is_refused_and_not_dropped():
     computed evidence as DerivedValue, and there is no path from
     Extractor to DerivedValue -- so emitting it here would assign it the
     measured class. Refused, so the omission is visible."""
-    with pytest.raises(GpcReportExtractionError, match="computed from other reported quantities"):
+    # The refusal moved from the NAME to the DECLARED KIND when a second
+    # source showed the name check was a case-sensitive enumeration a real
+    # vendor walks through. The fixture now declares kind `derived`, and
+    # that is what refuses -- the name net is the supplement, tested
+    # against a mislabelled column in tests/test_gpc_second_source.py.
+    with pytest.raises(GpcReportExtractionError, match="kind 'derived'"):
         acquire(DERIVED_COLUMN)
 
 

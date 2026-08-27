@@ -86,21 +86,30 @@ def test_the_permitted_outcome_is_failure():
     assert "cheaper to learn now" in permitted
 
 
-def test_no_second_source_code_existed_when_this_was_recorded():
-    """The pin's real guarantee is commit order. This asserts the state
-    that order was supposed to establish: at the moment of recording,
-    nothing implementing the second source is in the tree.
+def test_the_guard_that_asserted_no_second_source_code_existed_is_retired():
+    """RETIRED 2026-08-27, in the commit that built the second source --
+    which is what it instructed.
 
-    It is expected to FAIL once WO-3 builds -- and it is written to fail
-    LOUDLY and be retired in that commit, rather than to sit passing
-    forever over a condition that stopped being checked."""
-    second_source = [
+    It asserted that no second-source module existed, so that the
+    pre-registration's commit could be shown to precede the build rather
+    than merely claim to. It fired the moment the build landed. Retiring
+    it here rather than deleting it silently, and rather than leaving it
+    passing over a condition that had stopped being checked.
+
+    What it was protecting is the DIGEST, and that is unchanged: the pin
+    above still matches, so the predictions were not edited once the
+    results were known. This test now asserts the thing the retirement
+    must not cost -- that the modules it was watching for do now exist, so
+    a future reader can see the guard was retired because its condition
+    genuinely changed and not because it was inconvenient."""
+    built = [p.name for p in (
         REPO_ROOT / "daf" / "adapters" / "gpc_summary_export.py",
         REPO_ROOT / "daf" / "extractors" / "gpc_summary_export.py",
-    ]
-    existing = [p.name for p in second_source if p.exists()]
-    assert not existing, (
-        f"{existing} exists, so this assertion has done its job and should be RETIRED in the "
-        "commit that builds the second source -- with the pre-registration's digest unchanged, "
-        "which is the thing it was protecting"
+    ) if p.exists()]
+    assert "gpc_summary_export.py" in built, (
+        "the second source is gone, so this retirement no longer has a reason -- restore the "
+        "original guard rather than leaving a retired one standing"
+    )
+    assert not (REPO_ROOT / "daf" / "extractors" / "gpc_summary_export.py").exists(), (
+        "a second EXTRACTOR now exists; the contract test was that the shared one sufficed"
     )
