@@ -33,4 +33,22 @@ the_general_repair: "a check whose evidence is an ABSENCE (no diff, no violation
 what_it_does_not_say: "not that a redundant check is useless. tests/test_doctrine_generation.py was doing the work the whole time and the repository was never at risk. What is filed is that the wrong mechanism was CREDITED, five times, and that no amount of re-reading the report would have shown it."
 
 # ----------------------------------------------------------------------
+# ----------------------------------------------------------------------
+# TWO FURTHER CLASSES, same disposition: DAQ-local, proposed for the next
+# joint reissue of proof_integrity.yaml, not written into it.
+# ----------------------------------------------------------------------
+a_direction_does_not_discriminate_when_the_property_also_has_a_magnitude:
+  the_property: "when a check can be written against a SIGN or against a MAGNITUDE, the sign is usually the one that fails to discriminate -- because a wrong implementation often has the right sign. The natural test is the sign, and it agrees with the negation."
+  the_attestations:
+    the_band_broadening_kernel: "an exponential tail kernel was indexed backwards. A delta test asked whether mass moved to LATER elution volume; it did, and the test passed. A reversed exponential also moves mass later -- it TRANSLATES the peak instead of tailing it. What caught it was the magnitude: the centroid must shift by the kernel's discrete mean, r/(1-r) steps with r = exp(-step/tau), and the reversed kernel shifted six times further."
+    the_earlier_one: "the counterparty records a prior instance in a PSD budget, relative versus absolute. Attributed rather than re-measured here -- DAQ has not seen that code."
+  why_it_is_not_just_the_discriminating_case_rule: "the discriminating-case rule says an example drawn from the property holding agrees with the negation by default. This is narrower and more actionable: it says WHICH axis to test when a property has two. A magnitude check subsumes a sign check; a sign check almost never subsumes a magnitude one."
+  the_practical_form: "if the property is `X moves in direction D by amount A`, assert A. Asserting D alone is the cheaper test and it is the one that passes on the broken implementation."
+
+a_stated_limit_that_inverts_a_conclusion_is_not_a_conservative_one:
+  the_property: "a KNOWN LIMIT is normally recorded as a reason a result might be understated -- the reader is invited to treat the finding as a lower bound. That invitation is only valid if the limit is CONSERVATIVE. A limit that changes the SIGN of a residual does not soften the conclusion; it points a correction the wrong way, and a reader told `this is conservative` will act on it."
+  the_measured_instance: "the forward instrument model recorded a Gaussian broadening kernel as a limit, on the reasoning that it understates the low-M side and therefore biases the same way as truncation. Measured with an exponentially modified Gaussian: the cancellation point moved from N = 2600 with Mn error +3.4% to N = 8250 with Mn error MINUS 20.3%. Six times the magnitude AND the opposite sign, with the reported dispersity reading correct in both."
+  what_makes_it_a_class_rather_than_an_incident: "the reasoning that produced the limit was right about DIRECTION -- the symmetric kernel does bias with truncation -- and wrong about CONSEQUENCE, because tailing couples to the result twice, once through the modelling bias and once through the physics, in opposite directions. No amount of reasoning about the limit would have reached that. Which makes this the sibling of the class above: the direction was knowable by argument and the magnitude was not."
+  the_practical_form: "a stated limit must say whether it is conservative, and that word is a MEASUREMENT rather than an expectation. Until it is measured, the honest phrasing is `effect unknown in sign and size`, not `if anything understated`."
+
 the_aggravating_detail: "the author was quoting the standing rule about discarded exit codes in the same phase, in commit messages, while committing this. That is the fourth time this phase a class has recurred inside or beside the instrument built for it. It is consistent with the property the counterparty stated: knowing a class does not inoculate the next instance, because the instance never looks like the class while you are writing it."

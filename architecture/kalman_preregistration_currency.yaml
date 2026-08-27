@@ -1,0 +1,39 @@
+# WHAT IS STALE IN THE SHARED PRE-REGISTRATION. MEASURED, NOT EDITED.
+#
+# architecture/kalman_validation_preregistration.yaml is owned by the
+# compute layer and held BYTE-IDENTICALLY by both repositories. Binding it
+# means re-measuring its claims; a correction changes bytes the pair
+# verifier holds identical; that is a JOINT REISSUE and not DAQ's to take
+# alone. Nothing here edits it.
+#
+# And what the pair verifier certifies is worth restating: byte identity
+# across the pair is coverage for DIVERGENCE, not for CURRENCY. Two
+# equally stale artifacts pass every check either repository has. This
+# file is the currency check that byte identity cannot be.
+extends: core@1.0.0
+
+subject: kalman_preregistration_currency
+status: measured_reported_not_edited
+owner: daf
+enforcement: tests/test_kalman_preregistration_currency.py
+
+# ----------------------------------------------------------------------
+one_derived_number_does_not_reproduce_from_its_own_inputs:
+  the_claim: "machine_readable.derived_mean_and_whiteness_tolerance = 0.0670820393249937, derived as sigma_multiplier / sqrt(sample_count_N) = 3.0 / sqrt(2000)."
+  measured: "recomputing gives 0.06708203932499368. The two are ONE UNIT IN THE LAST PLACE apart -- a difference of 1.4e-17."
+  is_it_material: "NO. No statistic at N = 2000 distinguishes a tolerance differing in the seventeenth decimal, and nothing downstream would behave differently. Reported anyway, because the check is whether a DERIVED number still reproduces from the inputs beside it, and this one does not."
+  the_likely_cause: "a float that lost its last digit passing through a serialiser or a transcription, not a recalculation with different inputs. The NIS bounds in the same block, derived as m +- k*sqrt(2m/N), reproduce EXACTLY -- so whatever happened touched one number rather than the block."
+  what_daq_does_not_do: "correct it. The artifact is the compute layer's, held byte-identical, and a one-ulp fix is still a joint reissue. It is also the least urgent correction imaginable, which is exactly why it is a good test of the discipline: the temptation is to fix it because it is trivial."
+
+the_other_derived_numbers_reproduce_exactly:
+  measured: "derived_nis_lower and derived_nis_upper both equal m +- k*sqrt(2m/N) to the last bit, with m = 2, k = 3.0, N = 2000."
+  why_this_matters: "it makes the single discrepancy a fact about that number rather than about the derivation, and it is the non-empty domain the other check needs -- a currency check that found nothing reproducing would be measuring the recomputation."
+
+# ----------------------------------------------------------------------
+the_stop_condition_did_not_fire:
+  what_would_have_tripped_it: "a stale claim that would change a threshold some LANDED measurement was judged against. That is not a documentation correction."
+  measured: "no artifact in this repository cites derived_mean_and_whiteness_tolerance, either NIS bound, or sigma_multiplier, outside the pre-registration itself. Nothing has been judged against these thresholds, so nothing is invalidated by the discrepancy."
+  and_the_workload_is_still_unbuilt_here: "the pre-registration binds `the validation of kalman_filter_linear, whenever it is implemented`. The requirements artifact lists TWO blocking rows for that workload, both DAQ-owned and both SATISFIED, and NO compute-layer-owned row at all -- so nothing on either side blocks it and the pre-registration is live rather than hypothetical."
+
+# ----------------------------------------------------------------------
+what_this_file_is_not: "a binding. architecture/doctrine_coverage.yaml records the pre-registration as the one artifact covered by neither the doctrine projection nor any test, and this does not change that: reading an artifact to check two arithmetic identities is not asserting its claims. The unbound set is unchanged and the deferral there still holds."

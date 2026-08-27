@@ -65,10 +65,37 @@ def _named_by_a_test() -> set:
     #      the check that warns about it.
     # So: this file's mentions never count, and the one artifact it really
     # does bind is added back explicitly and asserted below.
-    corpus = [path.read_text() for path in sorted((REPO_ROOT / "tests").glob("*.py"))
-              if path.name != "test_doctrine_coverage.py"]
-    named = {artifact for artifact in _architecture_artifacts()
-             if any(artifact in text for text in corpus)}
+    # A TEST MAY DECLARE THAT NAMING IS NOT BINDING.
+    #
+    # The detector asks whether any test NAMES an artifact, which is a
+    # lower bound on binding and has now produced a false positive in the
+    # other direction: tests/test_kalman_preregistration_currency.py
+    # names the shared pre-registration to re-derive two arithmetic
+    # identities, which is not asserting its claims -- and its own record
+    # says so. The detector counted it bound and the two tests disagreed.
+    #
+    # Resolved by DECLARATION rather than by a second filename exclusion.
+    # A test that reads an artifact without binding it says so in a
+    # module-level DOES_NOT_BIND tuple, and this subtracts exactly those
+    # names for exactly that file. That is a property any test can use,
+    # not a list of files this check happens to know about -- which is
+    # what the growing-exclusion-list shape would have been.
+    corpus = []
+    for path in sorted((REPO_ROOT / "tests").glob("*.py")):
+        if path.name == "test_doctrine_coverage.py":
+            continue
+        text = path.read_text()
+        disclaimed = set()
+        for line in text.splitlines():
+            if line.startswith("DOES_NOT_BIND"):
+                disclaimed = {token.strip().strip("\"'") for token in
+                              line.split("(", 1)[-1].rstrip(")").split(",") if token.strip()}
+        corpus.append((text, disclaimed))
+
+    named = set()
+    for artifact in _architecture_artifacts():
+        if any(artifact in text and artifact not in disclaimed for text, disclaimed in corpus):
+            named.add(artifact)
     return named | {"doctrine_coverage.yaml"}
 
 
@@ -194,6 +221,10 @@ def test_the_check_states_its_own_limit_rather_than_overclaiming():
     live example of a reference that binds nothing."""
     limit = COVERAGE["what_this_check_cannot_see"]
     assert "LOWER BOUND" in limit["naming_is_not_reading"]
+    # And the measured false positive in the other direction, with the
+    # repair that is a declaration rather than a second filename.
+    assert "counted it BOUND" in limit["and_it_produced_a_false_positive_in_the_OTHER_direction"]
+    assert "DOES_NOT_BIND" in limit["the_repair_is_a_declaration_not_a_second_exclusion"]
     assert "verify_pair_landed.py" in limit["naming_is_not_reading"]
 
     verifier = (ARCHITECTURE / "exchange" / "verify_pair_landed.py").read_text()
