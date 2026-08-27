@@ -402,31 +402,84 @@ def test_a_duplicate_run_id_within_a_report_is_refused():
 # The gate relation nobody owns -- bound to a mechanism, not to prose
 # =====================================================================
 
-def test_the_two_science_gates_disagree_on_the_column_key():
-    """MEASURED during this build. `observation_is_table_alignable`
-    requires `variable`; `no_context_free_property` requires `property`
-    and `method`. Neither mentions the other's key, and the content in
-    architecture/polymer_acquisition_readiness.yaml's own tests -- which
-    that record describes as passing "every gate that exists" -- is
-    refused by the second.
+def test_the_column_key_is_reconciled_and_the_disagreeing_state_is_refused():
+    """THE DISCRIMINATING CASE, named before it was written.
 
-    Recorded as a test rather than as a sentence so that if either gate
-    is ever reconciled with the other, this fails and the extractor's
-    duplicated column key can be removed."""
-    readiness_shape = {
-        "sample_id": "PS-lot-4471", "variable": MN, "value": 104000.0, "unit": "g/mol",
-        "uncertainty": 1200.0, "uncertainty_kind": "stated",
-        "conditions": FrozenMapping({"solvent": "THF"}),
-    }
-    assert observation_is_table_alignable(readiness_shape).admissible
-    context = no_context_free_property(readiness_shape)
-    assert not context.admissible
-    assert set(context.reasons) == {"MISSING_METHOD", "MISSING_PROPERTY"}
+    The state in which this fails under the DUPLICATED representation:
+    content carrying `variable` and `property` with DIFFERENT values.
+    Measured under duplication, both gates admitted it --
+    observation_is_table_alignable returned no reasons and
+    no_context_free_property returned no reasons -- so an observation
+    could be joined as one column and found by materials.analyze as
+    another, with nothing anywhere owning the relation between two names
+    for one concept. A test using content where the two keys AGREE passes
+    under both representations and would have tested nothing.
+
+    Under the reconciliation the state is not merely detected, it is
+    unrepresentable: there is one column key, and the retired synonym is
+    refused by name."""
+    base = {"sample_id": "PS-lot-4471", "value": 104000.0, "unit": "g/mol",
+            "uncertainty": 1200.0, "uncertainty_kind": "stated", "method": "sec_thf",
+            "conditions": FrozenMapping({"solvent": "THF"})}
+
+    reconciled = {**base, "property": MN}
+    assert observation_is_table_alignable(reconciled).admissible
+    assert no_context_free_property(reconciled).admissible, (
+        "one key must satisfy BOTH gates, or the reconciliation moved the problem"
+    )
+
+    disagreeing = {**base, "property": MW, "variable": MN}
+    table = observation_is_table_alignable(disagreeing)
+    assert not table.admissible
+    assert "VARIABLE_IDENTITY_UNDER_A_RETIRED_NAME" in table.reasons, (
+        "the state that passed both gates under duplication must be refused BY NAME; a bare "
+        "refusal would not say which mechanism produced it"
+    )
+
+    agreeing = {**base, "property": MN, "variable": MN}
+    assert "VARIABLE_IDENTITY_UNDER_A_RETIRED_NAME" in observation_is_table_alignable(agreeing).reasons, (
+        "the synonym is refused whether or not it agrees -- a migration that tolerates the old "
+        "name where it happens to match is a migration that half-happened"
+    )
 
 
-def test_the_extractor_carries_both_column_keys_with_one_string():
+def test_a_retired_synonym_would_otherwise_become_a_condition_silently():
+    """WHY the synonym is refused rather than ignored. Left in content,
+    `variable` is an ordinary key: it enters the pairing consumer's
+    comparison context and splits the replicate set, and it enters the
+    vendored _comparison_context the same way. Refusing it at the gate
+    that owns column identity is what stops the migration half-happening."""
+    from science.replicate_pairing import _context_of
+
+    with_synonym = {"property": MN, "value": 1.0, "variable": MN}
+    context_keys = {key for key, _ in _context_of(with_synonym)}
+    assert "variable" in context_keys, (
+        "if the consumer ever excludes `variable` again it is tolerating the retired name, and "
+        "the refusal at the table gate is no longer the single owner of this"
+    )
+    assert "property" not in context_keys, "the column key must not be a context key"
+
+
+def test_the_reconciliation_matches_what_the_unmodifiable_core_filters_on():
+    """The direction was forced, not chosen. materials.analysis filters on
+    content['property'] before grouping, inside the vendored core, so an
+    observation lacking `property` is invisible to analyze rather than
+    merely awkward."""
+    import inspect
+
+    import materials.analysis as analysis
+
+    source = inspect.getsource(analysis)
+    assert 'content.get("property")' in source, (
+        "the core no longer filters on `property`; the reconciliation's direction needs "
+        "re-measuring rather than re-reading"
+    )
     for obs in observations():
-        assert obs.content["variable"] == obs.content["property"], (
-            "two gates read two different keys for one concept; the extractor satisfies both by "
-            "carrying one string under both names, and this asserts they can never drift"
-        )
+        assert "property" in obs.content and "variable" not in obs.content
+
+
+def test_every_acquired_observation_carries_the_column_key_exactly_once():
+    """WO-2's gate, stated as the property rather than as an example."""
+    for obs in observations():
+        present = [k for k in ("property", "variable") if k in obs.content]
+        assert present == ["property"], f"column key carried as {present}"

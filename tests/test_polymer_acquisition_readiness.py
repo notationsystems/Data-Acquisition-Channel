@@ -59,7 +59,7 @@ def content(value, uncertainty=1200.0, variable="number_average_molar_mass",
             conditions=None):
     return {
         "sample_id": "PS-lot-4471",
-        "variable": variable,
+        "property": variable,
         "value": value,
         "unit": "g/mol",
         "uncertainty": uncertainty,
@@ -180,7 +180,7 @@ def test_the_pairing_survives_in_the_evidence_pool():
           for i, v in enumerate(MW_VALUES)]
     by_run = {}
     for obs in mn + mw:
-        by_run.setdefault(obs.record_ids[0], []).append(obs.content["variable"])
+        by_run.setdefault(obs.record_ids[0], []).append(obs.content["property"])
     assert len(by_run) == len(MN_VALUES)
     assert all(len(v) == 2 for v in by_run.values()), (
         "each run must carry both moments, joinable on its Record -- this is what makes the "

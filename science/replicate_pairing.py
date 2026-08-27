@@ -135,7 +135,16 @@ EVERY_RUN_DIFFERS_IN = "EVERY_RUN_DIFFERS_IN"
 #: made under. They travel with the cell and never group.
 _PER_CELL_KEYS = ("value", "uncertainty", "uncertainty_kind")
 #: Keys that name what was measured rather than the circumstances.
-_COLUMN_KEYS = ("variable", "property")
+# ONE KEY, AFTER THE RECONCILIATION. This read `("variable", "property")`
+# and preferred `variable`, which made it a reader that accepted two
+# encodings of one meaning -- the shape this pair removes at the writer.
+# `property` is the variable identity (see science/table.py's note); the
+# retired synonym is refused by observation_is_table_alignable, which is
+# the gate that owns variable identity. Not defended against a second time
+# here: a stray `variable` reaching this consumer becomes a context key
+# and splits the replicate set, which is loud, and tolerating it here
+# would make the retirement half-happen.
+_COLUMN_KEYS = ("property",)
 
 
 @dataclass(frozen=True)

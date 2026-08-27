@@ -51,7 +51,7 @@ def observation(run, variable, value, uncertainty=1200.0, conditions=CONDITIONS,
     return make_observation(
         record_ids=(f"gpc-run-{run}",) if record_ids is None else record_ids,
         extraction_method="gpc_report_v1",
-        content={"sample_id": sample, "variable": variable, "value": value,
+        content={"sample_id": sample, "property": variable, "value": value,
                  "unit": "g/mol", "uncertainty": uncertainty,
                  "uncertainty_kind": "stated", "conditions": conditions},
         confidence=1.0, extracted_at=WHEN)
@@ -112,7 +112,7 @@ def test_the_run_identity_never_enters_the_comparison_context():
         f"{len(pairing.sets)} sets from one batch -- something run-unique reached the context"
     )
     context_keys = {key for key, _ in pairing.sets[0].context}
-    assert "value" not in context_keys and "variable" not in context_keys
+    assert "value" not in context_keys and "property" not in context_keys
     assert not any("run" in key for key in context_keys)
 
 
@@ -236,7 +236,7 @@ def test_a_ragged_set_is_refused_rather_than_trimmed():
     observations = observations_for(runs)
     observations = [o for o in observations
                     if not (o.record_ids[0] == "gpc-run-2"
-                            and o.content["variable"] == "weight_average_molar_mass")]
+                            and o.content["property"] == "weight_average_molar_mass")]
     pairing = pair_replicates(observations)
     assert any(code == RAGGED_REPLICATE_SET for code, _ in pairing.refusals)
     assert not pairing.sets
@@ -286,7 +286,7 @@ def observations_with(runs, extra=None, conditions=CONDITIONS):
             content_extra = extra(index) if extra else {}
             obs = make_observation(
                 record_ids=(f"gpc-run-{index}",), extraction_method="gpc_report_v1",
-                content={"sample_id": "PS-lot-4471", "variable": variable, "value": value,
+                content={"sample_id": "PS-lot-4471", "property": variable, "value": value,
                          "unit": "g/mol", "uncertainty": 1200.0,
                          "uncertainty_kind": "stated", "conditions": conditions,
                          **content_extra},

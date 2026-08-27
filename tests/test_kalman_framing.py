@@ -85,7 +85,7 @@ def test_the_table_gate_refuses_exactly_what_kalman_requires():
     assert KALMAN["ordering_requirements"] == "required_and_significant"
     assert KALMAN["modality"] == "ordered_multivariate_time_series"
 
-    positional = {"sample_id": "s1", "variable": "x", "value": 1.0, "row_index": 3}
+    positional = {"sample_id": "s1", "property": "x", "value": 1.0, "row_index": 3}
     assert not observation_is_table_alignable(positional).admissible
 
     least_squares = REQUIREMENTS["workloads"]["least_squares"]
@@ -197,7 +197,7 @@ def test_the_gate_admits_every_shape_it_declines_to_rule_on(cell):
     these starts being refused, the gate has begun defining the covariance
     contract, and that decision belongs in the joint record."""
     assert observation_is_table_alignable(
-        {"sample_id": "s1", "variable": "x", "value": cell}).admissible, cell
+        {"sample_id": "s1", "property": "x", "value": cell}).admissible, cell
 
 
 def test_the_leaf_rule_holds_at_every_depth_so_the_boundary_is_clean():
@@ -208,7 +208,7 @@ def test_the_leaf_rule_holds_at_every_depth_so_the_boundary_is_clean():
     from science.table import COMPOSITE_CELL_LEAF_IS_NOT_A_QUANTITY
 
     for bad in (True, float("nan"), float("inf"), "1.5", None):
-        deep = {"sample_id": "s1", "variable": "x", "value": [[1.0, [bad]]]}
+        deep = {"sample_id": "s1", "property": "x", "value": [[1.0, [bad]]]}
         verdict = observation_is_table_alignable(deep)
         assert not verdict.admissible, bad
         assert COMPOSITE_CELL_LEAF_IS_NOT_A_QUANTITY in verdict.reasons

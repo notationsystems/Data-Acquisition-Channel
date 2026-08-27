@@ -335,6 +335,7 @@ invariants:
 
   - id: table_identity_is_typed_not_positional
     rule: "an observation joined into an aligned table carries a non-empty string sample identity and a non-empty string variable identity; row position is not an identity"
+    the_keys_that_carry_them: "`sample_id` and `property`. Named here because `variable identity` is the CONCEPT and was briefly also a key: this gate read `variable` while no_context_free_property read `property`, and content carrying both with different values passed both gates. Reconciled 2026-08-27 -- `property` is the column identity, and the retired synonym is refused as VARIABLE_IDENTITY_UNDER_A_RETIRED_NAME. See architecture/aligned_observation_table.yaml column_identity_is_property."
     status: partially_enforced
     implementation: science/table.py
     enforcement: tests/test_aligned_observation_table.py

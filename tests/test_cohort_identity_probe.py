@@ -67,7 +67,7 @@ PROPERTY_GATES = (quantity_is_typed, no_context_free_property)
 def _table_shape(**overrides):
     content = {
         "sample_id": BATCH,
-        "variable": "number_average_molar_mass",
+        "property": "number_average_molar_mass",
         "conditions": dict(CONDITIONS),
         "value": 104000.0,
         "unit": "g/mol",
@@ -180,7 +180,7 @@ def case_the_full_distribution_as_the_value():
 
 
 def case_pdi_as_a_ratio_with_no_lineage_to_its_moments():
-    return {"table": _table_shape(variable="polydispersity_index", value=1.05,
+    return {"table": _table_shape(property="polydispersity_index", value=1.05,
                                   unit="dimensionless"),
             "property": _property_shape(property="polydispersity_index", value=1.05,
                                         unit="dimensionless")}

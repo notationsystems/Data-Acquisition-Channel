@@ -15,21 +15,24 @@ itself declared.
 IT SATISFIES TWO GATES THAT WERE NEVER POINTED AT THE SAME CONTENT.
 Measured during this build, not assumed:
 
-  * `science.table.observation_is_table_alignable` requires `sample_id`
+  * `science.table.observation_is_table_alignable` required `sample_id`
     and `variable`.
   * `science.admissibility.no_context_free_property` requires `property`
     and `method`.
 
-Neither gate mentions the other's column key. The content in
+Neither gate mentioned the other's column key. The content in
 `architecture/polymer_acquisition_readiness.yaml`'s own tests passes the
 first and is REFUSED by the second with
-`('MISSING_METHOD', 'MISSING_PROPERTY')`. Both gates are correct on their
-own terms and nothing owns the relation between them, so this extractor
-emits `variable` and `property` carrying the identical string, and
-`method` beside them. That is duplication in content and it is recorded
-as such rather than resolved here: reconciling two gates in the science
-layer is not an acquisition extractor's decision to make. See the report
-for this phase.
+`('MISSING_METHOD', 'MISSING_PROPERTY')`.
+
+RECONCILED. This extractor first emitted `variable` and `property`
+carrying the identical string, which admitted a worse state than it
+solved: content declaring `variable: mn` beside `property: mw` passed
+BOTH gates, because nothing owned the relation between two names for one
+concept. `property` is now the single column identity -- see
+`science/table.py` for the measurement that fixed the direction -- and a
+retired `variable` key is refused as VARIABLE_IDENTITY_UNDER_A_RETIRED_NAME
+rather than silently becoming a condition.
 
 A DERIVED COLUMN IS REFUSED, NOT DROPPED. Real GPC reports carry
 dispersity, which is Mw/Mn -- computed, not measured.
@@ -141,10 +144,15 @@ def _measurement_content(
 
     content: Dict[str, Any] = {
         "sample_id": _require_str(payload, "sample_id", record_id),
-        # Two column keys carrying one string. See this module's docstring:
-        # `science.table` reads `variable`, `science.admissibility` reads
-        # `property`, and nothing owns the relation between them.
-        "variable": variable,
+        # ONE COLUMN KEY. This wrote the same string under `variable` AND
+        # `property`, because the two science gates read different keys
+        # and neither read the other's. Reconciled: `property` is the
+        # column identity -- the name materials.analysis filters on inside
+        # the unmodifiable core, and the one DAQ's own capability artifact
+        # already published. The source's field is still called `variable`
+        # in the report; translating a source's vocabulary into the
+        # content vocabulary is exactly this layer's job, and is not the
+        # same as carrying both.
         "property": variable,
         "value": float(value),
         "unit": _require_str(measurement, "unit", record_id),
