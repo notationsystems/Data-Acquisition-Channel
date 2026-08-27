@@ -1,0 +1,48 @@
+# WHAT IS MEASURABLE ABOUT THE VENDOR VOCABULARY WITHOUT THE ANCHORS.
+#
+# The revised Phase B rests on two real reports -- an OMNISEC/PolyAnalytik
+# report in RSC supplementary information, and a PSS WinGPC report from
+# the Cosmetic Ingredient Review archive. NEITHER IS IN THIS REPOSITORY
+# AND DAQ HAS NOT SEEN EITHER. B.1 is not executable here and nothing in
+# this file claims otherwise.
+#
+# What IS measurable is what the CURRENT code does when handed the
+# spellings and moment names the corpus reports observing. Those are the
+# counterparty's observations, used as INPUTS to a measurement of this
+# tree, and they are attributed rather than adopted.
+extends: core@1.0.0
+
+subject: vendor_vocabulary
+status: measured_against_this_tree_only
+owner: daf
+enforcement: tests/test_vendor_vocabulary.py
+
+# ----------------------------------------------------------------------
+what_daq_has_not_done: "transcribed either anchor. A transcription of a document DAQ has not read would be fabricated provenance -- worse than the -999 assumption the counterparty withdrew, because it would be presented as verbatim from a named real source rather than as a plausible convention."
+
+# ----------------------------------------------------------------------
+# B.2.1 -- CONFIRMED, and worse than the finding states.
+# ----------------------------------------------------------------------
+pdi_has_no_canonical_spelling:
+  the_counterpartys_observation: "PDI, Polydispersity, Polydispersity Index, Mw/Mn, Mw/Mn (PDI), D, PD -- across Waters, OMNISEC, WinGPC, Agilent."
+  measured_against_this_tree: "the normalised denylist added in WO-3 catches THREE of the seven. pdi, polydispersity_index and mw_over_mn are caught; `Polydispersity`, `Mw/Mn (PDI)`, `D` and `PD` all pass."
+  what_that_settles: "the WO-3 repair was not a fix that happened to be incomplete -- normalisation cannot close a set the domain keeps extending. Four of seven real spellings walk through a list written by someone who had just been burned by exactly this. That is the enumeration shape resisting its own repair, measured rather than argued."
+  and_it_is_already_labelled_as_not_the_protection: "the declared kind is. An undeclared measurement kind is refused, so a vendor spelling nobody listed cannot enter as `measured` by default -- it cannot enter at all. The denylist catches a caller who declares a derived column `measured`, and catching three of seven such callers is worth having and is not coverage."
+  the_repair_direction_is_not_taken_here: "moving the vendor vocabulary into the adapter is right and is not done in this commit, because doing it well means knowing which vocabularies real adapters must speak -- which is what the anchors would say."
+
+# ----------------------------------------------------------------------
+# B.2.2 -- CONTRADICTED for this repository.
+# ----------------------------------------------------------------------
+the_moment_schema:
+  what_was_asked: "does the current variable vocabulary reject Mz or Mp today, or admit them untyped? Those are different defects."
+  measured: "NEITHER, because there is no variable vocabulary. Mz, Mz+1, Mz1, Mv, Mp, z_average_molar_mass and peak_molar_mass are ALL admitted with both science gates clean. science/table.py names no moment schema; the extractor's only name-based list is DERIVED_VARIABLES, which is a denylist of derived quantities and not a vocabulary of permitted ones."
+  so_the_finding_does_not_describe_this_tree: "`a schema of mn/mw/mz/pdi structurally rejects legitimate reports` is true of a system that has such a schema. DAQ does not. The variable identity is an open string, checked for presence and type and never for membership -- which is the aligned-observation-table gate's deliberate design, recorded in architecture/aligned_observation_table.yaml as declining shape rules."
+  which_changes_which_defect_is_live: "not rejection. The live one is that Mp and Mv are admitted as PEERS of Mn and Mw with nothing recording that Mp is a mode rather than a power-average moment, and that Mv is method-dependent through Mark-Houwink alpha. A consumer computing a ratio over them gets a number with no complaint from any gate. That is the category error the counterparty names, arriving through admission rather than through a schema."
+  not_repaired_here: "recording that distinction means a moment taxonomy, and a taxonomy built from documents rather than from records is the move refused three times in this program. It waits for the anchors."
+
+# ----------------------------------------------------------------------
+what_this_file_deliberately_does_not_contain:
+  no_transcription: "no fixture purporting to be either anchor."
+  no_moment_taxonomy: "no canonical-id-plus-aliases table proposed from documents."
+  no_absence_states_beyond_what_was_observed: "not_applicable, unknown_identifier and none_configured are the counterparty's observations from real reports and are implementable; they are NOT implemented here, because the phase's own gate requires them measured against the anchors first."
+  no_report_identity_model: "B.4 forbids it and nothing measured here argues for it."
