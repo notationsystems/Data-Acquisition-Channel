@@ -77,6 +77,7 @@ FIXTURE_PROVENANCE = {
     "gpc_report_synthetic_ps4471.json": NOT_A_GPC_ANCHOR,
     "gpc_report_synthetic_unlabelled_provenance.json": NOT_A_GPC_ANCHOR,
     "gpc_summary_export_synthetic_absences.csv": NOT_A_GPC_ANCHOR,
+    "gpc_summary_export_synthetic_flag_says_valid.csv": NOT_A_GPC_ANCHOR,
     "gpc_summary_export_synthetic_no_injection_id.csv": NOT_A_GPC_ANCHOR,
     "gpc_summary_export_synthetic_vendor.csv": NOT_A_GPC_ANCHOR,
     "graph_dataset_structure_only.json": NOT_A_GPC_ANCHOR,

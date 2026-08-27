@@ -31,6 +31,15 @@ the literal was genuinely absent from the value. Detecting that
 statically would require knowing the value, which is what running the
 test already does.
 
+A SIBLING RULE, ADDED LATER AND EXACT. A comparison whose BOTH sides are
+authored constants reads no value at all. It was added after the author
+wrote `assert "does not claim" in "what_this_record_does_not_claim"` --
+reaching for a record key and typing it as a string. That instance was
+FALSE and failed loudly; with a key whose words matched it would have
+passed forever. Swept over the corpus it found no other instance, so it
+is a guard against recurrence rather than a discovery, and its detector
+proof is the real line rather than an invented one.
+
 AND A RULE THAT WAS TRIED AND REJECTED. A NEGATION rule -- flag when a
 literal and its key share a negation token -- was measured against the
 live corpus and produced ELEVEN false positives, every one a legitimate
@@ -84,6 +93,62 @@ def assertions_satisfiable_by_their_own_key(source: str):
         if literal and literal <= _tokens(" ".join(keys)):
             found.append((node.left.value, keys, getattr(node, "lineno", 0)))
     return found
+
+
+def assertions_that_read_nothing(source: str):
+    """Every comparison whose BOTH sides are authored constants.
+
+    A SIBLING OF THE CLASS ABOVE, AND A STRICTLY WORSE FORM. There the
+    assertion reads a value through a key that already implies the
+    answer; here it reads no value at all -- both operands were typed by
+    the author, so the comparison is a fact about the source text and its
+    verdict is fixed before the suite runs.
+
+    Detection is EXACT rather than heuristic, which is why this rule can
+    exist where the negation rule could not: there is no legitimate
+    reason to compare two literals in an assertion, so it has no false
+    positives to measure. It was added after the author wrote
+
+        assert "does not claim" in "what_this_record_does_not_claim"
+
+    reaching for a record key and typing it as a string. That one
+    happened to be FALSE and failed loudly. Written with a key whose
+    words matched, it would have passed forever."""
+    found = []
+    for node in ast.walk(ast.parse(source)):
+        if not isinstance(node, ast.Compare) or len(node.ops) != 1:
+            continue
+        operands = [node.left, node.comparators[0]]
+        if all(isinstance(operand, ast.Constant) for operand in operands):
+            found.append((ast.unparse(node), getattr(node, "lineno", 0)))
+    return found
+
+
+def test_no_test_compares_two_things_the_author_typed():
+    offenders = []
+    for path in sorted((REPO_ROOT / "tests").glob("*.py")):
+        if path.name == "test_assertions_read_values_not_keys.py":
+            continue                       # this file quotes the bad forms on purpose
+        for expression, line in assertions_that_read_nothing(path.read_text()):
+            offenders.append(f"{path.name}:{line}  {expression}")
+    assert offenders == [], (
+        "a comparison whose both sides are constants reads no value; its verdict is fixed "
+        "before the suite runs:\n  " + "\n  ".join(offenders)
+    )
+
+
+def test_the_constant_comparison_check_catches_the_instance_that_motivated_it():
+    """DETECTOR PROOF, on the real line rather than an invented one."""
+    caught = assertions_that_read_nothing(
+        'assert "does not claim" in "what_this_record_does_not_claim"')
+    assert len(caught) == 1
+
+    assert assertions_that_read_nothing('assert "a" in RECORD["b"]') == [], (
+        "an assertion that reads a value must not be flagged, or the rule catches the corpus "
+        "rather than the error"
+    )
+    assert assertions_that_read_nothing('assert len(x) == 10') == []
+    assert assertions_that_read_nothing('assert x.status == "enforced"') == []
 
 
 def test_no_test_asserts_something_its_own_key_already_says():
