@@ -1,0 +1,89 @@
+# SIXTY-SEVEN COMMITS LANDED UNDER A GATE WHOSE RED CARRIED NO
+# INFORMATION. EVERY ONE HAS NOW BEEN EXECUTED AT ITS OWN COMMIT.
+#
+# The conformance workflow was red on sixty-one consecutive runs, dying
+# during collection on a missing pyyaml, so its Tests and Types steps
+# never ran. The commits in that window were not verified; they were
+# unexamined. The tip being green says the endpoint is sound and says
+# nothing about the states in between.
+#
+# METHOD, stated because a sweep's result is worthless without it. Each
+# commit was checked out into its own git worktree with the submodule
+# attached at THE PIN THAT COMMIT NAMES -- the pin moves once inside the
+# window, at f323289 -- and the full gate was run there: doctrine
+# regeneration compared, vendored tree clean, pytest, mypy. Exit codes
+# read directly, never through a pipeline. Four commits at a time.
+# Verdicts in architecture/_probes/window_verdicts.txt, one line per
+# commit, and this record is derived from that file rather than typed.
+#
+# NO HISTORY WAS REWRITTEN. Every failure below is reported as a fact
+# about a state that existed.
+extends: core@1.0.0
+
+subject: unverified_window
+status: every_commit_executed_seven_failed_six_of_them_really
+owner: daf
+enforcement: tests/test_unverified_window.py
+measured: "2026-08-27"
+
+# ----------------------------------------------------------------------
+the_window:
+  first: "7b7c257 -- the commit that added tests/test_joint_decision_record.py, which imports pyyaml. The run for it is the first red."
+  last: "1640963 -- the last commit before the workflow was repaired."
+  commits: 67
+  runs_red: 61
+  the_discrepancy_between_those_two_numbers: "commits and runs are not the same count. Some commits produced no run of their own; the run list is the authority for the gate's state and the commit list is the authority for what landed."
+  the_order_said_five: "measured, sixty-one runs. Twelve greens precede the window; 3fd8501 is the thirteenth. The brief's number is not corrected in the brief -- it is corrected here, by measurement."
+
+# ----------------------------------------------------------------------
+the_result:
+  measured: 67
+  passed_every_gate: 60
+  failed: 7
+  and_one_of_the_seven_is_not_a_failure_of_the_commit: "see below. Six intermediate states were genuinely broken."
+
+# ----------------------------------------------------------------------
+# The one verdict that is about the harness and not about the tree.
+the_environment_coupled_verdict:
+  commit: "8aaa0e2"
+  test: "tests/test_canonicalization_defect.py::test_the_serializer_is_byte_identical_to_the_compute_layers_copy"
+  why_it_is_not_a_fact_about_that_commit: "the test compares DAQ's canonical_yaml.py AT THAT COMMIT against the compute layer's copy AS IT EXISTS ON DISK NOW. The sibling checkout is not versioned with the commit under test. Measured: DAQ's copy at 8aaa0e2 hashes to a05f23c7, DAQ's copy today hashes to 899a0489, and the compute layer's copy today hashes to 899a0489 -- the two repositories AGREE, and the disagreement the sweep found is between two different moments."
+  it_is_an_instance_of_the_class_this_order_named: "a verdict about the checker's environment rather than about the artifact. It was nearly reported as a broken intermediate state, which would have been the same defect the sweep was commissioned to investigate, committed by the investigation."
+  what_it_means_for_the_method: "3 test modules read the sibling checkout in the CURRENT tree -- test_doctrine_coverage, test_kalman_preregistration_currency, test_vacuous_evidence. A fourth did at 8aaa0e2, test_canonicalization_defect, and no longer does, which is why the historical count and today's differ and why a list written from the current tree would have missed the one that actually fired. Any verdict any of them gives at a historical commit is about today's sibling. They are excluded from this record's conclusions and the exclusion is stated rather than silently applied."
+
+# ----------------------------------------------------------------------
+# Six states that were genuinely broken when they landed.
+the_genuine_failures:
+  89474d6:
+    subject: "Name the hollow-proof class in core; demote convergence to a prompt"
+    failed: "tests/test_joint_workload_decision.py::test_both_input_hashes_bind_to_real_artifacts"
+    what_was_wrong: "the joint-decision record at that commit binds sha256:f789d5dc for daq_capabilities.yaml, and daq_capabilities.yaml AS COMMITTED at that same commit hashes to d985e1a3. Both files are in the one commit and the test reads the committed bytes rather than regenerating. A record bound a hash its own artifact did not have."
+    why_it_is_the_worst_of_the_six: "it is the failure mode the record exists to prevent, in the record itself. A hash that binds to nothing is indistinguishable from one that binds correctly until someone checks."
+  f323289:
+    subject: "Move the pin; close the write-on-verify hazard first"
+    failed: "five tests in tests/test_invariant_register.py, headed by test_the_register_is_a_fixed_point_of_its_generator"
+    what_was_wrong: "the submodule pin moved and the invariant register, which embeds the gitlink, was not regenerated in the same commit."
+    the_repair_is_already_in_history: "the very next commit is 986acb7, `Re-derive the register at the new pin: the request is answered`. So this state was transient and known -- but it landed, and a gate would have refused it."
+  19d11d6:
+    subject: "Phase C: all 25 shadowed codes fire if reached; four plants were wrong first"
+    failed: "test_the_register_is_a_fixed_point_of_its_generator and test_the_extends_census_is_parsed_and_matches_a_parse_done_here (45 against a parsed 46)"
+    what_was_wrong: "an architecture record was added and the invariant register was not regenerated, so its extends census was one short."
+    THIS_ONE_IS_MINE: "landed in this session. The register regeneration was not in my per-phase gate list at the time; it entered it only later, when a census discrepancy surfaced by another route. Every phase report I wrote in that stretch listed the gates I ran, and this was not among them -- so the reports were accurate about what was run and silent about what was not."
+  a126b99:
+    subject: "The pairing-preserving consumer, built before any data exists"
+    failed: "tests/test_polymer_vertical.py::test_it_uses_the_probes_own_batch_and_says_which_numbers_are_derived"
+    what_was_wrong: "a provenance check asserts a specific magic number appears in exactly one place in the repository. At that commit tests/test_replicate_pairing.py also contained it, and the check names the file it found."
+  3747ab9:
+    subject: "The irreversible precondition is a gate now, not a sentence"
+    failed: "mypy -- two errors in science/replicate_pairing.py, an unannotated set and a None appended to a list[float]"
+    what_was_wrong: "real type errors, not a checker-version artifact. Repaired later at 87565ce."
+  086b502:
+    subject: "The most recurrent instance in the record, and the last one this phase"
+    failed: "mypy -- the same two errors, still unrepaired one commit later"
+    what_that_shows: "the two mypy failures are consecutive, which is what a dead Types step looks like from the inside: an error introduced and carried, with nothing between the author and the next commit to say so."
+
+# ----------------------------------------------------------------------
+what_this_does_and_does_not_establish:
+  established: "sixty of sixty-seven intermediate states pass the full gate at their own commit. Six do not, and each is named with the state that was wrong. The endpoint being green was not evidence for any of this and is now not needed as evidence."
+  not_established: "that the sweep's own environment matches CI's. It uses this machine's python, pytest and mypy, and a checker version that moves could change a verdict -- as the two mypy failures show, since `pip install --upgrade mypy` in the workflow pins nothing either."
+  the_verdicts_are_kept: "architecture/_probes/window_verdicts.txt, one line per commit. A future re-run that disagrees with it is a finding about the environment rather than about the commits."
