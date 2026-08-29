@@ -1,0 +1,57 @@
+# FOUR PREDICTIONS ABOUT WHAT THE UNCHANGED ACQUISITION PATH DOES WITH A
+# REAL REPORT. RECORDED BEFORE THE FIXTURE EXISTS.
+#
+# THREE GENERATIONS OF PREDICTION NOW EXIST AND THEY ARE NOT THE SAME
+# OBJECT. corpus_anchor_preregistration.yaml was recorded before any
+# anchor existed; post_anchor_predictions.yaml after a partial reading;
+# anchor_one_result.yaml after the full one. These four are weaker still
+# than the first generation and the reason is stated per prediction: P2,
+# P3 and P4 are read OFF the anchor, so they predict what the SUBSTRATE
+# does with something already known, not what the document contains. Only
+# P1 is a claim about code that could have been made without the anchor.
+#
+# The digest of corpus_anchor_preregistration.yaml is unchanged by this
+# file and must stay unchanged. Its guard --
+# `test_no_anchor_is_in_the_tree_at_the_commit_that_records_these` -- is
+# retired in the commit that lands the fixture, which is what it always
+# said it was for.
+extends: core@1.0.0
+
+subject: anchor_ingest_preregistration
+status: recorded_before_the_fixture_exists
+owner: daf
+enforcement: tests/test_anchor_ingest.py
+recorded: "2026-08-28"
+
+# ----------------------------------------------------------------------
+predictions:
+
+  p1_no_clause_covers_a_slice_table:
+    prediction: "the extractor admits no part of the hundred-row distribution table. It is not a property observation -- no sample carries `slice_mw` as a property of the material -- and no clause in daf/extractors/gpc_report.py covers a per-slice row."
+    basis: OPEN -- a claim about code, makeable without the anchor
+    why_it_is_the_only_strong_one: "P2 through P4 are read off a document already measured. This one could have been written before the anchor arrived and was not, which is a weakness in when it was recorded rather than in what it says."
+    what_would_falsify_it: "any observation reaching the pool whose property names a slice quantity."
+
+  p2_the_four_caller_declared_fields_are_needed_and_none_is_stated:
+    prediction: "data_provenance, sample_kind, method and unit are all required downstream and the report states none of them in a form the adapter can read. The acquisition therefore cannot proceed without four declarations, and each must appear in `acquisition_declared`."
+    basis: MEASURED on two synthetic sources, OPEN against a real one
+    the_sharper_half: "the report DOES state a method in prose -- ISO Procedure 2201, a Waters Alliance 2695, THF at 40 C. The prediction is that none of it is reachable as a FIELD, so the acquirer declares a method identifier and the document's own method statement travels only as opaque conditions text."
+
+  p3_mp_is_admitted_as_a_peer_of_mn_and_mw:
+    prediction: "Mp is admitted with no distinguishing mark. It is a MODE -- the molar mass at peak maximum -- and Mn, Mw, Mz are MOMENTS. Nothing in the substrate separates a mode from a moment, so all four enter as peers."
+    basis: OPEN
+    why_it_matters: "a consumer averaging or propagating uncertainty across `the molar mass columns` would treat a mode as a moment. The report's own vocabulary does not distinguish them either -- `MP` sits in the same row as `Mn`, `Mw`, `Mz` -- so the substrate would be reproducing the document's conflation rather than introducing one."
+
+  p4_nothing_refuses_a_value_the_report_declares_invalid:
+    prediction: "Mp = 15334 and Mz+1 = 15577 are admitted with no reason code, in a report whose own text says any molar mass above 14000 Da is not valid."
+    basis: MEASURED on a synthetic export carrying the same structure -- see architecture/present_and_invalidated.yaml -- and OPEN against the real one
+    why_this_is_the_one_that_matters: "it is the only prediction whose falsification would be good news. If something refuses them, the substrate carries a control nobody knew it had. If nothing does, that is a measured gap in a real ingest rather than an argument, and it is the same gap already measured synthetically -- which makes the real instance a confirmation rather than a discovery."
+    what_it_is_NOT: "not a claim that the acquisition path is defective. It carries what the document states and refuses to invent what it does not. The gap is that no field exists for `present and unsound`."
+
+# ----------------------------------------------------------------------
+what_is_recorded_before_the_run:
+  the_misread_set_comes_first: "read / dropped / MISREAD, with misread first. A drop is visible in the drop-set check; a misread produces a pooled observation that is wrong and looks right."
+  no_clause_is_widened: "if the anchor cannot be admitted, that is the result. A clause loosened so a real document passes converts a finding into an ingest and destroys the only test available."
+  the_raster_finding_is_reproduced_not_worked_around: "page 4 of the source extracts to ZERO characters and carries every headline result. The fixture is transcribed from the RENDERED page, and the fact that a text pipeline cannot reach those values is the first finding, not an obstacle."
+
+what_this_document_must_not_become: "a description of what the ingest turned out to do. Its digest is pinned by its enforcement and the result is recorded elsewhere."

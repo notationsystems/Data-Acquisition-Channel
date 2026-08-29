@@ -1,0 +1,776 @@
+{
+  "_transcription_note": "Transcribed from the RENDERED pages of the source PDF (EPA ChemView, TSCA P-22-0051). Page 4 -- every headline result -- extracts to zero characters, so the moments and the calibration were read from the rendered image; the slice table came from the text layer. NOTHING THE DOCUMENT DOES NOT STATE IS PRESENT: data_provenance, sample_kind, method and sample_id are absent because the report carries none of them as a field, and an earlier version of this fixture invented all four. This document is REFUSED by daf/adapters/gpc_report.py and that is the result, not an obstacle.",
+  "conditions": {
+    "calibration": "narrow polystyrene, American Polymer Standards, 162-14000 Da",
+    "column_temperature_c": 40.0,
+    "columns": "two Waters Styragel HR1 and one HR2",
+    "concentration_mg_per_ml": 3.0,
+    "detector": "Waters 2414 RI",
+    "eluent": "stabilized tetrahydrofuran with 0.1% BHT",
+    "flow_rate_ml_per_min": 1.0,
+    "guard_column": "Waters Styragel guard",
+    "injection_volume_ul": 50.0,
+    "system": "Waters Alliance 2695",
+    "test_method": "ISO Procedure 2201",
+    "validity_statement_as_reported": "any molecular weight information on the part of the polymer that exceeds 14000 Dalton is not valid"
+  },
+  "report_id": "EPA-ChemView-P-22-0051",
+  "runs": [
+    {
+      "distribution_table": [
+        {
+          "dwt_dlogm": 0.228449,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 24334,
+          "slice_retention_time_min": 16.078
+        },
+        {
+          "dwt_dlogm": 0.355053,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 22519,
+          "slice_retention_time_min": 16.178
+        },
+        {
+          "dwt_dlogm": 0.469152,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 21314,
+          "slice_retention_time_min": 16.25
+        },
+        {
+          "dwt_dlogm": 0.577113,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 20414,
+          "slice_retention_time_min": 16.307
+        },
+        {
+          "dwt_dlogm": 0.678056,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 19690,
+          "slice_retention_time_min": 16.355
+        },
+        {
+          "dwt_dlogm": 0.770321,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 19083,
+          "slice_retention_time_min": 16.397
+        },
+        {
+          "dwt_dlogm": 0.853361,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 18556,
+          "slice_retention_time_min": 16.435
+        },
+        {
+          "dwt_dlogm": 0.926664,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 18087,
+          "slice_retention_time_min": 16.469
+        },
+        {
+          "dwt_dlogm": 0.990563,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 17661,
+          "slice_retention_time_min": 16.501
+        },
+        {
+          "dwt_dlogm": 1.044937,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 17268,
+          "slice_retention_time_min": 16.532
+        },
+        {
+          "dwt_dlogm": 1.089993,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 16901,
+          "slice_retention_time_min": 16.561
+        },
+        {
+          "dwt_dlogm": 1.126355,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 16553,
+          "slice_retention_time_min": 16.59
+        },
+        {
+          "dwt_dlogm": 1.154554,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 16222,
+          "slice_retention_time_min": 16.618
+        },
+        {
+          "dwt_dlogm": 1.174332,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 15903,
+          "slice_retention_time_min": 16.645
+        },
+        {
+          "dwt_dlogm": 1.187153,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 15594,
+          "slice_retention_time_min": 16.672
+        },
+        {
+          "dwt_dlogm": 1.19357,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 15293,
+          "slice_retention_time_min": 16.699
+        },
+        {
+          "dwt_dlogm": 1.193531,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 14998,
+          "slice_retention_time_min": 16.727
+        },
+        {
+          "dwt_dlogm": 1.188422,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 14708,
+          "slice_retention_time_min": 16.754
+        },
+        {
+          "dwt_dlogm": 1.178711,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 14421,
+          "slice_retention_time_min": 16.781
+        },
+        {
+          "dwt_dlogm": 1.164997,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 14137,
+          "slice_retention_time_min": 16.81
+        },
+        {
+          "dwt_dlogm": 1.148381,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 13855,
+          "slice_retention_time_min": 16.838
+        },
+        {
+          "dwt_dlogm": 1.129563,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 13574,
+          "slice_retention_time_min": 16.867
+        },
+        {
+          "dwt_dlogm": 1.109388,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 13293,
+          "slice_retention_time_min": 16.897
+        },
+        {
+          "dwt_dlogm": 1.088528,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 13013,
+          "slice_retention_time_min": 16.927
+        },
+        {
+          "dwt_dlogm": 1.068007,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 12734,
+          "slice_retention_time_min": 16.958
+        },
+        {
+          "dwt_dlogm": 1.048535,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 12456,
+          "slice_retention_time_min": 16.99
+        },
+        {
+          "dwt_dlogm": 1.030869,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 12180,
+          "slice_retention_time_min": 17.023
+        },
+        {
+          "dwt_dlogm": 1.015038,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 11905,
+          "slice_retention_time_min": 17.056
+        },
+        {
+          "dwt_dlogm": 1.001412,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 11633,
+          "slice_retention_time_min": 17.09
+        },
+        {
+          "dwt_dlogm": 0.990539,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 11364,
+          "slice_retention_time_min": 17.124
+        },
+        {
+          "dwt_dlogm": 0.982479,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 11098,
+          "slice_retention_time_min": 17.159
+        },
+        {
+          "dwt_dlogm": 0.976675,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 10838,
+          "slice_retention_time_min": 17.194
+        },
+        {
+          "dwt_dlogm": 0.973341,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 10582,
+          "slice_retention_time_min": 17.23
+        },
+        {
+          "dwt_dlogm": 0.972238,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 10332,
+          "slice_retention_time_min": 17.265
+        },
+        {
+          "dwt_dlogm": 0.972573,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 10088,
+          "slice_retention_time_min": 17.301
+        },
+        {
+          "dwt_dlogm": 0.974399,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 9850,
+          "slice_retention_time_min": 17.337
+        },
+        {
+          "dwt_dlogm": 0.97689,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 9618,
+          "slice_retention_time_min": 17.373
+        },
+        {
+          "dwt_dlogm": 0.980181,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 9393,
+          "slice_retention_time_min": 17.409
+        },
+        {
+          "dwt_dlogm": 0.983585,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 9173,
+          "slice_retention_time_min": 17.446
+        },
+        {
+          "dwt_dlogm": 0.987103,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 8959,
+          "slice_retention_time_min": 17.482
+        },
+        {
+          "dwt_dlogm": 0.989751,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 8751,
+          "slice_retention_time_min": 17.518
+        },
+        {
+          "dwt_dlogm": 0.992337,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 8549,
+          "slice_retention_time_min": 17.554
+        },
+        {
+          "dwt_dlogm": 0.993695,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 8351,
+          "slice_retention_time_min": 17.591
+        },
+        {
+          "dwt_dlogm": 0.994204,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 8158,
+          "slice_retention_time_min": 17.627
+        },
+        {
+          "dwt_dlogm": 0.993581,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 7969,
+          "slice_retention_time_min": 17.664
+        },
+        {
+          "dwt_dlogm": 0.991986,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 7785,
+          "slice_retention_time_min": 17.701
+        },
+        {
+          "dwt_dlogm": 0.988458,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 7604,
+          "slice_retention_time_min": 17.739
+        },
+        {
+          "dwt_dlogm": 0.983912,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 7427,
+          "slice_retention_time_min": 17.776
+        },
+        {
+          "dwt_dlogm": 0.97781,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 7253,
+          "slice_retention_time_min": 17.814
+        },
+        {
+          "dwt_dlogm": 0.970264,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 7081,
+          "slice_retention_time_min": 17.853
+        },
+        {
+          "dwt_dlogm": 0.961487,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 6912,
+          "slice_retention_time_min": 17.892
+        },
+        {
+          "dwt_dlogm": 0.951226,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 6746,
+          "slice_retention_time_min": 17.932
+        },
+        {
+          "dwt_dlogm": 0.939765,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 6582,
+          "slice_retention_time_min": 17.972
+        },
+        {
+          "dwt_dlogm": 0.926976,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 6420,
+          "slice_retention_time_min": 18.013
+        },
+        {
+          "dwt_dlogm": 0.913019,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 6259,
+          "slice_retention_time_min": 18.055
+        },
+        {
+          "dwt_dlogm": 0.898056,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 6100,
+          "slice_retention_time_min": 18.098
+        },
+        {
+          "dwt_dlogm": 0.88224,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 5942,
+          "slice_retention_time_min": 18.142
+        },
+        {
+          "dwt_dlogm": 0.865432,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 5786,
+          "slice_retention_time_min": 18.187
+        },
+        {
+          "dwt_dlogm": 0.848253,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 5630,
+          "slice_retention_time_min": 18.233
+        },
+        {
+          "dwt_dlogm": 0.830584,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 5476,
+          "slice_retention_time_min": 18.28
+        },
+        {
+          "dwt_dlogm": 0.812636,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 5322,
+          "slice_retention_time_min": 18.329
+        },
+        {
+          "dwt_dlogm": 0.79424,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 5170,
+          "slice_retention_time_min": 18.379
+        },
+        {
+          "dwt_dlogm": 0.775772,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 5019,
+          "slice_retention_time_min": 18.43
+        },
+        {
+          "dwt_dlogm": 0.757308,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 4868,
+          "slice_retention_time_min": 18.483
+        },
+        {
+          "dwt_dlogm": 0.738622,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 4719,
+          "slice_retention_time_min": 18.538
+        },
+        {
+          "dwt_dlogm": 0.720242,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 4570,
+          "slice_retention_time_min": 18.595
+        },
+        {
+          "dwt_dlogm": 0.701866,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 4423,
+          "slice_retention_time_min": 18.654
+        },
+        {
+          "dwt_dlogm": 0.683629,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 4276,
+          "slice_retention_time_min": 18.714
+        },
+        {
+          "dwt_dlogm": 0.665434,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 4131,
+          "slice_retention_time_min": 18.777
+        },
+        {
+          "dwt_dlogm": 0.647476,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 3986,
+          "slice_retention_time_min": 18.842
+        },
+        {
+          "dwt_dlogm": 0.629846,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 3843,
+          "slice_retention_time_min": 18.91
+        },
+        {
+          "dwt_dlogm": 0.612211,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 3702,
+          "slice_retention_time_min": 18.98
+        },
+        {
+          "dwt_dlogm": 0.594791,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 3561,
+          "slice_retention_time_min": 19.052
+        },
+        {
+          "dwt_dlogm": 0.577408,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 3423,
+          "slice_retention_time_min": 19.128
+        },
+        {
+          "dwt_dlogm": 0.560171,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 3285,
+          "slice_retention_time_min": 19.206
+        },
+        {
+          "dwt_dlogm": 0.543292,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 3149,
+          "slice_retention_time_min": 19.288
+        },
+        {
+          "dwt_dlogm": 0.526433,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 3015,
+          "slice_retention_time_min": 19.373
+        },
+        {
+          "dwt_dlogm": 0.509252,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 2882,
+          "slice_retention_time_min": 19.463
+        },
+        {
+          "dwt_dlogm": 0.492341,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 2751,
+          "slice_retention_time_min": 19.556
+        },
+        {
+          "dwt_dlogm": 0.475234,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 2621,
+          "slice_retention_time_min": 19.654
+        },
+        {
+          "dwt_dlogm": 0.458264,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 2494,
+          "slice_retention_time_min": 19.756
+        },
+        {
+          "dwt_dlogm": 0.441508,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 2368,
+          "slice_retention_time_min": 19.864
+        },
+        {
+          "dwt_dlogm": 0.42455,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 2244,
+          "slice_retention_time_min": 19.978
+        },
+        {
+          "dwt_dlogm": 0.407991,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 2121,
+          "slice_retention_time_min": 20.097
+        },
+        {
+          "dwt_dlogm": 0.391724,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 2001,
+          "slice_retention_time_min": 20.224
+        },
+        {
+          "dwt_dlogm": 0.375077,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 1883,
+          "slice_retention_time_min": 20.359
+        },
+        {
+          "dwt_dlogm": 0.35849,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 1767,
+          "slice_retention_time_min": 20.501
+        },
+        {
+          "dwt_dlogm": 0.342088,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 1653,
+          "slice_retention_time_min": 20.654
+        },
+        {
+          "dwt_dlogm": 0.324884,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 1542,
+          "slice_retention_time_min": 20.816
+        },
+        {
+          "dwt_dlogm": 0.30782,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 1432,
+          "slice_retention_time_min": 20.992
+        },
+        {
+          "dwt_dlogm": 0.289276,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 1325,
+          "slice_retention_time_min": 21.182
+        },
+        {
+          "dwt_dlogm": 0.270432,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 1219,
+          "slice_retention_time_min": 21.389
+        },
+        {
+          "dwt_dlogm": 0.25115,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 1115,
+          "slice_retention_time_min": 21.616
+        },
+        {
+          "dwt_dlogm": 0.231058,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 1012,
+          "slice_retention_time_min": 21.87
+        },
+        {
+          "dwt_dlogm": 0.209398,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 910,
+          "slice_retention_time_min": 22.155
+        },
+        {
+          "dwt_dlogm": 0.187757,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 809,
+          "slice_retention_time_min": 22.481
+        },
+        {
+          "dwt_dlogm": 0.162327,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 709,
+          "slice_retention_time_min": 22.862
+        },
+        {
+          "dwt_dlogm": 0.12935,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 605,
+          "slice_retention_time_min": 23.333
+        },
+        {
+          "dwt_dlogm": 0.098244,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 492,
+          "slice_retention_time_min": 23.978
+        },
+        {
+          "dwt_dlogm": 0.00051,
+          "outside_vo_vt": "No",
+          "slice_area": 122321,
+          "slice_mw_daltons": 294,
+          "slice_retention_time_min": 25.667
+        }
+      ],
+      "measurements": [
+        {
+          "kind": "measured",
+          "uncertainty": null,
+          "uncertainty_kind": "absent",
+          "unit": "g/mol",
+          "value": 3466.0,
+          "variable": "number_average_molar_mass"
+        },
+        {
+          "kind": "measured",
+          "uncertainty": null,
+          "uncertainty_kind": "absent",
+          "unit": "g/mol",
+          "value": 8360.0,
+          "variable": "weight_average_molar_mass"
+        },
+        {
+          "kind": "measured",
+          "uncertainty": null,
+          "uncertainty_kind": "absent",
+          "unit": "g/mol",
+          "value": 12725.0,
+          "variable": "z_average_molar_mass"
+        },
+        {
+          "kind": "measured",
+          "uncertainty": null,
+          "uncertainty_kind": "absent",
+          "unit": "g/mol",
+          "value": 15577.0,
+          "variable": "z_plus_one_average_molar_mass"
+        },
+        {
+          "kind": "measured",
+          "uncertainty": null,
+          "uncertainty_kind": "absent",
+          "unit": "g/mol",
+          "value": 15334.0,
+          "variable": "peak_molar_mass"
+        },
+        {
+          "kind": "derived",
+          "uncertainty": null,
+          "uncertainty_kind": "absent",
+          "unit": "dimensionless",
+          "value": 2.412342,
+          "variable": "polydispersity"
+        }
+      ],
+      "retention_time_min": 16.696,
+      "run_id": "injection-1"
+    }
+  ]
+}

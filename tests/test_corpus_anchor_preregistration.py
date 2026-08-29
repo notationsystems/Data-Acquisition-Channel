@@ -55,6 +55,8 @@ def test_the_predictions_have_not_been_edited_since_they_were_recorded():
 # ----------------------------------------------------------------------
 
 NOT_A_GPC_ANCHOR = "not_a_gpc_anchor"
+#: The first real anchor to land, 2026-08-28.
+FIRST_ANCHOR = "gpc_report_anchor_epa_p22_0051.json"
 A_GPC_ANCHOR = "a_gpc_anchor"
 
 #: Every fixture in the tree, declared. Enumerating all of them rather
@@ -76,6 +78,7 @@ FIXTURE_PROVENANCE = {
     "gpc_report_synthetic_derived_column.json": NOT_A_GPC_ANCHOR,
     "gpc_report_synthetic_ps4471.json": NOT_A_GPC_ANCHOR,
     "gpc_report_synthetic_unlabelled_provenance.json": NOT_A_GPC_ANCHOR,
+    "gpc_report_anchor_epa_p22_0051.json": A_GPC_ANCHOR,
     "gpc_summary_export_synthetic_absences.csv": NOT_A_GPC_ANCHOR,
     "gpc_summary_export_synthetic_aggregate_block.csv": NOT_A_GPC_ANCHOR,
     "gpc_summary_export_synthetic_flag_says_valid.csv": NOT_A_GPC_ANCHOR,
@@ -117,10 +120,20 @@ def anchor_guard(present, declared):
     return undeclared, anchors
 
 
-def test_no_anchor_is_in_the_tree_at_the_commit_that_records_these():
-    """What the commit order is supposed to establish, asserted rather
-    than trusted. Expected to fail once an anchor lands, and to be
-    RETIRED in that commit with the pre-registration digest unchanged."""
+def test_an_anchor_has_landed_and_this_guard_is_retired():
+    """RETIRED 2026-08-28, in the commit that landed the first anchor
+    fixture, with the pre-registration digest unchanged -- which is what
+    it always said it was for.
+
+    It asserted that no anchor was in the tree when the predictions were
+    recorded, so the commit ORDER established that they were blind. That
+    is now a fact about history rather than about the tree, and history
+    is where it is checked: the pre-registration's digest still verifies,
+    and it predates the fixture.
+
+    The declaration list is kept, because it is doing the other half of
+    the job -- a fixture that is undeclared still fails, so the next
+    anchor cannot land unnoticed either."""
     present = {path.name for path in (REPO_ROOT / "tests" / "fixtures").iterdir()
                if path.is_file()}
     undeclared, anchors = anchor_guard(present, FIXTURE_PROVENANCE)
@@ -128,9 +141,9 @@ def test_no_anchor_is_in_the_tree_at_the_commit_that_records_these():
         f"undeclared fixtures: {undeclared}. Declare each as NOT_A_GPC_ANCHOR or A_GPC_ANCHOR. "
         "An undeclared fixture is how the first form of this guard missed a vendor nobody listed."
     )
-    assert anchors == [], (
-        f"an anchor fixture exists: {anchors}. Retire this assertion in the commit that adds "
-        "it, with the pre-registration digest unchanged."
+    assert anchors == [FIRST_ANCHOR], (
+        f"expected exactly the landed anchor and found {anchors}. A new anchor fixture must be "
+        "declared here deliberately; the guard was retired for the first one, not disabled."
     )
 
 
@@ -156,10 +169,15 @@ def test_the_guard_fires_on_a_vendor_nobody_listed_and_the_first_form_did_not():
     declared = dict(FIXTURE_PROVENANCE, **{planted: A_GPC_ANCHOR})
     undeclared, anchors = anchor_guard(present, declared)
     assert undeclared == []
-    assert anchors == [planted], "and a declared anchor must fire it whatever the vendor is called"
+    assert planted in anchors, "a declared anchor must fire it whatever the vendor is called"
+    assert anchors == sorted([planted, FIRST_ANCHOR]), (
+        "and the landed anchor is still reported alongside it -- the guard was retired for the "
+        "first anchor, not switched off"
+    )
 
-    honest_synthetic = dict(FIXTURE_PROVENANCE,
-                            **{"gpc_report_synthetic_new.json": NOT_A_GPC_ANCHOR})
+    honest_synthetic = {name: kind for name, kind in FIXTURE_PROVENANCE.items()
+                        if kind == NOT_A_GPC_ANCHOR}
+    honest_synthetic["gpc_report_synthetic_new.json"] = NOT_A_GPC_ANCHOR
     _, none_fired = anchor_guard(set(honest_synthetic), honest_synthetic)
     assert none_fired == [], (
         "and a declared-synthetic fixture must NOT fire it, or the guard refuses every new "

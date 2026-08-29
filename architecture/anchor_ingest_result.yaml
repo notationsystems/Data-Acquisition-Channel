@@ -1,0 +1,60 @@
+# THE FIRST REAL REPORT MET THE UNCHANGED ACQUISITION PATH AND WAS
+# REFUSED. THAT IS THE RESULT.
+#
+# All four pinned predictions held. One of them held for a stronger
+# reason than it was written for, and the run produced a misread that
+# was MINE -- reported first, as the order requires.
+extends: core@1.0.0
+
+subject: anchor_ingest_result
+status: refused_faithfully_transcribed_no_clause_widened
+owner: daf
+enforcement: tests/test_anchor_ingest.py
+measured: "2026-08-28"
+
+# ----------------------------------------------------------------------
+# MISREAD FIRST. A drop is visible in the drop set; a misread produces a
+# pooled observation that is wrong and looks right.
+the_misread_was_in_the_fixture_and_it_was_mine:
+  what_happened: "the first transcription of Anchor 1 carried `data_provenance`, `sample_kind`, `method` and `sample_id` as document fields. The report states NONE of them in that form. I wrote four fields into a document that does not contain them, and the ingest that followed succeeded because of it."
+  why_it_is_the_serious_kind: "it did not fail. Six observations entered the pool, every gate clean, and the acquisition looked like a successful first ingest of a real vendor report. The only thing wrong was that the document had been improved to make it acquirable."
+  how_it_was_caught: "by scoring P2, which predicted the four fields would be needed and unstated. Scoring it required asking whether the DOCUMENT stated them -- and it does not, so the fixture did."
+  the_repair: "the fixture now carries only what the report carries and is REFUSED. The refusal is the result."
+  the_general_shape: "a fixture is a claim about a document. Transcribing a field that would make the path work is the same act as widening a clause so a real anchor passes, performed one layer earlier where no test is looking."
+
+# ----------------------------------------------------------------------
+the_predictions_scored:
+  p1_no_clause_covers_a_slice_table:
+    verdict: HELD
+    measured: "one hundred slice rows in, ZERO observations out. No clause covers a per-slice row and none was added."
+    and_it_is_worse_than_predicted: "the drop is SILENT. `not_acquired_because_not_measured` is None and no refusal is raised -- the hundred rows leave no trace of having been present. The prediction said the extractor would not admit them; it does not record declining them either, so a consumer cannot tell a report that carried a distribution table from one that did not."
+  p2_the_four_caller_declared_fields_are_needed_and_none_is_stated:
+    verdict: HELD, and the mechanism is stronger than the prediction
+    what_was_predicted: "the four would be needed, unstated by the source, and therefore caller-declared -- appearing in `acquisition_declared`."
+    what_was_measured: "daf/adapters/gpc_report.py has NO CALLER-DECLARATION CHANNEL AT ALL. Its constructor is (path, source_name, retrieved_at). All four fields are required IN THE DOCUMENT, and removing any one of them is refused individually: `declares no non-empty 'data_provenance'`, and the same for sample_kind, method and sample_id."
+    so_the_consequence_is_not_a_declaration_but_a_wall: "a faithfully transcribed Anchor 1 cannot be acquired by this adapter by any route that does not fabricate. The only path to ingest is to write the four fields into the document, which is exactly the misread above."
+    and_the_two_adapters_disagree: "daf/adapters/gpc_summary_export.py, built SECOND, takes all four as caller declarations and emits `acquisition_declared` naming them. The first adapter requires them from the source. Two adapters in one repository, two incompatible answers to `who states what the document cannot`, and the second one is right."
+  p3_mp_is_admitted_as_a_peer_of_mn_and_mw:
+    verdict: HELD
+    measured: "on the fabricated-field variant, `peak_molar_mass` 15334 entered beside number_average 3466, weight_average 8360 and z_average 12725, with no field distinguishing a MODE from a MOMENT and no gate reason on any of them."
+  p4_nothing_refuses_a_value_the_report_declares_invalid:
+    verdict: HELD
+    measured: "peak_molar_mass 15334 and z_plus_one_average_molar_mass 15577 both admitted, zero reason codes, in a document whose own conditions text -- carried verbatim into every observation -- says `any molecular weight information on the part of the polymer that exceeds 14000 Dalton is not valid`."
+    it_confirms_rather_than_discovers: "the same gap was measured synthetically in architecture/present_and_invalidated.yaml. What the anchor adds is that it occurs on a real vendor report with the invalidating sentence present in the substrate and unreachable from the data."
+
+# ----------------------------------------------------------------------
+the_finding_that_was_not_predicted:
+  what_it_is: "THE REPORT'S OWN SPELLING IS NOT IN THE DERIVED DENYLIST. `Polydispersity` normalises to `polydispersity`, and DERIVED_VARIABLES holds (dispersity, polydispersity_index, pdi, mw_over_mn, molar_mass_dispersity). It is the seventh vendor spelling to walk through, and the first from a real document."
+  the_two_dispositions_one_declaration_decides: "declared `derived`, the extractor refuses the WHOLE record and all six moments are lost with it. Declared `measured`, all six are admitted INCLUDING a dispersity of 2.412342 entering as a measured dimensionless quantity. One acquirer declaration decides between losing everything and admitting a derived value as measured, and the denylist that exists to catch the second does not know the spelling."
+  why_the_denylist_is_not_the_repair: "architecture/vendor_vocabulary.yaml already records that the normalised denylist catches three of seven observed spellings and is NOT the protection -- the declared-kind requirement is. This anchor confirms that on real data: the protection worked (the record was refused) and the denylist did not (it never saw the spelling). Adding `polydispersity` to the tuple would fix this document and not the class."
+  what_is_not_done: "the spelling is NOT added to DERIVED_VARIABLES. Doing so would make this anchor pass and would be the eighth spelling's problem unchanged."
+
+# ----------------------------------------------------------------------
+what_was_refused_and_with_what_code:
+  faithful_transcription: "GpcReportFetchError -- `declares no non-empty 'data_provenance'. Nothing is defaulted here`. Four separate refusals, one per missing required field, each naming the field."
+  with_the_fields_present_and_the_dispersity_declared_derived: "GpcReportExtractionError -- `reports 'polydispersity' with kind 'derived'. This interface produces evidence.types.Observation, which architecture/evidence_class.yaml classes as `measured`; every measurement must declare that kind explicitly.`"
+  every_refusal_names_a_code: "yes. No silent failure was observed at the adapter or extractor boundary. The one silence is the distribution table, which is dropped without a code -- recorded under P1."
+
+what_no_clause_was_widened_means_here: "nothing in daf/, science/ or the extractor changed. The adapter's four required fields stand, the derived-kind refusal stands, and the denylist is unchanged. The anchor is in the tree as a REFUSED document."
+
+what_this_does_not_establish: "that the acquisition path is defective, or that it works. One report from one vendor met it and was refused for reasons that are correct given what the report carries. Whether the contract was fixture-shaped is a question two anchors of different shape could answer, and the second is not yet a fixture."
