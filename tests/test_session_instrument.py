@@ -260,17 +260,25 @@ def test_the_module_cannot_reach_canonical_state():
     comment."""
     import ast
 
-    source = (REPO_ROOT / "session" / "work_order.py").read_text()
-    imported = set()
-    for node in ast.walk(ast.parse(source)):
-        if isinstance(node, ast.Import):
-            imported.update(alias.name.split(".")[0] for alias in node.names)
-        elif isinstance(node, ast.ImportFrom) and node.module and node.level == 0:
-            imported.add(node.module.split(".")[0])
+    # SWEPT, not named. The first version read ONE file by name, which is
+    # enumeration-by-location: a second module in the package inherited
+    # the claim without inheriting the check. Every .py under session/ is
+    # read, and the sweep asserts it found more than the file it started
+    # with, so the package growing cannot quietly outrun it.
     forbidden = {"daf", "scout", "evidence", "structures", "science", "epistemics"}
-    assert not (imported & forbidden), (
-        f"session/ must not reach an acquisition, admission or state layer; it imports {imported}"
-    )
+    modules = sorted((REPO_ROOT / "session").rglob("*.py"))
+    assert len(modules) >= 2, "the layer sweep is reading fewer files than the package holds"
+    for module in modules:
+        imported = set()
+        for node in ast.walk(ast.parse(module.read_text())):
+            if isinstance(node, ast.Import):
+                imported.update(alias.name.split(".")[0] for alias in node.names)
+            elif isinstance(node, ast.ImportFrom) and node.module and node.level == 0:
+                imported.add(node.module.split(".")[0])
+        assert not (imported & forbidden), (
+            f"{module.name} must not reach an acquisition, admission or state layer; "
+            f"it imports {sorted(imported & forbidden)}"
+        )
 
 
 def test_every_refusal_code_is_an_observable_and_not_a_diagnosis():

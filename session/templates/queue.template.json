@@ -1,0 +1,15 @@
+{
+  "how_to_fill_this": "One object per question the RESEARCHER brought, in their words, obtained in writing BEFORE they saw the instrument. Prior framing narrows what they try, and what they try is the measurement. Copy this file, fill `items`, keep the field names. Nothing here is defaulted: a field you leave out is refused by name rather than guessed.",
+  "box_minutes": 120,
+  "items": [],
+  "field_notes": {
+    "identifier": "Short handle, unique in this queue. It is what the refusals and the accounting will name.",
+    "question": "The researcher's own words. Not a paraphrase that has already decided what the answer looks like.",
+    "decision_it_could_change": "The downstream decision this answer could change. If you cannot name one, write null: the item will be DROPPED, in writing, with its reason, which is the honest handling of a question that discriminates nothing.",
+    "acceptance_test": "How the answer will be graded, written NOW, before the item is worked. If it is written afterwards it grades nothing.",
+    "expected_yield": "Your own estimate of how much the answer discriminates, on any scale you keep consistently. Only the ORDER matters; it is divided by `minutes`.",
+    "minutes": "The per-item box. An item that overruns it is abandoned as a decision rather than by exhaustion.",
+    "acceptance_test_at": "A monotonic position (1, 2, 3 …) recording WHEN the acceptance test was written. It must be strictly less than `worked_at`. A sequence, not a clock: the property is an order, and a timestamp invites an argument about whose machine.",
+    "worked_at": "The position at which the item was worked. Leave it out until it has been."
+  }
+}

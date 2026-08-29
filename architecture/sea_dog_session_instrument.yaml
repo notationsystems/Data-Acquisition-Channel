@@ -67,6 +67,29 @@ session_accounting:
   the_plan_is_not_trimmed_to_fit: "an order whose boxes exceed the session reports overruns_the_box rather than dropping the tail. Which items to cut is the operator's call, and a plan quietly trimmed reads as a plan that fits."
 
 # ----------------------------------------------------------------------
+# THE OPERATOR SURFACE. The instrument enforced its invariants and could
+# only be reached by writing Python. The preconditions it waits on are
+# supplied by a person under time pressure on the morning of a session,
+# and a mechanism reachable only through an import statement is reached
+# by nobody -- so part of the blocked precondition was a missing FORM.
+# ----------------------------------------------------------------------
+operator_surface:
+  intake: session/intake.py
+  command_line: "python3 -m session plan <queue.json> | close <queue.json> <capture.json>"
+  exit_codes: "2 for an unusable input, 1 for a session whose record carries refusals, 0 only when the record can be graded. The exit code is the operator's signal, and a record that cannot be graded must not exit 0."
+  templates:
+    - session/templates/queue.template.json
+    - session/templates/capture.template.json
+  refusals_at_the_file_boundary:
+    MALFORMED_INTAKE: "unparseable is not empty. Returning an empty queue for a broken file is the class this instrument spends its surface refusing."
+    QUEUE_FIELD_MISSING: "the field AND the item are named, so the operator is sent to one line rather than to the file. Nothing is defaulted: a value invented at load reaches the ranker wearing the operator's authority."
+    UNKNOWN_QUEUE_FIELD: "a typo'd key is refused rather than dropped. A silently ignored key is a value the operator believes they set -- `minutes_` is not `minutes`, and the item would arrive looking like one that never had a box."
+  why_json_and_not_yaml: "session/ may not import epistemics, which owns this repository's YAML subset parser, and a second parser here would be the duplicate-vocabulary problem in a new place. json is stdlib and is not a layer. The cost -- the operator writes JSON -- is the honest one."
+  the_templates_carry_no_questions: "queue.template.json ships with items: [] and field notes only. A template with a question in it becomes the question. capture.template.json ships residue as an EMPTY LIST and stopping_rule_met as null, because a template that omits the residue teaches the omission and a template that defaults the stopping rule teaches the default."
+  the_worked_example_is_labelled_fabricated: "session/templates/example.fabricated.json and its capture declare provenance: fabricated_example inside their own content, and a test asserts they say so -- the convention this repository already uses for the GPC fixture. They exercise all three outcomes and a drop, because an example that only shows the happy path teaches half the instrument."
+  what_this_does_not_do: "it does not supply a queue. The researcher's questions must be obtained from them, in writing, before they see the instrument. A work order built from questions the builder invented would measure the builder."
+
+# ----------------------------------------------------------------------
 # THE FIRST NAMED-BUT-ABSENT ARTIFACT: the research finding schema.
 # ----------------------------------------------------------------------
 research_finding_schema:
@@ -96,5 +119,6 @@ preconditions:
   a_date_and_a_time_box: not_supplied
   the_question_queue: not_supplied
   a_stopping_rule: not_supplied
+how_each_is_now_supplied: "queue.template.json carries box_minutes and the items; capture.template.json carries the stopping rule as a fact rather than a default. The date is the operator's calendar. The forms exist; the content is a person's to write."
 consequence_of_the_block: "no session is planned, no work order is populated and no findings record exists. What is built is the thing that refuses a malformed one. A work order produced without the researcher's own questions would measure the builder."
 what_would_discharge_it: "the four preconditions, in writing, before the session. The queue must be the researcher's own questions obtained BEFORE they see the instrument -- prior framing narrows what they try, and what they try is the measurement."
