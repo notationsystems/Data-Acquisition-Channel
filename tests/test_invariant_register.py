@@ -341,17 +341,25 @@ def test_every_bent_zero_claim_is_accounted_for_in_the_register():
     accounted for fails here until someone re-derives -- which is the
     point at which they have to say which property set they mean."""
     block = REGISTER["bent_zero_claims_held_here"]
-    accounted = {(entry["document"], entry["line"]) for entry in block["occurrences"]}
+    claims = {(e["document"], e["line"]) for e in block["occurrences"]}
+    mentions = {(e["document"], e["line"]) for e in block["mentions_not_claims"]}
+
+    # EVERY appearance of the phrase must be in one bucket or the other.
+    # Checking only the claims would let the narrowing to the claim form
+    # hide an appearance rather than classify it -- which is the whole risk
+    # a narrowing carries.
     found = set()
     for path in sorted((REPO_ROOT / "docs").rglob("*.md")):
         for number, line in enumerate(path.read_text(errors="replace").splitlines(), 1):
             if re.search(r"(?<![\w])Bent: zero(?![\w])", line):
                 found.add((str(path.relative_to(REPO_ROOT)), number))
-    assert found == accounted, (
-        f"unaccounted claims: {sorted(found - accounted)}; "
-        f"accounted but no longer present: {sorted(accounted - found)}"
+    assert found == claims | mentions, (
+        f"unaccounted appearances: {sorted(found - (claims | mentions))}; "
+        f"accounted but no longer present: {sorted((claims | mentions) - found)}"
     )
-    assert block["count"] == len(found)
+    assert not (claims & mentions), "an appearance is filed as both a claim and a mention"
+    assert block["count"] == len(claims)
+    assert block["mention_count"] == len(mentions)
 
 
 def test_the_ten_four_property_claims_and_the_one_five_property_claim_split_in_git():
@@ -374,11 +382,17 @@ def test_the_ten_four_property_claims_and_the_one_five_property_claim_split_in_g
         )
         (after if ancestor.returncode == 0 else before).append(document)
 
-    assert len(before) == 10 and len(after) == 1, (
-        f"expected ten documents predating the five-property probe and one after it; measured "
-        f"{len(before)} before, {len(after)} after"
+    assert len(before) == 10, (
+        f"expected ten reports predating the five-property probe; measured {len(before)}"
     )
-    assert "PHASE_36" in after[0]
+    assert len(after) >= 1 and any("PHASE_36" in d for d in after), (
+        f"Phase 36 was the first report written against the five-property set; measured {after}"
+    )
+    # Every report added from here on is on the five-property side, so this
+    # side grows and the other must not.
+    assert not any("PHASE_3" in d and int(d.split("PHASE_")[1][:2]) > 36 for d in before), (
+        f"a report written after the probe grew is counted against the four-property set: {before}"
+    )
 
 
 def test_the_verdicts_survive_the_wider_set_and_the_register_says_why():
@@ -397,3 +411,28 @@ def test_the_verdicts_survive_the_wider_set_and_the_register_says_why():
         "the fifth property now reports a core-invariant modification, so the ten earlier claims "
         "no longer survive the wider set and must be revisited individually"
     )
+
+
+def test_a_mention_of_bent_zero_is_not_counted_as_a_claim():
+    """NARROWED AFTER IT FIRED. The scan matched the phrase anywhere, which
+    was correct while every occurrence was a claim -- eleven reports, one
+    bolded assertion each. The first report to DISCUSS the class rather
+    than only assert it counted three, and the register would have said
+    fourteen claims where twelve exist.
+
+    Both are recorded, so the narrowing is visible: a claim written in a
+    new form shows up here as a mention with no claim beside it."""
+    block = REGISTER["bent_zero_claims_held_here"]
+    documents = [o["document"] for o in block["occurrences"]]
+    assert len(documents) == len(set(documents)), (
+        f"a report is counted twice, so mentions are being read as claims: {documents}"
+    )
+    assert block["count"] == len(documents)
+    assert block["mention_count"] >= 1, (
+        "no mentions found at all -- either the distinction stopped being exercised, or the scan "
+        "no longer sees them and the narrowing has become invisible"
+    )
+    for mention in block["mentions_not_claims"]:
+        assert "**Bent: zero.**" not in mention["text"], (
+            f"a claim was filed as a mention: {mention}"
+        )

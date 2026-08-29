@@ -185,24 +185,47 @@ def artifacts_declaring_extends():
 AGREEING, DISAGREEING = artifacts_declaring_extends()
 
 
+#: The claim form, verified against every phase report that makes one:
+#: all eleven originals write it as the bolded assertion `**Bent: zero.**`.
+_CLAIM = re.compile(r"\*\*Bent: zero\.\*\*")
+#: Any other appearance of the phrase -- a heading, a backticked reference,
+#: prose about the class. A MENTION, not a claim.
+_MENTION = re.compile(r"(?<![\w])Bent: zero(?![\w])")
+
+
 def bent_zero_claims():
-    """Every `Bent: zero` this repository holds, with its document.
+    """Every `Bent: zero` CLAIM this repository holds, and every mention.
 
     Derived by scanning, so a claim written tomorrow and not accounted for
-    here moves this artifact's digest and fails its test."""
-    found = []
+    here moves this artifact's digest and fails its test.
+
+    NARROWED TO THE CLAIM FORM 2026-08-26, and narrowed rather than
+    loosened. The first version matched the phrase anywhere, which was
+    correct while every occurrence was a claim -- eleven phase reports,
+    one bolded assertion each. The first document to DISCUSS `bent: zero`
+    rather than assert it (this phase's own report, which has a heading, a
+    claim and a prose reference) counted three, and the register would
+    have reported fourteen claims where twelve exist.
+
+    The same shape as the provenance guard narrowed in the polymer
+    vertical: a check that holds only while there is exactly one kind of
+    use. Mentions are still counted and reported, so the narrowing is
+    visible and a claim written in some new form shows up as a mention
+    that no claim accompanies.
+    """
+    claims, mentions = [], []
     for path in sorted((REPO / "docs").rglob("*.md")):
         for number, line in enumerate(path.read_text(errors="replace").splitlines(), 1):
-            if re.search(r"\*\*Bent: zero\.?\*\*|(?<![\w])Bent: zero(?![\w])", line):
-                found.append({
-                    "document": str(path.relative_to(REPO)),
-                    "line": number,
-                    "text": line.strip()[:180],
-                })
-    return found
+            entry = {"document": str(path.relative_to(REPO)), "line": number,
+                     "text": line.strip()[:180]}
+            if _CLAIM.search(line):
+                claims.append(entry)
+            elif _MENTION.search(line):
+                mentions.append(entry)
+    return claims, mentions
 
 
-BENT_ZERO = bent_zero_claims()
+BENT_ZERO, BENT_ZERO_MENTIONS = bent_zero_claims()
 
 DOCUMENT = {
     "extends": f"core@{CORE['version']}",
@@ -335,6 +358,14 @@ DOCUMENT = {
         ),
         "occurrences": BENT_ZERO,
         "count": len(BENT_ZERO),
+        "mentions_not_claims": BENT_ZERO_MENTIONS,
+        "mention_count": len(BENT_ZERO_MENTIONS),
+        "why_both_are_recorded": (
+            "the scan matches the CLAIM FORM -- the bolded assertion every phase report making one "
+            "uses. Anything else naming the phrase is a mention: a heading, a backticked "
+            "reference, prose about the class. Both are listed so the narrowing is visible, and so "
+            "a claim written in some new form appears here as a mention with no claim beside it."
+        ),
         "the_property_set_split": (
             "ten of them were written when the generality probe declared FOUR properties; one was "
             "written after it declared five. Same words, two assertions. Which set each quantified "
