@@ -237,11 +237,21 @@ def test_the_stale_mirror_measurement_where_the_sibling_is_present():
     mine = loads((REPO_ROOT / "architecture" / "exchange"
                   / "invariant_register.yaml").read_text())
     other = loads(theirs.read_text())
-    assert other["bent_zero_claims_held_here"]["occurrences"] == \
-        mine["bent_zero_claims_held_here"]["occurrences"], (
-        "the two copies must agree on the block derived from THIS repository's documents; if "
-        "they do not, the other side is generating its own and the stale-mirror reading is wrong"
+    # A STALE MIRROR IS BEHIND, NOT IDENTICAL. This asserted equality
+    # until 2026-08-28, which was true on the day it was written and is
+    # not the property: DAQ adds phase reports, so its own derived block
+    # grows and the mirror falls further behind. What the reading
+    # requires is CONTAINMENT -- every entry the other side holds is one
+    # DAQ derived, and DAQ may hold more.
+    theirs_block = other["bent_zero_claims_held_here"]["occurrences"]
+    mine_block = mine["bent_zero_claims_held_here"]["occurrences"]
+    assert theirs_block, "an empty block on the other side would discriminate nothing"
+    missing = [entry for entry in theirs_block if entry not in mine_block]
+    assert missing == [], (
+        f"the other side holds bent-zero entries DAQ never derived: {missing}. It is therefore "
+        "generating its own block and the stale-mirror reading is wrong."
     )
+    assert len(mine_block) >= len(theirs_block)
 
     theirs_own_count = 0
     for path in sorted(SIBLING.rglob("*.yaml")):

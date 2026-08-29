@@ -367,3 +367,102 @@ def test_the_record_no_longer_names_the_wrong_layer_for_the_irreversible_one():
         "if run_scout ever builds Records some other way, this correction needs re-measuring "
         "rather than re-reading"
     )
+
+
+# =====================================================================
+# The correction reached the prose a day before it reached the keys
+# =====================================================================
+
+_GRANULARITY = "one record per run"
+_CORRECTION_MARKERS = ("wrong layer", "wrong about who owns it", "cannot be discharged by an "
+                       "extractor", "named for the extractor")
+
+
+def _strings(node, path=""):
+    """(path, text) for every KEY and every string VALUE, so the property
+    below reaches both. The correction that was missed lived in a key."""
+    if isinstance(node, dict):
+        for key, value in node.items():
+            yield f"{path}.{key}", key
+            yield from _strings(value, f"{path}.{key}")
+    elif isinstance(node, list):
+        for index, value in enumerate(node):
+            yield from _strings(value, f"{path}[{index}]")
+    elif isinstance(node, str):
+        yield path, node
+
+
+def _keys(node):
+    found = set()
+    if isinstance(node, dict):
+        for key, value in node.items():
+            found.add(key)
+            found |= _keys(value)
+    elif isinstance(node, list):
+        for value in node:
+            found |= _keys(value)
+    return found
+
+
+def test_no_key_or_string_gives_the_extractor_the_granularity_without_the_correction():
+    """THE PROPERTY, replacing having looked.
+
+    The record was corrected on 2026-08-27 in its prose and kept a KEY --
+    `which_settles_the_extractor_contract` -- naming the wrong layer for a
+    day after. A key is what a reader greps for, so a correction that
+    reaches the prose and not the keys is half a correction.
+
+    Any text here that ties the extractor to Record granularity must
+    carry the correction with it. Quoting the old sentence in order to
+    correct it is the whole point of the correction block and is
+    admitted; asserting it is not."""
+    offenders = []
+    for path, text in _strings(READINESS):
+        lowered = text.lower().replace("_", " ")
+        if "extractor" not in lowered:
+            continue
+        if _GRANULARITY not in lowered and "contract" not in lowered:
+            continue
+        if any(marker in lowered for marker in _CORRECTION_MARKERS):
+            continue                      # the correction travels with the claim
+        if path.startswith(".the_retired_key_name"):
+            continue                      # recording a retired name is not asserting it
+        offenders.append(f"{path}: {text[:90]}")
+    assert offenders == [], (
+        "these attribute Record granularity to the extractor with no correction attached:\n  "
+        + "\n  ".join(offenders)
+    )
+
+
+def test_the_retired_key_is_recorded_rather_than_silently_renamed():
+    """A renamed key with no trace is a decision that cannot be audited:
+    an older commit, or a report quoting the old name, has nothing here to
+    connect it to."""
+    retired = READINESS["the_retired_key_name"]
+    assert retired["what_it_was"] == "which_settles_the_extractor_contract"
+    keys_present = _keys(READINESS)
+    assert retired["what_it_is_now"] in keys_present, "the new key must actually be in use"
+    assert retired["what_it_was"] not in keys_present, (
+        "the old key is still a key somewhere in this record"
+    )
+    assert "half a correction" in retired["the_general_form"]
+    assert "RETIRED_IDENTITY_KEYS" in retired["why_it_is_recorded_rather_than_just_renamed"], (
+        "the same shape has a precedent in this tree and the record should name it"
+    )
+
+
+def test_the_granularity_is_owned_by_the_layer_that_can_discharge_it():
+    """RE-MEASURED, not restated. The pipeline builds the Record; the
+    extractor receives it. Whatever the record says, this is who owns it."""
+    import inspect
+
+    from scout.interface import Extractor
+    from scout import pipeline
+
+    source = inspect.getsource(pipeline.run_scout)
+    assert "for raw_doc in adapter.fetch()" in source
+    assert "make_record(" in source
+    signature = inspect.signature(Extractor.extract)
+    assert list(signature.parameters)[1] == "record", (
+        "the extractor RECEIVES a record; if it ever returns them, the layer question reopens"
+    )

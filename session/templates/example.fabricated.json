@@ -1,0 +1,46 @@
+{
+  "provenance": "fabricated_example",
+  "what_this_is_not": "NOT a queue. No researcher was asked any of these, no session was run, and no number below says anything about any instrument. It exists so an operator can see the shape of a filled intake — including a dropped item and a refused one — without the builder inventing the questions a real session must obtain from the researcher in writing beforehand.",
+  "box_minutes": 120,
+  "items": [
+    {
+      "identifier": "corridor-grade",
+      "question": "for the two corridors I care about, does it state a grade or refuse",
+      "decision_it_could_change": "whether to pay for assay data before the next review",
+      "acceptance_test": "each corridor returns a stated grade with a source, or a refusal naming what would resolve it",
+      "expected_yield": 8.0,
+      "minutes": 20,
+      "acceptance_test_at": 1,
+      "worked_at": 4
+    },
+    {
+      "identifier": "who-can-stop-it",
+      "question": "for the top five nodes, who can actually halt them",
+      "decision_it_could_change": "which counterparty the desk calls first in a disruption",
+      "acceptance_test": "an operator is named per node, or the attribution is refused with its basis stated",
+      "expected_yield": 9.0,
+      "minutes": 45,
+      "acceptance_test_at": 2,
+      "worked_at": 5
+    },
+    {
+      "identifier": "history-depth",
+      "question": "how far back can I ask this before it stops answering",
+      "decision_it_could_change": "whether the backtest window I planned is even available",
+      "acceptance_test": "a date is found at which the answer changes character, and the instrument says why",
+      "expected_yield": 4.0,
+      "minutes": 30,
+      "acceptance_test_at": 3,
+      "worked_at": 6
+    },
+    {
+      "identifier": "how-does-it-look",
+      "question": "is the interface pleasant to use",
+      "decision_it_could_change": null,
+      "acceptance_test": "n/a",
+      "expected_yield": 2.0,
+      "minutes": 15,
+      "acceptance_test_at": 4
+    }
+  ]
+}

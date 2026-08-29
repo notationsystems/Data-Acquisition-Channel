@@ -39,18 +39,28 @@ sys.path.insert(0, str(REPO_ROOT / "vendor" / "scout-retrieval-agent"))
 
 import daf  # noqa: F401,E402
 
-from session.work_order import (ACCEPTANCE_TEST_POSTDATES_WORK,  # noqa: E402
+from session.work_order import (ABANDONED_AND_ALSO_REPORTED,  # noqa: E402
+                                ABANDONED_AT_ITS_BOX,
+                                ABANDONED_ITEM_NOT_IN_THE_ORDER,
+                                ABANDONED_WITHOUT_A_REASON,
+                                ACCEPTANCE_TEST_POSTDATES_WORK,
                                 EMPTY_BECAUSE_EVERY_ITEM_WAS_DROPPED,
                                 EMPTY_BECAUSE_THE_QUEUE_WAS_EMPTY,
+                                EVERY_REACHED_ITEM_WAS_ABANDONED,
                                 FINDING_CITES_NO_SOURCE,
                                 FINDING_DECLARES_NO_EVIDENCE_CLASS,
                                 FINDING_FOR_NO_ITEM,
                                 NO_ACCEPTANCE_TEST,
                                 NO_DECISION_IT_COULD_CHANGE,
+                                NO_ITEM_WAS_REACHED,
                                 NO_TIME_BOX,
+                                NOT_REACHED,
+                                WORKED,
                                 RESIDUE_OMITTED,
                                 STOPPED_WITHOUT_THE_STOPPING_RULE,
-                                Finding, QueueItem, close_session, plan)
+                                WORKED_WITHOUT_A_RECORDED_POSITION,
+                                Abandonment, Finding, QueueItem, close_session,
+                                plan)
 
 
 def _item(identifier="q1", *, decision="whether to build the allocation model",
@@ -251,17 +261,25 @@ def test_the_module_cannot_reach_canonical_state():
     comment."""
     import ast
 
-    source = (REPO_ROOT / "session" / "work_order.py").read_text()
-    imported = set()
-    for node in ast.walk(ast.parse(source)):
-        if isinstance(node, ast.Import):
-            imported.update(alias.name.split(".")[0] for alias in node.names)
-        elif isinstance(node, ast.ImportFrom) and node.module and node.level == 0:
-            imported.add(node.module.split(".")[0])
+    # SWEPT, not named. The first version read ONE file by name, which is
+    # enumeration-by-location: a second module in the package inherited
+    # the claim without inheriting the check. Every .py under session/ is
+    # read, and the sweep asserts it found more than the file it started
+    # with, so the package growing cannot quietly outrun it.
     forbidden = {"daf", "scout", "evidence", "structures", "science", "epistemics"}
-    assert not (imported & forbidden), (
-        f"session/ must not reach an acquisition, admission or state layer; it imports {imported}"
-    )
+    modules = sorted((REPO_ROOT / "session").rglob("*.py"))
+    assert len(modules) >= 2, "the layer sweep is reading fewer files than the package holds"
+    for module in modules:
+        imported = set()
+        for node in ast.walk(ast.parse(module.read_text())):
+            if isinstance(node, ast.Import):
+                imported.update(alias.name.split(".")[0] for alias in node.names)
+            elif isinstance(node, ast.ImportFrom) and node.module and node.level == 0:
+                imported.add(node.module.split(".")[0])
+        assert not (imported & forbidden), (
+            f"{module.name} must not reach an acquisition, admission or state layer; "
+            f"it imports {sorted(imported & forbidden)}"
+        )
 
 
 def test_every_refusal_code_is_an_observable_and_not_a_diagnosis():
@@ -324,3 +342,155 @@ def test_the_class_vocabulary_is_owned_elsewhere_and_not_restated_here():
     # And the module still refuses an unclassed finding, so declining to
     # hold the list is not declining to require one.
     assert hasattr(work_order, "FINDING_DECLARES_NO_EVIDENCE_CLASS")
+
+
+# =====================================================================
+# Deliverable 2 and 3 together: every ranked item lands in exactly one
+# bucket, and an item that overran was ABANDONED rather than forgotten
+# =====================================================================
+
+def test_every_ranked_item_lands_in_exactly_one_bucket():
+    """ROW ACCOUNTING, applied to the session itself.
+
+    The doctrine asks for a findings record PER ITEM and for a per-item
+    box `so an item that overruns is abandoned deliberately rather than
+    by exhaustion`. Both need the same thing: an item that was ranked and
+    then produced nothing must say WHICH nothing -- worked, abandoned at
+    its box, or never reached. Three items, three outcomes, and the
+    counts conserve."""
+    order = plan([_item("a", yield_=9.0, minutes=10, worked_at=5),
+                  _item("b", yield_=6.0, minutes=20, worked_at=5),
+                  _item("c", yield_=1.0, minutes=30)], box_minutes=60)
+    assert [i.identifier for i in order.items] == ["a", "b", "c"]
+
+    session = close_session(
+        order,
+        findings=[Finding(item_id="a", statement="s", sources=("t",), evidence_class="asserted")],
+        abandoned=[Abandonment(identifier="b", reason="ran past its twenty minutes with the "
+                                                      "corridor grade still unresolved",
+                               minutes_spent=26)],
+        residue=("what the grade would have taken",),
+        stopping_rule_met=True,
+    )
+    assert session.refusals == ()
+    assert session.accounting == {WORKED: ("a",), ABANDONED_AT_ITS_BOX: ("b",),
+                                  NOT_REACHED: ("c",)}
+    assert sum(len(v) for v in session.accounting.values()) == len(order.items), (
+        "every ranked item must be in exactly one bucket, or the session lost one"
+    )
+
+
+def test_an_abandonment_without_a_reason_is_refused():
+    """`Abandoned deliberately` and `abandoned by exhaustion` differ only
+    in whether anyone wrote down why. Without the reason the record
+    cannot tell them apart, which is the whole point of the box."""
+    order = plan([_item("a", worked_at=5)], box_minutes=60)
+    session = close_session(order, findings=[],
+                            abandoned=[Abandonment(identifier="a", reason="", minutes_spent=40)],
+                            residue=(), stopping_rule_met=True)
+    assert (ABANDONED_WITHOUT_A_REASON, "a") in session.refusals
+
+
+def test_an_item_cannot_be_both_abandoned_and_reported():
+    """Two answers to one question -- the shape `replicate_pairing`
+    already refuses as CONFLICTING_VALUE_FOR_A_RUN."""
+    order = plan([_item("a", worked_at=5)], box_minutes=60)
+    session = close_session(
+        order,
+        findings=[Finding(item_id="a", statement="s", sources=("t",), evidence_class="asserted")],
+        abandoned=[Abandonment(identifier="a", reason="overran", minutes_spent=40)],
+        residue=(), stopping_rule_met=True)
+    assert (ABANDONED_AND_ALSO_REPORTED, "a") in session.refusals
+    # AND THE ACCOUNTING STILL CONSERVES. Found by a plant: refusing the
+    # conflict is not the same as not double-counting it, and the first
+    # version of this test asserted only the refusal. An item appearing
+    # in two buckets makes the session's own row accounting untrue while
+    # every refusal reads correctly -- a check correct about what it
+    # examined and silent about what it handed on.
+    buckets = session.accounting
+    assert sum(len(v) for v in buckets.values()) == len(session.order.items)
+    seen = [identifier for bucket in buckets.values() for identifier in bucket]
+    assert len(seen) == len(set(seen)), f"an item is in two buckets: {seen}"
+
+
+def test_an_abandonment_naming_no_ranked_item_is_refused():
+    order = plan([_item("a", worked_at=5)], box_minutes=60)
+    session = close_session(order, findings=[],
+                            abandoned=[Abandonment(identifier="zz", reason="overran",
+                                                   minutes_spent=5)],
+                            residue=(), stopping_rule_met=True)
+    assert (ABANDONED_ITEM_NOT_IN_THE_ORDER, "zz") in session.refusals
+
+
+def test_a_session_with_no_findings_says_WHICH_no_findings():
+    """The empty-collection rule, at the session. Nothing reached and
+    everything abandoned are different afternoons."""
+    order = plan([_item("a", minutes=30), _item("b", minutes=30)], box_minutes=60)
+
+    nothing_reached = close_session(order, findings=[], abandoned=[], residue=(),
+                                    stopping_rule_met=True)
+    assert nothing_reached.findings_empty_because == NO_ITEM_WAS_REACHED
+
+    all_abandoned = close_session(
+        order, findings=[],
+        abandoned=[Abandonment(identifier="a", reason="overran", minutes_spent=31),
+                   Abandonment(identifier="b", reason="overran", minutes_spent=31)],
+        residue=(), stopping_rule_met=True)
+    assert all_abandoned.findings_empty_because == EVERY_REACHED_ITEM_WAS_ABANDONED
+    assert all_abandoned.findings_empty_because != nothing_reached.findings_empty_because
+
+    # A session that produced findings carries no such note.
+    produced = close_session(
+        order,
+        findings=[Finding(item_id="a", statement="s", sources=("t",), evidence_class="asserted")],
+        abandoned=[], residue=(), stopping_rule_met=True)
+    assert produced.findings_empty_because is None
+
+
+def test_the_plan_reports_an_overrun_rather_than_trimming_to_fit():
+    """Which items to cut is the operator's call. A plan quietly trimmed
+    to fit reads as a plan that fits."""
+    order = plan([_item("a", minutes=50), _item("b", minutes=50)], box_minutes=60)
+    assert len(order.items) == 2, "the plan must not silently drop the item that does not fit"
+    assert order.planned_minutes == 100
+    assert order.overruns_the_box is True
+    assert plan([_item("a", minutes=20)], box_minutes=60).overruns_the_box is False
+
+
+def test_a_finding_for_an_item_with_no_recorded_work_position_is_refused():
+    """THE INVARIANT'S OWN BLIND SPOT, found by probing it rather than by
+    reading it.
+
+    ACCEPTANCE_TEST_POSTDATES_WORK compares two positions, and it can only
+    fire when BOTH exist. An item whose `worked_at` was never recorded
+    ranks cleanly, accepts a finding, and closes COMPLETE -- with the
+    pre-registration invariant unverifiable for it and nothing saying so.
+    The check was silent exactly where the record was incomplete, which is
+    the case it matters in: a hurried session is the one that skips the
+    position.
+
+    The refusal names the OBSERVABLE. It does not claim the test was
+    written late; it says the order cannot be checked."""
+    unrecorded = _item("q1", test_at=1, worked_at=None)
+    order = plan([unrecorded], box_minutes=60)
+    assert order.refusals == (), "an unworked item is not malformed -- it may simply be next"
+
+    finding = Finding(item_id="q1", statement="s", sources=("t",), evidence_class="asserted")
+    session = close_session(order, findings=[finding], residue=(), stopping_rule_met=True)
+    assert (WORKED_WITHOUT_A_RECORDED_POSITION, "q1") in session.refusals
+    assert session.complete is False, (
+        "a session whose central invariant cannot be checked for one of its findings must not "
+        "report itself finished"
+    )
+
+    # With the position recorded, the same finding closes clean -- so the
+    # refusal is about the missing record and not about the finding.
+    recorded = plan([_item("q1", test_at=1, worked_at=4)], box_minutes=60)
+    clean = close_session(recorded, findings=[finding], residue=(), stopping_rule_met=True)
+    assert clean.refusals == ()
+
+    # And an item that was never worked and produced no finding is NOT
+    # refused: it is simply not_reached, which the accounting already says.
+    untouched = close_session(order, findings=[], residue=(), stopping_rule_met=True)
+    assert all(code != WORKED_WITHOUT_A_RECORDED_POSITION for code, _ in untouched.refusals)
+    assert untouched.accounting[NOT_REACHED] == ("q1",)
