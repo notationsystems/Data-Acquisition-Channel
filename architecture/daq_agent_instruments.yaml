@@ -7,15 +7,29 @@
 # control the instrument does not have is worse than one asserting none,
 # because it is relied on.
 #
-# THIS FILE WAS WRITTEN TO MATCH A CONTRACT THAT ARRIVED WITHOUT IT. The
-# contract handed to this repository declared `Source:
-# architecture/instruments.yaml`, `Regenerate: python3 generate.py` and
-# `Source digest: 66629e18fca40af9`, and none of the three existed here.
-# The digest above cannot be reproduced from a source this repository
-# does not hold, and no attempt is made to reproduce it: the generator
-# emits the digest of THIS file and the schema it appends, which is a
-# different and honest number. If the original source ever arrives, the
-# two can be diffed; until then this is a reconstruction and says so.
+# THIS FILE IS NOT THE SOURCE THE ARRIVING CONTRACT NAMED, AND IT DOES
+# NOT SIT WHERE THAT SOURCE WOULD SIT. A contract handed to this
+# repository declared `Source: architecture/instruments.yaml`,
+# `Regenerate: python3 generate.py` and a source digest, and none of the
+# three existed here. The digest string itself is recorded once, in
+# architecture/sea_dog_session_instrument.yaml, and is deliberately not
+# repeated here: that record measures how far it has spread, and a copy
+# made to disclaim it is still a copy.
+#
+# A first version of this file WAS written into architecture/instruments.yaml
+# with generate.py beside it. A concurrent session had already measured
+# those two paths as absent and asserted they stay absent, on the ground
+# that a source invented to satisfy a header is worse than a header with
+# no source -- and that assertion caught this file. It was right. Saying
+# `this is a reconstruction` inside the file does not help a reader who
+# finds the path occupied and the digest different; they would read a
+# drift where there was a substitution.
+#
+# So: DAQ's own instrument record, at a name that claims nothing about
+# the missing one. The two paths the foreign doctrine names remain empty.
+# The digest below is over THIS file and the schema it appends, and a
+# test asserts it differs from the claimed one -- read from the record
+# that owns it rather than retyped.
 extends: core@1.0.0
 
 subject: instruments

@@ -1,5 +1,17 @@
 #!/usr/bin/env python3
-"""Generate the agent contracts from architecture/instruments.yaml.
+"""Generate DAQ's agent contracts from architecture/daq_agent_instruments.yaml.
+
+IT DOES NOT OCCUPY THE PATHS A FOREIGN DOCTRINE NAMES, AND THAT IS
+DELIBERATE. A contract handed to this repository declared
+`Source: architecture/instruments.yaml`, `Regenerate: python3 generate.py`
+and a source digest this tree cannot produce (recorded, once, in
+architecture/sea_dog_session_instrument.yaml -- not repeated here, because
+a check in that record measures how far that string has spread). Those two paths are recorded as
+ABSENT in architecture/sea_dog_session_instrument.yaml and must stay
+absent: a file written into them would make that header true by
+fabrication, and a later reader comparing the two artifacts would find a
+drift rather than a substitution. This generator and its source are
+DAQ's own, named so they cannot be mistaken for the missing ones.
 
 An agent contract is what an executing model reads. It must therefore be
 DERIVED from the instrument record rather than written beside it: a
@@ -11,8 +23,8 @@ a digest over the inputs, and a test that regenerates and compares. The
 digest is over BOTH inputs, the instrument record and the schema it
 appends, because a schema edit changes the contract an agent reads.
 
-    python3 generate.py            write the contracts
-    python3 generate.py --check    exit 1 if any is stale
+    python3 architecture/build_agent_contracts.py           write the contracts
+    python3 architecture/build_agent_contracts.py --check   exit 1 if stale
 """
 
 from __future__ import annotations
@@ -23,12 +35,13 @@ import pathlib
 import sys
 from typing import Any, Dict, List
 
-ROOT = pathlib.Path(__file__).resolve().parent
+ROOT = pathlib.Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "vendor" / "scout-retrieval-agent"))
 
 from epistemics._yaml import loads  # noqa: E402
 
-INSTRUMENTS = ROOT / "architecture" / "instruments.yaml"
+INSTRUMENTS = ROOT / "architecture" / "daq_agent_instruments.yaml"
 OUT_DIR = ROOT / "docs" / "generated"
 
 #: Sixteen hex characters, the shape the arriving contract used. It is a
@@ -65,8 +78,14 @@ def render(instrument_id: str, instrument: Dict[str, Any], agent_id: str,
 
     failure = agent["failure_behaviour"]
     parts = [
-        f"<!-- GENERATED FILE -- DO NOT EDIT. Source: architecture/instruments.yaml"
-        f" Regenerate: python3 generate.py Source digest: {digest} -->",
+        f"<!-- GENERATED FILE -- DO NOT EDIT."
+        f" Source: architecture/daq_agent_instruments.yaml"
+        f" Regenerate: python3 architecture/build_agent_contracts.py"
+        f" Source digest: {digest} -->",
+        "<!-- This is NOT the artifact whose header names"
+        " architecture/instruments.yaml. That source, and the digest it"
+        " claims, are absent from every reachable tree and were not"
+        " reconstructed -- see architecture/sea_dog_session_instrument.yaml. -->",
         "",
         f"AGENT -- {agent_id}",
         "",

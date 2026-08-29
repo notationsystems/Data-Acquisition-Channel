@@ -1,4 +1,5 @@
-<!-- GENERATED FILE -- DO NOT EDIT. Source: architecture/instruments.yaml Regenerate: python3 generate.py Source digest: 8757e2631cbe91eb -->
+<!-- GENERATED FILE -- DO NOT EDIT. Source: architecture/daq_agent_instruments.yaml Regenerate: python3 architecture/build_agent_contracts.py Source digest: 16d40d9964c0cc13 -->
+<!-- This is NOT the artifact whose header names architecture/instruments.yaml. That source, and the digest it claims, are absent from every reachable tree and were not reconstructed -- see architecture/sea_dog_session_instrument.yaml. -->
 
 AGENT -- EDGAR_SCOUT
 

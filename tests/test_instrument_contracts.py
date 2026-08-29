@@ -27,7 +27,7 @@ from daf.agents.candidate_filing import (SchemaNotSupported,  # noqa: E402
                                          check_schema_is_supported, first_refusal, validate)
 from epistemics._yaml import loads  # noqa: E402
 
-RECORD = loads((REPO_ROOT / "architecture" / "instruments.yaml").read_text())
+RECORD = loads((REPO_ROOT / "architecture" / "daq_agent_instruments.yaml").read_text())
 INSTRUMENT = RECORD["instruments"]["edgar_acquisition"]
 AGENT = INSTRUMENT["agents"]["EDGAR_SCOUT"]
 SCHEMA = json.loads((REPO_ROOT / "architecture" / "schemas"
@@ -40,8 +40,9 @@ CONTRACT = REPO_ROOT / "docs" / "generated" / "AGENT_EDGAR_SCOUT.md"
 # =====================================================================
 
 def test_the_contract_regenerates_identically():
-    result = subprocess.run([sys.executable, "generate.py", "--check"],
-                            cwd=str(REPO_ROOT), capture_output=True, text=True)
+    result = subprocess.run(
+        [sys.executable, "architecture/build_agent_contracts.py", "--check"],
+        cwd=str(REPO_ROOT), capture_output=True, text=True)
     assert result.returncode == 0, (
         f"the committed contract differs from regeneration: {result.stdout.strip()} -- run "
         "`python3 generate.py` and commit the result"
@@ -53,13 +54,20 @@ def test_the_banner_names_a_source_and_a_regenerate_command_that_both_exist():
     A banner is a claim about the tree like any other."""
     banner = CONTRACT.read_text().splitlines()[0]
     assert "GENERATED FILE" in banner and "DO NOT EDIT" in banner
-    assert (REPO_ROOT / "architecture" / "instruments.yaml").exists()
-    assert (REPO_ROOT / "generate.py").exists()
+    assert (REPO_ROOT / "architecture" / "daq_agent_instruments.yaml").exists()
+    assert (REPO_ROOT / "architecture" / "build_agent_contracts.py").exists()
     assert (REPO_ROOT / AGENT["output_schema"]).exists()
 
     digest = banner.split("Source digest:")[1].split("-->")[0].strip()
     assert len(digest) == 16 and all(c in "0123456789abcdef" for c in digest)
-    assert digest != "66629e18fca40af9", (
+
+    # READ, NOT RETYPED. The claimed digest is owned by the record that
+    # measured the source as absent, and that record checks how far the
+    # string has spread -- so this module names the owner instead of
+    # carrying a copy.
+    foreign = loads((REPO_ROOT / "architecture" / "sea_dog_session_instrument.yaml")
+                    .read_text())["instrument_registry"]["claimed_digest"]
+    assert digest != foreign, (
         "this repository does not hold the source the arriving contract was generated from, so "
         "reproducing its digest would mean fabricating one"
     )
@@ -68,7 +76,8 @@ def test_the_banner_names_a_source_and_a_regenerate_command_that_both_exist():
 def test_the_digest_moves_when_either_input_moves():
     """A digest over one of two inputs would go stale silently when the
     other changed, and the schema is appended into the contract."""
-    import generate
+    sys.path.insert(0, str(REPO_ROOT / "architecture"))
+    import build_agent_contracts as generate
 
     baseline = generate.source_digest([generate.INSTRUMENTS,
                                        REPO_ROOT / AGENT["output_schema"]])
@@ -307,8 +316,33 @@ def test_the_record_says_it_is_a_reconstruction():
     that quietly presented itself as the original would be the fabrication
     its own rules forbid."""
     header = " ".join(line.lstrip("#").strip() for line in
-                      (REPO_ROOT / "architecture" / "instruments.yaml")
+                      (REPO_ROOT / "architecture" / "daq_agent_instruments.yaml")
                       .read_text().split("extends:")[0].splitlines())
     assert "none of the three existed here" in header
-    assert "cannot be reproduced" in header
-    assert "this is a reconstruction and says so" in header
+    assert "at a name that claims nothing about the missing one" in header
+    assert "The two paths the foreign doctrine names remain empty" in header
+
+
+def test_nothing_here_occupies_the_paths_the_foreign_doctrine_names():
+    """A CONCURRENT SESSION'S ASSERTION, AND IT CAUGHT THIS WORK.
+
+    The first version of DAQ's instrument record was written into
+    architecture/instruments.yaml with generate.py beside it -- the exact
+    two paths a foreign doctrine header names and that
+    tests/test_sea_dog_session_instrument.py had already measured as
+    absent. Saying `this is a reconstruction` inside the file does not
+    help a reader who finds the path occupied and the digest different:
+    they read a drift where there was a substitution.
+
+    Held here as well as there, because the hazard belongs to whoever
+    next feels the pull to make a header true."""
+    assert not (REPO_ROOT / "architecture" / "instruments.yaml").exists()
+    assert not (REPO_ROOT / "generate.py").exists()
+
+    banner = CONTRACT.read_text().splitlines()[1]
+    assert "is NOT the artifact" in banner
+    assert "architecture/instruments.yaml" in banner
+    assert "were not\n reconstructed" in banner or "were not reconstructed" in banner, (
+        "the generated contract must disclaim the foreign one in its own header, where a "
+        "reader meets it, and not only in the source record"
+    )
