@@ -1,0 +1,60 @@
+# THE REPLICATE ANCHOR: REFUSED THREE TIMES, AND NOT ONCE FOR BEING AN
+# AGGREGATE.
+#
+# B.2.4 asked whether a table of injections followed by Average / Standard
+# Deviation / % RSD enters the pool as measurements. Measured
+# synthetically, it does. Measured on the real report, the FAITHFUL
+# transcription is refused three times over -- and every one of the three
+# is incidental to the question.
+extends: core@1.0.0
+
+subject: anchor_two_ingest_result
+status: refused_four_times_faithfully_and_every_refusal_is_incidental
+owner: daf
+enforcement: tests/test_anchor_two_ingest.py
+measured: "2026-08-28"
+source: "regulations.gov EPA-HQ-OPPT-2019-0271-0065 attachment 2, Impact Analytical R190048. Retrieved directly: a plain fetch returns 403 and a request carrying a browser User-Agent and a regulations.gov Referer returns 200. The 403 was a user-agent block, not an unreachable address."
+
+# ----------------------------------------------------------------------
+the_four_refusals_in_the_order_they_actually_fire:
+  the_order_was_recorded_wrong_first: "this record listed three refusals with the blank Sample cell first. Measured, there are FOUR and the identity-column literal fires FIRST -- before any row is read. Corrected here rather than in prose elsewhere: the order is the finding, because the first thing that stops a real replicate report is that the adapter does not recognise the report's word for a run."
+  one_the_run_identifier_column_is_not_recognised:
+    code: "GpcSummaryExportFetchError -- `no unit declared for column(s) ['Injection']. The file does not state them and this adapter will not choose one.`"
+    the_mechanism: "`_IDENTITY_COLUMNS` is the literal ('Sample', 'Inj'). The report's column is `Injection`. Anything not in that tuple is a QUANTITY, so the run identifier needs a declared unit -- and a run number has no unit, because it is not a quantity."
+    why_it_is_first: "column declarations are validated before any row is parsed. So the earliest thing a real replicate report meets is a two-element literal that does not contain the word its vendor used."
+    it_is_the_literal_enumeration_class_on_real_data: "the same shape already filed as a latent hazard when a third identifier had nowhere to go. It is no longer latent: it fires on the FIRST spelling a real vendor used."
+  two_the_sample_cell_is_blank_on_the_continuation_row:
+    code: "GpcSummaryExportFetchError -- `row 1 names no Sample`"
+    what_the_document_does: "Table II names the sample once and leaves the cell empty on the second injection row. The rendered table groups both rows under one sample BY LAYOUT."
+    why_filling_it_is_not_free: "the value is not in the cell. A reader recovers it from the table's structure, and transcribing it is a READING of that layout rather than a transcription of a value. It is the same act as Anchor 1's four invented fields, one degree more defensible and still an interpretation -- so it is marked as one here and the fixture keeps the blank."
+  three_the_aggregate_rows_have_no_injection_number:
+    code: "GpcSummaryExportFetchError -- `row 2 column 'Injection' is blank with no absence reason`"
+    what_the_document_does: "an average has no injection number, so Table II leaves those cells empty. Because the column is read as a quantity (refusal one), an empty cell is an unexplained blank rather than an absent identifier."
+  four_the_percent_sign:
+    code: "GpcSummaryExportFetchError -- `row 4 column 'Mn' is not numeric: '8.4%'`"
+    measured_synthetically_first: "recorded in tests/test_aggregate_rows.py before this anchor existed. The real report prints `8.4%`, and it is refused for not parsing as a float -- not for being a repeatability statistic."
+
+# ----------------------------------------------------------------------
+what_happens_when_all_four_are_removed:
+  method: "each of the four obstacles removed in turn, in memory, never written to a fixture. This is not a proposal to remove them; it is what the substrate does once the incidental refusals are out of the way."
+  measured: "FIFTEEN observations across FIVE Records, zero acquisition failures, zero admissibility reasons."
+  the_five_records: "PA191 (S190109)/1 and /2 are the two injections. `Average/row-2`, `Standard Deviation/row-3` and `% RSD/row-4` are three more, each with its own Record identity taken from the aggregate LABEL."
+  every_mn_in_the_pool: "[8.4, 2107.0, 23479.0, 24969.0, 26459.0] -- a per-cent RSD, a standard deviation, an average and two measurements, in one column, with nothing distinguishing them."
+
+the_three_questions_answered:
+  do_the_two_injection_rows_become_two_records: "YES. Two Records, one per row, which is the precondition working."
+  does_the_average_row_become_a_third_measured_observation: "IT MUST NOT, AND IT DOES. Three further Records and nine further observations, indistinguishable from measurements in every field the substrate carries."
+  is_the_aggregates_lineage_to_the_two_injections_recoverable: "NO. The Average Record's locator is `Average/row-2` and nothing connects it to rows 1 and 2. The lineage is POSITIONAL IN THE DOCUMENT -- the reader knows the average is of the rows above it -- and position is exactly what acquisition discards. Nothing in the pool records that those five Records came from one table, let alone which three are derived from which two."
+
+# ----------------------------------------------------------------------
+what_the_declared_kind_requirement_did_catch:
+  measured: "`Mw/Mn` was declared derived and is declined visibly -- it never enters, so the Average row's dispersity of 1.29 is not in the pool. The mean-of-ratios finding cannot reach a consumer through this path."
+  and_what_it_did_not: "the same declaration is per COLUMN. Mn, Mw and Mz are genuinely measured in the injection rows and genuinely derived in the aggregate rows, and one declaration covers both. There is no per-ROW channel, which is why nine derived values enter under a declaration that is correct for the rows it was written for."
+
+# ----------------------------------------------------------------------
+the_contrast_with_anchor_one_is_the_result:
+  anchor_one: "daf/adapters/gpc_report.py requires data_provenance, sample_kind, method and sample_id IN THE DOCUMENT and has no caller-declaration channel. A faithful transcription cannot be acquired by any route that does not fabricate."
+  anchor_two: "daf/adapters/gpc_summary_export.py takes all four as caller declarations. Its refusals are about the TABLE's shape, not about missing declarations -- so a faithful transcription gets further, and fails on structure a real replicate table has and a synthetic one did not."
+  what_that_says_about_the_contract: "the four caller-declared fields were specified after the first adapter was written and never propagated back. The later adapter is right and the earlier one was never updated, which is visible only because a real document needs the channel the first one lacks."
+
+what_no_clause_was_widened_means_here: "nothing in daf/ or science/ changed. `_IDENTITY_COLUMNS` still reads ('Sample', 'Inj'), the blank-cell refusal stands, and the numeric parse stands. The fixture keeps the blank Sample cell and the `Injection` spelling and the percent signs, and is REFUSED."

@@ -1,0 +1,21 @@
+# GPC Analysis of Urethane and Acrylic Based Polymers
+# Impact Analytical report R190048; project P190044; analyst J. Damaska; report date 2019-02-14
+# Pump/Autosampler: Waters Alliance 2695 separations module
+# Eluent: N, N-dimethylformamide (S190109)
+# Flow Rate: 0.5 mL/min
+# Injection Size: 100 uL
+# Column: PLgel Mixed C, 50 C
+# Detector: Waters 2414 Refractive Index Detector (50 C)
+# Calibration: Narrow distribution polystyrene, Agilent lot # 0006341768
+# Software: Waters Empower 3
+# Processing Method: P190044 DMF
+# The chromatography for PA191 (S190109) did not show any peaks that could be integrated
+# to provide a result. The eluent on the instrument was changed to N, N-dimethylformamide
+# (DMF) and a portion of the dried sample was dissolved in DMF for retesting. An aliquot of
+# the non-dried portion of PA191 (S190109) was diluted with 10 mL of DMF and injected.
+Sample,Injection,Mn,Mw,Mz,Mw/Mn,% Poly <1000,% Poly <500
+PA191 (S190109),1,26459,33070,41046,1.25,0,0
+,2,23479,30985,40436,1.32,0,0
+Average,,24969,32028,40741,1.29,0,0
+Standard Deviation,,2107,1474,431,0.05,0,0
+% RSD,,8.4%,4.6%,1.1%,3.9%,0,0

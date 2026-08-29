@@ -57,6 +57,8 @@ def test_the_predictions_have_not_been_edited_since_they_were_recorded():
 NOT_A_GPC_ANCHOR = "not_a_gpc_anchor"
 #: The first real anchor to land, 2026-08-28.
 FIRST_ANCHOR = "gpc_report_anchor_epa_p22_0051.json"
+#: The replicate anchor, 2026-08-28.
+SECOND_ANCHOR = "gpc_summary_export_anchor_impact_r190048.csv"
 A_GPC_ANCHOR = "a_gpc_anchor"
 
 #: Every fixture in the tree, declared. Enumerating all of them rather
@@ -79,6 +81,8 @@ FIXTURE_PROVENANCE = {
     "gpc_report_synthetic_ps4471.json": NOT_A_GPC_ANCHOR,
     "gpc_report_synthetic_unlabelled_provenance.json": NOT_A_GPC_ANCHOR,
     "gpc_report_anchor_epa_p22_0051.json": A_GPC_ANCHOR,
+    "gpc_summary_export_anchor_impact_r190048.csv": A_GPC_ANCHOR,
+    "gpc_summary_export_anchor_impact_r190048.provenance.md": NOT_A_GPC_ANCHOR,
     "gpc_summary_export_synthetic_absences.csv": NOT_A_GPC_ANCHOR,
     "gpc_summary_export_synthetic_aggregate_block.csv": NOT_A_GPC_ANCHOR,
     "gpc_summary_export_synthetic_flag_says_valid.csv": NOT_A_GPC_ANCHOR,
@@ -141,8 +145,8 @@ def test_an_anchor_has_landed_and_this_guard_is_retired():
         f"undeclared fixtures: {undeclared}. Declare each as NOT_A_GPC_ANCHOR or A_GPC_ANCHOR. "
         "An undeclared fixture is how the first form of this guard missed a vendor nobody listed."
     )
-    assert anchors == [FIRST_ANCHOR], (
-        f"expected exactly the landed anchor and found {anchors}. A new anchor fixture must be "
+    assert anchors == sorted([FIRST_ANCHOR, SECOND_ANCHOR]), (
+        f"expected exactly the landed anchors and found {anchors}. A new anchor fixture must be "
         "declared here deliberately; the guard was retired for the first one, not disabled."
     )
 
@@ -170,7 +174,7 @@ def test_the_guard_fires_on_a_vendor_nobody_listed_and_the_first_form_did_not():
     undeclared, anchors = anchor_guard(present, declared)
     assert undeclared == []
     assert planted in anchors, "a declared anchor must fire it whatever the vendor is called"
-    assert anchors == sorted([planted, FIRST_ANCHOR]), (
+    assert anchors == sorted([planted, FIRST_ANCHOR, SECOND_ANCHOR]), (
         "and the landed anchor is still reported alongside it -- the guard was retired for the "
         "first anchor, not switched off"
     )
