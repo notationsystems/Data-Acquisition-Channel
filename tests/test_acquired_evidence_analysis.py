@@ -220,6 +220,7 @@ def test_acquired_evidence_reaches_a_model_state_transition(tmp_path):
     result = make_experimental_result(
         campaign, entry, content={"property": "tensile_strength", "value": 81, "unit": "MPa"},
         record_id=record.id, extracted_at="2026-08-25T02:00:00Z",
+        extraction_method="measurement:campaign_execution",
     )
     observation, _relationship = admit_experimental_result(pool, result, confidence=1.0)
 

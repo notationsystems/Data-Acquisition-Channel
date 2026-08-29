@@ -149,6 +149,7 @@ def _run_result(pool, doc, campaign, entry, locator, value):
     result = make_experimental_result(
         campaign, entry, content={"property": "tensile_strength", "value": value, "unit": "MPa"},
         record_id=rec.id, extracted_at="2026-08-23T02:00:00Z",
+        extraction_method="measurement:campaign_execution",
     )
     observation, relationship = admit_experimental_result(pool, result, confidence=1.0)
     return result, observation, relationship

@@ -252,6 +252,7 @@ def test_the_complete_loop_from_state_to_next_state(tmp_path):
     experimental_result = make_experimental_result(
         campaign, entry, content={"property": "tensile_strength", "value": 91, "unit": "MPa"},
         record_id=record.id, extracted_at="2026-08-25T05:00:00Z",
+        extraction_method="measurement:campaign_execution",
     )
     observation, _relationship = admit_experimental_result(pool, experimental_result, confidence=1.0)
     s_next = update(s1, follow_candidate, experimental_result, observation)

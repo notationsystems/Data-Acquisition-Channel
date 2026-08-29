@@ -185,7 +185,7 @@ def test_the_one_deliberate_divergence_from_the_table_gates_leaf_semantics():
     uncertainty is a magnitude."""
     assert leaf_is_a_quantity("B7") == "", "the shared rule admits a categorical"
     assert observation_is_table_alignable(
-        {"sample_id": "s", "variable": "v", "value": "B7"}).admissible
+        {"sample_id": "s", "property": "v", "value": "B7"}).admissible
 
     verdict = uncertainty_corresponds_to_value(
         _observation(uncertainty=[["low", "high"], ["high", "low"]]))

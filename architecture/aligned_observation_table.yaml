@@ -105,6 +105,20 @@ two_gates_that_must_agree:
   the_one_rule_they_share: "nothing in the numeric range can ever mean missing"
   why_it_is_locked_as_a_test: "if either admitted a sentinel, the extension's guarantee would hold only on whichever gate happened to run"
 
+# ------------------------------------- the column key, reconciled (WO-2) --
+
+column_identity_is_property:
+  the_rule: "`property` IS THE COLUMN IDENTITY. observation_is_table_alignable and no_context_free_property both read it; neither carries a private name for it; a retired synonym present in content is refused as VARIABLE_IDENTITY_UNDER_A_RETIRED_NAME."
+  what_was_wrong: "this gate read `variable` and no_context_free_property read `property`, and neither read the other's key. An extractor satisfied both by writing the key TWICE. Measured: content declaring `variable: mn` beside `property: mw` -- two DISAGREEING names for one concept -- was admitted by BOTH gates with zero reasons. The duplication was not merely redundant; it admitted a state in which an observation joins as one column and is found by materials.analyze as another."
+  the_direction_was_forced_not_chosen:
+    the_core_filters_on_it: "materials.analysis.analyze filters on content['property'] via _matches_property BEFORE grouping, and _comparison_context excludes `property` precisely because that filter already fixed it. That code is inside the unmodifiable core, so an observation without `property` is not awkward to find -- analyze cannot see it at all."
+    daq_had_already_published_it: "architecture/exchange/daq_capabilities.yaml states `A single Observation carries one property name and one scalar value`. No published artifact ever named `variable` as a KEY; every occurrence of the word is the English term for the concept."
+    the_rest_of_the_tree_agreed: "four extractors already emitted `property`. `variable` existed only in science/table.py, science/replicate_pairing.py and the GPC extractor -- all authored after it."
+  why_this_is_not_the_unowned_relation_shape: "the STOP condition was evaluated and does not apply. Joinability is this gate's subject and interpretability is the other's; WHICH QUANTITY is a referent BOTH need and NEITHER owns, so unifying the name moves no subject -- it removes a second name for a shared referent. And it DISSOLVES the relation rather than assigning it an owner: with one key there is no relation between two keys for a third gate to own. A third gate would have been the repair if the two keys had meant different things."
+  the_synonym_is_refused_rather_than_ignored: "left in content, `variable` becomes an ordinary key -- it enters the pairing consumer's comparison context and the vendored _comparison_context alike, splitting replicate sets as though it were a condition. Refusing it at the gate that owns column identity is what stops the migration half-happening, and the consumer deliberately does NOT defend against it a second time: two readers tolerating the old name is how a retirement becomes permanent tolerance."
+  the_discriminating_case: "content whose two keys DISAGREE. Under the duplicated representation both gates admitted it; under the reconciliation it is refused by name. A case where the two keys AGREE passes under both representations and tests nothing -- named before the test was written, and mutation-verified by restoring the duplication and watching exactly that test fail."
+  enforcement: "tests/test_gpc_acquisition.py"
+
 # ---------------------------------------- the pass-through routes fixed --
 
 pass_through_routes:

@@ -1,0 +1,16 @@
+# GPC/SEC SUMMARY REPORT -- SYNTHETIC
+# Column set: two mixed-bed columns in series; Solvent: THF; Temp: 40 C; Flow: 1.0 mL/min
+# Detector: RI; Calibration: narrow polystyrene standards, 200 to 12000 g/mol
+# NOTE: any molar mass above 12000 g/mol reported by this method is not valid.
+# NOTE: values in this file are FABRICATED. No instrument produced them.
+Sample,Inj,Mw,Mw_OutsideWindow
+SYN-lot-0001,s01,18400,No
+SYN-lot-0001,s02,14900,No
+SYN-lot-0001,s03,11200,No
+SYN-lot-0001,s04,9600,No
+SYN-lot-0001,s05,8700,No
+SYN-lot-0001,s06,7900,No
+SYN-lot-0001,s07,6800,No
+SYN-lot-0001,s08,5300,No
+SYN-lot-0001,s09,4100,No
+SYN-lot-0001,s10,2600,No

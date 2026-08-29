@@ -128,9 +128,51 @@ def _strings(node, path=""):
         yield path, node
 
 
-def _rows_with_status_claims():
+#: Sentence boundaries, for the predication rule below. Deliberately
+#: crude: splitting too eagerly only narrows further, and the narrowing
+#: is measured against every claim in the tree rather than reasoned about.
+_SENTENCE_BREAK = re.compile(r"(?<=[.;])\s+")
+
+
+def _predicated_of(value, invariant, word):
+    """Is `word` asserted AS THE STATUS OF `invariant`, or merely present
+    in the same string?
+
+    THE NARROWING THE DEFERRAL'S CONDITION REQUIRED. The sweep counted
+    any status-vocabulary word anywhere in a string that named an
+    invariant. `absent` is also ordinary English, so a sentence about an
+    invariant followed by a sentence using the word tripped it.
+
+    The rule is derived from every status claim actually in this tree,
+    not invented: each one either uses the word `status` explicitly, or
+    puts the status word in the SAME SENTENCE as the invariant it is
+    predicated of. A string doing neither is not making a status claim.
+
+    WHAT IT GIVES UP, stated rather than discovered later: a genuine
+    stale claim that spans two sentences without using the word `status`
+    -- "X was measured in Phase 3. It is vacuously_enforced." -- is no
+    longer caught. And it does NOT address the OTHER false-positive mode:
+    a string about the FUNCTION `no_context_free_property` still reads as
+    a string about the INVARIANT of that name, in the same sentence or
+    not. That mode is unrepaired and is measured by the collision test
+    below."""
+    if re.search(r"(?<![\w])status(?![\w])", value, re.IGNORECASE):
+        return True
+    for sentence in _SENTENCE_BREAK.split(value):
+        if invariant in sentence and re.search(rf"(?<![\w]){word}(?![\w])", sentence):
+            return True
+    return False
+
+
+def _rows_with_status_claims(predicate=_predicated_of):
     """Every mapping in the requirements artifact that names one of this
-    repository's invariants together with a status word."""
+    repository's invariants together with a status word PREDICATED of
+    it.
+
+    `predicate` is an argument so the narrowing can be measured against
+    the unnarrowed sweep by passing the rule that admits everything --
+    the comparison then runs the real path twice rather than comparing
+    the real one against a paraphrase of the old one."""
     found = []
 
     def visit(node, path=""):
@@ -141,7 +183,8 @@ def _rows_with_status_claims():
                         if invariant not in value:
                             continue
                         said = [w for w in VOCABULARY
-                                if re.search(rf"(?<![\w]){w}(?![\w])", value)]
+                                if re.search(rf"(?<![\w]){w}(?![\w])", value)
+                                and predicate(value, invariant, w)]
                         if said:
                             found.append((f"{path}.{key}", invariant, said, node))
                 else:
@@ -166,20 +209,92 @@ def test_the_domain_is_non_empty_so_the_check_can_fail():
         "-- either the artifacts changed shape or this check stopped reaching them")
 
 
-def test_no_superseded_status_claim_stands_alone():
-    """The property. A superseded status may be RETAINED -- this pair does
-    that deliberately -- but only where the current one is stated in the
-    same row, so the reader meets both. Standing alone, it is a claim
-    about the sibling that the sibling has already contradicted."""
+def test_the_sweep_can_confuse_an_invariant_with_a_function_of_the_same_name():
+    """The measured root cause of this sweep's false-positive mode,
+    DERIVED rather than listed so it cannot go stale by a name being
+    added or removed.
+
+    Not a weakening and not a repair -- it makes the collision a fact the
+    next person meets rather than a surprise they diagnose again."""
+    import ast
+
+    invariant_ids = set(CURRENT)
+    function_names = set()
+    for module in sorted((REPO_ROOT / "science").glob("*.py")):
+        function_names |= {
+            node.name for node in ast.walk(ast.parse(module.read_text()))
+            if isinstance(node, ast.FunctionDef)
+        }
+
+    collisions = invariant_ids & function_names
+    assert collisions, (
+        "no invariant id is also a function name, so this sweep can no longer confuse the two "
+        "and the deferral recorded in the docstring above is moot -- retire it rather than "
+        "leaving it standing"
+    )
+    assert collisions == {"quantity_is_typed", "no_context_free_property"}, (
+        f"the collision set moved to {sorted(collisions)}. A new name that is both an invariant "
+        "and a function is a new way for this sweep to misread; re-measure before trusting it."
+    )
+
+
+def _unmarked_claims(predicate=_predicated_of):
+    """The check's VERDICT, extracted so the narrowing can be compared on
+    what it reports rather than on what it intermediately collects.
+
+    A row whose status word merely moves between the two passing branches
+    -- `the field itself is current` and `superseded, and marked as such`
+    -- has not changed the answer, and comparing intermediates would call
+    that a difference."""
     unmarked = []
-    for path, invariant, said, row in _rows_with_status_claims():
+    for path, invariant, said, row in _rows_with_status_claims(predicate):
         now = CURRENT[invariant]
         if now in said:
             continue                       # the field itself is current
         siblings = " ".join(v for _, v in _strings(row)).lower()
         if re.search(rf"(?<![\w]){now}(?![\w])", siblings):
             continue                       # superseded, and marked as such
-        unmarked.append((path, invariant, said, now))
+        unmarked.append((path, invariant, tuple(sorted(said)), now))
+    return unmarked
+
+
+def test_no_superseded_status_claim_stands_alone():
+    """The property. A superseded status may be RETAINED -- this pair does
+    that deliberately -- but only where the current one is stated in the
+    same row, so the reader meets both. Standing alone, it is a claim
+    about the sibling that the sibling has already contradicted.
+
+    THE DEFERRAL WAS DISCHARGED ON ITS OWN CONDITION, and discharging it
+    corrected the diagnosis a second time.
+
+    It fired twice on 2026-08-27 and both were reworded. The note then
+    recorded a single root cause -- TWO NAMES ARE BOTH AN INVARIANT ID
+    AND A FUNCTION (derived in the test below) -- and demoted the earlier
+    `absent`-is-also-English reading to a symptom of it. The deferral
+    carried a condition: a THIRD firing, or any firing against an artifact
+    that must not be edited, and the sweep must be narrowed rather than
+    the prose reworded again.
+
+    IT FIRED A THIRD TIME, and it was not the function collision. The row
+    named the INVARIANT `no_context_free_property` explicitly -- "in a
+    stronger form than the invariant states" -- and the word `absent`
+    appeared in the NEXT SENTENCE as ordinary English. So the two modes
+    are independent and the earlier note was wrong to fold the first into
+    the second. There are two, and only one of them is now repaired.
+
+    REPAIRED: the predication rule in `_predicated_of`, derived from every
+    status claim in this tree rather than invented. Measured against the
+    unnarrowed sweep, it changes the flagged set by exactly one row -- the
+    false positive -- which is the evidence that it is a narrowing and not
+    a weakening.
+
+    UNREPAIRED, and no longer deferred behind a condition it has already
+    met: the function/invariant collision. It is stated in
+    `_predicated_of` and measured below. Distinguishing a string about the
+    function from a string about the invariant needs more than a text
+    sweep, and that is a different piece of work rather than a pending
+    one."""
+    unmarked = _unmarked_claims()
 
     assert not unmarked, "\n".join(
         f"{path}: says {said} about {invariant!r}, which this repository now "
@@ -195,21 +310,35 @@ def test_a_quoted_requirement_is_verbatim():
 
     The requirement was to read the text programmatically. This is the
     check that the reading stayed a reading."""
-    workload = RESPONSE["responds_to_workload"]
-    rows = {row["requirement"]: row
-            for row in REQUIREMENTS["workloads"][workload]["blocking_requirements"]}
+    # KEYED BY (workload, requirement), because a requirement NAME is not a
+    # row identity: `stable_sample_and_variable_identity` is a row in both
+    # least_squares and pca with DIFFERENT statement text. Keyed by name,
+    # the two collide and one quote silently answers the other's question
+    # -- and this check would have compared the surviving quote against the
+    # surviving row and passed.
+    rows = {(workload, row["requirement"]): row
+            for workload, entry in REQUIREMENTS["workloads"].items()
+            for row in entry.get("blocking_requirements", ())}
     assert RESPONSE["responses"], "no responses to check"
-    for name, body in RESPONSE["responses"].items():
-        assert name in rows, f"{name} responds to a requirement the artifact does not list"
-        assert body["what_the_requirement_asked"].strip() == rows[name]["statement"].strip(), (
-            f"{name}: the quoted requirement has drifted from the original")
+
+    collisions = [name for name in {r for _, r in rows}
+                  if len({rows[k]["statement"] for k in rows if k[1] == name}) > 1]
+    assert collisions, (
+        "no requirement name appears in two workloads with different text, so this check cannot "
+        "distinguish keying by name from keying by row -- re-measure before trusting it")
+
+    for key, body in RESPONSE["responses"].items():
+        workload, _, name = key.partition("::")
+        assert name, f"{key} is not a workload::requirement key"
+        assert (workload, name) in rows, f"{key} responds to a row the artifact does not list"
+        assert body["what_the_requirement_asked"].strip() == rows[(workload, name)]["statement"].strip(), (
+            f"{key}: the quoted requirement has drifted from the original")
 
 
 def test_every_row_the_response_answers_still_exists_upstream():
     """A response to a requirement that has since been withdrawn is a
     different failure from a stale status, and would otherwise pass
     silently: the row simply would not be looked at."""
-    workload = RESPONSE["responds_to_workload"]
     # THE OWNER TOKEN DIFFERS ACROSS THE BOUNDARY and this check is what
     # found it: this repository calls itself `daf`, the compute layer
     # addresses its rows to `daq`. Both consistent internally, so nothing
@@ -270,13 +399,116 @@ def test_every_row_the_response_answers_still_exists_upstream():
         f"OWN artifact ownership. An alias naming the wrong party still selects a "
         f"self-consistent set of rows, so set equality below cannot catch it.")
 
-    upstream = {row["requirement"]
-                for row in REQUIREMENTS["workloads"][workload]["blocking_requirements"]
+    # SCOPED TO THE ARTIFACT'S OWN PARTITION, not to a workload named in
+    # the response. The previous version read RESPONSE["responds_to_workload"]
+    # -- a single hardcoded string -- so a DAQ-owned row in any other
+    # workload was not unanswered here, it was INVISIBLE. The row derivation
+    # was genuine and its scope was an enumeration of one, which is the
+    # shape that looks complete while covering one partition of seven.
+    upstream = {f"{workload}::{row['requirement']}"
+                for workload, entry in REQUIREMENTS["workloads"].items()
+                for row in entry.get("blocking_requirements", ())
                 if row["owner"] in tokens}
     assert upstream, (
         f"no row in the artifact is owned by any of {sorted(tokens)} -- an empty upstream "
         f"set would compare equal to an empty answered set and pass vacuously")
+    assert len({key.split("::")[0] for key in upstream}) > 1, (
+        "every DAQ-owned row is in one workload, so this check cannot distinguish a partition-wide "
+        "scope from a single-workload one -- the condition that made the old version look right")
+
     answered = set(RESPONSE["responses"])
-    assert answered == upstream, (
-        f"answered {sorted(answered)} but the artifact lists {sorted(upstream)} "
-        f"as owned by {RESPONSE['owner']}")
+    accounted = set(RESPONSE["row_accounting"]["not_answered_and_why"])
+    overlap = answered & accounted
+    assert not overlap, f"a row is both answered and recorded as unanswered: {sorted(overlap)}"
+    assert answered | accounted == upstream, (
+        f"answered {sorted(answered)} and accounted-for {sorted(accounted)} do not together cover "
+        f"the artifact's DAQ-owned rows {sorted(upstream)}. A row in neither set is one nobody "
+        f"looked at, and nothing else in this repository would notice it.")
+    assert RESPONSE["row_accounting"]["daq_owned_rows_upstream"] == len(upstream)
+
+
+# ----------------------------------------------------------------------
+# The narrowing, measured rather than argued
+# ----------------------------------------------------------------------
+
+def _admits_everything(value, invariant, word):
+    """The rule this sweep used before the third firing."""
+    return True
+
+
+#: Every row the narrowing drops, with why the drop was judged correct.
+#: A LIST RATHER THAN A COUNT, and reviewed rather than pinned: the first
+#: entry is the false positive that motivated the rule, and the SECOND is
+#: a row where the rule was right about the prose and the prose was
+#: wrong. That one contained a genuine status claim spanning four
+#: sentences -- exactly the case the rule's stated limit gives up -- and
+#: it was repaired by predicating the claim rather than by widening the
+#: rule. A new entry here means someone looked; a new drop with no entry
+#: fails.
+REVIEWED_DROPS = {
+    ("architecture/post_anchor_predictions.yaml.predictions_for_a_second_anchor"
+     ".p2_a_per_slice_validity_flag_that_tracks_the_elution_window"
+     ".why_it_is_the_sharpest_of_the_four"):
+        "the measured false positive: the invariant is named in one sentence and `absent` "
+        "appears in the next as ordinary English.",
+}
+
+
+def test_the_narrowing_drops_the_false_positive_and_nothing_else():
+    """THE EVIDENCE THAT IT IS A NARROWING AND NOT A WEAKENING.
+
+    Both rules are run over the same tree through the same code path. The
+    unnarrowed one flags every row the narrowed one does, plus exactly the
+    rows where a status word sits in a different sentence from the
+    invariant and the string never says `status`. If that difference ever
+    contains a row that is a real claim, this test is the place it shows
+    up."""
+    rows = lambda predicate: {(path, invariant)
+                              for path, invariant, _, _ in _rows_with_status_claims(predicate)}
+    wide_rows, narrow_rows = rows(_admits_everything), rows(_predicated_of)
+    assert narrow_rows <= wide_rows, "the narrowed rule must not flag anything the wide one missed"
+    assert {path for path, _ in wide_rows - narrow_rows} == set(REVIEWED_DROPS), (
+        f"rows dropped: {sorted(wide_rows - narrow_rows)}, reviewed: {sorted(REVIEWED_DROPS)}. "
+        "Every drop must be inspected and recorded above -- a drop nobody looked at is "
+        "indistinguishable from a weakening, and the second entry there is one that was."
+    )
+
+    wide_verdict = set(_unmarked_claims(_admits_everything))
+    narrow_verdict = set(_unmarked_claims(_predicated_of))
+    assert narrow_verdict == set(), "the check must be green under the narrowed rule"
+    assert {(path, invariant) for path, invariant, _, _ in wide_verdict} == wide_rows - narrow_rows, (
+        "and the only thing the narrowing changed about the VERDICT is that false positive -- "
+        "a row moving between the two passing branches is not a change in the answer"
+    )
+
+
+def test_a_genuine_stale_claim_is_still_caught_in_every_form_the_tree_uses():
+    """DETECTOR PROOF, planted in each shape the corpus actually
+    contains. A narrowing that also silenced the real claims would pass
+    the test above -- the flagged set would still only lose false
+    positives, because the true ones would have been in neither set."""
+    invariant = "generation_depth_bounded"
+    stale = "vacuously_enforced"
+    assert CURRENT[invariant] != stale, "the plant must be a status this repository has moved off"
+
+    same_sentence = f"{invariant} is {stale} and nothing checks it"
+    assert _predicated_of(same_sentence, invariant, stale)
+
+    with_the_marker = (f"{invariant} was measured in an earlier phase. "
+                       f"Its status is {stale}.")
+    assert _predicated_of(with_the_marker, invariant, stale), (
+        "a claim spanning two sentences must still be caught when it says `status`"
+    )
+
+    ordinary_english = (f"it is {invariant} in a stronger form. "
+                        "The context is not merely absent from the document.")
+    assert not _predicated_of(ordinary_english, invariant, "absent"), (
+        "and the measured false positive must NOT be caught, or nothing was narrowed"
+    )
+
+    and_the_limit = f"{invariant} was measured in an earlier phase. It is {stale}."
+    assert not _predicated_of(and_the_limit, invariant, stale), (
+        "the stated limit, asserted rather than described: a cross-sentence claim with no "
+        "`status` marker is now missed. If this ever starts passing, the docstring's "
+        "'what it gives up' is stale and must be corrected."
+    )

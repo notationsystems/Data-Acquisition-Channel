@@ -1,4 +1,4 @@
-# Phase 38 — The Register, and the First Vertical
+# Phase 39 — The Register, and the First Vertical
 
 ## What this phase was
 
@@ -147,6 +147,12 @@ enumerate, it names two invariants nothing here ever mentions. Only **I5**
 stop being inference; the other five each state what would refute them, and I7 is
 flagged as the weakest offered at all.
 
+**Superseded, and quickly.** All of the above was true at pin `3e5bea9` and is
+retained as the dated measurement it was: STE has since declared its invariants
+upstream, the pin moved to `5e146d5`, and the register now reads 58 rather than
+none. The reconstruction below stands as a record of what the documents
+constrained when nothing else did, and is no longer the best available account.
+
 `architecture/exchange/ste_invariants.yaml` carries `status:
 RECONSTRUCTION_NOT_DECLARATION` and keeps it. A set written about a party by
 another party is not that party's set — the same reason a decision authored with
@@ -178,17 +184,42 @@ eleven claims in this repository's phase reports are the former; this one and Ph
 **And the claim is supported by a different route than its wording implies.** An
 unenumerated set has no members to check, so *"zero core invariants were modified"*
 is unfalsifiable as worded. It is entailed by something stronger that is
-checkable: the core's bytes are unmodified at the participating referent —
-gitlink `3e5bea9` matches the recorded commit, and the working tree matches the
-pin. Zero files changed entails zero invariants changed, whatever they are and
-however many.
+checkable: the core's bytes are unmodified at the participating referent. At the
+time of writing that was gitlink `3e5bea9`, matching the recorded commit.
 
 What is **not** claimed: that STE's invariants hold. Nothing here inspects them,
 because nothing here can. The claim is that this pair did not modify them.
 
-The standing consequence: **a submodule bump is not a routine update.** The moment
-the pin moves, `bent: zero` stops being entailed by byte-identity and must be
-re-established against a set still nobody has enumerated.
+### The prediction this report made, and how it was falsified — in both halves
+
+This section originally closed with a standing consequence: *a submodule bump is
+not a routine update; the moment the pin moves, `bent: zero` stops being entailed
+by byte-identity and must be re-established against a set still nobody has
+enumerated.*
+
+**Both halves were wrong, and both were measured rather than assumed lapsed.**
+Between this report being written and landing, a concurrent session moved the pin
+(`3e5bea9` → `5e146d5`, 68 commits) and re-ran the check:
+
+- **The entailment held.** `core/` is *still* byte-identical across those 68
+  commits. A bump does not end the entailment; a bump that **changes `core/`**
+  does. The prediction confused the pin moving with the core changing.
+- **The set was enumerated.** STE now declares five canonical-state invariants as
+  rules, and the register reads 58. The claim moved from **unfalsifiable** to
+  **falsifiable** — which is the real improvement, and it is exact: before, the
+  set had no members so nothing could make it fail.
+
+And the answer to the check, now that it can be asked, is **silence, not
+cleanliness**. Every declared invariant names a subject under `core.*`, and no
+authored package here imports `core.*` at all. By this repository's own
+`zero_rate_when_unreachable` rule, a zero over a subject nothing reaches is not a
+measurement. Reporting it as a pass would have been a third instance of a shape
+already recorded twice.
+
+That correction is kept in the report that made the prediction rather than only in
+the commit that overturned it. A register whose predictions could not be wrong
+would have been worth nothing; this one was falsified within a day, in both
+halves, by someone measuring instead of citing it.
 
 ---
 
@@ -397,8 +428,10 @@ stated as required and the list is not.
   above is real code run against constructed observations.
 - **ρ from an instrument.** What exists is ρ under a stated forward model, which
   establishes what ρ *cannot* be. Only data says what it is.
-- **The extractor's Record granularity.** Still the one irreversible precondition,
-  still undischargeable before the extractor exists — but getting it wrong is now
-  loud at the first pairing instead of silent forever.
+- **The extractor's Record granularity.** Recorded here as the one irreversible
+  precondition, undischargeable before the extractor exists. A concurrent session
+  has since built the GPC extractor path (Phase 38, `docs/PHASE_38_GPC_EXTRACTOR.md`)
+  and found the precondition *named the wrong layer* — read that report, not this
+  line, for the current account.
 - **Both polymer gaps remain undecided as representation changes.** A workload
   names its extension, and none does yet.

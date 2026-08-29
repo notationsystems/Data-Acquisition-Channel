@@ -1,0 +1,62 @@
+# WHERE THE CHEMISTRY RULES ACTUALLY LIVE, and why DAQ recorded them absent.
+#
+# A build brief handed to DAQ stated four chemistry rules as active
+# constraints DAQ's first acquisition path had to satisfy. DAQ's own
+# architecture/invariants.yaml records all four as `status: absent` with
+# the gap "no chemistry representation exists in this repository at all".
+# The brief's own first instruction was that the tree wins over the
+# program record, so this file records the discrepancy rather than
+# resolving it in either direction: nothing was built to satisfy the
+# clause, and the clause was not dropped.
+#
+# MEASURED AT THE PIN, NOT INFERRED. Everything below was read from
+# vendor/scout-retrieval-agent at 5e146d5924675cd7b6e1d1ed44fb39f5da012610.
+extends: core@1.0.0
+
+subject: chemistry_rule_ownership
+status: discrepancy_recorded_not_resolved
+owner: daf
+enforcement: tests/test_chemistry_rule_ownership.py
+
+# ----------------------------------------------------------------------
+the_discrepancy: "the brief filed four chemistry rules to DAQ. They are STE's, they exist, and they are enforced -- in structures/, which did not exist in DAQ's picture of the pair when those invariant rows were written."
+
+what_daq_records: "identity_policy_declared, no_point_identity_for_distributions, computed_fully_specified and applicability_domain_declared are all status: absent in architecture/invariants.yaml, each with the gap 'no chemistry representation exists in this repository at all'."
+whether_that_is_wrong: "NO, and this is the part worth stating precisely. The sentence is true OF DAQ and is not a claim about the pair. But a reader takes 'this repository' as the unit of analysis for a rule the pair shares, and on that reading it is now stale -- the representation exists, one repository over, at the pin DAQ itself points at."
+
+# ----------------------------------------------------------------------
+# The four rules, and where each one actually is.
+# ----------------------------------------------------------------------
+where_each_rule_lives:
+  identity_policy_declared:
+    daq_row: absent
+    ste_implementation: "structures/substance.py, assert_identity_policy -- the merge guard. resolution_policy values are validated against an allowed set per dimension."
+  no_point_identity_for_distributions:
+    daq_row: absent
+    ste_implementation: "structures/substance.py, assert_distribution_identity -- the ingest guard. A distribution-kind entity identified by a structure string alone raises: 'distribution-kind entity has no point identity'."
+  computed_fully_specified:
+    daq_row: absent
+    ste_implementation: "structures/method_blocks.py, assert_method_block."
+  applicability_domain_declared:
+    daq_row: absent
+    ste_implementation: "structures/method_blocks.py, assert_applicability -- an ML prediction outside its declared applicability domain is refused for canonical assertion."
+
+# ----------------------------------------------------------------------
+# The finding that matters more than the misfiling.
+# ----------------------------------------------------------------------
+the_gates_exist_and_nothing_reaches_them:
+  measured: "across the whole vendored tree at the pin, the ONLY callers of these guards outside structures/ and tests/ are scripts/chemistry_reachability.py and scripts/mutate_reachability_checks.py -- the probe itself and its mutation harness. No admission path, no acquisition path, no pipeline stage calls any of them."
+  which_is_exactly_what_stes_own_probe_says: "architecture/chemistry_reachability.yaml records codes_total 20, live 20, reachable_from_any_entry 0. Twenty guards that are real, enforced and mutation-tested, and that no entry path reaches."
+  and_it_corrects_what_daq_implied: "DAQ's phase 38 report said an acquisition path now exists and left open whether that moves STE's number. Measured, it cannot on its own. Reachability needs a CALL SITE in the admission path, and there is none; an acquisition path that carries chemistry-shaped content past a guard nobody calls is still zero reachable. Adding that call site is inside the unmodifiable submodule and is STE's, not DAQ's."
+  the_rule_this_is_an_instance_of: "architecture/admission_reachability.yaml. zero_rate_when_unreachable: no entry path can reach the gate. NOT a measurement; the metric is silent, not clean. It applies to the twenty codes and it applies to any inference DAQ might draw from its own acquisition path about them."
+
+# ----------------------------------------------------------------------
+what_this_does_not_do:
+  does_not_build_the_representation: "no chemistry representation was created in DAQ. Building one to satisfy a clause the tree says is absent would have been inventing the thing the brief separately forbids."
+  does_not_drop_the_clause: "the brief's rule is real. It is simply not DAQ's, and saying so is different from saying it does not apply."
+  does_not_edit_stes_artifacts: "structures/ and chemistry_reachability.yaml are read here and not touched. A party's own artifact is that party's to correct."
+  does_not_amend_the_invariant_rows: "the four rows in architecture/invariants.yaml still read `absent`, because that is what is true of this repository, and a row that starts describing another repository's state would be a worse record than a precise one plus this file."
+  does_not_claim_stes_number_moved: "DAQ has not re-run chemistry_reachability.py and does not claim any of the twenty codes changed verdict."
+
+# ----------------------------------------------------------------------
+the_shape_this_repeats: "A ROW SAYING `absent` ANSWERS `absent WHERE?`, AND THE ANSWER WAS NEVER WRITTEN DOWN. The same shape as bent: zero -- there, five invariants named subjects under core.* and no authored package imported core.*, so the zero was silence rather than cleanliness, and the improvement was that the claim became falsifiable rather than that it became true. Here a row reads `absent` with a scope nobody stated, so it is true and unfalsifiable at the same time: nothing about the row changes when the rule appears one repository over. What makes it falsifiable is naming the other repository and the pin, which is what this file does."

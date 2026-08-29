@@ -1,0 +1,122 @@
+# A TRUE CLAIM SUPPORTED BY A CHECK THAT COULD NOT HAVE DETECTED ITS FALSITY.
+#
+# DAQ-LOCAL, AND PROPOSED RATHER THAN APPLIED. This belongs in
+# architecture/proof_integrity.yaml, which both repositories hold
+# byte-identically and whose own header says a rule one side can edit
+# alone is a rule the two sides can come to disagree about. Recorded here
+# for the next joint reissue. The class was named by the counterparty
+# reading DAQ's own self-correction; DAQ measured the instance.
+extends: core@1.0.0
+
+subject: vacuous_evidence
+status: proposed_for_the_next_joint_reissue_of_proof_integrity
+owner: daf
+enforcement: tests/test_vacuous_evidence.py
+
+# ----------------------------------------------------------------------
+the_class: "a check is quoted as evidence for a claim; the claim is TRUE; and the check could not have detected its falsity. The conclusion is correct, the evidence is vacuous, and nothing in the report distinguishes the two."
+why_it_is_not_already_filed: "every instance in proof_integrity.yaml has a FALSE claim behind it -- grep_for_fatal reported the opposite of the truth, the enumerated sweep reported green over a hole, the mutation harness reported a test gap that did not exist. Each was found BECAUSE the conclusion was wrong. This one cannot be found that way: the conclusion is right, so nothing downstream misbehaves, and the vacuous check goes on being cited."
+why_it_is_worse_than_the_exit_code_rule_it_instantiates: "the discarded-exit-code rule says a check that did not run is not evidence. That is about detection. This is about ATTRIBUTION: the property held, so the report was accurate, and the only thing wrong was WHICH MECHANISM was credited. A reader auditing the claim finds it true and stops."
+
+# ----------------------------------------------------------------------
+the_measured_instance:
+  what_was_claimed: "doctrine regeneration diff zero -- reported in five consecutive commit messages."
+  was_the_claim_true: "YES, throughout. tests/test_doctrine_generation.py::test_committed_doctrine_matches_regeneration regenerates and compares, and was green in every one of those runs."
+  what_was_actually_run: "python epistemics/doctrine.py >/dev/null 2>&1, which had been exiting 1 on ModuleNotFoundError: No module named 'evidence' from the first invocation. The generator never ran. `git diff docs/generated/DOCTRINE.md` was then empty because NOTHING HAD BEEN WRITTEN, and the empty diff was read as agreement."
+  what_the_correct_invocation_is: "python -c 'import epistemics.doctrine as d; d.write()', which the failing test's own message states."
+  how_it_was_found: "not by the claim being wrong. By editing a doctrine SOURCE (architecture/invariants.yaml), seeing a zero diff, and finding that suspicious enough to recompute the source-digest by hand. The digests disagreed."
+  the_idiom_is_the_mechanism: "`>/dev/null 2>&1` silences exactly the diagnostic that would have said so. A traceback is not noise to be suppressed; it is the only thing distinguishing `no change` from `no run`."
+
+# ----------------------------------------------------------------------
+what_distinguishes_the_two_greens: "an EMPTY DIFF and a VERIFIED AGREEMENT are the same observation with different causes, and a check that reports only the observation cannot tell them apart. The discriminator is whether the producing step is known to have run -- its exit status, or an artifact it must have written."
+the_general_repair: "a check whose evidence is an ABSENCE (no diff, no violation, no output) must independently establish that the producing step ran. This is the same shape as absence_of_violation_mistaken_for_emptiness in proof_integrity.yaml -- assert the domain is non-empty before asserting it is clean -- applied to the PRODUCER rather than to the domain."
+what_it_does_not_say: "not that a redundant check is useless. tests/test_doctrine_generation.py was doing the work the whole time and the repository was never at risk. What is filed is that the wrong mechanism was CREDITED, five times, and that no amount of re-reading the report would have shown it."
+
+# ----------------------------------------------------------------------
+# ----------------------------------------------------------------------
+# TWO FURTHER CLASSES, same disposition: DAQ-local, proposed for the next
+# joint reissue of proof_integrity.yaml, not written into it.
+# ----------------------------------------------------------------------
+a_direction_does_not_discriminate_when_the_property_also_has_a_magnitude:
+  the_property: "when a check can be written against a SIGN or against a MAGNITUDE, the sign is usually the one that fails to discriminate -- because a wrong implementation often has the right sign. The natural test is the sign, and it agrees with the negation."
+  the_attestations:
+    the_band_broadening_kernel: "an exponential tail kernel was indexed backwards. A delta test asked whether mass moved to LATER elution volume; it did, and the test passed. A reversed exponential also moves mass later -- it TRANSLATES the peak instead of tailing it. What caught it was the magnitude: the centroid must shift by the kernel's discrete mean, r/(1-r) steps with r = exp(-step/tau), and the reversed kernel shifted six times further."
+    the_earlier_one: "the counterparty records a prior instance in a PSD budget, relative versus absolute. Attributed rather than re-measured here -- DAQ has not seen that code."
+  why_it_is_not_just_the_discriminating_case_rule: "the discriminating-case rule says an example drawn from the property holding agrees with the negation by default. This is narrower and more actionable: it says WHICH axis to test when a property has two. A magnitude check subsumes a sign check; a sign check almost never subsumes a magnitude one."
+  the_practical_form: "if the property is `X moves in direction D by amount A`, assert A. Asserting D alone is the cheaper test and it is the one that passes on the broken implementation."
+
+a_stated_limit_that_inverts_a_conclusion_is_not_a_conservative_one:
+  the_property: "a KNOWN LIMIT is normally recorded as a reason a result might be understated -- the reader is invited to treat the finding as a lower bound. That invitation is only valid if the limit is CONSERVATIVE. A limit that changes the SIGN of a residual does not soften the conclusion; it points a correction the wrong way, and a reader told `this is conservative` will act on it."
+  the_measured_instance: "the forward instrument model recorded a Gaussian broadening kernel as a limit, on the reasoning that it understates the low-M side and therefore biases the same way as truncation. Measured with an exponentially modified Gaussian: the cancellation point moved from N = 2600 with Mn error +3.4% to N = 8250 with Mn error MINUS 20.3%. Six times the magnitude AND the opposite sign, with the reported dispersity reading correct in both."
+  what_makes_it_a_class_rather_than_an_incident: "the reasoning that produced the limit was right about DIRECTION -- the symmetric kernel does bias with truncation -- and wrong about CONSEQUENCE, because tailing couples to the result twice, once through the modelling bias and once through the physics, in opposite directions. No amount of reasoning about the limit would have reached that. Which makes this the sibling of the class above: the direction was knowable by argument and the magnitude was not."
+  the_practical_form: "a stated limit must say whether it is conservative, and that word is a MEASUREMENT rather than an expectation. Until it is measured, the honest phrasing is `effect unknown in sign and size`, not `if anything understated`."
+
+# ----------------------------------------------------------------------
+# A SECOND MEASURED INSTANCE OF THE IDIOM, TWO COMMITS AFTER THIS RECORD
+# WAS WRITTEN, AND THIS TIME THE CLAIM WAS FALSE.
+# ----------------------------------------------------------------------
+the_second_instance:
+  what_was_claimed: "`shared set byte-identical`, in the verification block of commit ede73b1."
+  was_the_claim_true: "NO. Run properly against both repositories on 2026-08-27, verify_pair_landed.py exits 1 and reports four of nineteen shared files DIFF: architecture/exchange/daq_requirement_response.{yaml,sha256} and architecture/exchange/invariant_register.{yaml,sha256}. The two artifacts that commit was actually about -- proof_integrity.yaml and kalman_validation_preregistration.yaml -- are byte-identical, which is why the false half went unnoticed."
+  how_the_check_was_malformed_in_this_session: "`python architecture/exchange/verify_pair_landed.py 2>&1 | tail -12; echo PAIR_EXIT=$?`. Two independent defects, both the same family. The script takes two repository paths and was given none, so it printed its usage text and returned 2. And `$?` after a pipeline is the status of the LAST command, so it read tail's 0. The usage text scrolled past under a `tail` that showed its final lines, which read like check output."
+  what_is_not_claimed_here: "how the check was run at ede73b1. That is outside this session's record and is not reconstructed. What is established is that the claim is false as measured today, and that the run in this session which should have caught it was itself malformed in the way described."
+  why_it_is_a_different_failure_from_the_first_instance: "the first was a TRUE claim with vacuous evidence -- the class this record is named for. This is the ordinary discarded-exit-code failure the class was said to be worse than, producing a FALSE claim. So the record's own argument now has a companion: the same idiom, in the same phase, yielding both the subtle failure and the plain one."
+  the_aggravating_detail_restated: "this record was written at ede73b1. The idiom recurred at the very next verification block. Writing the rule down did not change the behaviour, which is the counterparty's stated property holding for the fifth time this phase."
+  the_repair_applied: "the script's exit status is read directly and its arguments are supplied, with output written to a file rather than piped, so that no pipeline can stand between the producing step and its status."
+
+# ----------------------------------------------------------------------
+# A THIRD CLASS, same disposition: DAQ-local, proposed for the next joint
+# reissue, not written into proof_integrity.yaml.
+# ----------------------------------------------------------------------
+a_diff_and_a_stale_mirror_are_the_same_observation_with_different_causes:
+  the_property: "a byte-comparison across two repositories reports DIFF for two situations that call for opposite responses. DIVERGENCE -- the two sides authored incompatible content -- is a joint reissue. STALENESS -- one side holds an older copy of an artifact the other owns -- is a mirror that has not been pulled, and editing either side's content would be wrong. The check reports the same word for both."
+  it_is_the_mirror_of_the_class_above: "an empty diff and a verified agreement are the same observation with different causes. So are a divergence and a stale mirror. In both cases the discriminator is not in the observation and has to be fetched from somewhere else."
+  the_measured_instance: "verify_pair_landed.py reports DIFF on architecture/exchange/invariant_register.yaml. Measured, the two copies differ on ONE line out of 16064 identical bytes -- artifacts_declaring_the_core, 47 on DAQ's side and 36 on the compute layer's -- and the file is DAQ-owned: its bent-zero block is derived by scanning DAQ's own phase reports, which the compute layer does not hold. Regenerating the register against the compute layer's tree counts 7, not 36. So its copy is not an independently generated census that happens to disagree; it is a stale copy of DAQ's, from before the count moved. daq_requirement_response.yaml is the same shape and further behind -- 6311 bytes against 15057, missing every least_squares and pca row DAQ has since answered."
+  what_the_discriminator_actually_was: "whether the disagreeing side could have PRODUCED its own copy. It could not: it holds neither the inputs nor a generator for them. That is checkable and the check does not ask it."
+  why_it_is_not_a_defect_in_the_verifier_to_be_fixed_here: "verify_pair_landed.py is itself in the shared set and byte-identical across the pair. Changing it is a joint reissue, and DAQ altering a shared checker unilaterally is the failure that checker exists to prevent. Recorded and proposed, not applied."
+  what_its_own_docstring_already_says: "that byte identity is coverage for DIVERGENCE and not for CURRENCY. It is right, and the gap it names is wider than stated: the check does not merely fail to detect staleness, it REPORTS staleness in the vocabulary of divergence, which is worse than silence because it invites the wrong repair."
+  the_wrong_repair_it_invites: "copying one side's number into the other to make the digests agree. That would make the census false on one side and the check green, which is the outcome the check exists to prevent."
+
+# ----------------------------------------------------------------------
+# A FOURTH CLASS, same disposition: DAQ-local, proposed for the next
+# joint reissue, not written into proof_integrity.yaml.
+# ----------------------------------------------------------------------
+a_figure_propagated_through_a_nonlinear_function_is_not_a_measurement_of_it:
+  the_property: "a quantity is measured across a set of cases, SUMMARISED to a mean, and the mean is pushed through a nonlinear function to derive a consequence. The consequence is then reported in the same voice as the measurement. It is not one: taking the mean discarded the case-to-case variation, and where that variation is CORRELATED with the function's argument it can cancel the nonlinearity that the derived figure is entirely made of."
+  why_it_is_not_merely_jensens_inequality: "Jensen says the mean of a function is not the function of the mean and bounds the direction. This is sharper and more dangerous: the discarded variation was structured, not noise, and the structure ran opposite to the curvature. So the error is not a bias of known sign that a careful reader could allow for -- the derived quantity is an artifact with no counterpart in the data."
+  the_measured_instance: "the calibration drift in architecture/anchor_one_result.yaml. Eleven duplicate injections give a retention-time stretch per pair; the MEAN stretch of 0.151% pushed through the recovered cubic reads 1.9% at the high-mass end against 1.2% at the low, a 0.69-point spread, which was recorded as `mass-dependent, therefore does not cancel in a ratio, therefore changes the dispersity`. Measured directly off the report's own calculated column with no fit involved, the slope against log M is +0.037 %/decade with a standard error of 0.126 -- and recovering unrounded values flips it to -0.060 with se 0.101. Not significant either way and opposite in sign. The spread is 0.07 points, not 0.69."
+  what_the_error_cost: "the conclusion inverted. A mass-independent multiplicative shift cancels exactly in Mw/Mn, so the drift moves the SCALE and leaves the dispersity alone -- the opposite of what was recorded, and the opposite of what a consumer told `this does not cancel in a ratio` would do about it."
+  the_mechanism_of_the_cancellation: "the per-pair stretches run 0.00122 to 0.00186 and rise with retention time. That rise and the calibration's curvature act in opposite directions. The mean keeps the curvature and throws away the compensation."
+  the_practical_form: "if the consequence is directly measurable from the same data, MEASURE IT. A propagated figure is a prediction and must be labelled as one. Here the direct measurement was available throughout -- the report prints its own calculated weight for every standard, so the mass shift per pair needed no model at all."
+  why_it_was_reached_for_anyway: "the calibration had just been built and verified, so it was the tool in hand. A newly-earned instrument invites being used on the next question whether or not that question needs it."
+  how_it_was_caught: "not by this repository. The counterparty read `1.9% against 1.2%` and observed that it is derived through the recovered fit and therefore inherits that fit's uncertainty, and asked for one check because it is the step the whole not-a-random-uncertainty conclusion rests on. The check went further than the doubt: the quantity is not merely uncertain, it is absent."
+
+# ----------------------------------------------------------------------
+# A FIFTH CLASS, same disposition. architecture/proof_integrity.yaml IS
+# this repository's defect-class register -- 24 instances and named rules
+# including `coverage_specified_by_enumeration` -- and it is held
+# byte-identically by both repositories, so this is recorded here and
+# proposed rather than written into it.
+# ----------------------------------------------------------------------
+a_verdict_about_the_checker_rather_than_about_the_artifact:
+  the_property: "a mechanism runs, reports, and is correct about what it examined -- while being silent about what it handed on. Its verdict is not wrong; it is about the wrong subject. The distinguishing mark is that the report is INVARIANT: it says the same thing whatever the artifact does, so the reader cannot separate `the artifact is bad` from `the checker never reached the artifact`."
+  why_it_is_worse_than_a_broken_check: "a check that errors is visibly broken. This one produces a well-formed verdict in the vocabulary of the thing it was meant to judge. A permanently red gate is not merely useless, it is worse than no gate, because it looks like coverage and it trains its readers to stop reading it."
+  the_measured_instance: "the conformance workflow. It was red on SIXTY-ONE consecutive runs -- from 7b7c257 on 2026-08-25T23:31 to 1640963 on 2026-08-27T22:30 -- because `tests/test_joint_decision_record.py` imports pyyaml as a test-time reference implementation and the workflow installed no such checker. pytest exited 2 during COLLECTION, so the Tests and Types steps never executed. Sixty-one commits landed with a red that carried no information about any of them."
+  the_second_cause_behind_the_first: "`actions/checkout@v4` defaults to fetch-depth 1. Five probes establish that their expectations PREDATE the run that judges them by asking git which commit added each file; at depth 1 every file appears added in the single fetched commit, so those probes compare a SHA with itself. Latent for the whole life of the workflow because collection died first. Two instances of one class, stacked, the second invisible until the first was fixed."
+  what_it_cost: "measured, not estimated. Every commit in the window was verified LOCALLY before it landed, and the pushed tree was never verified at all. Whether the intermediate states were sound is the subject of a separate re-verification recorded in architecture/unverified_window.yaml; the cost of the defect is that the question had to be asked at all."
+  what_closed_it: "pyyaml added to the workflow's checker install, and fetch-depth 0. Both at 3fd8501, which is the first green since 7b7c257."
+
+  WHAT_DOES_NOT_GENERALISE_FROM_THE_FIX:
+    the_green_is_not_the_evidence: "the fix was confirmed by the gate turning green -- and green was precisely the state that carried no information before. A gate that cannot fail reports green for the same reason it reported red: it never reached the tree. The only thing that separates the two is a PLANTED FAILURE, and that is why one was pushed: run 33125020295 reached the Tests step, reported `2 failed, 1643 passed` in 148 seconds, exit 1, and named the test."
+    two_causes_found_is_not_two_causes_existing: "the second cause was invisible until the first was fixed, and nothing about the method used to find it would have found a third. What is established is that no third cause fires TODAY, on this tree, under these two conditions. It is not established that the environment matches the local one in general."
+    the_empty_dependency_list_reproduces_this_exactly: "`[project] dependencies = []` is correct and should stay -- the runtime has no third-party dependency. But it means every future TEST-TIME import of a third-party module reproduces this failure identically, and the workflow's install list is a literal that nothing derives from the test corpus. The class's own rule applied to its own fix: an enumeration standing for a set nobody checks it against."
+    fetch_depth_zero_fixes_depth_and_nothing_adjacent: "it does not address any other way the environment can differ from the artifact. Measured example in the same logs: the CI working directory was `Notations-Acquisition-Channel` on 2026-08-25 and `Data-Acquisition-Channel` on 2026-08-27 -- the repository was renamed twice under a gate nobody was reading. A check keying on directory name would have broken silently across that rename."
+
+  the_sweep_the_class_demands:
+    method: "the class's own question applied to this repository's checks -- which could report a verdict about something other than the artifact in use -- executed over three shapes by AST and by grep, not by recollection. Recorded because an unexecuted sweep and a clean one look identical in a report."
+    shape_a_history_depth_dependence: "SEVEN test modules invoke a history-walking git subcommand (log, show, merge-base): test_cohort_identity_probe, test_daq_workload_proposal, test_generality_probe_gate, test_invariant_register, test_joint_workload_decision, test_kalman_framing, test_revocable_record_probe. Five of them were measured to fail under a shallow clone; the arrangement is now pinned by fetch-depth 0 and by the probe recorded under D-1."
+    shape_b_comparing_an_artifact_to_a_copy_of_itself: "TEN syntactic self-comparisons found, and NONE is an instance. Every one is either a determinism assertion -- `generate().text == generate().text`, `canonical_bytes(D) == canonical_bytes(D)` -- which is a real property, or a NaN reflexivity check where `value != value` is the point. Reported as clean, with the method, because a clean sweep and no sweep are the same sentence otherwise."
+    shape_c_an_enumeration_standing_for_a_derived_set: "SEVENTEEN literal string tuples in the product. One live hazard: daf/storage/durable_pool.py enumerates the evidence categories it fingerprints as two literals, and the set they stand for lives in the VENDORED pool, which moves. LATENT RATHER THAN FIRED, and measured as such: the pin moved once inside this very window, 3e5bea9 to 5e146d5, and EvidencePool's collections are identical across both. Closed by deriving the set from the vendored class in tests/test_enumerated_categories_are_derived.py, with `fingerprint_history` excluded for a stated reason rather than by omission."
+    what_the_sweep_did_not_cover: "checks outside this repository's test suite, and any confusion between environment and artifact that is not one of the three named shapes. The three were named by the counterparty from the CI instance; they are the shapes that produced it, not a partition of the class."
+
+the_aggravating_detail: "the author was quoting the standing rule about discarded exit codes in the same phase, in commit messages, while committing this. That is the fourth time this phase a class has recurred inside or beside the instrument built for it. It is consistent with the property the counterparty stated: knowing a class does not inoculate the next instance, because the instance never looks like the class while you are writing it."

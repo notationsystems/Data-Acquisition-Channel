@@ -321,18 +321,24 @@ def test_the_response_states_no_status_and_covers_every_daq_owned_row():
     exchange = REPO_ROOT / "architecture" / "exchange"
     response = loads((exchange / "daq_requirement_response.yaml").read_text())
 
-    assert response["responds_to_workload"] == "kalman_filter_linear"
+    # SCOPED TO KALMAN ON PURPOSE -- this is the Kalman file. The
+    # partition-wide coverage property lives in
+    # tests/test_cross_repository_claims.py, which is where it belongs now
+    # that the response answers more than one workload. Keys became
+    # `workload::requirement` when a requirement NAME turned out not to be
+    # a row identity.
+    assert "kalman_filter_linear" in response["responds_to_workloads"]
     assert "states_no_status" in response
 
     requirements = loads((exchange / "scl_requirements.yaml").read_text())
     daq_rows = {
-        row["requirement"]
+        f"kalman_filter_linear::{row['requirement']}"
         for row in requirements["workloads"]["kalman_filter_linear"]["blocking_requirements"]
         if row["owner"] == "daq"
     }
-    assert set(response["responses"]) == daq_rows, (
-        f"the response addresses {sorted(response['responses'])} of the artifact's "
-        f"{sorted(daq_rows)}")
+    answered_here = {k for k in response["responses"] if k.startswith("kalman_filter_linear::")}
+    assert answered_here == daq_rows, (
+        f"the response addresses {sorted(answered_here)} of the artifact's {sorted(daq_rows)}")
 
     # No row may assert a status word.
     for name, row in response["responses"].items():
@@ -346,10 +352,12 @@ def test_the_response_quotes_the_requirement_rather_than_paraphrasing_it():
     response = loads((exchange / "daq_requirement_response.yaml").read_text())
     requirements = loads((exchange / "scl_requirements.yaml").read_text())
     rows = {
-        row["requirement"]: row["statement"]
+        f"kalman_filter_linear::{row['requirement']}": row["statement"]
         for row in requirements["workloads"]["kalman_filter_linear"]["blocking_requirements"]
     }
     for name, row in response["responses"].items():
+        if not name.startswith("kalman_filter_linear::"):
+            continue
         assert row["what_the_requirement_asked"] == rows[name], (
             f"{name}: the response paraphrases the requirement. A paraphrase of a counterparty's "
             "requirement is DAQ's account of it, which is what the exchange protocol exists to "
@@ -377,7 +385,7 @@ def test_the_response_reports_the_stale_upstream_status_without_editing_it():
     response because the artifact is the compute layer's."""
     exchange = REPO_ROOT / "architecture" / "exchange"
     response = loads((exchange / "daq_requirement_response.yaml").read_text())
-    row = response["responses"]["recursive_generation_depth"]
+    row = response["responses"]["kalman_filter_linear::recursive_generation_depth"]
     assert "stale" in row["the_status_your_artifact_records_is_stale"].lower() or \
         "vacuously_enforced" in row["the_status_your_artifact_records_is_stale"]
     assert "Reported, not edited" in row["the_status_your_artifact_records_is_stale"]

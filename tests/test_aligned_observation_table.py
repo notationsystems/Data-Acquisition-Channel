@@ -61,14 +61,14 @@ from science.table import observation_is_table_alignable
 
 ALIGNED_CELL = {
     "sample_id": "specimen-07",
-    "variable": "tensile_strength",
+    "property": "tensile_strength",
     "value": 78.4,
     "unit": "MPa",
 }
 
 ABSENT_CELL = {
     "sample_id": "specimen-07",
-    "variable": "elongation_pct",
+    "property": "elongation_pct",
     "value_absence": table.BELOW_DETECTION,
     "unit": "percent",
 }
@@ -228,8 +228,8 @@ def test_an_explicitly_absent_cell_is_alignable():
         ({"sample_id": 7}, table.UNTYPED_SAMPLE_IDENTITY),
         ({"sample_id": True}, table.UNTYPED_SAMPLE_IDENTITY),
         ({"sample_id": "   "}, table.UNTYPED_SAMPLE_IDENTITY),
-        ({"variable": 3}, table.UNTYPED_VARIABLE_IDENTITY),
-        ({"variable": ""}, table.UNTYPED_VARIABLE_IDENTITY),
+        ({"property": 3}, table.UNTYPED_VARIABLE_IDENTITY),
+        ({"property": ""}, table.UNTYPED_VARIABLE_IDENTITY),
     ],
 )
 def test_a_partially_typed_identity_is_refused_at_the_gate(overrides, expected):
@@ -246,7 +246,7 @@ def test_a_partially_typed_identity_is_refused_at_the_gate(overrides, expected):
     assert not verdict.admissible and expected in verdict.reasons
 
 
-@pytest.mark.parametrize("key", ["sample_id", "variable"])
+@pytest.mark.parametrize("key", ["sample_id", "property"])
 def test_a_missing_identity_is_a_different_reason_from_an_untyped_one(key):
     """Two different facts about the source and they stay distinguishable:
     "this source does not identify its samples" is a modelling gap,
@@ -329,7 +329,7 @@ def test_conditions_that_distinguish_samples_stay_recoverable():
     a modelling assertion, not an observation"), so DAQ must not decide
     it. What DAQ owes is that the conditions are carried under stable
     identifiers a consumer can join on."""
-    base = {"sample_id": "s1", "variable": "x", "value": 1.0}
+    base = {"sample_id": "s1", "property": "x", "value": 1.0}
 
     assert observation_is_table_alignable(base).admissible, "conditions are optional to THIS gate"
     assert observation_is_table_alignable(
@@ -342,14 +342,14 @@ def test_conditions_that_distinguish_samples_stay_recoverable():
         dict(base, conditions={"": 1})).reasons
 
 
-@pytest.mark.parametrize("shadow", ["sample_id", "variable", "value_absence"])
+@pytest.mark.parametrize("shadow", ["sample_id", "property", "value_absence"])
 def test_a_condition_may_not_shadow_one_of_the_tables_own_columns(shadow):
     """The collision is silent, which is the only reason it is worth a
     reason code: lifted into a predictor, a condition named `variable`
     sits beside the identity column of the same name, and the consumer
     joins on one while reading the other. Refused rather than renamed --
     renaming a source's own vocabulary is not DAQ's to do."""
-    content = {"sample_id": "s1", "variable": "x", "value": 1.0,
+    content = {"sample_id": "s1", "property": "x", "value": 1.0,
                "conditions": FrozenMapping({shadow: "anything"})}
     verdict = observation_is_table_alignable(content)
     assert not verdict.admissible
@@ -361,9 +361,9 @@ def test_the_gate_does_not_decide_predictor_versus_stratum():
     or strata. It does not say which, and neither does this gate. A
     numeric condition and a categorical one are equally alignable here;
     choosing between them is the modelling assertion DAQ must not make."""
-    numeric = {"sample_id": "s1", "variable": "x", "value": 1.0,
+    numeric = {"sample_id": "s1", "property": "x", "value": 1.0,
                "conditions": FrozenMapping({"temperature_c": 23})}
-    categorical = {"sample_id": "s1", "variable": "x", "value": 1.0,
+    categorical = {"sample_id": "s1", "property": "x", "value": 1.0,
                    "conditions": FrozenMapping({"batch": "B7"})}
     assert observation_is_table_alignable(numeric).admissible
     assert observation_is_table_alignable(categorical).admissible
@@ -420,7 +420,7 @@ def test_the_table_gate_does_not_subsume_the_property_gate():
     """They answer different questions and neither implies the other.
     Stated as a test because a future reader is likely to assume one
     replaces the other and drop a call."""
-    alignable_but_untyped = {"sample_id": "s1", "variable": "v", "value": 1.0}
+    alignable_but_untyped = {"sample_id": "s1", "property": "v", "value": 1.0}
     assert observation_is_table_alignable(alignable_but_untyped).admissible
     assert not no_context_free_property(alignable_but_untyped).admissible
 
@@ -552,10 +552,10 @@ def test_an_aligned_table_survives_acquisition_and_a_reopen(tmp_path):
     type would show up."""
     store = FilesystemEvidenceStore(tmp_path / "evidence")
     cells = [
-        {"sample_id": "s1", "variable": "x", "value": 1.0},
-        {"sample_id": "s1", "variable": "y", "value": 2.0},
-        {"sample_id": "s2", "variable": "x", "value": 3.0},
-        {"sample_id": "s2", "variable": "y", "value_absence": table.BELOW_DETECTION},
+        {"sample_id": "s1", "property": "x", "value": 1.0},
+        {"sample_id": "s1", "property": "y", "value": 2.0},
+        {"sample_id": "s2", "property": "x", "value": 3.0},
+        {"sample_id": "s2", "property": "y", "value_absence": table.BELOW_DETECTION},
     ]
     for index, cell in enumerate(cells):
         assert observation_is_table_alignable(cell).admissible, cell
@@ -569,10 +569,10 @@ def test_an_aligned_table_survives_acquisition_and_a_reopen(tmp_path):
     recovered = [observation.content for observation in reopened.all_observations()]
     assert len(recovered) == 4
 
-    keys = {(content["sample_id"], content["variable"]) for content in recovered}
+    keys = {(content["sample_id"], content["property"]) for content in recovered}
     assert keys == {("s1", "x"), ("s1", "y"), ("s2", "x"), ("s2", "y")}
     for content in recovered:
-        assert isinstance(content["sample_id"], str) and isinstance(content["variable"], str)
+        assert isinstance(content["sample_id"], str) and isinstance(content["property"], str)
         assert observation_is_table_alignable(content).admissible
 
     absent = [c for c in recovered if table.is_explicitly_absent(c)]
@@ -587,7 +587,7 @@ def test_the_absent_cell_is_never_a_number_at_any_point_in_the_lifecycle(tmp_pat
     store = FilesystemEvidenceStore(tmp_path / "evidence")
     observation = make_observation(
         record_ids=("r1",), extraction_method="test",
-        content={"sample_id": "s1", "variable": "y", "value_absence": table.BELOW_DETECTION},
+        content={"sample_id": "s1", "property": "y", "value_absence": table.BELOW_DETECTION},
         confidence=1.0, extracted_at="2020-01-01T00:00:00Z",
     )
     store.put_observation(observation)
@@ -883,7 +883,7 @@ def test_DECISION_a_categorical_string_cell_is_alignable_and_a_numeric_looking_o
     says anything. That is the implicit-typing defect one layer in, the
     same class the always-quote rule closed where a value's type depended
     on who read it."""
-    base = {"sample_id": "s1", "variable": "v1", "unit": "m", "value": 1.5}
+    base = {"sample_id": "s1", "property": "v1", "unit": "m", "value": 1.5}
     assert observation_is_table_alignable(base).admissible
 
     for categorical in ("B7", "low", "control", "north-east"):
@@ -912,7 +912,7 @@ def test_the_dividing_line_is_what_a_consumer_actually_calls():
         except (TypeError, ValueError):
             coerces = False
         admitted = observation_is_table_alignable(
-            {"sample_id": "s", "variable": "v", "value": value}).admissible
+            {"sample_id": "s", "property": "v", "value": value}).admissible
         assert admitted is not coerces, f"{value!r}: gate and float() disagree"
 
 
@@ -929,7 +929,7 @@ def test_FIXED_the_bool_cell_defect_the_concurrent_session_named():
         error at any layer, and the fit looks entirely healthy.
 
     That argument was correct and the exclusion now applies to both."""
-    base = {"sample_id": "s1", "variable": "v1", "unit": "m", "value": 1.5}
+    base = {"sample_id": "s1", "property": "v1", "unit": "m", "value": 1.5}
     for value in (True, False):
         verdict = observation_is_table_alignable({**base, "value": value})
         assert not verdict.admissible
@@ -950,23 +950,23 @@ def test_the_two_gates_now_agree_on_every_shape_that_split_them():
         scalar = quantity_is_typed(
             {"value": cell, "unit": "m", "uncertainty": 0.1, "uncertainty_kind": "stated"})
         alignable = observation_is_table_alignable(
-            {"sample_id": "s1", "variable": "v1", "value": cell})
+            {"sample_id": "s1", "property": "v1", "value": cell})
         assert not scalar.admissible and UNTYPED_QUANTITY in scalar.reasons
         assert not alignable.admissible, f"the table gate still admits {cell!r}"
 
     # ...and they still answer DIFFERENT questions, which the agreement
     # must not be mistaken for. A categorical cell is alignable and is not
     # a typed quantity, and that is correct on both sides.
-    categorical = {"sample_id": "s1", "variable": "v1", "value": "B7"}
+    categorical = {"sample_id": "s1", "property": "v1", "value": "B7"}
     assert observation_is_table_alignable(categorical).admissible
     assert not quantity_is_typed({"value": "B7", "unit": "m"}).admissible
 
 
 def test_the_bool_exclusion_is_now_applied_to_identity_AND_to_the_cell():
     """The asymmetry they named, stated as closed."""
-    base = {"sample_id": "s1", "variable": "v1", "unit": "m", "value": 1.5}
+    base = {"sample_id": "s1", "property": "v1", "unit": "m", "value": 1.5}
     assert not observation_is_table_alignable({**base, "sample_id": True}).admissible
-    assert not observation_is_table_alignable({**base, "variable": True}).admissible
+    assert not observation_is_table_alignable({**base, "property": True}).admissible
     assert not observation_is_table_alignable({**base, "value": True}).admissible
 
 

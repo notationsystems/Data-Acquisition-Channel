@@ -1,0 +1,65 @@
+# WHAT A ZERO DOCTRINE DIFF IS EVIDENCE FOR, AND WHAT IT IS SILENT ABOUT.
+#
+# The standing phase discipline is that every architecture change goes
+# through the doctrine generator with a verified zero regeneration diff.
+# That check is real and it is narrower than it reads: doctrine.yaml
+# names its sources in a LIST, and architecture/ holds more files than
+# the list names. For an artifact outside the list, a zero diff is not
+# evidence that nothing broke -- the generator never opened it.
+#
+# This is the coverage shape one level up: not in a gate, but in the
+# mechanism that certifies the gates' record is current. It is filed
+# because it now has a MEASURED POPULATION rather than a hypothetical
+# one -- two artifacts hit it in consecutive phases, and measuring the
+# rest turned up two more that are covered by nothing at all.
+extends: core@1.0.0
+
+subject: doctrine_coverage
+status: measured_and_deferred
+owner: daf
+enforcement: tests/test_doctrine_coverage.py
+
+# ----------------------------------------------------------------------
+# MEASURED. Counts are derived by the enforcement, never restated here as
+# numbers a reader would have to trust.
+# ----------------------------------------------------------------------
+the_measurement:
+  what_was_counted: "every architecture/*.yaml, against the sources list in architecture/doctrine.yaml, against every tests/*.py that names the file."
+  the_shape: "the source list is an ENUMERATION. Artifacts outside it are invisible to the doctrine projection, so `doctrine regeneration diff zero` says nothing whatever about them."
+  how_it_surfaced: "twice, in consecutive phases, by an artifact being CHANGED and the zero-diff being reported as if it covered the change. polymer_acquisition_readiness.yaml was corrected and regenerated to a zero diff the generator could not have produced otherwise; chemistry_rule_ownership.yaml was added the same way. Neither is a source."
+  why_that_is_not_obviously_wrong: "the excluded files are records and findings -- defect records, preregistrations, verticals, readiness accounts -- and a defect record is not doctrine. The projection covers the control loop, evidence classes, roles, invariants and unresolved items. The curation reads DELIBERATE, not drifted."
+
+# ----------------------------------------------------------------------
+# The part that is not merely a narrower-than-it-reads check.
+# ----------------------------------------------------------------------
+one_artifact_is_not_covered_for_currency:
+  measured: "kalman_validation_preregistration.yaml is neither a doctrine source nor named by any test. Every other artifact outside the source list is bound by at least one test that reads it."
+  corrected_the_same_day_this_was_written: "the first version of this section said `covered by NOTHING`, and that was wrong by a distinction worth keeping. This artifact is one of exactly TWO files in architecture/ that BOTH repositories hold -- measured, not inferred: SCL's architecture/ contains kalman_validation_preregistration.yaml and proof_integrity.yaml and nothing else. So it IS covered, by architecture/exchange/verify_pair_landed.py, which compares the pair's intersection byte for byte. Verified today: both are byte-identical across the pair."
+  what_it_is_covered_FOR_and_what_it_is_not: "DIVERGENCE, not CURRENCY. The pair verifier catches the two copies drifting apart; nothing catches both copies being equally and identically stale. Those are different properties and the first version conflated them. A byte-identical pair of stale artifacts passes every check either repository has."
+  and_this_is_why_binding_it_is_not_daqs_to_do_alone: "a stronger reason than the dated-by-construction one, and it only appeared on measuring the intersection. Binding it means re-measuring its claims, and re-measuring may find a correction -- which would change the bytes and break an identity the pair verifier enforces. Correcting a shared artifact is a JOINT ACT. So the ordering here was right for a reason neither half of it stated: selection_rule_defect.yaml is DAQ-only and was correctable unilaterally; this one is shared and its correction is a reissue."
+  it_was_two_and_the_trigger_tightened_it: "selection_rule_defect.yaml was the other, and re-measuring it found FOUR stale claims including its own headline evidence -- a defect record whose observable symptom named a selection that never happened. It is bound as of 2026-08-27 by tests/test_selection_rule_defect.py. The baseline was NOT edited by hand to match: the trigger fired on the shrink and named the artifact, which is the direction a baseline quietly rots in if it only ever fires on growth."
+  which_one_was_worse_and_why: "the defect record, and the ordering was called before the measurement rather than after. A pre-registration is dated BY CONSTRUCTION -- its thresholds were fixed before any run and are inert by design, so stale is its expected state and reading it as current is a reader error. A defect record makes claims about a live rule with no such marking, so a moved rule makes it silently wrong. The selection rule had moved; the pre-registration had not been run against anything."
+  what_that_means: "they could be arbitrarily stale, internally contradictory, or contradicted by the tree, and the entire suite stays green. A zero doctrine diff does not reach them and no test does either."
+  the_near_miss_worth_recording: "kalman_validation_preregistration.yaml IS named in architecture/exchange/verify_pair_landed.py -- inside SHARED_AS_ENUMERATED_UNTIL_2026_08_26, a dated list retained as history, which its own test deliberately declines to assert membership of because doing so would assert `the presence of a dated list, not membership of the live set`. A reference that binds nothing looks exactly like one that does."
+  not_repaired_here: "binding them means re-measuring their claims against the tree, and an artifact bound by a test that asserts unverified claims is worse than one honestly marked unbound. Named as executable work rather than done in passing."
+
+# ----------------------------------------------------------------------
+# THE DEFERRAL. Same shape as the half-frozen reconstruction's, and for
+# the same reason.
+# ----------------------------------------------------------------------
+the_deferral:
+  what_is_undecided: "whether doctrine.yaml's sources should be DERIVED from architecture/ with explicit exclusions, or stay an enumeration. Both are defensible and they are different answers to what doctrine IS -- a projection of everything the architecture declares, or a projection of the subset that is doctrine rather than record."
+  deferred_while: "the source list stays curated rather than drifting, and no artifact outside it is unbound beyond the two already named. Deriving the list would move the doctrine source digest and every hash reference bound to it, in both repositories -- so while the exclusions are deliberate and the unbound set is not growing, the cost of deciding wrongly exceeds the cost of waiting. The moment a THIRD artifact is neither a source nor bound by a test, the exclusions are no longer curation and the deferral lapses."
+  trigger_enforced_by: "tests/test_doctrine_coverage.py::test_the_deferral_on_the_doctrine_source_list_still_holds"
+  why_a_trigger_and_not_a_note: "this repository has watched two parked items fade because they were carried in prose, and the counterparty's faded the same way. A deferral with no condition attached is indistinguishable from an omission once the session that made it ends. This one states what keeps it valid and fails when that stops being true."
+  not_a_decision: "recorded as UNDECIDED. Not a preference, a lean, or a plan -- either resolution may be right and neither has been chosen. It is a decision about the pair's wiring and it is not one to take mid-phase."
+  what_it_does_not_defer: "the reporting rule. A zero doctrine diff must not be offered as evidence for a change to a non-source artifact; that change is bound by its own test or it is not bound at all. Phase 38 stated this about its own regeneration rather than letting the green stand unqualified."
+
+# ----------------------------------------------------------------------
+what_this_check_cannot_see:
+  naming_is_not_reading: "the binding measurement asks whether any test NAMES the artifact. A test that names a file without asserting anything about its content passes. So the unbound set is a LOWER BOUND -- it catches artifacts no test mentions at all, and cannot catch one mentioned inertly. The dated list in verify_pair_landed.py is the live example of exactly that failure mode, which is why it is recorded above rather than left as a caveat."
+  why_it_is_not_strengthened_here: "asserting that a test MEANINGFULLY reads an artifact is the same undecidable shape as asserting a check is not a proxy. The honest move is to state the bound rather than to claim a stronger property the check does not have."
+  and_it_produced_a_false_positive_in_the_OTHER_direction: "MEASURED 2026-08-27. tests/test_kalman_preregistration_currency.py names the shared pre-registration to re-derive two arithmetic identities -- a currency check that asserts nothing about its claims -- and the detector counted it BOUND. Its own record said it was not, so two tests disagreed, which is how it surfaced. The lower-bound limit was stated for the direction where naming misses a real binding; it also runs the other way, where naming creates a false one."
+  the_repair_is_a_declaration_not_a_second_exclusion: "a test that reads an artifact WITHOUT binding it declares a module-level DOES_NOT_BIND tuple, and the detector subtracts exactly those names for exactly that file. Any test can use it. The alternative was a second filename in the exclusion list, which is the growing-enumeration shape this file exists to watch for -- and adding one to the mechanism that watches for it would have been the class arriving inside its own instrument for the fifth time."
+
+the_shape_this_repeats: "A MECHANISM THAT CERTIFIES CURRENCY, WHOSE OWN COVERAGE IS A LIST. The same form as coverage_specified_by_enumeration in architecture/proof_integrity.yaml, one layer out: there a CHECK's predicate was a list someone wrote, here the CERTIFIER's subject is. Both work perfectly on what the author had in mind, both report a confident green, and both are repaired by deriving rather than naming. What is different is that this one is not repaired -- the repair is expensive and the exclusions look deliberate -- so it carries a trigger instead of a fix."

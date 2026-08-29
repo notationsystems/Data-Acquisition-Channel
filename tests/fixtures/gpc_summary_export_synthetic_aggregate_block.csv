@@ -1,0 +1,10 @@
+# GPC/SEC SUMMARY REPORT -- SYNTHETIC
+# Column: mixed-bed; Solvent: DMF; Temp: 50 C; Flow: 0.5 mL/min
+# Detector: RI; Calibration: narrow polystyrene standards
+# NOTE: values in this file are FABRICATED. No instrument produced them.
+Sample,Inj,Mn,Mw
+SYN-0001,1,26000,33000
+SYN-0001,2,23000,31000
+SYN-0001,Average,24500,32000
+SYN-0001,Standard Deviation,2121,1414
+SYN-0001,% RSD,8.7,4.4

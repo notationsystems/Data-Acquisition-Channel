@@ -114,7 +114,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from typing import Iterable, Mapping, Optional, Sequence, Tuple
+from typing import Iterable, List, Mapping, Optional, Sequence, Set, Tuple
 
 #: An observation that names no single Record has no row to occupy.
 AMBIGUOUS_RUN_IDENTITY = "AMBIGUOUS_RUN_IDENTITY"
@@ -126,6 +126,17 @@ RAGGED_REPLICATE_SET = "RAGGED_REPLICATE_SET"
 TOO_FEW_RUNS_FOR_A_COVARIANCE = "TOO_FEW_RUNS_FOR_A_COVARIANCE"
 #: A variable with zero sample variance: correlations against it are 0/0.
 DEGENERATE_VARIABLE = "DEGENERATE_VARIABLE"
+
+#: A replicate set carrying ONE variable. The covariance is a 1x1 matrix
+#: and the correlation is 1.0 -- structurally, not measurably: a variable
+#: correlates with itself whatever the data says. Named because a second
+#: real source produced exactly this and the result came back with ZERO
+#: reasons, which reads as a computed correlation. A number that is true
+#: by construction and a number that was measured must not be
+#: indistinguishable in the same field; that is the shape recorded in
+#: architecture/admission_reachability.yaml as silence mistaken for
+#: cleanliness.
+TOO_FEW_VARIABLES_FOR_A_CORRELATION = "TOO_FEW_VARIABLES_FOR_A_CORRELATION"
 #: A context key that takes a different value on every run, so every run is
 #: its own group. Either an acquisition locator leaked into content, or these
 #: runs are not replicates. Named rather than decided -- see the docstring.
@@ -135,7 +146,16 @@ EVERY_RUN_DIFFERS_IN = "EVERY_RUN_DIFFERS_IN"
 #: made under. They travel with the cell and never group.
 _PER_CELL_KEYS = ("value", "uncertainty", "uncertainty_kind")
 #: Keys that name what was measured rather than the circumstances.
-_COLUMN_KEYS = ("variable", "property")
+# ONE KEY, AFTER THE RECONCILIATION. This read `("variable", "property")`
+# and preferred `variable`, which made it a reader that accepted two
+# encodings of one meaning -- the shape this pair removes at the writer.
+# `property` is the variable identity (see science/table.py's note); the
+# retired synonym is refused by observation_is_table_alignable, which is
+# the gate that owns variable identity. Not defended against a second time
+# here: a stray `variable` reaching this consumer becomes a context key
+# and splits the replicate set, which is loud, and tolerating it here
+# would make the retirement half-happen.
+_COLUMN_KEYS = ("property",)
 
 
 @dataclass(frozen=True)
@@ -297,7 +317,7 @@ def _keys_that_split_every_run(grouped: Mapping) -> Sequence[Tuple[str, str]]:
         return ()
 
     observed = [(dict(context), run) for context, runs in grouped.items() for run in runs]
-    keys = set()
+    keys: Set[str] = set()
     for context, _ in observed:
         keys.update(context)
 
@@ -336,25 +356,32 @@ def sample_covariance(replicates: ReplicateSet) -> Optional[SampleCovariance]:
 
     covariance = []
     for i, column_i in enumerate(columns):
-        row = []
+        covariance_row: List[float] = []
         for j, column_j in enumerate(columns):
-            row.append(sum((a - means[i]) * (b - means[j])
-                           for a, b in zip(column_i, column_j)) / (n - 1))
-        covariance.append(tuple(row))
+            covariance_row.append(sum((a - means[i]) * (b - means[j])
+                                      for a, b in zip(column_i, column_j)) / (n - 1))
+        covariance.append(tuple(covariance_row))
 
     reasons = []
+    if len(variables) < 2:
+        # The set is still returned -- the means and the 1x1 covariance are
+        # real and a caller may want them -- but the correlation it carries
+        # is 1.0 by construction and the reason says so.
+        reasons.append(TOO_FEW_VARIABLES_FOR_A_CORRELATION)
     correlation = []
     for i in range(len(variables)):
-        row = []
+        # Optional[float]: a degenerate variable has no correlation to report,
+        # and None says so rather than a number standing in for absence.
+        correlation_row: List[Optional[float]] = []
         for j in range(len(variables)):
             denominator = math.sqrt(covariance[i][i] * covariance[j][j])
             if denominator == 0.0:
-                row.append(None)
+                correlation_row.append(None)
                 if covariance[i][i] == 0.0:
                     reasons.append(DEGENERATE_VARIABLE)
             else:
-                row.append(covariance[i][j] / denominator)
-        correlation.append(tuple(row))
+                correlation_row.append(covariance[i][j] / denominator)
+        correlation.append(tuple(correlation_row))
 
     return SampleCovariance(
         variables=variables,

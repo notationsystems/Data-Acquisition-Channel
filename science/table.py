@@ -87,7 +87,58 @@ CELL_TYPE_IS_NOT_A_QUANTITY = "CELL_TYPE_IS_NOT_A_QUANTITY"
 POSITIONAL_IDENTITY_IS_NOT_IDENTITY = "POSITIONAL_IDENTITY_IS_NOT_IDENTITY"
 
 SAMPLE_ID = "sample_id"
-VARIABLE = "variable"
+
+# THE VARIABLE IDENTITY IS `property`, AND IT IS NOT THIS GATE'S TO NAME.
+#
+# `variable identity` is this module's term and `column` is deliberately
+# avoided in every DEFINED NAME here: naming things after a table's
+# columns would be this gate taking a position on predictor-versus-stratum,
+# which it must not. That rule is asserted by
+# test_the_gate_does_not_decide_predictor_versus_stratum -- and it caught
+# this very reconciliation, whose first draft defined RETIRED_COLUMN_KEYS
+# and COLUMN_IDENTITY_UNDER_A_RETIRED_NAME.
+#
+# This gate originally read `variable` while science/admissibility.py's
+# no_context_free_property read `property`. Both gates were correct and
+# neither read the other's key, so an extractor satisfied both by writing
+# the key TWICE -- and content declaring `variable: mn` alongside
+# `property: mw` passed BOTH GATES with nothing anywhere owning the
+# relation between two names for one concept.
+#
+# The direction of the reconciliation was not a preference. Measured:
+#
+#   * materials.analysis.analyze FILTERS on content["property"]
+#     (_matches_property) before grouping, and _comparison_context
+#     excludes `property` precisely BECAUSE that filter already fixed it.
+#     That code is inside the unmodifiable core. An observation without
+#     `property` is not merely inconvenient to find; analyze cannot see it.
+#   * DAQ's own published capability artifact already states the key:
+#     "A single Observation carries one `property` name and one scalar
+#     `value`". No published artifact ever named `variable` as a KEY --
+#     every occurrence is the English word for the concept.
+#   * four extractors already emit `property`; `variable` existed only in
+#     this module, in replicate_pairing, and in the GPC extractor.
+#
+# So `property` is the column identity and `variable` was a synonym this
+# module introduced. Retired here.
+#
+# WHY THIS IS NOT ONE GATE REACHING INTO ANOTHER'S SUBJECT. Joinability is
+# this gate's subject; interpretability is the other's. WHICH QUANTITY is
+# a referent BOTH need and neither owns -- so unifying the name does not
+# move a subject, it removes a second name for a shared referent. And it
+# dissolves the unowned relation rather than assigning it an owner: with
+# one key there is no relation between two keys to own, so no third gate
+# is needed. A third gate would have been the repair if the two keys had
+# meant DIFFERENT things.
+VARIABLE = "property"
+
+# A retired synonym still PRESENT in content is the two-encodings shape,
+# and it is silent: `variable` would simply become an ordinary content
+# key, entering the comparison context as though it were a condition.
+# Refused by name so the migration cannot half-happen.
+RETIRED_IDENTITY_KEYS = ("variable",)
+VARIABLE_IDENTITY_UNDER_A_RETIRED_NAME = "VARIABLE_IDENTITY_UNDER_A_RETIRED_NAME"
+
 VALUE_ABSENCE = "value_absence"
 CONDITIONS = "conditions"
 
@@ -292,6 +343,14 @@ def observation_is_table_alignable(content: Mapping[str, object]) -> Admissibili
     reasons.extend(_identity_is_typed(content, SAMPLE_ID, MISSING_SAMPLE_IDENTITY, UNTYPED_SAMPLE_IDENTITY))
     reasons.extend(_identity_is_typed(content, VARIABLE, MISSING_VARIABLE_IDENTITY, UNTYPED_VARIABLE_IDENTITY))
     reasons.extend(_conditions_are_recoverable(content))
+
+    # The reconciled key is `property`; a retired synonym alongside it is
+    # two encodings of one meaning and is refused at the reader that can
+    # still see both. Named separately from the missing/untyped codes
+    # because it is a different fault: the identity is present, under a
+    # name that no longer denotes it.
+    if any(key in content for key in RETIRED_IDENTITY_KEYS):
+        reasons.append(VARIABLE_IDENTITY_UNDER_A_RETIRED_NAME)
 
     # Row position is explicitly NOT an identity for this modality --
     # ordering is not required of it, so an index cannot align anything.

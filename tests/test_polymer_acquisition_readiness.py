@@ -59,7 +59,7 @@ def content(value, uncertainty=1200.0, variable="number_average_molar_mass",
             conditions=None):
     return {
         "sample_id": "PS-lot-4471",
-        "variable": variable,
+        "property": variable,
         "value": value,
         "unit": "g/mol",
         "uncertainty": uncertainty,
@@ -180,7 +180,7 @@ def test_the_pairing_survives_in_the_evidence_pool():
           for i, v in enumerate(MW_VALUES)]
     by_run = {}
     for obs in mn + mw:
-        by_run.setdefault(obs.record_ids[0], []).append(obs.content["variable"])
+        by_run.setdefault(obs.record_ids[0], []).append(obs.content["property"])
     assert len(by_run) == len(MN_VALUES)
     assert all(len(v) == 2 for v in by_run.values()), (
         "each run must carry both moments, joinable on its Record -- this is what makes the "
@@ -212,9 +212,16 @@ def test_only_one_precondition_is_irreversible_and_the_record_says_which():
     assert "unrecoverable if wrong" in preconditions["one"]
     assert preconditions["two"].endswith("SATISFIED."), "the consumer is built"
     assert "SATISFIED, by divergence stated rather than by suppression." in preconditions["three"]
-    assert "ONE ALONE" in READINESS["what_remains_outstanding"], (
-        "only the irreversible precondition may remain outstanding"
+    assert "SATISFIED for the first acquisition path" in preconditions["one"], (
+        "the irreversible precondition is discharged by daf/adapters/gpc_report.py"
     )
+    outstanding = READINESS["what_remains_outstanding"]
+    assert "NONE OF THE FOUR" in outstanding
+    assert "not the same as ready" in outstanding, (
+        "four satisfied preconditions must not be readable as an acquisition; there is still no "
+        "instrument, no polymer and no data"
+    )
+    assert "FABRICATED" in outstanding
     assert "cannot be repaired after the data exists" in READINESS["the_order_that_matters"]
     assert "discarding a measurement to make a check pass" in preconditions["three"], (
         "the tempting fix for the uncertainty split must be named and refused"
@@ -267,3 +274,34 @@ def test_the_irreversible_precondition_is_enforced_rather_than_merely_written():
 
     from science.replicate_pairing import EVERY_RUN_DIFFERS_IN
     assert EVERY_RUN_DIFFERS_IN == "EVERY_RUN_DIFFERS_IN"
+
+
+def test_the_record_no_longer_names_the_wrong_layer_for_the_irreversible_one():
+    """CORRECTED 2026-08-27, by measuring run_scout before building rather
+    than by a failure. `the extractor emits one Record per RUN` named the
+    layer that cannot discharge it: run_scout builds one Record per
+    RawDocument and hands it TO the extractor, so the granularity is the
+    adapter's. An author who read this record and wrote only an extractor
+    would have violated the one unrepairable precondition while believing
+    they had satisfied it."""
+    correction = READINESS["the_precondition_named_the_wrong_layer"]
+    assert "extractors do not emit Records" in correction["what_is_actually_the_case"]
+    assert "ADAPTER" in correction["what_is_actually_the_case"]
+    assert "daf/adapters/gpc_report.py" in correction["where_the_obligation_now_lives"]
+
+    modes = correction["the_two_modes"]
+    assert "CONFLICTING_VALUE_FOR_A_RUN" in modes["measured"], "the loud mode must be named"
+    assert "nothing raises" in modes["why_the_second_is_the_serious_one"], (
+        "the silent mode is the serious one and the record must say so"
+    )
+
+    # The correction is not merely written: the layer it names is real.
+    import inspect
+
+    import scout.pipeline
+
+    source = inspect.getsource(scout.pipeline)
+    assert "make_record(document_id=document.id, locator=raw_doc.locator" in source, (
+        "if run_scout ever builds Records some other way, this correction needs re-measuring "
+        "rather than re-reading"
+    )

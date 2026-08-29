@@ -1,0 +1,52 @@
+# A VALUE THAT IS PRESENT, MACHINE-READABLE, FLAGGED VALID BY THE
+# INSTRUMENT, AND INVALIDATED BY A SENTENCE IN THE SAME DOCUMENT.
+#
+# DAQ has no representation for this state, and the two representations
+# it does have are wrong in opposite directions. Measured, not argued:
+# the whole acquisition path is driven end to end on a synthetic export
+# carrying the structure, and both dispositions are executed.
+#
+# WHERE THE STRUCTURE COMES FROM. A real Waters Empower report -- ANCHOR
+# 1, EPA ChemView, TSCA P-22-0051 -- carries three validity boundaries,
+# of which exactly one is machine-readable per row, and that one reads
+# benign on every row. The fixture here reproduces that SHAPE and nothing
+# else: no vendor, no transcribed value, no claim that any instrument
+# produced it. The anchor's own tables have since been recovered from the
+# rendered PDF and the contradiction is quantified there; nothing in this
+# record depends on those numbers, and the fixture is still synthetic.
+extends: core@1.0.0
+
+subject: present_and_invalidated
+status: measured_and_recorded_no_representation_built
+owner: daf
+enforcement: tests/test_present_and_invalidated.py
+
+# ----------------------------------------------------------------------
+the_state: "a measurement whose value is stated, whose per-row validity flag says nothing is wrong, and which a sentence elsewhere in the same document places outside the range the method can support. It is not an absence -- the number is there -- and it is not a sound measurement."
+
+# ----------------------------------------------------------------------
+what_was_measured:
+  the_fixture: "tests/fixtures/gpc_summary_export_synthetic_flag_says_valid.csv. Ten rows, a per-row validity flag reading the same benign value on every one, and a header sentence stating that any molar mass above 12000 g/mol reported by this method is not valid. Two of the ten exceed it."
+  the_path: "daf/adapters/gpc_summary_export.py and daf/extractors/gpc_report.py, UNCHANGED, through scout.pipeline.run_scout into an EvidencePool, then science/admissibility.py's gates."
+  disposition_a_the_flag_is_believed: "ten observations, zero acquisition failures, zero admissibility reasons. The two values above the stated limit are INDISTINGUISHABLE from the eight below it in every field the substrate carries."
+  disposition_b_the_flag_is_mapped_onto_an_absence: "mapping the benign flag onto `above_range` makes all TEN rows absences and discards every value the document stated, including the eight the document does not invalidate."
+  so_the_channel_is_the_wrong_shape: "the flag-to-absence mapping is the only channel that could carry invalidity, and it is keyed on the FLAG VALUE rather than on the measurement. A threshold stated in prose partitions the rows by their VALUES, and no per-flag mapping can express that partition."
+
+# ----------------------------------------------------------------------
+the_sharper_half:
+  the_sentence_is_not_lost: "it is carried, verbatim, into every one of the ten observations, inside conditions under `report_header_as_reported`. The substrate preserves it exactly and cannot act on it."
+  which_is_stronger_than_the_prediction_it_came_from: "the prediction said the invalidating context is present in the document and structurally unreachable from the data. Measured, it is present in the OBSERVATION and still unreachable. Faithful carriage is not reachability, and the distance between them is this record."
+  what_that_says_about_the_gate: "no_context_free_property is satisfied here. Its bar is that a conditions mapping EXISTS, and one does -- containing the very sentence that invalidates the value it accompanies. Presence of context is not sufficiency of context, and no_context_free_property carries status partially_enforced for exactly this gap."
+  the_verbatim_carriage_was_the_right_call_and_is_why_this_is_visible: "the adapter refuses to parse the header block into fields, because inventing `{max_valid_molar_mass: 12000.0}` would fabricate a field name, a unit and a numeric type the source stated as none of those. That refusal is what leaves the sentence legible to a reader and opaque to a parser. The cost is now measured rather than asserted."
+
+# ----------------------------------------------------------------------
+what_is_deliberately_not_built:
+  a_new_absence_reason: "the state is not an absence. The value is present. Adding a member to a closed absence vocabulary to carry a present-but-unsound value would put a value's soundness in the field that says whether a value exists, which is the category error this vocabulary exists to prevent."
+  a_validity_qualifier_on_a_present_value: "the shape that would actually fit, and NOT built here. It is a substrate change touching every consumer of a quantity, it decides who owns the judgement -- the acquirer, the gate, or the consumer -- and DAQ choosing it alone would be answering a question the pair has not been asked."
+  parsing_the_limit_out_of_the_header: "would make the threshold reachable and would fabricate the field. It is the single most tempting move this shape offers and it is refused for the same reason the conditions block is carried verbatim."
+  a_gate_that_reads_prose: "no. A gate that searched conditions text for a number and compared it to a value would be a parser wearing a gate's name, and it would be wrong on the first report that phrases the limit differently."
+
+# ----------------------------------------------------------------------
+what_would_settle_the_representation: "a second anchor. The prediction that a per-row validity flag tracks the elution window rather than the stated limit is recorded in architecture/post_anchor_predictions.yaml and is OPEN. If two vendors both emit a benign per-row flag beside a prose limit, the state is a property of the report class rather than of one product, and the substrate question is worth putting to the pair."
+
+what_this_record_does_not_claim: "that the acquisition path is defective. It carries what the document states and refuses to invent what it does not, which is what it was built to do. What is filed is that a document can be read faithfully, in full, and still yield a pooled value a consumer cannot tell from a sound one -- and that no field in the substrate is the place to say so."

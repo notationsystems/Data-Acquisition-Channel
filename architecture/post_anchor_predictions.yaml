@@ -1,0 +1,79 @@
+# PREDICTIONS MADE AFTER SEEING ONE ANCHOR. A WEAKER OBJECT THAN THE ONE
+# BEFORE IT, AND SAID SO HERE RATHER THAN LEFT TO BE NOTICED.
+#
+# architecture/corpus_anchor_preregistration.yaml was written before any
+# anchor existed and its digest is pinned. These are not that. One anchor
+# has now been read -- a Waters Empower contract-lab GPC report published
+# through EPA ChemView (TSCA P-22-0051) -- and everything below is
+# informed by it. A prediction made after seeing an instance is worth
+# less than one made before, and mixing the two into a single artifact
+# would launder the second into the first. That is why this is a separate
+# file with its own pin.
+#
+# WHAT THIS SESSION DID AND DID NOT TAKE FROM THE ANCHOR. Taken: the
+# STRUCTURE of its slice table, legible in the extracted text and not
+# dependent on any single digit. Not taken: any value. The extraction is
+# machine-produced, has NOT been verified field-by-field against the
+# rendered PDF, and its Tables 1 and 2 did not extract. No fixture has
+# been transcribed and B.1 has not run.
+extends: core@1.0.0
+
+subject: post_anchor_predictions
+status: recorded_after_anchor_one_before_a_fixture_exists
+owner: daf
+enforcement: tests/test_post_anchor_predictions.py
+
+# ----------------------------------------------------------------------
+# Resolvable against ANCHOR 1 itself, once its Tables 1 and 2 are
+# recovered from the rendered PDF. No second anchor needed.
+# ----------------------------------------------------------------------
+predictions_resolvable_against_anchor_one:
+
+  the_printed_slice_table_is_a_downsample_and_not_the_computation:
+    prediction: "the report's own printed Mn and Mw will NOT equal the equal-area sums over its own printed one hundred (Slice Area, MW) rows. They will differ by of order one percent, not by zero."
+    basis: MEASURED -- in the forward model, on a synthetic distribution
+    the_measurement_behind_it: "equal-area slicing converges to the same integral as the fine acquisition grid, and the residual at a real slice count is a discretisation error: 1.1e-02 relative on Mn at one hundred slices, 3.0e-04 at one thousand, 3.4e-05 at ten thousand. If the software computes over the acquisition grid and prints a hundred equal-area rows, re-deriving from the printed rows must land about a percent away."
+    the_sign_is_not_predicted: "it depends on where inside a slice the mass is read, which the anchor does not pin. Midpoint put Mn ABOVE the fine value in both calibrations measured; the endpoint rule put it BELOW. Predicting the sign would be predicting the convention."
+    what_the_other_outcome_would_mean: "if the printed Mn and Mw match the printed rows EXACTLY, the slice table is not a downsample -- it IS the computation, the software re-bins to one hundred slices and reports from those, and the discretisation error above is in the vendor's answer rather than in a reader's re-derivation. That is the more alarming outcome and it is the one this prediction bets against."
+    what_would_make_this_unresolvable: "Tables 1 and 2 not being recoverable from the rendered PDF, in which case this prediction stands unresolved rather than being quietly dropped."
+
+  the_representative_point_is_answered_by_the_same_two_tables:
+    prediction: "if the printed moments DO match the printed rows, the representative point is whichever of start / midpoint / end reproduces them, and the artifact settles a question this session could only record as an argument."
+    basis: OPEN
+    why_it_matters: "the three conventions differ by more than eleven percent of the true Mn on one chromatogram in the forward model. It is currently a required argument with no correct value."
+
+# ----------------------------------------------------------------------
+# For a SECOND anchor. Stated by the counterparty from Anchor 1 and
+# recorded here unchanged, with this session's basis marking added.
+# ----------------------------------------------------------------------
+predictions_for_a_second_anchor:
+
+  p1_equal_area_slicing_again:
+    prediction: "a second anchor's slice table is also equal-area: one constant Slice Area column, a cumulative-percent column running to 100, elution steps narrow at the peak and wide in the tails."
+    basis: OPEN
+    what_would_falsify_it: "a slice table with constant elution steps and varying areas, which is the signature of the convention this session assumed and had to correct."
+    why_it_is_worth_pinning: "one anchor makes equal-area a fact about one vendor's software. Two make it a fact about the class of report DAQ has to read. The forward model now carries both conventions as required arguments either way."
+
+  p2_a_per_slice_validity_flag_that_tracks_the_elution_window:
+    prediction: "a second anchor carries a machine-readable per-slice validity flag, and it tracks the ELUTION WINDOW rather than the calibration range or any stated molar-mass limit."
+    basis: OPEN
+    where_it_came_from: "Anchor 1 carries three validity boundaries -- a calibration range, a column exclusion limit, and a prose sentence naming a maximum valid molar mass -- and exactly one of them is machine-readable per slice. That one did not fire on any row."
+    why_it_is_the_sharpest_of_the_four: "it is no_context_free_property in a stronger form than the invariant states. The invalidating context is not merely absent from the document; it is PRESENT in the document and structurally unreachable from the data. A reader with the file has it. A parser with the file does not."
+
+  p3_integration_parameters_absent_again:
+    prediction: "a second anchor states no peak start, no peak end, and no baseline threshold."
+    basis: MEASURED in the forward model, OPEN as a claim about reports
+    what_rides_on_it: "those choices alone move reported Mn by sixty-two percent in the forward model, and they interact with the slicing convention: integrated to the calibration's edges the three conventions disagree on the SIGN of the Mn residual, while under a tight window they agree to three points. Two omissions whose joint effect is not the sum of either."
+
+  p4_the_calibration_range_is_stated_in_prose_only:
+    prediction: "a second anchor gives its calibration range in prose or a method block, not as a field that survives extraction into a table."
+    basis: OPEN
+    the_pre_anchor_prediction_it_bears_on: "corpus_anchor_preregistration.yaml predicted the calibration range would be recoverable from at least one anchor and the permeation limit would not. Anchor 1 is consistent with the first half and STRONGER than predicted -- it states a column exclusion limit outright. That pre-registration is pinned and is not edited to say so; the result belongs in B.1's report."
+
+# ----------------------------------------------------------------------
+what_is_still_needed_and_from_whom:
+  a_verified_transcription: "field-by-field against the rendered PDF, with Tables 1 and 2 recovered. Not this session's to fabricate from a machine extraction."
+  a_second_anchor_with_replicates: "B.2.4's aggregate-row question and the pairing questions need a report with triplicates. Anchor 1 is a single injection and cannot answer them; recording a verdict from it would be answering a question the artifact does not address."
+  withheld: "still the one absence reason no fixture exercises."
+
+what_this_document_must_not_become: "a description of what a second anchor turned out to contain, or a retrofit of Anchor 1's findings into predictions. Its digest is pinned. Where a prediction is wrong, the RESULT says so."
