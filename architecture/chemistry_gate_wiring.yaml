@@ -1,0 +1,34 @@
+# DAQ-4: CAN THE CHEMISTRY GATES BE WIRED FROM THIS SIDE?
+#
+# The brief required this settled before any rejection rate is reported,
+# on the grounds that a first real measurement over unwired gates produces
+# twenty silences and reads as clean.
+#
+# THE ANSWER IS YES, AND THE RECORDED REASON FOR NO WAS WRONG.
+extends: core@1.0.0
+
+question: "if the call site can be added on DAQ's side of the boundary, add it; if it cannot, say so plainly and state what would be required"
+answer: THE_CALL_SITE_CAN_BE_ADDED_ON_THIS_SIDE
+status: measured_not_wired
+
+what_was_recorded: "architecture/acquisition_reachability.yaml: `the four guards have no caller on any admission or acquisition path, the call site WOULD BE INSIDE THE UNMODIFIABLE SUBMODULE`."
+why_that_was_wrong: "it conflated where the guards LIVE with where a caller would have to live. The guards live in the submodule; a caller does not have to. This repository already calls science.* guards from assertion/ without modifying anything they live in, and the same move is available here."
+
+measured:
+  they_are_importable_from_this_process: "structures.quantity.assert_quantity_type, structures.quantity.assert_property_context, structures.method_blocks.assert_method_block, structures.method_blocks.assert_applicability -- imported from DAQ's own interpreter over the vendored path daf._vendor already establishes."
+  they_are_LIVE_not_dead_code: "planted a violation at each and every one refused, from DAQ's process, with a typed error and a named reason."
+  the_planted_refusals:
+    assert_quantity_type_without_unit: "QuantityError -- quantity is missing ['uncertainty_kind', 'unit']"
+    assert_quantity_type_with_unit_only: "QuantityError -- quantity is missing ['uncertainty_kind']; a bare scalar is still refused"
+    assert_method_block_unknown_kind: "MethodBlockError -- unknown computed-method kind"
+    assert_applicability_empty: "MethodBlockError -- prediction carries no declared applicability domain"
+  what_that_settles: "LIVE, in the vertical probe's own vocabulary. A gate that refuses a planted violation is not dead code, and the question of whether it is REACHABLE from an entry path is separate and still open."
+
+what_is_NOT_claimed:
+  not_wired: "no call site was added. Wiring these into the admission path is a change to what this repository REFUSES, and refusing more is not a free action -- it is the kind of change a workload names. Nothing here proposes it."
+  not_reachable: "LIVE and REACHABLE are different questions and the submodule's own probe separates them deliberately. This measures liveness and the availability of a caller. It does not measure whether real data reaches them."
+  not_a_rejection_rate: "and none is reported. The brief's condition was that this be ANSWERED before a rate is reported, not that the gates be wired first. It is answered: the obstacle recorded was not real, and a rate over unwired gates would still be twenty silences."
+
+what_would_be_required_to_wire_them: "a call site in assertion/, beside the existing science.* gates, and a decision about what a chemistry refusal means for a non-chemistry observation -- the four guards assume a chemistry payload shape, and applying them to every admitted observation would be the `gate applied to content it does not govern` class this pair has already filed twice. That decision belongs with a chemistry workload, and none exists."
+
+enforcement: tests/test_chemistry_gate_wiring.py
