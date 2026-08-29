@@ -84,6 +84,15 @@ RESIDUE_OMITTED = "RESIDUE_OMITTED"
 #: The session ended without its stopping rule being met. It says the
 #: rule was not met; it does not claim to know why.
 STOPPED_WITHOUT_THE_STOPPING_RULE = "STOPPED_WITHOUT_THE_STOPPING_RULE"
+#: A finding exists for an item whose `worked_at` was never recorded, so
+#: ACCEPTANCE_TEST_POSTDATES_WORK cannot be evaluated for it: the
+#: pre-registration invariant is UNVERIFIABLE rather than satisfied. The
+#: code names the missing record, not a motive -- it does not claim the
+#: test was written late. Found by probing the invariant instead of
+#: reading it: the comparison needs two positions and went silent exactly
+#: where the record was incomplete, which is the hurried session it exists
+#: to catch.
+WORKED_WITHOUT_A_RECORDED_POSITION = "WORKED_WITHOUT_A_RECORDED_POSITION"
 #: An abandonment carrying no reason. `Abandoned deliberately` and
 #: `abandoned by exhaustion` differ only in whether anyone wrote down
 #: why, and the per-item box exists to make the first possible.
@@ -296,7 +305,8 @@ def close_session(
     the same evidence and the signature does not let them collapse.
     """
     refusals = list(order.refusals)
-    known = {item.identifier for item in order.items}
+    by_identifier = {item.identifier: item for item in order.items}
+    known = set(by_identifier)
 
     for finding in findings:
         if finding.item_id not in known:
@@ -306,6 +316,8 @@ def close_session(
             refusals.append((FINDING_CITES_NO_SOURCE, finding.item_id))
         if not finding.evidence_class:
             refusals.append((FINDING_DECLARES_NO_EVIDENCE_CLASS, finding.item_id))
+        if by_identifier[finding.item_id].worked_at is None:
+            refusals.append((WORKED_WITHOUT_A_RECORDED_POSITION, finding.item_id))
 
     reported = {finding.item_id for finding in findings if finding.item_id in known}
     put_down = set()

@@ -36,6 +36,18 @@ invariants_in_code:
   acceptance_test_predates_the_work: ACCEPTANCE_TEST_POSTDATES_WORK
   terminates_on_the_stopping_rule: STOPPED_WITHOUT_THE_STOPPING_RULE
 
+# The pre-registration invariant's own blind spot, found by probing it
+# rather than by reading it. ACCEPTANCE_TEST_POSTDATES_WORK compares two
+# positions and can only fire when BOTH exist; an item whose worked_at
+# was never recorded ranked cleanly, accepted a finding and closed
+# COMPLETE with the invariant unverifiable for it. Silent exactly where
+# the record was incomplete, which is the hurried session it exists to
+# catch.
+the_invariants_blind_spot:
+  refusal: WORKED_WITHOUT_A_RECORDED_POSITION
+  what_it_says: "a finding exists for an item whose work position was never recorded, so the ordering cannot be checked. It names the missing record, not a motive: it does NOT claim the test was written late."
+  and_what_it_does_not_refuse: "an item never worked and carrying no finding. That is not_reached, which the accounting already states."
+
 validations_in_code:
   every_item_ranked_and_tested_before: NO_ACCEPTANCE_TEST
   every_finding_cites_its_sources: FINDING_CITES_NO_SOURCE

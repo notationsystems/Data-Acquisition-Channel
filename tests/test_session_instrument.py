@@ -58,6 +58,7 @@ from session.work_order import (ABANDONED_AND_ALSO_REPORTED,  # noqa: E402
                                 WORKED,
                                 RESIDUE_OMITTED,
                                 STOPPED_WITHOUT_THE_STOPPING_RULE,
+                                WORKED_WITHOUT_A_RECORDED_POSITION,
                                 Abandonment, Finding, QueueItem, close_session,
                                 plan)
 
@@ -454,3 +455,42 @@ def test_the_plan_reports_an_overrun_rather_than_trimming_to_fit():
     assert order.planned_minutes == 100
     assert order.overruns_the_box is True
     assert plan([_item("a", minutes=20)], box_minutes=60).overruns_the_box is False
+
+
+def test_a_finding_for_an_item_with_no_recorded_work_position_is_refused():
+    """THE INVARIANT'S OWN BLIND SPOT, found by probing it rather than by
+    reading it.
+
+    ACCEPTANCE_TEST_POSTDATES_WORK compares two positions, and it can only
+    fire when BOTH exist. An item whose `worked_at` was never recorded
+    ranks cleanly, accepts a finding, and closes COMPLETE -- with the
+    pre-registration invariant unverifiable for it and nothing saying so.
+    The check was silent exactly where the record was incomplete, which is
+    the case it matters in: a hurried session is the one that skips the
+    position.
+
+    The refusal names the OBSERVABLE. It does not claim the test was
+    written late; it says the order cannot be checked."""
+    unrecorded = _item("q1", test_at=1, worked_at=None)
+    order = plan([unrecorded], box_minutes=60)
+    assert order.refusals == (), "an unworked item is not malformed -- it may simply be next"
+
+    finding = Finding(item_id="q1", statement="s", sources=("t",), evidence_class="asserted")
+    session = close_session(order, findings=[finding], residue=(), stopping_rule_met=True)
+    assert (WORKED_WITHOUT_A_RECORDED_POSITION, "q1") in session.refusals
+    assert session.complete is False, (
+        "a session whose central invariant cannot be checked for one of its findings must not "
+        "report itself finished"
+    )
+
+    # With the position recorded, the same finding closes clean -- so the
+    # refusal is about the missing record and not about the finding.
+    recorded = plan([_item("q1", test_at=1, worked_at=4)], box_minutes=60)
+    clean = close_session(recorded, findings=[finding], residue=(), stopping_rule_met=True)
+    assert clean.refusals == ()
+
+    # And an item that was never worked and produced no finding is NOT
+    # refused: it is simply not_reached, which the accounting already says.
+    untouched = close_session(order, findings=[], residue=(), stopping_rule_met=True)
+    assert all(code != WORKED_WITHOUT_A_RECORDED_POSITION for code, _ in untouched.refusals)
+    assert untouched.accounting[NOT_REACHED] == ("q1",)
