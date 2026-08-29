@@ -181,6 +181,10 @@ def ste_exchange_register():
 
 
 STE = ste_invariant_references()
+#: What the register will report for the core party -- derived once, so the
+#: run summary cannot disagree with the artifact. It said `ste none
+#: enumerated` as a hardcoded string while the document derived 58.
+
 STE_EXCHANGE = ste_exchange_register()
 GITLINK = gitlink_commit()
 UNMODIFIED = core_tree_is_unmodified()
@@ -271,6 +275,8 @@ def bent_zero_claims():
 
 
 BENT_ZERO, BENT_ZERO_MENTIONS = bent_zero_claims()
+
+STE_COUNT = (STE_EXCHANGE or {}).get("invariant_count")
 
 DOCUMENT = {
     "extends": f"core@{CORE['version']}",
@@ -521,6 +527,47 @@ DOCUMENT = {
 }
 
 
+def _refuse_if_a_merge_is_unresolved() -> None:
+    """The guard above, one step further out -- and it was found by the
+    guard above PASSING while the artifact came out wrong.
+
+    `gitlink_commit()` asks `git ls-tree HEAD`. During an unresolved
+    merge HEAD is still the PRE-merge commit, so it reports the old
+    gitlink while the index and the worktree already hold the new one.
+    The tree-vs-index guard sees agreement and permits the run, and the
+    artifact records `joined_on.value` from core.yaml (new) beside
+    `gitlink_at_generation` from HEAD (old) -- internally inconsistent,
+    correctly hashed, and wrong.
+
+    MEASURED, not anticipated: generating mid-merge produced exactly that,
+    with value 5e146d5 and gitlink 3e5bea9 in one file. The register's own
+    join test would have caught it, which is the difference between this
+    and the state the guard above exists for -- but a generator that can
+    only be caught downstream is a generator that emits a wrong artifact
+    first.
+
+    The general shape: A GENERATOR THAT READS `HEAD` IS READING A CLAIM
+    ABOUT THE REPOSITORY THAT IS NOT TRUE DURING A MERGE. Refuse rather
+    than record it.
+    """
+    git_dir = subprocess.run(["git", "rev-parse", "--git-dir"], cwd=str(REPO),
+                             capture_output=True, text=True)
+    if git_dir.returncode != 0:
+        return
+    root = pathlib.Path(git_dir.stdout.strip())
+    if not root.is_absolute():
+        root = REPO / root
+    for marker in ("MERGE_HEAD", "REBASE_HEAD", "CHERRY_PICK_HEAD"):
+        if (root / marker).exists():
+            raise SystemExit(
+                f"REFUSING to generate: {marker} exists, so this is an unresolved "
+                f"{marker.split('_')[0].lower()}.\n"
+                "This generator reads `git ls-tree HEAD` for the gitlink, and during an "
+                "unresolved merge HEAD is the PRE-merge commit -- so the artifact would record "
+                "a gitlink the pin does not name, beside a pin that does.\n"
+                "Resolve and commit first, then re-run.")
+
+
 def _refuse_if_the_pin_and_the_tree_disagree() -> None:
     """A generator that READS the vendored tree may not run while that
     tree and the index disagree about which commit it is.
@@ -567,13 +614,15 @@ def _refuse_if_the_pin_and_the_tree_disagree() -> None:
 
 if __name__ == "__main__":
     _refuse_if_the_pin_and_the_tree_disagree()
+    _refuse_if_a_merge_is_unresolved()
     payload = canonical_bytes(DOCUMENT)
     (HERE / "invariant_register.yaml").write_bytes(payload)
     digest = "sha256:" + hashlib.sha256(payload).hexdigest()
     (HERE / "invariant_register.sha256").write_text(digest + "\n")
     print("wrote invariant_register.yaml")
     print(f"  daf {len(DAQ_INVARIANTS)} invariants | "
-          f"scl {SCL['clause_count'] if SCL else '-'} clauses | ste none enumerated")
+          f"scl {SCL['clause_count'] if SCL else '-'} clauses | "
+          f"ste {STE_COUNT if STE_COUNT else 'none'} enumerated")
     print(f"  extends join: {len(AGREEING)} agreeing, {len(DISAGREEING)} disagreeing")
     print(f"  core unmodified at {GITLINK}: {UNMODIFIED}")
     print(" ", digest)

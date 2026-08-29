@@ -611,3 +611,40 @@ def test_the_deferral_on_the_half_frozen_reconstruction_still_holds():
         "inert; it is load-bearing now. Decide: freeze the index too, or retire the file for the "
         "declaration."
     )
+
+
+def test_every_generator_that_reads_HEAD_refuses_during_an_unresolved_merge():
+    """FOUND BY THE TREE-VS-INDEX GUARD PASSING while the artifact came out
+    wrong. `gitlink_commit()` asks `git ls-tree HEAD`, and during an
+    unresolved merge HEAD is the PRE-merge commit -- so the register
+    recorded joined_on.value 5e146d5 from core.yaml beside
+    gitlink_at_generation 3e5bea9 from HEAD, in one file.
+
+    Asserted as a CORRESPONDENCE rather than a list: a generator needs
+    this guard exactly when it reads HEAD. build_ste_invariants.py does
+    not read HEAD and correctly does not carry it, and a generator that
+    starts reading HEAD tomorrow fails here until it does."""
+    for generator in sorted(EXCHANGE.glob("build_*.py")):
+        source = generator.read_text()
+        reads_head = "ls-tree" in source and "HEAD" in source
+        guarded = "_refuse_if_a_merge_is_unresolved" in source
+        assert reads_head == guarded, (
+            f"{generator.name}: reads HEAD={reads_head} but merge-guarded={guarded}. A generator "
+            "reading HEAD records a claim about the repository that is not true mid-merge."
+        )
+
+
+def test_the_merge_guard_fires_and_names_every_unresolved_state():
+    source = (EXCHANGE / "build_invariant_register.py").read_text()
+    for marker in ("MERGE_HEAD", "REBASE_HEAD", "CHERRY_PICK_HEAD"):
+        assert marker in source, f"{marker} leaves HEAD stale too and is not covered"
+    assert "REFUSING to generate" in source
+
+
+def test_the_run_summary_cannot_disagree_with_the_artifact():
+    """It did: `ste none enumerated` was a hardcoded string in the print
+    while the document derived 58 -- a prose statement beside a derived
+    value, which is the class this repository files most."""
+    source = (EXCHANGE / "build_invariant_register.py").read_text()
+    assert "ste none enumerated" not in source
+    assert "STE_COUNT" in source
