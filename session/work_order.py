@@ -65,6 +65,18 @@ FINDING_CITES_NO_SOURCE = "FINDING_CITES_NO_SOURCE"
 #: A finding naming an item the work order does not contain: there is no
 #: acceptance test to grade it against.
 FINDING_FOR_NO_ITEM = "FINDING_FOR_NO_ITEM"
+#: A finding that declares no evidence class. The doctrine requires
+#: findings to conform to "the research finding schema"; MEASURED, no such
+#: schema exists anywhere in this repository, the vendored substrate at the
+#: pin, or the instrument this session studies -- recorded in
+#: architecture/sea_dog_session_instrument.yaml. What this layer can assert
+#: without one is that the finding said SOMETHING about its class rather
+#: than nothing. Which classes are admissible is owned by
+#: `epistemics.evidence_class` and is NOT restated here: a second copy of a
+#: closed vocabulary drifts from the first, and the layer test forbids the
+#: import that would keep them in step. This is the same resolution the GPC
+#: extractor reached when it tried to import UNCERTAINTY_KINDS.
+FINDING_DECLARES_NO_EVIDENCE_CLASS = "FINDING_DECLARES_NO_EVIDENCE_CLASS"
 #: The residue list was not supplied. DISTINCT from a list explicitly
 #: stated as empty: `nothing was raised` and `nobody recorded what was
 #: raised` are different sessions.
@@ -127,6 +139,13 @@ class Finding:
     item_id: str
     statement: str
     sources: Tuple[str, ...]
+    #: The class the finding is claimed under, from the vocabulary
+    #: `epistemics.evidence_class` owns. Unset is refused rather than
+    #: defaulted: a session finding is almost always `asserted` -- a
+    #: person's account of what they did -- and defaulting to it would
+    #: silently promote the occasional counter reading to the same class
+    #: without anyone choosing.
+    evidence_class: Optional[str] = None
 
 
 @dataclass(frozen=True)
@@ -240,6 +259,8 @@ def close_session(
             continue
         if not finding.sources:
             refusals.append((FINDING_CITES_NO_SOURCE, finding.item_id))
+        if not finding.evidence_class:
+            refusals.append((FINDING_DECLARES_NO_EVIDENCE_CLASS, finding.item_id))
 
     if residue is None:
         refusals.append((RESIDUE_OMITTED, "session"))

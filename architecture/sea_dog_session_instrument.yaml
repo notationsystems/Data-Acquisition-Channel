@@ -1,0 +1,75 @@
+# THE sea_dog_session INSTRUMENT: what was built, what is blocked, and the
+# two things its own doctrine names that do not exist.
+#
+# The instrument doctrine arrived as a GENERATED file -- header
+# "Source: architecture/instruments.yaml, Regenerate: python3 generate.py,
+# Source digest: 66629e18fca40af9". Neither the source nor the generator is
+# in this repository, in the vendored substrate at the pin, in the Sea Dog
+# Terminal repository the session studies, or in its archive mirror.
+# Searched, not assumed. So this file is DAQ's own record of an instrument
+# it implements and does not own: the doctrine cannot be regenerated here
+# and its digest cannot be verified here.
+#
+# This is the shape already filed as chemistry_rule_ownership: a brief
+# states a rule as active, the tree says otherwise, and the record keeps
+# both rather than resolving it in either direction.
+extends: core@1.0.0
+
+subject: sea_dog_session_instrument
+status: built_and_blocked_on_preconditions
+owner: daf
+enforcement: tests/test_sea_dog_session_instrument.py
+
+instrument:
+  id: sea_dog_session
+  layer: daq
+  implementation: session/work_order.py
+  purpose: "convert a half-day of researcher time into the maximum number of discriminating answers, by ordering the queue on information yield and giving every item its own stopping condition."
+
+# ----------------------------------------------------------------------
+# What is built. Each invariant is enforced by a named refusal, and each
+# refusal names an OBSERVABLE rather than a cause it cannot establish --
+# the rule this repository already applies to EVERY_RUN_DIFFERS_IN.
+# ----------------------------------------------------------------------
+invariants_in_code:
+  ordering_is_by_discrimination: NO_DECISION_IT_COULD_CHANGE
+  acceptance_test_predates_the_work: ACCEPTANCE_TEST_POSTDATES_WORK
+  terminates_on_the_stopping_rule: STOPPED_WITHOUT_THE_STOPPING_RULE
+
+validations_in_code:
+  every_item_ranked_and_tested_before: NO_ACCEPTANCE_TEST
+  every_finding_cites_its_sources: FINDING_CITES_NO_SOURCE
+  residue_stated_or_explicitly_empty: RESIDUE_OMITTED
+
+# ----------------------------------------------------------------------
+# THE FIRST NAMED-BUT-ABSENT ARTIFACT: the research finding schema.
+# ----------------------------------------------------------------------
+research_finding_schema:
+  doctrine_says: "a findings record per item, conforming to the research finding schema"
+  measured: absent
+  searched: "this repository, vendor/scout-retrieval-agent at the pin, the Sea Dog Terminal working tree, and its archive mirror. No file, class or key of that name exists in any of them."
+  what_was_done_instead: "session.Finding requires an evidence_class and refuses a finding that declares none (FINDING_DECLARES_NO_EVIDENCE_CLASS). It does NOT restate which classes are admissible: that vocabulary is owned by epistemics.evidence_class, and session/ may not import it under its own layer rule."
+  why_not_a_local_copy: "a second copy of a closed vocabulary drifts from the first, and the import that would keep them in step is the one the layer rule forbids. The GPC extractor reached the same resolution when its first draft imported science.admissibility.UNCERTAINTY_KINDS: assert only what an acquisition layer can know, which is that the record said something rather than nothing."
+  the_relation_is_bound_not_promised: "tests/test_session_instrument.py reads architecture/evidence_class.yaml, asserts `asserted` is still in the ingest set, and asserts that no class name from that set appears as a literal in session/work_order.py."
+  what_is_not_claimed: "not that `asserted` is the right class for every session finding. The instrument requires a declaration and does not make it."
+
+# ----------------------------------------------------------------------
+# THE SECOND: the instrument's own source of truth.
+# ----------------------------------------------------------------------
+instrument_registry:
+  doctrine_header_names: architecture/instruments.yaml
+  claimed_digest: 66629e18fca40af9
+  measured: absent_from_every_reachable_tree
+  consequence: "the doctrine cannot be regenerated or digest-verified from here, and this instrument is not registered in any architecture catalogue that DAQ can see. Its placement in session/ is a decision recorded here, not one a registry dictated."
+  not_reconstructed: "no instruments.yaml was written to make the header true. A generated file whose source was invented to match it is worse than a generated file with an unreachable source, because the second one says so."
+
+# ----------------------------------------------------------------------
+# Blocked, and on what. The doctrine's own facts block states this: the
+# instrument has no external dependency and is blocked on calendar alone.
+# ----------------------------------------------------------------------
+preconditions:
+  a_date_and_a_time_box: not_supplied
+  the_question_queue: not_supplied
+  a_stopping_rule: not_supplied
+consequence_of_the_block: "no session is planned, no work order is populated and no findings record exists. What is built is the thing that refuses a malformed one. A work order produced without the researcher's own questions would measure the builder."
+what_would_discharge_it: "the four preconditions, in writing, before the session. The queue must be the researcher's own questions obtained BEFORE they see the instrument -- prior framing narrows what they try, and what they try is the measurement."
