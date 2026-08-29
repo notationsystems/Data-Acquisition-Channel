@@ -39,18 +39,27 @@ sys.path.insert(0, str(REPO_ROOT / "vendor" / "scout-retrieval-agent"))
 
 import daf  # noqa: F401,E402
 
-from session.work_order import (ACCEPTANCE_TEST_POSTDATES_WORK,  # noqa: E402
+from session.work_order import (ABANDONED_AND_ALSO_REPORTED,  # noqa: E402
+                                ABANDONED_AT_ITS_BOX,
+                                ABANDONED_ITEM_NOT_IN_THE_ORDER,
+                                ABANDONED_WITHOUT_A_REASON,
+                                ACCEPTANCE_TEST_POSTDATES_WORK,
                                 EMPTY_BECAUSE_EVERY_ITEM_WAS_DROPPED,
                                 EMPTY_BECAUSE_THE_QUEUE_WAS_EMPTY,
+                                EVERY_REACHED_ITEM_WAS_ABANDONED,
                                 FINDING_CITES_NO_SOURCE,
                                 FINDING_DECLARES_NO_EVIDENCE_CLASS,
                                 FINDING_FOR_NO_ITEM,
                                 NO_ACCEPTANCE_TEST,
                                 NO_DECISION_IT_COULD_CHANGE,
+                                NO_ITEM_WAS_REACHED,
                                 NO_TIME_BOX,
+                                NOT_REACHED,
+                                WORKED,
                                 RESIDUE_OMITTED,
                                 STOPPED_WITHOUT_THE_STOPPING_RULE,
-                                Finding, QueueItem, close_session, plan)
+                                Abandonment, Finding, QueueItem, close_session,
+                                plan)
 
 
 def _item(identifier="q1", *, decision="whether to build the allocation model",
@@ -324,3 +333,116 @@ def test_the_class_vocabulary_is_owned_elsewhere_and_not_restated_here():
     # And the module still refuses an unclassed finding, so declining to
     # hold the list is not declining to require one.
     assert hasattr(work_order, "FINDING_DECLARES_NO_EVIDENCE_CLASS")
+
+
+# =====================================================================
+# Deliverable 2 and 3 together: every ranked item lands in exactly one
+# bucket, and an item that overran was ABANDONED rather than forgotten
+# =====================================================================
+
+def test_every_ranked_item_lands_in_exactly_one_bucket():
+    """ROW ACCOUNTING, applied to the session itself.
+
+    The doctrine asks for a findings record PER ITEM and for a per-item
+    box `so an item that overruns is abandoned deliberately rather than
+    by exhaustion`. Both need the same thing: an item that was ranked and
+    then produced nothing must say WHICH nothing -- worked, abandoned at
+    its box, or never reached. Three items, three outcomes, and the
+    counts conserve."""
+    order = plan([_item("a", yield_=9.0, minutes=10, worked_at=5),
+                  _item("b", yield_=6.0, minutes=20, worked_at=5),
+                  _item("c", yield_=1.0, minutes=30)], box_minutes=60)
+    assert [i.identifier for i in order.items] == ["a", "b", "c"]
+
+    session = close_session(
+        order,
+        findings=[Finding(item_id="a", statement="s", sources=("t",), evidence_class="asserted")],
+        abandoned=[Abandonment(identifier="b", reason="ran past its twenty minutes with the "
+                                                      "corridor grade still unresolved",
+                               minutes_spent=26)],
+        residue=("what the grade would have taken",),
+        stopping_rule_met=True,
+    )
+    assert session.refusals == ()
+    assert session.accounting == {WORKED: ("a",), ABANDONED_AT_ITS_BOX: ("b",),
+                                  NOT_REACHED: ("c",)}
+    assert sum(len(v) for v in session.accounting.values()) == len(order.items), (
+        "every ranked item must be in exactly one bucket, or the session lost one"
+    )
+
+
+def test_an_abandonment_without_a_reason_is_refused():
+    """`Abandoned deliberately` and `abandoned by exhaustion` differ only
+    in whether anyone wrote down why. Without the reason the record
+    cannot tell them apart, which is the whole point of the box."""
+    order = plan([_item("a", worked_at=5)], box_minutes=60)
+    session = close_session(order, findings=[],
+                            abandoned=[Abandonment(identifier="a", reason="", minutes_spent=40)],
+                            residue=(), stopping_rule_met=True)
+    assert (ABANDONED_WITHOUT_A_REASON, "a") in session.refusals
+
+
+def test_an_item_cannot_be_both_abandoned_and_reported():
+    """Two answers to one question -- the shape `replicate_pairing`
+    already refuses as CONFLICTING_VALUE_FOR_A_RUN."""
+    order = plan([_item("a", worked_at=5)], box_minutes=60)
+    session = close_session(
+        order,
+        findings=[Finding(item_id="a", statement="s", sources=("t",), evidence_class="asserted")],
+        abandoned=[Abandonment(identifier="a", reason="overran", minutes_spent=40)],
+        residue=(), stopping_rule_met=True)
+    assert (ABANDONED_AND_ALSO_REPORTED, "a") in session.refusals
+    # AND THE ACCOUNTING STILL CONSERVES. Found by a plant: refusing the
+    # conflict is not the same as not double-counting it, and the first
+    # version of this test asserted only the refusal. An item appearing
+    # in two buckets makes the session's own row accounting untrue while
+    # every refusal reads correctly -- a check correct about what it
+    # examined and silent about what it handed on.
+    buckets = session.accounting
+    assert sum(len(v) for v in buckets.values()) == len(session.order.items)
+    seen = [identifier for bucket in buckets.values() for identifier in bucket]
+    assert len(seen) == len(set(seen)), f"an item is in two buckets: {seen}"
+
+
+def test_an_abandonment_naming_no_ranked_item_is_refused():
+    order = plan([_item("a", worked_at=5)], box_minutes=60)
+    session = close_session(order, findings=[],
+                            abandoned=[Abandonment(identifier="zz", reason="overran",
+                                                   minutes_spent=5)],
+                            residue=(), stopping_rule_met=True)
+    assert (ABANDONED_ITEM_NOT_IN_THE_ORDER, "zz") in session.refusals
+
+
+def test_a_session_with_no_findings_says_WHICH_no_findings():
+    """The empty-collection rule, at the session. Nothing reached and
+    everything abandoned are different afternoons."""
+    order = plan([_item("a", minutes=30), _item("b", minutes=30)], box_minutes=60)
+
+    nothing_reached = close_session(order, findings=[], abandoned=[], residue=(),
+                                    stopping_rule_met=True)
+    assert nothing_reached.findings_empty_because == NO_ITEM_WAS_REACHED
+
+    all_abandoned = close_session(
+        order, findings=[],
+        abandoned=[Abandonment(identifier="a", reason="overran", minutes_spent=31),
+                   Abandonment(identifier="b", reason="overran", minutes_spent=31)],
+        residue=(), stopping_rule_met=True)
+    assert all_abandoned.findings_empty_because == EVERY_REACHED_ITEM_WAS_ABANDONED
+    assert all_abandoned.findings_empty_because != nothing_reached.findings_empty_because
+
+    # A session that produced findings carries no such note.
+    produced = close_session(
+        order,
+        findings=[Finding(item_id="a", statement="s", sources=("t",), evidence_class="asserted")],
+        abandoned=[], residue=(), stopping_rule_met=True)
+    assert produced.findings_empty_because is None
+
+
+def test_the_plan_reports_an_overrun_rather_than_trimming_to_fit():
+    """Which items to cut is the operator's call. A plan quietly trimmed
+    to fit reads as a plan that fits."""
+    order = plan([_item("a", minutes=50), _item("b", minutes=50)], box_minutes=60)
+    assert len(order.items) == 2, "the plan must not silently drop the item that does not fit"
+    assert order.planned_minutes == 100
+    assert order.overruns_the_box is True
+    assert plan([_item("a", minutes=20)], box_minutes=60).overruns_the_box is False

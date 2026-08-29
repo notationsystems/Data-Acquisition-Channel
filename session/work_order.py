@@ -45,7 +45,7 @@ promised here.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional, Sequence, Tuple
+from typing import Dict, Mapping, Optional, Sequence, Tuple
 
 #: A question that names no decision its answer could change. Dropped,
 #: with its reason recorded -- never removed silently.
@@ -84,6 +84,28 @@ RESIDUE_OMITTED = "RESIDUE_OMITTED"
 #: The session ended without its stopping rule being met. It says the
 #: rule was not met; it does not claim to know why.
 STOPPED_WITHOUT_THE_STOPPING_RULE = "STOPPED_WITHOUT_THE_STOPPING_RULE"
+#: An abandonment carrying no reason. `Abandoned deliberately` and
+#: `abandoned by exhaustion` differ only in whether anyone wrote down
+#: why, and the per-item box exists to make the first possible.
+ABANDONED_WITHOUT_A_REASON = "ABANDONED_WITHOUT_A_REASON"
+#: One item both abandoned and reported: two answers to one question,
+#: the shape replicate_pairing already refuses per run.
+ABANDONED_AND_ALSO_REPORTED = "ABANDONED_AND_ALSO_REPORTED"
+#: An abandonment naming an item the order does not rank.
+ABANDONED_ITEM_NOT_IN_THE_ORDER = "ABANDONED_ITEM_NOT_IN_THE_ORDER"
+#: No ranked item was reached at all.
+NO_ITEM_WAS_REACHED = "NO_ITEM_WAS_REACHED"
+#: Every item that WAS reached was abandoned at its box. A different
+#: afternoon from the one above, and an empty findings list states neither.
+EVERY_REACHED_ITEM_WAS_ABANDONED = "EVERY_REACHED_ITEM_WAS_ABANDONED"
+
+#: The three outcomes a ranked item can have. Every ranked item has
+#: exactly one, and the session's accounting conserves: an item that was
+#: ranked and then produced nothing must say WHICH nothing.
+WORKED = "worked"
+ABANDONED_AT_ITS_BOX = "abandoned_at_its_box"
+NOT_REACHED = "not_reached"
+
 #: The whole queue was dropped for want of a decision it could change.
 EMPTY_BECAUSE_EVERY_ITEM_WAS_DROPPED = "EMPTY_BECAUSE_EVERY_ITEM_WAS_DROPPED"
 #: No question was supplied. Not the same fact as the one above.
@@ -149,6 +171,21 @@ class Finding:
 
 
 @dataclass(frozen=True)
+class Abandonment:
+    """An item put down at its box, with the reason in writing.
+
+    The doctrine's second deliverable is a per-item box `so an item that
+    overruns is abandoned DELIBERATELY rather than by exhaustion`. The
+    two are the same event from the outside; the reason is the only thing
+    that distinguishes them, so an abandonment without one is refused.
+    """
+
+    identifier: str
+    reason: str
+    minutes_spent: int
+
+
+@dataclass(frozen=True)
 class WorkOrder:
     items: Tuple[QueueItem, ...]
     drops: Tuple[Drop, ...]
@@ -173,10 +210,17 @@ class WorkOrder:
 class Session:
     order: WorkOrder
     findings: Tuple[Finding, ...]
+    abandoned: Tuple[Abandonment, ...]
     residue: Tuple[str, ...]
     residue_was_stated: bool
     stopping_rule_met: bool
     refusals: Tuple[Tuple[str, str], ...]
+    #: Every RANKED item in exactly one bucket. Row accounting, applied
+    #: to the session: a ranked item that produced nothing says which
+    #: nothing, and the three counts sum to the order's length.
+    accounting: Mapping[str, Tuple[str, ...]]
+    #: Set only when no finding was produced, and it says which no.
+    findings_empty_because: Optional[str] = None
 
     @property
     def complete(self) -> bool:
@@ -243,6 +287,7 @@ def close_session(
     findings: Sequence[Finding],
     residue: Optional[Sequence[str]],
     stopping_rule_met: bool,
+    abandoned: Sequence[Abandonment] = (),
 ) -> Session:
     """Close a session against its work order.
 
@@ -262,6 +307,33 @@ def close_session(
         if not finding.evidence_class:
             refusals.append((FINDING_DECLARES_NO_EVIDENCE_CLASS, finding.item_id))
 
+    reported = {finding.item_id for finding in findings if finding.item_id in known}
+    put_down = set()
+    for record in abandoned:
+        if record.identifier not in known:
+            refusals.append((ABANDONED_ITEM_NOT_IN_THE_ORDER, record.identifier))
+            continue
+        if not record.reason.strip():
+            refusals.append((ABANDONED_WITHOUT_A_REASON, record.identifier))
+        if record.identifier in reported:
+            refusals.append((ABANDONED_AND_ALSO_REPORTED, record.identifier))
+        put_down.add(record.identifier)
+
+    # Every ranked item in exactly one bucket, in the order's own order
+    # so the accounting reads down the plan rather than alphabetically.
+    accounting: Dict[str, Tuple[str, ...]] = {
+        WORKED: tuple(i.identifier for i in order.items if i.identifier in reported),
+        ABANDONED_AT_ITS_BOX: tuple(i.identifier for i in order.items
+                                    if i.identifier in put_down and i.identifier not in reported),
+        NOT_REACHED: tuple(i.identifier for i in order.items
+                           if i.identifier not in reported and i.identifier not in put_down),
+    }
+
+    findings_empty_because = None
+    if not findings:
+        findings_empty_because = (EVERY_REACHED_ITEM_WAS_ABANDONED if put_down
+                                  else NO_ITEM_WAS_REACHED)
+
     if residue is None:
         refusals.append((RESIDUE_OMITTED, "session"))
     if not stopping_rule_met:
@@ -270,8 +342,11 @@ def close_session(
     return Session(
         order=order,
         findings=tuple(findings),
+        abandoned=tuple(abandoned),
         residue=tuple(residue or ()),
         residue_was_stated=residue is not None,
         stopping_rule_met=stopping_rule_met,
         refusals=tuple(refusals),
+        accounting=accounting,
+        findings_empty_because=findings_empty_because,
     )

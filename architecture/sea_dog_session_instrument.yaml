@@ -41,6 +41,31 @@ validations_in_code:
   every_finding_cites_its_sources: FINDING_CITES_NO_SOURCE
   residue_stated_or_explicitly_empty: RESIDUE_OMITTED
 
+# The four deliverables. The first, second and fourth are shapes the
+# module enforces; the third is the one whose named schema does not
+# exist, below.
+deliverables_in_code:
+  the_work_order: "session.plan -- ranked by yield PER UNIT TIME, drops recorded, an empty order saying which empty it is."
+  the_per_item_time_box: ABANDONED_WITHOUT_A_REASON
+  a_findings_record_per_item: "session.Session.accounting -- every RANKED item in exactly one of worked / abandoned_at_its_box / not_reached, and the three conserve."
+  the_residue_list: RESIDUE_OMITTED
+
+# ROW ACCOUNTING, APPLIED TO THE SESSION. A ranked item that produced
+# nothing must say WHICH nothing. `abandoned deliberately` and
+# `abandoned by exhaustion` are the same event from outside; the reason
+# is the only thing separating them, so an abandonment without one is
+# refused, and an item both abandoned and reported is two answers to one
+# question -- the shape replicate_pairing refuses per run.
+session_accounting:
+  buckets:
+    - worked
+    - abandoned_at_its_box
+    - not_reached
+  conserves: "sum of the three equals the number of ranked items, asserted, and no item appears twice."
+  found_by_a_plant: "the first version of the conflict test asserted only the REFUSAL. Planting an overlapping bucket left it green: refusing the conflict is not the same as not double-counting it. The test now asserts conservation and disjointness, and the plant fails it by name."
+  no_findings_at_all: "distinguished -- NO_ITEM_WAS_REACHED against EVERY_REACHED_ITEM_WAS_ABANDONED. Different afternoons, and an empty list states neither."
+  the_plan_is_not_trimmed_to_fit: "an order whose boxes exceed the session reports overruns_the_box rather than dropping the tail. Which items to cut is the operator's call, and a plan quietly trimmed reads as a plan that fits."
+
 # ----------------------------------------------------------------------
 # THE FIRST NAMED-BUT-ABSENT ARTIFACT: the research finding schema.
 # ----------------------------------------------------------------------
