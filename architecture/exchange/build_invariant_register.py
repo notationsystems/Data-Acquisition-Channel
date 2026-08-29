@@ -181,6 +181,10 @@ def ste_exchange_register():
 
 
 STE = ste_invariant_references()
+#: What the register will report for the core party -- derived once, so the
+#: run summary cannot disagree with the artifact. It said `ste none
+#: enumerated` as a hardcoded string while the document derived 58.
+
 STE_EXCHANGE = ste_exchange_register()
 GITLINK = gitlink_commit()
 UNMODIFIED = core_tree_is_unmodified()
@@ -230,24 +234,49 @@ def artifacts_declaring_extends():
 AGREEING, DISAGREEING = artifacts_declaring_extends()
 
 
+#: The claim form, verified against every phase report that makes one:
+#: all eleven originals write it as the bolded assertion `**Bent: zero.**`.
+_CLAIM = re.compile(r"\*\*Bent: zero\.\*\*")
+#: Any other appearance of the phrase -- a heading, a backticked reference,
+#: prose about the class. A MENTION, not a claim.
+_MENTION = re.compile(r"(?<![\w])Bent: zero(?![\w])")
+
+
 def bent_zero_claims():
-    """Every `Bent: zero` this repository holds, with its document.
+    """Every `Bent: zero` CLAIM this repository holds, and every mention.
 
     Derived by scanning, so a claim written tomorrow and not accounted for
-    here moves this artifact's digest and fails its test."""
-    found = []
+    here moves this artifact's digest and fails its test.
+
+    NARROWED TO THE CLAIM FORM 2026-08-26, and narrowed rather than
+    loosened. The first version matched the phrase anywhere, which was
+    correct while every occurrence was a claim -- eleven phase reports,
+    one bolded assertion each. The first document to DISCUSS `bent: zero`
+    rather than assert it (this phase's own report, which has a heading, a
+    claim and a prose reference) counted three, and the register would
+    have reported fourteen claims where twelve exist.
+
+    The same shape as the provenance guard narrowed in the polymer
+    vertical: a check that holds only while there is exactly one kind of
+    use. Mentions are still counted and reported, so the narrowing is
+    visible and a claim written in some new form shows up as a mention
+    that no claim accompanies.
+    """
+    claims, mentions = [], []
     for path in sorted((REPO / "docs").rglob("*.md")):
         for number, line in enumerate(path.read_text(errors="replace").splitlines(), 1):
-            if re.search(r"\*\*Bent: zero\.?\*\*|(?<![\w])Bent: zero(?![\w])", line):
-                found.append({
-                    "document": str(path.relative_to(REPO)),
-                    "line": number,
-                    "text": line.strip()[:180],
-                })
-    return found
+            entry = {"document": str(path.relative_to(REPO)), "line": number,
+                     "text": line.strip()[:180]}
+            if _CLAIM.search(line):
+                claims.append(entry)
+            elif _MENTION.search(line):
+                mentions.append(entry)
+    return claims, mentions
 
 
-BENT_ZERO = bent_zero_claims()
+BENT_ZERO, BENT_ZERO_MENTIONS = bent_zero_claims()
+
+STE_COUNT = (STE_EXCHANGE or {}).get("invariant_count")
 
 DOCUMENT = {
     "extends": f"core@{CORE['version']}",
@@ -422,6 +451,14 @@ DOCUMENT = {
         ),
         "occurrences": BENT_ZERO,
         "count": len(BENT_ZERO),
+        "mentions_not_claims": BENT_ZERO_MENTIONS,
+        "mention_count": len(BENT_ZERO_MENTIONS),
+        "why_both_are_recorded": (
+            "the scan matches the CLAIM FORM -- the bolded assertion every phase report making one "
+            "uses. Anything else naming the phrase is a mention: a heading, a backticked "
+            "reference, prose about the class. Both are listed so the narrowing is visible, and so "
+            "a claim written in some new form appears here as a mention with no claim beside it."
+        ),
         "the_property_set_split": (
             "ten of them were written when the generality probe declared FOUR properties; one was "
             "written after it declared five. Same words, two assertions. Which set each quantified "
@@ -490,6 +527,47 @@ DOCUMENT = {
 }
 
 
+def _refuse_if_a_merge_is_unresolved() -> None:
+    """The guard above, one step further out -- and it was found by the
+    guard above PASSING while the artifact came out wrong.
+
+    `gitlink_commit()` asks `git ls-tree HEAD`. During an unresolved
+    merge HEAD is still the PRE-merge commit, so it reports the old
+    gitlink while the index and the worktree already hold the new one.
+    The tree-vs-index guard sees agreement and permits the run, and the
+    artifact records `joined_on.value` from core.yaml (new) beside
+    `gitlink_at_generation` from HEAD (old) -- internally inconsistent,
+    correctly hashed, and wrong.
+
+    MEASURED, not anticipated: generating mid-merge produced exactly that,
+    with value 5e146d5 and gitlink 3e5bea9 in one file. The register's own
+    join test would have caught it, which is the difference between this
+    and the state the guard above exists for -- but a generator that can
+    only be caught downstream is a generator that emits a wrong artifact
+    first.
+
+    The general shape: A GENERATOR THAT READS `HEAD` IS READING A CLAIM
+    ABOUT THE REPOSITORY THAT IS NOT TRUE DURING A MERGE. Refuse rather
+    than record it.
+    """
+    git_dir = subprocess.run(["git", "rev-parse", "--git-dir"], cwd=str(REPO),
+                             capture_output=True, text=True)
+    if git_dir.returncode != 0:
+        return
+    root = pathlib.Path(git_dir.stdout.strip())
+    if not root.is_absolute():
+        root = REPO / root
+    for marker in ("MERGE_HEAD", "REBASE_HEAD", "CHERRY_PICK_HEAD"):
+        if (root / marker).exists():
+            raise SystemExit(
+                f"REFUSING to generate: {marker} exists, so this is an unresolved "
+                f"{marker.split('_')[0].lower()}.\n"
+                "This generator reads `git ls-tree HEAD` for the gitlink, and during an "
+                "unresolved merge HEAD is the PRE-merge commit -- so the artifact would record "
+                "a gitlink the pin does not name, beside a pin that does.\n"
+                "Resolve and commit first, then re-run.")
+
+
 def _refuse_if_the_pin_and_the_tree_disagree() -> None:
     """A generator that READS the vendored tree may not run while that
     tree and the index disagree about which commit it is.
@@ -536,13 +614,15 @@ def _refuse_if_the_pin_and_the_tree_disagree() -> None:
 
 if __name__ == "__main__":
     _refuse_if_the_pin_and_the_tree_disagree()
+    _refuse_if_a_merge_is_unresolved()
     payload = canonical_bytes(DOCUMENT)
     (HERE / "invariant_register.yaml").write_bytes(payload)
     digest = "sha256:" + hashlib.sha256(payload).hexdigest()
     (HERE / "invariant_register.sha256").write_text(digest + "\n")
     print("wrote invariant_register.yaml")
     print(f"  daf {len(DAQ_INVARIANTS)} invariants | "
-          f"scl {SCL['clause_count'] if SCL else '-'} clauses | ste none enumerated")
+          f"scl {SCL['clause_count'] if SCL else '-'} clauses | "
+          f"ste {STE_COUNT if STE_COUNT else 'none'} enumerated")
     print(f"  extends join: {len(AGREEING)} agreeing, {len(DISAGREEING)} disagreeing")
     print(f"  core unmodified at {GITLINK}: {UNMODIFIED}")
     print(" ", digest)

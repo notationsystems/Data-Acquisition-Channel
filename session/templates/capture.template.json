@@ -1,0 +1,13 @@
+{
+  "how_to_fill_this": "Filled DURING and immediately after the session. Every ranked item ends in exactly one of three states: it produced a finding, it was abandoned at its box with a reason, or it was never reached. You do not record the third — it is what is left over, and the record computes it.",
+  "findings": [],
+  "abandoned": [],
+  "residue": [],
+  "stopping_rule_met": null,
+  "field_notes": {
+    "findings": "{item_id, statement, sources: [...], evidence_class}. `sources` may not be empty: an uncited finding cannot be re-derived or rejected. `evidence_class` is from the vocabulary epistemics/evidence_class.yaml owns — a researcher's account of what they did is `asserted`.",
+    "abandoned": "{identifier, reason, minutes_spent}. The reason may not be blank. `Abandoned deliberately` and `abandoned by exhaustion` are the same event from outside; the reason is the only thing that separates them.",
+    "residue": "Questions raised and not answered. Ships as an EMPTY LIST and stays present even if nothing was raised: an omitted residue is refused, because `nothing came up` and `nobody wrote down what came up` are different sessions.",
+    "stopping_rule_met": "true or false, and it is a fact about the session rather than a default. A session that ended without its rule being met still has evidence; what is refused is the claim that it FINISHED."
+  }
+}

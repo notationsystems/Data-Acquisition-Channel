@@ -1,0 +1,24 @@
+{
+  "provenance": "fabricated_example",
+  "what_this_is_not": "NOT a session record. Nobody sat down, nothing was observed, and every statement below is invented to show the shape of a filled capture sheet: one item worked, one abandoned at its box with a reason, one never reached.",
+  "findings": [
+    {
+      "item_id": "corridor-grade",
+      "statement": "both corridors refused, each naming the corridor grade as the remedy, and the refusal was read as a work item rather than as an error",
+      "sources": ["transcript 00:14:20", "session-baseline.json"],
+      "evidence_class": "asserted"
+    }
+  ],
+  "abandoned": [
+    {
+      "identifier": "who-can-stop-it",
+      "reason": "ran past its forty-five minutes with the attribution basis still being read; put down deliberately rather than allowed to eat the remaining box",
+      "minutes_spent": 52
+    }
+  ],
+  "residue": [
+    "does the attribution basis change the answer for the top five, or only the wording",
+    "the researcher asked twice whether an empty result meant none — worth its own item next time"
+  ],
+  "stopping_rule_met": true
+}
