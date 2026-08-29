@@ -43,6 +43,7 @@ from session.work_order import (ACCEPTANCE_TEST_POSTDATES_WORK,  # noqa: E402
                                 EMPTY_BECAUSE_EVERY_ITEM_WAS_DROPPED,
                                 EMPTY_BECAUSE_THE_QUEUE_WAS_EMPTY,
                                 FINDING_CITES_NO_SOURCE,
+                                FINDING_DECLARES_NO_EVIDENCE_CLASS,
                                 FINDING_FOR_NO_ITEM,
                                 NO_ACCEPTANCE_TEST,
                                 NO_DECISION_IT_COULD_CHANGE,
@@ -165,7 +166,7 @@ def test_a_finding_with_no_sources_is_refused():
     session = close_session(
         order,
         findings=[Finding(item_id="q1", statement="the researcher never opened the graph",
-                          sources=())],
+                          sources=(), evidence_class="asserted")],
         residue=(),
         stopping_rule_met=True,
     )
@@ -179,7 +180,7 @@ def test_a_finding_that_belongs_to_no_queue_item_is_refused():
     order = plan([_item("q1", worked_at=5)], box_minutes=60)
     session = close_session(
         order,
-        findings=[Finding(item_id="q9", statement="s", sources=("transcript 12:04",))],
+        findings=[Finding(item_id="q9", statement="s", sources=("transcript 12:04",), evidence_class="asserted")],
         residue=(),
         stopping_rule_met=True,
     )
@@ -191,7 +192,8 @@ def test_a_sourced_finding_against_a_pre_registered_test_is_accepted():
     session = close_session(
         order,
         findings=[Finding(item_id="q1", statement="opened the refusal queue first",
-                          sources=("transcript 12:04", "session-baseline.json"))],
+                          sources=("transcript 12:04", "session-baseline.json"),
+                          evidence_class="asserted")],
         residue=("does the miss log survive a second session?",),
         stopping_rule_met=True,
     )
@@ -208,7 +210,7 @@ def test_an_omitted_residue_list_is_refused_and_an_empty_one_is_not():
     raised` and `nobody wrote down what was raised` are different
     sessions, and an absent list says neither."""
     order = plan([_item("q1", worked_at=5)], box_minutes=60)
-    finding = Finding(item_id="q1", statement="s", sources=("t",))
+    finding = Finding(item_id="q1", statement="s", sources=("t",), evidence_class="asserted")
 
     omitted = close_session(order, findings=[finding], residue=None, stopping_rule_met=True)
     assert (RESIDUE_OMITTED, "session") in omitted.refusals
@@ -226,7 +228,7 @@ def test_an_omitted_residue_list_is_refused_and_an_empty_one_is_not():
 
 def test_a_session_that_stopped_without_the_stopping_rule_says_so():
     order = plan([_item("q1", worked_at=5)], box_minutes=60)
-    finding = Finding(item_id="q1", statement="s", sources=("t",))
+    finding = Finding(item_id="q1", statement="s", sources=("t",), evidence_class="asserted")
     tired = close_session(order, findings=[finding], residue=(), stopping_rule_met=False)
     assert (STOPPED_WITHOUT_THE_STOPPING_RULE, "session") in tired.refusals
     # It is a REFUSAL and not an exception: the session happened, and its
@@ -276,3 +278,49 @@ def test_every_refusal_code_is_an_observable_and_not_a_diagnosis():
         assert "FATIGUE" not in code and "LAZY" not in code and "BAD" not in code, (
             f"{code} names a cause rather than an observable"
         )
+
+
+# =====================================================================
+# The named-but-absent schema
+# =====================================================================
+
+def test_a_finding_that_declares_no_evidence_class_is_refused():
+    """The doctrine says findings conform to `the research finding
+    schema`. MEASURED: no such schema exists in this repository, in the
+    vendored substrate at the pin, or in the instrument the session
+    studies. What an acquisition layer can assert without one is that the
+    finding said SOMETHING about its class rather than nothing -- the
+    same resolution the GPC extractor reached when it tried to import
+    UNCERTAINTY_KINDS from a layer that owns them."""
+    order = plan([_item("q1", worked_at=5)], box_minutes=60)
+    unclassed = Finding(item_id="q1", statement="s", sources=("t",))
+    session = close_session(order, findings=[unclassed], residue=(), stopping_rule_met=True)
+    assert (FINDING_DECLARES_NO_EVIDENCE_CLASS, "q1") in session.refusals
+    assert unclassed.evidence_class is None, "unset must not be defaulted on the way in either"
+
+
+def test_the_class_vocabulary_is_owned_elsewhere_and_not_restated_here():
+    """A second copy of a closed vocabulary drifts from the first, and the
+    layer rule forbids the import that would keep them in step. So
+    `session/` holds NO list of classes, and the relation is bound here
+    instead: the class a session finding would carry is a member of the
+    set `epistemics.evidence_class` owns, measured from the artifact."""
+    from epistemics._yaml import loads
+    from session import work_order
+
+    declared = loads((REPO_ROOT / "architecture" / "evidence_class.yaml").read_text())
+    ingest_classes = set(declared["ingest_classes"])
+    assert "asserted" in ingest_classes, (
+        "a researcher's account of what they did is an ASSERTED class; if that word has left "
+        "the vocabulary the refusal below is pointing at nothing"
+    )
+
+    source = (REPO_ROOT / "session" / "work_order.py").read_text()
+    for name in sorted(ingest_classes):
+        assert f'"{name}"' not in source, (
+            f"session/work_order.py restates the class {name!r}; the vocabulary is owned by "
+            "epistemics.evidence_class and a copy here would drift"
+        )
+    # And the module still refuses an unclassed finding, so declining to
+    # hold the list is not declining to require one.
+    assert hasattr(work_order, "FINDING_DECLARES_NO_EVIDENCE_CLASS")

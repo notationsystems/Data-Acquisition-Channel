@@ -1,0 +1,126 @@
+# THE INSTRUMENTS, AND WHAT EACH AGENT INSIDE ONE IS AUTHORISED TO DO.
+#
+# An AGENT CONTRACT is generated from this file. The contract is what an
+# executing model reads; this is where the claims in it are made, and
+# every claim about enforcement is checked against the code that enforces
+# it -- see tests/test_instrument_contracts.py. A contract asserting a
+# control the instrument does not have is worse than one asserting none,
+# because it is relied on.
+#
+# THIS FILE IS NOT THE SOURCE THE ARRIVING CONTRACT NAMED, AND IT DOES
+# NOT SIT WHERE THAT SOURCE WOULD SIT. A contract handed to this
+# repository declared `Source: architecture/instruments.yaml`,
+# `Regenerate: python3 generate.py` and a source digest, and none of the
+# three existed here. The digest string itself is recorded once, in
+# architecture/sea_dog_session_instrument.yaml, and is deliberately not
+# repeated here: that record measures how far it has spread, and a copy
+# made to disclaim it is still a copy.
+#
+# A first version of this file WAS written into architecture/instruments.yaml
+# with generate.py beside it. A concurrent session had already measured
+# those two paths as absent and asserted they stay absent, on the ground
+# that a source invented to satisfy a header is worse than a header with
+# no source -- and that assertion caught this file. It was right. Saying
+# `this is a reconstruction` inside the file does not help a reader who
+# finds the path occupied and the digest different; they would read a
+# drift where there was a substitution.
+#
+# So: DAQ's own instrument record, at a name that claims nothing about
+# the missing one. The two paths the foreign doctrine names remain empty.
+# The digest below is over THIS file and the schema it appends, and a
+# test asserts it differs from the claimed one -- read from the record
+# that owns it rather than retyped.
+extends: core@1.0.0
+
+subject: instruments
+status: one_instrument_declared_one_agent_contract_generated
+owner: daf
+enforcement: tests/test_instrument_contracts.py
+
+# ----------------------------------------------------------------------
+program: "Notation Systems computational research substrate"
+
+system_rules:
+  - "No instrument writes canonical state directly; STE promotes."
+  - "Every observation carries provenance sufficient to re-derive it or reject it."
+  - "Shared files stay byte-identical across SCL and DAQ; changes land as verified coordinated pairs."
+  - "An estimate is never promoted to a fact by being passed through a function boundary."
+
+# ----------------------------------------------------------------------
+instruments:
+  edgar_acquisition:
+    layer: DAQ
+    title: "EDGAR Filing Acquisition"
+    purpose: "Acquire SEC filings as provenanced observations, under a declared requester identity and the pacing controls named below, without ever presenting an unverified retrieval as canonical."
+
+    # Every entry here names the module that implements it. A claim with
+    # no implementation is recorded under `not_enforced` instead.
+    enforced:
+      declared_requester_identity:
+        claim: "every request carries a real identifying User-Agent, as SEC's fair-access policy requires."
+        implemented_by: "daf/adapters/edgar_daily_index.py EDGAR_USER_AGENT, set on every urllib Request."
+      bounded_volume_per_call:
+        claim: "a single fetch() retrieves at most max_dates_per_fetch daily index files, defaulting to 5, plus one directory listing."
+        implemented_by: "daf/adapters/edgar_daily_index.py max_dates_per_fetch."
+      retry_only_on_transient_status:
+        claim: "retries are attempted only for 429 and 5xx, at most twice, with a 0.5 second delay; a 404 is never retried."
+        implemented_by: "daf/adapters/edgar_daily_index.py _TRANSIENT_HTTP_STATUSES, _MAX_RETRIES, _RETRY_DELAY_SECONDS."
+      provenance_on_every_document:
+        claim: "each RawDocument carries source_name and retrieval_method, and extraction carries its own method identifier."
+        implemented_by: "daf/adapters/edgar_daily_index.py retrieval_method 'http:edgar_daily_index_v1'; daf/extractors/edgar_daily_index.py extraction_method 'text:edgar_daily_index_v1'."
+
+    # ------------------------------------------------------------------
+    not_enforced:
+      a_hard_request_rate_ceiling:
+        what_the_arriving_contract_said: "the instrument operates under `a hard request-rate ceiling`."
+        what_is_actually_there: "MEASURED, and it is not a rate ceiling. `max_dates_per_fetch` bounds the NUMBER of documents per call, not the RATE at which they are requested, and the fetch loop contains no inter-request delay on the normal path. The only sleep in the module is _RETRY_DELAY_SECONDS, which fires after a transient failure and never between successful requests. Six requests -- one listing plus five index files -- can issue as fast as the network allows."
+        why_the_distinction_matters: "a volume bound limits how much one call costs the SEC; a rate ceiling limits how fast. They are different controls and only the first exists. An agent contract asserting the second invites a caller to schedule calls back-to-back on the belief that the instrument paces itself."
+        the_disposition: "recorded, not built. Adding a rate limiter is a change to acquisition behaviour and belongs to a phase that measures it, not to a documentation pass. The generated contract says `the pacing controls named below` and enumerates them, rather than repeating a control that does not exist."
+
+    agents:
+      EDGAR_SCOUT:
+        role: "You propose which filings are worth acquiring. You select targets and estimate relevance. You do not fetch, you do not decide, and you do not write state."
+        inputs:
+          - "A research question, in natural language, with its domain and time window."
+          - "The current acquisition ledger: what has already been retrieved, so proposals do not duplicate it."
+        output_schema: "architecture/schemas/candidate_filing.schema.json"
+        estimation_rules:
+          - "Relevance is an estimate in [0,1] and is always labelled as an estimate."
+          - "Confidence is about the proposal, not about the filing's contents, which have not been read."
+          - "When the question cannot be mapped to a form type or filer, emit an empty array and one query_gap object rather than guessing a target."
+          - "Never assert that a filing contains something; assert that a filing is the kind of document where it would be found."
+        may:
+          - "Propose targets, rank them, and state why each is a candidate."
+          - "Decline the whole request and say what is missing."
+        may_not:
+          - "Issue network requests."
+          - "Assert the existence of a filing not present in the supplied ledger or index."
+          - "Invent accession numbers, CIKs, dates, or form types. An unknown identifier is null, never a plausible-looking value."
+          - "Treat its own prior output as evidence."
+        provenance_rules:
+          - "Every proposal names the index or ledger entry it was derived from."
+          - "A proposal derived from general knowledge rather than supplied data is marked source=\"prior\", and prior-sourced proposals are always ranked below data-sourced ones."
+        failure_behaviour:
+          preamble: "Failing correctly is part of the function. A wrong answer costs more than no answer, because a wrong answer closes the question."
+          rules:
+            - "Malformed or unreadable input -> emit a single error object with reason; do not partially answer."
+            - "Output that would violate the schema -> emit the error object instead of the violating output."
+            - "Uncertainty is expressed inside the schema, never by narrating outside it."
+        prohibited:
+          - "Emitting anything outside the output schema -- no preamble, no commentary, no explanation of your reasoning."
+          - "Writing to system state. You return values; the system decides what becomes state."
+          - "Treating your own previous output as evidence."
+          - "Substituting a plausible value for an unknown one. An unknown is null."
+          - "Expanding the scope of the task you were given."
+
+        # ------------------------------------------------------------------
+        # The prohibitions above are prose until something refuses the
+        # shapes they forbid. daf/agents/candidate_filing.py is that
+        # something, and its scope is stated rather than implied.
+        mechanical_enforcement:
+          validator: "daf/agents/candidate_filing.py"
+          what_it_checks: "the constraints the prohibitions actually rest on: the discriminator `kind`, required keys, additionalProperties false, the accession-number and CIK patterns, the [0,1] bounds on relevance and confidence, and the source enum."
+          what_it_does_not_check: "it is NOT a general JSON Schema engine and does not claim to be. Unimplemented keywords -- format, $ref resolution beyond the three named definitions, and the draft's numeric edge cases -- are listed in the module and a schema keyword appearing that it does not implement is a REFUSAL rather than a silent pass."
+          why_it_is_not_jsonschema: "`[project] dependencies = []` and the conformance workflow installs checkers only. A general validator would be a runtime dependency for a check that four keywords cover."
+
+what_this_file_must_not_become: "a place where a control is described because it would be good if it existed. Every entry under `enforced` names the module that enforces it, and a claim without one goes under `not_enforced` with what is actually there."
