@@ -83,17 +83,79 @@ def groups_for(values, **kwargs):
 # --------------------------------------------- the gates were not the constraint
 
 
-def test_every_replicate_passes_every_gate_that_exists():
-    """So wiring the gates at ingest could not have been the answer either
-    way. Measured before the rest of this file draws any conclusion."""
+def discovered_content_gates():
+    """Every content gate in science/, derived by signature rather than
+    listed -- the same technique the polymer vertical uses, and the reason
+    this test can no longer be scoped to whichever gate came to mind."""
+    import ast
+
+    found = {}
+    for path in sorted((REPO_ROOT / "science").glob("*.py")):
+        module = None
+        for node in ast.parse(path.read_text()).body:
+            if not isinstance(node, ast.FunctionDef) or node.name.startswith("_"):
+                continue
+            args = [a.arg for a in node.args.args]
+            returns = ast.unparse(node.returns) if node.returns else ""
+            if not (args and args[0] == "content" and "Admissibility" in returns):
+                continue
+            if module is None:
+                module = __import__(f"science.{path.stem}", fromlist=["*"])
+            found[node.name] = (getattr(module, node.name), len(node.args.args))
+    return found
+
+
+def test_the_replicates_reach_every_gate_and_the_one_refusal_is_not_about_replication():
+    """REWRITTEN. This test was named `every_replicate_passes_every_gate_
+    that_exists` and applied ONE gate -- the mirror image of the class the
+    cohort probe filed against itself, where a gate was applied to content
+    it does not govern and its refusals counted as evidence. Here one gate
+    was applied and its verdict generalised to all of them.
+
+    A concurrent session's Phase 38 found it from the other side: its
+    fixture content is refused by `no_context_free_property`, which this
+    file never ran. Measured on THIS file's content, three of four admit
+    and the fourth refuses with MISSING_METHOD.
+
+    THE CONCLUSION SURVIVES AND IS NOW TRUE AS STATED. The point was never
+    that replicates pass everything -- it was that no gate refuses them
+    FOR BEING REPLICATES, so wiring the gates at ingest could not have been
+    the answer either way. That is what is asserted now: every refusal is
+    checked against the vocabulary, and none of it names replication.
+    """
+    gates = discovered_content_gates()
+    assert len(gates) >= 4, f"the gate sweep found only {sorted(gates)}"
+
     observations = [observation(i, v) for i, v in enumerate(MN_VALUES)]
     assert len({o.id for o in observations}) == len(observations)
-    for obs in observations:
-        verdict = observation_is_table_alignable(obs.content)
-        assert verdict.admissible and not list(verdict.reasons), (
-            f"a replicate is now refused: {list(verdict.reasons)}. The readiness record's premise "
-            "-- that the gates are not the constraint -- must be re-measured."
+
+    verdicts = {}
+    for name, (gate, arity) in sorted(gates.items()):
+        if arity > 1:
+            continue          # needs a resolver; exercised by its own suite
+        outcomes = [gate(obs.content) for obs in observations]
+        assert len({(o.admissible, o.reasons) for o in outcomes}) == 1, (
+            f"{name} disagrees across identical replicates, which would mean the gate reads "
+            "something that is not the content"
         )
+        verdicts[name] = outcomes[0]
+
+    refused = {n: list(v.reasons) for n, v in verdicts.items() if not v.admissible}
+
+    # THE PROPERTY, not the pass. A refusal is only evidence for the
+    # mechanism that produced it -- this pair's own rule.
+    replication_words = ("REPLICATE", "RUN", "REPEAT", "COHORT", "POPULATION",
+                         "SAMPLE_SIZE", "PAIR")
+    for name, reasons in refused.items():
+        for reason in reasons:
+            assert not any(word in reason for word in replication_words), (
+                f"{name} refused with {reason!r}, which names a replication concept -- the gates "
+                "ARE the constraint after all and this record's premise must be re-measured"
+            )
+    assert refused, (
+        "every gate now admits this content, so the distinction this test draws is untested; "
+        "re-measure rather than assuming the premise still holds"
+    )
 
 
 def test_replicate_distinctness_rests_on_one_record_per_run():

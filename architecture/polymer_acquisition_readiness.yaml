@@ -29,7 +29,7 @@ answers_a_question_posed_by: architecture/polymer_vertical.yaml
 # ----------------------------------------------------------------------
 the_question_that_was_asked: "no content gate runs at ingest -- is that the state you want the data arriving into?"
 the_question_that_decided_it: "can rho be computed from what the substrate produces, given perfect replicate data?"
-why_they_are_different: "the pair question, again. The ingest surface is the thing that was worried about; the grouping is the thing that determines the outcome. Measured before assuming: five replicates pass every gate that exists, so the gates could not have been the answer either way."
+why_they_are_different: "the pair question, again. The ingest surface is the thing that was worried about; the grouping is the thing that determines the outcome. Measured before assuming: no gate refuses replicates FOR BEING REPLICATES, so the gates could not have been the answer either way. CORRECTED 2026-08-27 -- the sentence here first read `five replicates pass every gate that exists`, which was scoped to ONE gate and generalised to all of them. Measured across the gate set derived by signature, three of four admit this record's own content and the fourth refuses with MISSING_METHOD -- a refusal that has nothing to do with replication. The mirror image of the class the cohort probe filed against itself: there a gate was applied to content it does not govern and its refusals counted as evidence; here one gate was applied and its verdict counted for all. Found from the other side by the concurrent session's Phase 38, whose fixture content is refused by the gate this file never ran."
 
 # ----------------------------------------------------------------------
 # MEASURED, against the real modules.
