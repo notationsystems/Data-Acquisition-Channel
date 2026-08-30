@@ -63,6 +63,20 @@ SECOND_ANCHOR = "gpc_summary_export_anchor_impact_r190048.csv"
 THIRD_ANCHOR = "gpc_summary_export_anchor_impact_r190048_identifiers.csv"
 A_GPC_ANCHOR = "a_gpc_anchor"
 
+#: THE VOCABULARY WAS TECHNIQUE-SHAPED, and the anchor that found it is
+#: the one that exists to test exactly that. A real GLP water-solubility
+#: determination is not a GPC anchor, so the binary above offered only
+#: NOT_A_GPC_ANCHOR for it -- true by the letter, and the precise false
+#: statement this guard's own docstring says no check can reach: a
+#: fixture transcribed from a real report, filed with the synthetic ones.
+#: The repair is a third value rather than a widened clause. What the
+#: guard is really asking is "was this transcribed from a real
+#: document", and the GPC in the name was always incidental.
+A_NON_GPC_ANCHOR = "a_non_gpc_anchor"
+#: The first anchor of a different analytical technique, 2026-08-30.
+FOURTH_ANCHOR = "physchem_study_anchor_wil_505902_water_solubility.json"
+ANCHOR_KINDS = (A_GPC_ANCHOR, A_NON_GPC_ANCHOR)
+
 #: Every fixture in the tree, declared. Enumerating all of them rather
 #: than filtering to `gpc_*` is deliberate: a filename prefix is the same
 #: kind of proxy the first form used, and an anchor need not be named for
@@ -79,14 +93,14 @@ FIXTURE_PROVENANCE = {
     "edgar_daily_index_synthetic_20260703.idx": NOT_A_GPC_ANCHOR,
     "edgar_daily_index_synthetic_double_space_name.idx": NOT_A_GPC_ANCHOR,
     "edgar_index_listing_synthetic.json": NOT_A_GPC_ANCHOR,
+    "gpc_report_anchor_epa_p22_0051.json": A_GPC_ANCHOR,
     "gpc_report_synthetic_derived_column.json": NOT_A_GPC_ANCHOR,
     "gpc_report_synthetic_ps4471.json": NOT_A_GPC_ANCHOR,
     "gpc_report_synthetic_unlabelled_provenance.json": NOT_A_GPC_ANCHOR,
-    "gpc_report_anchor_epa_p22_0051.json": A_GPC_ANCHOR,
     "gpc_summary_export_anchor_impact_r190048.csv": A_GPC_ANCHOR,
+    "gpc_summary_export_anchor_impact_r190048.provenance.md": NOT_A_GPC_ANCHOR,
     "gpc_summary_export_anchor_impact_r190048_identifiers.csv": A_GPC_ANCHOR,
     "gpc_summary_export_anchor_impact_r190048_identifiers.provenance.md": NOT_A_GPC_ANCHOR,
-    "gpc_summary_export_anchor_impact_r190048.provenance.md": NOT_A_GPC_ANCHOR,
     "gpc_summary_export_synthetic_absences.csv": NOT_A_GPC_ANCHOR,
     "gpc_summary_export_synthetic_aggregate_block.csv": NOT_A_GPC_ANCHOR,
     "gpc_summary_export_synthetic_flag_says_valid.csv": NOT_A_GPC_ANCHOR,
@@ -106,6 +120,8 @@ FIXTURE_PROVENANCE = {
     "noaa_window_synthetic_20260101_20260103.json": NOT_A_GPC_ANCHOR,
     "noaa_window_synthetic_20260101_20260103_revised.json": NOT_A_GPC_ANCHOR,
     "noaa_window_synthetic_20260102_20260104.json": NOT_A_GPC_ANCHOR,
+    "physchem_study_anchor_wil_505902_water_solubility.json": A_NON_GPC_ANCHOR,
+    "physchem_study_anchor_wil_505902_water_solubility.provenance.md": NOT_A_GPC_ANCHOR,
     "usgs_event_detail_malformed.json": NOT_A_GPC_ANCHOR,
     "usgs_event_detail_synth00000001.json": NOT_A_GPC_ANCHOR,
     "usgs_event_detail_synth00000001_empty.json": NOT_A_GPC_ANCHOR,
@@ -124,7 +140,7 @@ def anchor_guard(present, declared):
     can run the REAL path against planted inputs instead of a paraphrase
     of it."""
     undeclared = sorted(set(present) - set(declared))
-    anchors = sorted(name for name in present if declared.get(name) == A_GPC_ANCHOR)
+    anchors = sorted(name for name in present if declared.get(name) in ANCHOR_KINDS)
     return undeclared, anchors
 
 
@@ -149,7 +165,7 @@ def test_an_anchor_has_landed_and_this_guard_is_retired():
         f"undeclared fixtures: {undeclared}. Declare each as NOT_A_GPC_ANCHOR or A_GPC_ANCHOR. "
         "An undeclared fixture is how the first form of this guard missed a vendor nobody listed."
     )
-    assert anchors == sorted([FIRST_ANCHOR, SECOND_ANCHOR, THIRD_ANCHOR]), (
+    assert anchors == sorted([FIRST_ANCHOR, SECOND_ANCHOR, THIRD_ANCHOR, FOURTH_ANCHOR]), (
         f"expected exactly the landed anchors and found {anchors}. A new anchor fixture must be "
         "declared here deliberately; the guard was retired for the first one, not disabled."
     )
@@ -178,7 +194,8 @@ def test_the_guard_fires_on_a_vendor_nobody_listed_and_the_first_form_did_not():
     undeclared, anchors = anchor_guard(present, declared)
     assert undeclared == []
     assert planted in anchors, "a declared anchor must fire it whatever the vendor is called"
-    assert anchors == sorted([planted, FIRST_ANCHOR, SECOND_ANCHOR, THIRD_ANCHOR]), (
+    assert anchors == sorted([planted, FIRST_ANCHOR, SECOND_ANCHOR, THIRD_ANCHOR,
+                              FOURTH_ANCHOR]), (
         "and the landed anchor is still reported alongside it -- the guard was retired for the "
         "first anchor, not switched off"
     )

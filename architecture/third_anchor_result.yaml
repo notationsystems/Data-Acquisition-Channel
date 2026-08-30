@@ -1,0 +1,109 @@
+# WHAT A NON-CHROMATOGRAPHIC REPORT DID TO THIS CONTRACT.
+#
+# Scored against architecture/third_anchor_preregistration.yaml, whose
+# five predictions were pinned (digest
+# 070eece7be75adec877dd96bacc1fdee424779d2e6e2be05d4afaa0fcb0db832) and
+# committed before any candidate was fetched. Two of the five are wrong,
+# and the two wrong ones are the more useful half of the result.
+extends: core@1.0.0
+
+subject: third_anchor_result
+status: measured
+owner: daf
+enforcement: tests/test_third_anchor.py
+recorded: "2026-08-30"
+
+# ----------------------------------------------------------------------
+the_source:
+  title: "FINAL REPORT -- DETERMINATION OF PHYSICO-CHEMICAL PROPERTIES OF NKK-1304"
+  facility: "WIL Research Europe B.V., 's-Hertogenbosch, The Netherlands"
+  study_director: "K.A. Oudhoff, PhD."
+  identification: "Project 505902, Substance 205674/A, batch CDC-003"
+  sponsor: "Nippon Soda Co. Ltd"
+  dates: "study plan 02 July 2014 -- 24 September 2014; GLP-compliant; 44 pages"
+  url: "https://downloads.regulations.gov/EPA-HQ-OPPT-2019-0495-0004/attachment_4.pdf"
+  sha256: "4278fff29d1cf6235131d5ce12552434d7286ecfac989f3984f85a5c235775aa"
+  retrieved: "2026-08-30"
+  what_was_transcribed: "section 12, WATER SOLUBILITY, by column elution under OECD 105. The other ten properties in the report are not in the fixture."
+  why_it_qualifies: "not size-exclusion chromatography, and not a chromatographic measurement under another name -- the separation is an elution from a loaded column and the quantity is a saturation mass concentration, not a retention-derived molar mass."
+
+faithfulness:
+  two_parser_agreement: "pypdf default and layout extraction returned the twenty individual concentrations identically."
+  arithmetic_check: "the report publishes statistics derived from the twenty values, so the transcription can be checked against the document's own arithmetic. The two means reproduce exactly (9.6610 / 9.7410 against the printed 9.66 / 9.74). MD computes to 0.825% against a printed 0.83%, which is half-up rounding of a value sitting exactly on the boundary. Both CVs land one unit low in the last printed digit (0.903 vs 0.91, 0.271 vs 0.28), which is what a CV computed from concentrations carried at full precision and printed to 2 dp produces. Stated this precisely because a first draft of this record said MD reproduced 'exactly' and it does not -- it reproduces to within the laboratory's rounding convention, which is a weaker and true claim."
+  why_this_is_stronger_than_the_gpc_anchors: "neither GPC anchor contained an internal consistency relation a transcription could be tested against. This one does, and the transcription was tested rather than asserted."
+
+# ----------------------------------------------------------------------
+predictions_scored:
+
+  q1_the_four_declarable_fields_are_still_absent:
+    verdict: FALSIFIED_IN_PART
+    what_was_predicted: "a report of any technique states none of data_provenance, sample_kind, method-as-an-identifier or a machine-readable sample id."
+    what_was_measured: "three of four hold. `method` does not, and it fails hard: the report cites OECD 105, EC A.6 and OPPTS 830.7840 -- three identifiers from published closed vocabularies, more machine-readable than anything either GPC anchor carried. Declaring `method` at the adapter alongside the document's own is REFUSED as a conflict, which is the correct behaviour and is also the proof that the field is genuinely stated."
+    why_the_prediction_was_wrong: "it generalised from two chromatograms. A chromatogram names an instrument and a column; a guideline study cites the guideline it was performed under, because that citation is what makes it a guideline study. The absent fields are absent for a reason that survives -- data_provenance and sample_kind are the acquirer's categories, not the laboratory's -- and `method` was in the list only because chromatography reports happen not to state it."
+    what_it_changes: "the four are not one class. Three are properties of the ACQUISITION; `method` is a property of the STUDY, and a whole document class states it."
+
+  q2_the_uncertainty_kind_will_not_fit:
+    verdict: CONFIRMED_IN_A_SHARPER_FORM
+    what_was_predicted: "the vocabulary `stated | estimated | propagated | absent` will not fit a mean of replicates plus a standard deviation."
+    what_was_measured: "no standard deviation appears anywhere in section 12. What the report publishes is a coefficient of variation (n = 10, per flow rate: 0.91% and 0.28%) and a maximum difference between the two flow-rate means (0.83%). Neither is an uncertainty ON the reported value: both are dispersion at a level of aggregation BELOW it. The only true posture for every one of the twenty replicates is `absent`, and `absent` is what was recorded."
+    the_gap: "`absent` is TRUE and discards two published numbers. Nothing refuses, because nothing is false. A vocabulary that can only say `absent` about a report carrying two dispersion statistics is not mis-fitting the data -- it is silently declining to carry it, which is the harder failure to see."
+    what_it_is_not: "this is not an argument for adding a fifth kind. The CV is a property of a SET of runs, and `uncertainty_kind` is a per-cell field; a fifth name in a per-cell vocabulary would put a set-level statistic on every member of the set, which is the shape science/structured_uncertainty.py already refuses for covariances. Named and left open."
+
+  q3_the_derived_measured_distinction_survives_but_the_denylist_does_not:
+    verdict: CONFIRMED
+    what_was_measured: "the declared-kind requirement holds unchanged on a technique it was never written for. DERIVED_VARIABLES catches nothing, as predicted: it lists spellings of dispersity, and this report's derived quantities are Mean 1, Mean 2, CV, MD, the analysed concentration (from a calibration curve) and log Pow. Also outside section 12: the reported surface tension 73.5 mN/m is the mean of five readings multiplied by a calibration factor and then Harkins-Jordan corrected -- a headline result three transformations from measurement, and no list would have named it."
+    what_it_shows: "the protection is the REQUIREMENT and the list is decoration, now measured on two techniques rather than one."
+
+  q4_a_single_value_report_has_no_run_identity:
+    verdict: FALSIFIED
+    what_was_predicted: "a study reporting one value from replicates may satisfy the one-Record-per-run precondition vacuously, by collapsing the replicates before acquisition."
+    what_was_measured: "Table 8 prints all twenty individual concentrations. The precondition has real work and does it: twenty runs, twenty distinct Records, twenty distinct Observation ids, zero failures."
+    the_stronger_result_the_prediction_did_not_reach: "TWELVE of the twenty replicates share a value with another replicate (9.70 three times, 9.74 three times, 9.71/9.72/9.73 twice each), and all twenty stayed distinct. The adapter's claim that run identity on the locator keeps two runs reporting the SAME number two Records had never been tested on real data -- both GPC anchors had all-distinct values. It holds."
+    what_survives_of_the_prediction: "the vacuous case is still reachable; this document simply is not it. Section 12.7 states the result as a single figure, so a transcriber reading the conclusion rather than the table would produce exactly the collapsed document the prediction describes, and nothing downstream could tell the two readings apart. The prediction was wrong about this report and right about the shape."
+
+  q5_the_conditions_mapping_will_carry_the_whole_method:
+    verdict: CONFIRMED
+    what_was_measured: "seventeen conditions keys per run -- three guideline citations, technique, temperature, column geometry, carrier material, eluent, equilibration protocol, fraction volume, analytical finish, calibration design, turbidity check, blank column, preliminary test, flow rate, pH. Reachability by anything downstream: zero, exactly as on both GPC anchors. The volume went up and the reachability did not move."
+
+# ----------------------------------------------------------------------
+# What the anchor found that no prediction reached.
+# ----------------------------------------------------------------------
+unpredicted:
+
+  the_substrate_reproduced_the_study_s_own_statistics:
+    what_happened: "given the twenty replicates and nothing else, science/replicate_pairing.py recovered TWO replicate sets of ten, with means 9.6610 and 9.7410 and CVs 0.903% and 0.271%. The report prints 9.66 / 0.91 and 9.74 / 0.28. The mean of the two means is 9.7010; the report's stated water solubility is 9.70 mg/l."
+    why_it_matters: "the pairing machinery had only ever been checked against synthetic runs and against this repository's own fixtures. This is the first time it has been checked against an external laboratory's published statistics, and it agrees to the printed precision without being given the aggregate. It is also the first evidence that the grouping rule -- CONDITIONS ARE THE GROUP -- picks the same grouping a GLP study picks for itself."
+    what_it_is_not: "not a validation of the module. One agreement on one study is one agreement."
+
+  the_adapter_carries_what_the_extractor_discards:
+    what_happened: "the first transcription put flow rate and pH under a run-level key `run_conditions`. The adapter copies every non-`run_id` run key into the payload, so it travelled; the extractor's content vocabulary is closed, so it was dropped without a word. Acquisition succeeded: twenty observations, zero failures, zero pairing refusals."
+    the_consequence: "the twenty runs merged into ONE comparison group instead of two, and the pooled CV was 0.773% -- a statistic the study never computed, sitting between its two acceptance figures and derived from pooling across the conditioning variable its acceptance criterion is evaluated within."
+    why_it_is_the_dangerous_shape: "the MEAN IS INVARIANT. 9.7010 in both groupings, matching the report's 9.70 exactly. A consumer checking the acquisition against the source would compare the mean, find it right, and never see that the grouping was wrong. The check a reader would actually run is blind to the defect."
+    the_correct_expression_exists: "a run-level `conditions` is carried, and architecture/acquisition_reachability.yaml already recorded that per-run conditions are expressible by run-level keys. That record is CORRECT; the first transcription was wrong. This is filed as a defect anyway, because the failure mode is an adapter accepting a key the extractor discards in silence, and an author who guesses the wrong name gets a clean green."
+    what_is_not_claimed: "no product change is made here. The finding is a measured asymmetry, not a proposal."
+
+  conditions_replace_rather_than_merge:
+    what_happened: "a run-level `conditions` overwrites the report-level one wholesale. To add one per-run key, all fifteen report-level keys must be restated in every run; the fixture does this. A transcription that states only the run's own two keys also passes every gate with zero refusals -- and loses all three guideline citations, the temperature, the column, and the whole method context."
+    the_cost: "the correct transcription and the context-destroying one are both green, and differ only in verbosity."
+
+  a_result_that_is_neither_a_value_nor_any_absence_reason:
+    where: "section 10, VAPOUR PRESSURE -- outside the transcribed section, recorded because the same report contains it."
+    what_the_report_states: "vapour pressure at 20 C: < 1.5e-3 Pa; at 25 C: < 9.6e-3 Pa. The intended determination FAILED -- a log p versus 1/T curve with r > 0.99 could not be obtained, so the weight losses were not related to vapour pressure. The bound was established instead by comparing weight loss against hexachlorobenzene at the same temperatures."
+    why_it_fits_nothing: "science/table.py's ABSENCE_REASONS are not_measured, below_detection, above_range, withheld, lost_in_acquisition. It was measured, so not the first. It is not below the instrument's detection -- weight loss WAS detected; the correlation failed. It is not above range, not withheld, not lost. The true statement -- an upper bound established by comparison with a reference substance after the intended method failed -- is expressible as none of the five, and the bound 1.5e-3 has nowhere to live even if a reason fitted, because an absence carries a reason and not a number."
+    the_inversion: "`< 1.5e-3 Pa` is strictly more informative than `not_measured`, and the substrate flattens them to the same thing. This is the class already filed in architecture/vacuous_evidence.yaml as a stated limit that inverts a conclusion, now met on a real document."
+    status: OPEN_AND_NOT_RESOLVED_HERE
+
+  the_identifier_ambiguity_is_technique_independent:
+    what_happened: "the report carries NKK-1304 (substance designation), CDC-003 (batch) and 205674/A (test-facility substance number), none labelled as the identity of what was measured. The fixture states none, so the acquirer's choice appears in acquisition_declared."
+    why_it_is_recorded: "architecture/anchor_three_identifiers.yaml found this on a GPC export from a different vendor. It recurs unchanged on a different technique, a different laboratory and a different continent, which upgrades it from a vendor quirk to a property of test reports."
+
+  the_guard_vocabulary_was_technique_shaped_too:
+    what_happened: "tests/test_corpus_anchor_preregistration.py declares every fixture as A_GPC_ANCHOR or NOT_A_GPC_ANCHOR. A real GLP water-solubility determination is not a GPC anchor, so the binary offered only NOT_A_GPC_ANCHOR for it."
+    why_that_would_have_been_the_bad_kind_of_true: "that declaration is true by the letter and files a faithfully transcribed real report alongside the synthetic fixtures. It is the precise case the guard's own docstring names as beyond any check -- 'a fixture transcribed from a real report and declared NOT_A_GPC_ANCHOR is a false statement by a person, and no check reaches it.'"
+    the_repair: "a third value, A_NON_GPC_ANCHOR, and an ANCHOR_KINDS set the guard reads instead of one constant. The vocabulary was widened; no clause was. What the guard is really asking is whether a fixture came from a real document, and the GPC in the name was always incidental."
+    what_makes_it_worth_recording: "the finding this anchor exists to test -- that a name encoded a technique where the substance was general -- recurred inside the check written to police the anchors. Found by the guard refusing the fixture rather than by review."
+    detector_proof: "the anchor filed as NOT_A_GPC_ANCHOR now fails two assertions. Before the widening that misfiling was silent, which is what the docstring said."
+
+# ----------------------------------------------------------------------
+what_the_anchor_settles: "the contract is not GPC-shaped. Every clause that survived two chromatograms survived a column-elution solubility determination, on a document none of them was written for, and the grouping machinery reproduced the study's own analysis. What is technique-shaped is smaller and now named: `method` was in the caller-declarable list only because chromatograms do not cite guidelines."
+what_it_leaves_open: "the uncertainty vocabulary carries no set-level dispersion and says `absent` truthfully while discarding it; the absence vocabulary has no bound; a conditioning variable under an unrecognised key is dropped in silence behind an invariant mean. None is repaired here."

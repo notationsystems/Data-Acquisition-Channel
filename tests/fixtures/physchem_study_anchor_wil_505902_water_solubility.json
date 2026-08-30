@@ -1,0 +1,663 @@
+{
+  "report_id": "wil-505902-nkk1304-water-solubility",
+  "method": "OECD 105 / EC A.6 / OPPTS 830.7840 column elution method, HPLC-UV finish",
+  "conditions": {
+    "guideline_ec": "EC no. 440/2008 Part A, Guideline A.6 'Water Solubility', OJEU L142, 31 May 2008",
+    "guideline_oecd": "OECD Guidelines for the Testing of Chemicals no. 105 'Water Solubility', 27 July 1995",
+    "guideline_epa": "OPPTS 830.7840 'Water Solubility: Column Elution Method; Shake Flask Method', March 1998",
+    "technique": "column elution",
+    "temperature_c": "19.8 +/- 0.2",
+    "column": "150 mm x 4.6 mm i.d., 0.5 um frits",
+    "carrier_material": "LiChroprep Si 60 25-40 um (Merck), 5 g, loaded with 51.8 mg test substance from acetone, acetone evaporated at 35 C",
+    "eluent": "double distilled water",
+    "equilibration": "column filled with water, equilibrated 2 hours, stabilised overnight at 12 ml/hour",
+    "sample_volume_ml": "2",
+    "analysis": "500 uL subsample diluted 1:1 (v:v) with acetonitrile; HPLC-UV per validated method of Chapter 7",
+    "calibration": "five concentrations, two responses each, linear least squares, 1/concentration^2 weighting, r > 0.99",
+    "turbidity_check": "eluate turbidity < 0.2 NTU; no undissolved particles detected",
+    "blank_column": "identical procedure on blank carrier material; no test substance detected",
+    "preliminary_test": "494 mg/l nominal, stirred 22 h at 19.8 +/- 0.3 C; dissolved content 2.38 mg/l; water solubility < 10^-2 g/l, so column elution chosen"
+  },
+  "runs": [
+    {
+      "run_id": "flow24-sample1",
+      "conditions": {
+        "guideline_ec": "EC no. 440/2008 Part A, Guideline A.6 'Water Solubility', OJEU L142, 31 May 2008",
+        "guideline_oecd": "OECD Guidelines for the Testing of Chemicals no. 105 'Water Solubility', 27 July 1995",
+        "guideline_epa": "OPPTS 830.7840 'Water Solubility: Column Elution Method; Shake Flask Method', March 1998",
+        "technique": "column elution",
+        "temperature_c": "19.8 +/- 0.2",
+        "column": "150 mm x 4.6 mm i.d., 0.5 um frits",
+        "carrier_material": "LiChroprep Si 60 25-40 um (Merck), 5 g, loaded with 51.8 mg test substance from acetone, acetone evaporated at 35 C",
+        "eluent": "double distilled water",
+        "equilibration": "column filled with water, equilibrated 2 hours, stabilised overnight at 12 ml/hour",
+        "sample_volume_ml": "2",
+        "analysis": "500 uL subsample diluted 1:1 (v:v) with acetonitrile; HPLC-UV per validated method of Chapter 7",
+        "calibration": "five concentrations, two responses each, linear least squares, 1/concentration^2 weighting, r > 0.99",
+        "turbidity_check": "eluate turbidity < 0.2 NTU; no undissolved particles detected",
+        "blank_column": "identical procedure on blank carrier material; no test substance detected",
+        "preliminary_test": "494 mg/l nominal, stirred 22 h at 19.8 +/- 0.3 C; dissolved content 2.38 mg/l; water solubility < 10^-2 g/l, so column elution chosen",
+        "flow_rate_ml_per_hour": "24",
+        "ph": "7.8"
+      },
+      "measurements": [
+        {
+          "variable": "eluate_concentration",
+          "value": 9.43,
+          "unit": "mg/L",
+          "uncertainty": null,
+          "uncertainty_kind": "absent",
+          "kind": "measured"
+        }
+      ]
+    },
+    {
+      "run_id": "flow24-sample2",
+      "conditions": {
+        "guideline_ec": "EC no. 440/2008 Part A, Guideline A.6 'Water Solubility', OJEU L142, 31 May 2008",
+        "guideline_oecd": "OECD Guidelines for the Testing of Chemicals no. 105 'Water Solubility', 27 July 1995",
+        "guideline_epa": "OPPTS 830.7840 'Water Solubility: Column Elution Method; Shake Flask Method', March 1998",
+        "technique": "column elution",
+        "temperature_c": "19.8 +/- 0.2",
+        "column": "150 mm x 4.6 mm i.d., 0.5 um frits",
+        "carrier_material": "LiChroprep Si 60 25-40 um (Merck), 5 g, loaded with 51.8 mg test substance from acetone, acetone evaporated at 35 C",
+        "eluent": "double distilled water",
+        "equilibration": "column filled with water, equilibrated 2 hours, stabilised overnight at 12 ml/hour",
+        "sample_volume_ml": "2",
+        "analysis": "500 uL subsample diluted 1:1 (v:v) with acetonitrile; HPLC-UV per validated method of Chapter 7",
+        "calibration": "five concentrations, two responses each, linear least squares, 1/concentration^2 weighting, r > 0.99",
+        "turbidity_check": "eluate turbidity < 0.2 NTU; no undissolved particles detected",
+        "blank_column": "identical procedure on blank carrier material; no test substance detected",
+        "preliminary_test": "494 mg/l nominal, stirred 22 h at 19.8 +/- 0.3 C; dissolved content 2.38 mg/l; water solubility < 10^-2 g/l, so column elution chosen",
+        "flow_rate_ml_per_hour": "24",
+        "ph": "7.8"
+      },
+      "measurements": [
+        {
+          "variable": "eluate_concentration",
+          "value": 9.61,
+          "unit": "mg/L",
+          "uncertainty": null,
+          "uncertainty_kind": "absent",
+          "kind": "measured"
+        }
+      ]
+    },
+    {
+      "run_id": "flow24-sample3",
+      "conditions": {
+        "guideline_ec": "EC no. 440/2008 Part A, Guideline A.6 'Water Solubility', OJEU L142, 31 May 2008",
+        "guideline_oecd": "OECD Guidelines for the Testing of Chemicals no. 105 'Water Solubility', 27 July 1995",
+        "guideline_epa": "OPPTS 830.7840 'Water Solubility: Column Elution Method; Shake Flask Method', March 1998",
+        "technique": "column elution",
+        "temperature_c": "19.8 +/- 0.2",
+        "column": "150 mm x 4.6 mm i.d., 0.5 um frits",
+        "carrier_material": "LiChroprep Si 60 25-40 um (Merck), 5 g, loaded with 51.8 mg test substance from acetone, acetone evaporated at 35 C",
+        "eluent": "double distilled water",
+        "equilibration": "column filled with water, equilibrated 2 hours, stabilised overnight at 12 ml/hour",
+        "sample_volume_ml": "2",
+        "analysis": "500 uL subsample diluted 1:1 (v:v) with acetonitrile; HPLC-UV per validated method of Chapter 7",
+        "calibration": "five concentrations, two responses each, linear least squares, 1/concentration^2 weighting, r > 0.99",
+        "turbidity_check": "eluate turbidity < 0.2 NTU; no undissolved particles detected",
+        "blank_column": "identical procedure on blank carrier material; no test substance detected",
+        "preliminary_test": "494 mg/l nominal, stirred 22 h at 19.8 +/- 0.3 C; dissolved content 2.38 mg/l; water solubility < 10^-2 g/l, so column elution chosen",
+        "flow_rate_ml_per_hour": "24",
+        "ph": "7.8"
+      },
+      "measurements": [
+        {
+          "variable": "eluate_concentration",
+          "value": 9.66,
+          "unit": "mg/L",
+          "uncertainty": null,
+          "uncertainty_kind": "absent",
+          "kind": "measured"
+        }
+      ]
+    },
+    {
+      "run_id": "flow24-sample4",
+      "conditions": {
+        "guideline_ec": "EC no. 440/2008 Part A, Guideline A.6 'Water Solubility', OJEU L142, 31 May 2008",
+        "guideline_oecd": "OECD Guidelines for the Testing of Chemicals no. 105 'Water Solubility', 27 July 1995",
+        "guideline_epa": "OPPTS 830.7840 'Water Solubility: Column Elution Method; Shake Flask Method', March 1998",
+        "technique": "column elution",
+        "temperature_c": "19.8 +/- 0.2",
+        "column": "150 mm x 4.6 mm i.d., 0.5 um frits",
+        "carrier_material": "LiChroprep Si 60 25-40 um (Merck), 5 g, loaded with 51.8 mg test substance from acetone, acetone evaporated at 35 C",
+        "eluent": "double distilled water",
+        "equilibration": "column filled with water, equilibrated 2 hours, stabilised overnight at 12 ml/hour",
+        "sample_volume_ml": "2",
+        "analysis": "500 uL subsample diluted 1:1 (v:v) with acetonitrile; HPLC-UV per validated method of Chapter 7",
+        "calibration": "five concentrations, two responses each, linear least squares, 1/concentration^2 weighting, r > 0.99",
+        "turbidity_check": "eluate turbidity < 0.2 NTU; no undissolved particles detected",
+        "blank_column": "identical procedure on blank carrier material; no test substance detected",
+        "preliminary_test": "494 mg/l nominal, stirred 22 h at 19.8 +/- 0.3 C; dissolved content 2.38 mg/l; water solubility < 10^-2 g/l, so column elution chosen",
+        "flow_rate_ml_per_hour": "24",
+        "ph": "7.8"
+      },
+      "measurements": [
+        {
+          "variable": "eluate_concentration",
+          "value": 9.7,
+          "unit": "mg/L",
+          "uncertainty": null,
+          "uncertainty_kind": "absent",
+          "kind": "measured"
+        }
+      ]
+    },
+    {
+      "run_id": "flow24-sample5",
+      "conditions": {
+        "guideline_ec": "EC no. 440/2008 Part A, Guideline A.6 'Water Solubility', OJEU L142, 31 May 2008",
+        "guideline_oecd": "OECD Guidelines for the Testing of Chemicals no. 105 'Water Solubility', 27 July 1995",
+        "guideline_epa": "OPPTS 830.7840 'Water Solubility: Column Elution Method; Shake Flask Method', March 1998",
+        "technique": "column elution",
+        "temperature_c": "19.8 +/- 0.2",
+        "column": "150 mm x 4.6 mm i.d., 0.5 um frits",
+        "carrier_material": "LiChroprep Si 60 25-40 um (Merck), 5 g, loaded with 51.8 mg test substance from acetone, acetone evaporated at 35 C",
+        "eluent": "double distilled water",
+        "equilibration": "column filled with water, equilibrated 2 hours, stabilised overnight at 12 ml/hour",
+        "sample_volume_ml": "2",
+        "analysis": "500 uL subsample diluted 1:1 (v:v) with acetonitrile; HPLC-UV per validated method of Chapter 7",
+        "calibration": "five concentrations, two responses each, linear least squares, 1/concentration^2 weighting, r > 0.99",
+        "turbidity_check": "eluate turbidity < 0.2 NTU; no undissolved particles detected",
+        "blank_column": "identical procedure on blank carrier material; no test substance detected",
+        "preliminary_test": "494 mg/l nominal, stirred 22 h at 19.8 +/- 0.3 C; dissolved content 2.38 mg/l; water solubility < 10^-2 g/l, so column elution chosen",
+        "flow_rate_ml_per_hour": "24",
+        "ph": "7.8"
+      },
+      "measurements": [
+        {
+          "variable": "eluate_concentration",
+          "value": 9.69,
+          "unit": "mg/L",
+          "uncertainty": null,
+          "uncertainty_kind": "absent",
+          "kind": "measured"
+        }
+      ]
+    },
+    {
+      "run_id": "flow24-sample6",
+      "conditions": {
+        "guideline_ec": "EC no. 440/2008 Part A, Guideline A.6 'Water Solubility', OJEU L142, 31 May 2008",
+        "guideline_oecd": "OECD Guidelines for the Testing of Chemicals no. 105 'Water Solubility', 27 July 1995",
+        "guideline_epa": "OPPTS 830.7840 'Water Solubility: Column Elution Method; Shake Flask Method', March 1998",
+        "technique": "column elution",
+        "temperature_c": "19.8 +/- 0.2",
+        "column": "150 mm x 4.6 mm i.d., 0.5 um frits",
+        "carrier_material": "LiChroprep Si 60 25-40 um (Merck), 5 g, loaded with 51.8 mg test substance from acetone, acetone evaporated at 35 C",
+        "eluent": "double distilled water",
+        "equilibration": "column filled with water, equilibrated 2 hours, stabilised overnight at 12 ml/hour",
+        "sample_volume_ml": "2",
+        "analysis": "500 uL subsample diluted 1:1 (v:v) with acetonitrile; HPLC-UV per validated method of Chapter 7",
+        "calibration": "five concentrations, two responses each, linear least squares, 1/concentration^2 weighting, r > 0.99",
+        "turbidity_check": "eluate turbidity < 0.2 NTU; no undissolved particles detected",
+        "blank_column": "identical procedure on blank carrier material; no test substance detected",
+        "preliminary_test": "494 mg/l nominal, stirred 22 h at 19.8 +/- 0.3 C; dissolved content 2.38 mg/l; water solubility < 10^-2 g/l, so column elution chosen",
+        "flow_rate_ml_per_hour": "24",
+        "ph": "7.8"
+      },
+      "measurements": [
+        {
+          "variable": "eluate_concentration",
+          "value": 9.68,
+          "unit": "mg/L",
+          "uncertainty": null,
+          "uncertainty_kind": "absent",
+          "kind": "measured"
+        }
+      ]
+    },
+    {
+      "run_id": "flow24-sample7",
+      "conditions": {
+        "guideline_ec": "EC no. 440/2008 Part A, Guideline A.6 'Water Solubility', OJEU L142, 31 May 2008",
+        "guideline_oecd": "OECD Guidelines for the Testing of Chemicals no. 105 'Water Solubility', 27 July 1995",
+        "guideline_epa": "OPPTS 830.7840 'Water Solubility: Column Elution Method; Shake Flask Method', March 1998",
+        "technique": "column elution",
+        "temperature_c": "19.8 +/- 0.2",
+        "column": "150 mm x 4.6 mm i.d., 0.5 um frits",
+        "carrier_material": "LiChroprep Si 60 25-40 um (Merck), 5 g, loaded with 51.8 mg test substance from acetone, acetone evaporated at 35 C",
+        "eluent": "double distilled water",
+        "equilibration": "column filled with water, equilibrated 2 hours, stabilised overnight at 12 ml/hour",
+        "sample_volume_ml": "2",
+        "analysis": "500 uL subsample diluted 1:1 (v:v) with acetonitrile; HPLC-UV per validated method of Chapter 7",
+        "calibration": "five concentrations, two responses each, linear least squares, 1/concentration^2 weighting, r > 0.99",
+        "turbidity_check": "eluate turbidity < 0.2 NTU; no undissolved particles detected",
+        "blank_column": "identical procedure on blank carrier material; no test substance detected",
+        "preliminary_test": "494 mg/l nominal, stirred 22 h at 19.8 +/- 0.3 C; dissolved content 2.38 mg/l; water solubility < 10^-2 g/l, so column elution chosen",
+        "flow_rate_ml_per_hour": "24",
+        "ph": "7.8"
+      },
+      "measurements": [
+        {
+          "variable": "eluate_concentration",
+          "value": 9.71,
+          "unit": "mg/L",
+          "uncertainty": null,
+          "uncertainty_kind": "absent",
+          "kind": "measured"
+        }
+      ]
+    },
+    {
+      "run_id": "flow24-sample8",
+      "conditions": {
+        "guideline_ec": "EC no. 440/2008 Part A, Guideline A.6 'Water Solubility', OJEU L142, 31 May 2008",
+        "guideline_oecd": "OECD Guidelines for the Testing of Chemicals no. 105 'Water Solubility', 27 July 1995",
+        "guideline_epa": "OPPTS 830.7840 'Water Solubility: Column Elution Method; Shake Flask Method', March 1998",
+        "technique": "column elution",
+        "temperature_c": "19.8 +/- 0.2",
+        "column": "150 mm x 4.6 mm i.d., 0.5 um frits",
+        "carrier_material": "LiChroprep Si 60 25-40 um (Merck), 5 g, loaded with 51.8 mg test substance from acetone, acetone evaporated at 35 C",
+        "eluent": "double distilled water",
+        "equilibration": "column filled with water, equilibrated 2 hours, stabilised overnight at 12 ml/hour",
+        "sample_volume_ml": "2",
+        "analysis": "500 uL subsample diluted 1:1 (v:v) with acetonitrile; HPLC-UV per validated method of Chapter 7",
+        "calibration": "five concentrations, two responses each, linear least squares, 1/concentration^2 weighting, r > 0.99",
+        "turbidity_check": "eluate turbidity < 0.2 NTU; no undissolved particles detected",
+        "blank_column": "identical procedure on blank carrier material; no test substance detected",
+        "preliminary_test": "494 mg/l nominal, stirred 22 h at 19.8 +/- 0.3 C; dissolved content 2.38 mg/l; water solubility < 10^-2 g/l, so column elution chosen",
+        "flow_rate_ml_per_hour": "24",
+        "ph": "7.8"
+      },
+      "measurements": [
+        {
+          "variable": "eluate_concentration",
+          "value": 9.71,
+          "unit": "mg/L",
+          "uncertainty": null,
+          "uncertainty_kind": "absent",
+          "kind": "measured"
+        }
+      ]
+    },
+    {
+      "run_id": "flow24-sample9",
+      "conditions": {
+        "guideline_ec": "EC no. 440/2008 Part A, Guideline A.6 'Water Solubility', OJEU L142, 31 May 2008",
+        "guideline_oecd": "OECD Guidelines for the Testing of Chemicals no. 105 'Water Solubility', 27 July 1995",
+        "guideline_epa": "OPPTS 830.7840 'Water Solubility: Column Elution Method; Shake Flask Method', March 1998",
+        "technique": "column elution",
+        "temperature_c": "19.8 +/- 0.2",
+        "column": "150 mm x 4.6 mm i.d., 0.5 um frits",
+        "carrier_material": "LiChroprep Si 60 25-40 um (Merck), 5 g, loaded with 51.8 mg test substance from acetone, acetone evaporated at 35 C",
+        "eluent": "double distilled water",
+        "equilibration": "column filled with water, equilibrated 2 hours, stabilised overnight at 12 ml/hour",
+        "sample_volume_ml": "2",
+        "analysis": "500 uL subsample diluted 1:1 (v:v) with acetonitrile; HPLC-UV per validated method of Chapter 7",
+        "calibration": "five concentrations, two responses each, linear least squares, 1/concentration^2 weighting, r > 0.99",
+        "turbidity_check": "eluate turbidity < 0.2 NTU; no undissolved particles detected",
+        "blank_column": "identical procedure on blank carrier material; no test substance detected",
+        "preliminary_test": "494 mg/l nominal, stirred 22 h at 19.8 +/- 0.3 C; dissolved content 2.38 mg/l; water solubility < 10^-2 g/l, so column elution chosen",
+        "flow_rate_ml_per_hour": "24",
+        "ph": "7.8"
+      },
+      "measurements": [
+        {
+          "variable": "eluate_concentration",
+          "value": 9.7,
+          "unit": "mg/L",
+          "uncertainty": null,
+          "uncertainty_kind": "absent",
+          "kind": "measured"
+        }
+      ]
+    },
+    {
+      "run_id": "flow24-sample10",
+      "conditions": {
+        "guideline_ec": "EC no. 440/2008 Part A, Guideline A.6 'Water Solubility', OJEU L142, 31 May 2008",
+        "guideline_oecd": "OECD Guidelines for the Testing of Chemicals no. 105 'Water Solubility', 27 July 1995",
+        "guideline_epa": "OPPTS 830.7840 'Water Solubility: Column Elution Method; Shake Flask Method', March 1998",
+        "technique": "column elution",
+        "temperature_c": "19.8 +/- 0.2",
+        "column": "150 mm x 4.6 mm i.d., 0.5 um frits",
+        "carrier_material": "LiChroprep Si 60 25-40 um (Merck), 5 g, loaded with 51.8 mg test substance from acetone, acetone evaporated at 35 C",
+        "eluent": "double distilled water",
+        "equilibration": "column filled with water, equilibrated 2 hours, stabilised overnight at 12 ml/hour",
+        "sample_volume_ml": "2",
+        "analysis": "500 uL subsample diluted 1:1 (v:v) with acetonitrile; HPLC-UV per validated method of Chapter 7",
+        "calibration": "five concentrations, two responses each, linear least squares, 1/concentration^2 weighting, r > 0.99",
+        "turbidity_check": "eluate turbidity < 0.2 NTU; no undissolved particles detected",
+        "blank_column": "identical procedure on blank carrier material; no test substance detected",
+        "preliminary_test": "494 mg/l nominal, stirred 22 h at 19.8 +/- 0.3 C; dissolved content 2.38 mg/l; water solubility < 10^-2 g/l, so column elution chosen",
+        "flow_rate_ml_per_hour": "24",
+        "ph": "7.8"
+      },
+      "measurements": [
+        {
+          "variable": "eluate_concentration",
+          "value": 9.72,
+          "unit": "mg/L",
+          "uncertainty": null,
+          "uncertainty_kind": "absent",
+          "kind": "measured"
+        }
+      ]
+    },
+    {
+      "run_id": "flow12-sample1",
+      "conditions": {
+        "guideline_ec": "EC no. 440/2008 Part A, Guideline A.6 'Water Solubility', OJEU L142, 31 May 2008",
+        "guideline_oecd": "OECD Guidelines for the Testing of Chemicals no. 105 'Water Solubility', 27 July 1995",
+        "guideline_epa": "OPPTS 830.7840 'Water Solubility: Column Elution Method; Shake Flask Method', March 1998",
+        "technique": "column elution",
+        "temperature_c": "19.8 +/- 0.2",
+        "column": "150 mm x 4.6 mm i.d., 0.5 um frits",
+        "carrier_material": "LiChroprep Si 60 25-40 um (Merck), 5 g, loaded with 51.8 mg test substance from acetone, acetone evaporated at 35 C",
+        "eluent": "double distilled water",
+        "equilibration": "column filled with water, equilibrated 2 hours, stabilised overnight at 12 ml/hour",
+        "sample_volume_ml": "2",
+        "analysis": "500 uL subsample diluted 1:1 (v:v) with acetonitrile; HPLC-UV per validated method of Chapter 7",
+        "calibration": "five concentrations, two responses each, linear least squares, 1/concentration^2 weighting, r > 0.99",
+        "turbidity_check": "eluate turbidity < 0.2 NTU; no undissolved particles detected",
+        "blank_column": "identical procedure on blank carrier material; no test substance detected",
+        "preliminary_test": "494 mg/l nominal, stirred 22 h at 19.8 +/- 0.3 C; dissolved content 2.38 mg/l; water solubility < 10^-2 g/l, so column elution chosen",
+        "flow_rate_ml_per_hour": "12",
+        "ph": "7.7"
+      },
+      "measurements": [
+        {
+          "variable": "eluate_concentration",
+          "value": 9.7,
+          "unit": "mg/L",
+          "uncertainty": null,
+          "uncertainty_kind": "absent",
+          "kind": "measured"
+        }
+      ]
+    },
+    {
+      "run_id": "flow12-sample2",
+      "conditions": {
+        "guideline_ec": "EC no. 440/2008 Part A, Guideline A.6 'Water Solubility', OJEU L142, 31 May 2008",
+        "guideline_oecd": "OECD Guidelines for the Testing of Chemicals no. 105 'Water Solubility', 27 July 1995",
+        "guideline_epa": "OPPTS 830.7840 'Water Solubility: Column Elution Method; Shake Flask Method', March 1998",
+        "technique": "column elution",
+        "temperature_c": "19.8 +/- 0.2",
+        "column": "150 mm x 4.6 mm i.d., 0.5 um frits",
+        "carrier_material": "LiChroprep Si 60 25-40 um (Merck), 5 g, loaded with 51.8 mg test substance from acetone, acetone evaporated at 35 C",
+        "eluent": "double distilled water",
+        "equilibration": "column filled with water, equilibrated 2 hours, stabilised overnight at 12 ml/hour",
+        "sample_volume_ml": "2",
+        "analysis": "500 uL subsample diluted 1:1 (v:v) with acetonitrile; HPLC-UV per validated method of Chapter 7",
+        "calibration": "five concentrations, two responses each, linear least squares, 1/concentration^2 weighting, r > 0.99",
+        "turbidity_check": "eluate turbidity < 0.2 NTU; no undissolved particles detected",
+        "blank_column": "identical procedure on blank carrier material; no test substance detected",
+        "preliminary_test": "494 mg/l nominal, stirred 22 h at 19.8 +/- 0.3 C; dissolved content 2.38 mg/l; water solubility < 10^-2 g/l, so column elution chosen",
+        "flow_rate_ml_per_hour": "12",
+        "ph": "7.7"
+      },
+      "measurements": [
+        {
+          "variable": "eluate_concentration",
+          "value": 9.72,
+          "unit": "mg/L",
+          "uncertainty": null,
+          "uncertainty_kind": "absent",
+          "kind": "measured"
+        }
+      ]
+    },
+    {
+      "run_id": "flow12-sample3",
+      "conditions": {
+        "guideline_ec": "EC no. 440/2008 Part A, Guideline A.6 'Water Solubility', OJEU L142, 31 May 2008",
+        "guideline_oecd": "OECD Guidelines for the Testing of Chemicals no. 105 'Water Solubility', 27 July 1995",
+        "guideline_epa": "OPPTS 830.7840 'Water Solubility: Column Elution Method; Shake Flask Method', March 1998",
+        "technique": "column elution",
+        "temperature_c": "19.8 +/- 0.2",
+        "column": "150 mm x 4.6 mm i.d., 0.5 um frits",
+        "carrier_material": "LiChroprep Si 60 25-40 um (Merck), 5 g, loaded with 51.8 mg test substance from acetone, acetone evaporated at 35 C",
+        "eluent": "double distilled water",
+        "equilibration": "column filled with water, equilibrated 2 hours, stabilised overnight at 12 ml/hour",
+        "sample_volume_ml": "2",
+        "analysis": "500 uL subsample diluted 1:1 (v:v) with acetonitrile; HPLC-UV per validated method of Chapter 7",
+        "calibration": "five concentrations, two responses each, linear least squares, 1/concentration^2 weighting, r > 0.99",
+        "turbidity_check": "eluate turbidity < 0.2 NTU; no undissolved particles detected",
+        "blank_column": "identical procedure on blank carrier material; no test substance detected",
+        "preliminary_test": "494 mg/l nominal, stirred 22 h at 19.8 +/- 0.3 C; dissolved content 2.38 mg/l; water solubility < 10^-2 g/l, so column elution chosen",
+        "flow_rate_ml_per_hour": "12",
+        "ph": "7.7"
+      },
+      "measurements": [
+        {
+          "variable": "eluate_concentration",
+          "value": 9.73,
+          "unit": "mg/L",
+          "uncertainty": null,
+          "uncertainty_kind": "absent",
+          "kind": "measured"
+        }
+      ]
+    },
+    {
+      "run_id": "flow12-sample4",
+      "conditions": {
+        "guideline_ec": "EC no. 440/2008 Part A, Guideline A.6 'Water Solubility', OJEU L142, 31 May 2008",
+        "guideline_oecd": "OECD Guidelines for the Testing of Chemicals no. 105 'Water Solubility', 27 July 1995",
+        "guideline_epa": "OPPTS 830.7840 'Water Solubility: Column Elution Method; Shake Flask Method', March 1998",
+        "technique": "column elution",
+        "temperature_c": "19.8 +/- 0.2",
+        "column": "150 mm x 4.6 mm i.d., 0.5 um frits",
+        "carrier_material": "LiChroprep Si 60 25-40 um (Merck), 5 g, loaded with 51.8 mg test substance from acetone, acetone evaporated at 35 C",
+        "eluent": "double distilled water",
+        "equilibration": "column filled with water, equilibrated 2 hours, stabilised overnight at 12 ml/hour",
+        "sample_volume_ml": "2",
+        "analysis": "500 uL subsample diluted 1:1 (v:v) with acetonitrile; HPLC-UV per validated method of Chapter 7",
+        "calibration": "five concentrations, two responses each, linear least squares, 1/concentration^2 weighting, r > 0.99",
+        "turbidity_check": "eluate turbidity < 0.2 NTU; no undissolved particles detected",
+        "blank_column": "identical procedure on blank carrier material; no test substance detected",
+        "preliminary_test": "494 mg/l nominal, stirred 22 h at 19.8 +/- 0.3 C; dissolved content 2.38 mg/l; water solubility < 10^-2 g/l, so column elution chosen",
+        "flow_rate_ml_per_hour": "12",
+        "ph": "7.7"
+      },
+      "measurements": [
+        {
+          "variable": "eluate_concentration",
+          "value": 9.74,
+          "unit": "mg/L",
+          "uncertainty": null,
+          "uncertainty_kind": "absent",
+          "kind": "measured"
+        }
+      ]
+    },
+    {
+      "run_id": "flow12-sample5",
+      "conditions": {
+        "guideline_ec": "EC no. 440/2008 Part A, Guideline A.6 'Water Solubility', OJEU L142, 31 May 2008",
+        "guideline_oecd": "OECD Guidelines for the Testing of Chemicals no. 105 'Water Solubility', 27 July 1995",
+        "guideline_epa": "OPPTS 830.7840 'Water Solubility: Column Elution Method; Shake Flask Method', March 1998",
+        "technique": "column elution",
+        "temperature_c": "19.8 +/- 0.2",
+        "column": "150 mm x 4.6 mm i.d., 0.5 um frits",
+        "carrier_material": "LiChroprep Si 60 25-40 um (Merck), 5 g, loaded with 51.8 mg test substance from acetone, acetone evaporated at 35 C",
+        "eluent": "double distilled water",
+        "equilibration": "column filled with water, equilibrated 2 hours, stabilised overnight at 12 ml/hour",
+        "sample_volume_ml": "2",
+        "analysis": "500 uL subsample diluted 1:1 (v:v) with acetonitrile; HPLC-UV per validated method of Chapter 7",
+        "calibration": "five concentrations, two responses each, linear least squares, 1/concentration^2 weighting, r > 0.99",
+        "turbidity_check": "eluate turbidity < 0.2 NTU; no undissolved particles detected",
+        "blank_column": "identical procedure on blank carrier material; no test substance detected",
+        "preliminary_test": "494 mg/l nominal, stirred 22 h at 19.8 +/- 0.3 C; dissolved content 2.38 mg/l; water solubility < 10^-2 g/l, so column elution chosen",
+        "flow_rate_ml_per_hour": "12",
+        "ph": "7.7"
+      },
+      "measurements": [
+        {
+          "variable": "eluate_concentration",
+          "value": 9.76,
+          "unit": "mg/L",
+          "uncertainty": null,
+          "uncertainty_kind": "absent",
+          "kind": "measured"
+        }
+      ]
+    },
+    {
+      "run_id": "flow12-sample6",
+      "conditions": {
+        "guideline_ec": "EC no. 440/2008 Part A, Guideline A.6 'Water Solubility', OJEU L142, 31 May 2008",
+        "guideline_oecd": "OECD Guidelines for the Testing of Chemicals no. 105 'Water Solubility', 27 July 1995",
+        "guideline_epa": "OPPTS 830.7840 'Water Solubility: Column Elution Method; Shake Flask Method', March 1998",
+        "technique": "column elution",
+        "temperature_c": "19.8 +/- 0.2",
+        "column": "150 mm x 4.6 mm i.d., 0.5 um frits",
+        "carrier_material": "LiChroprep Si 60 25-40 um (Merck), 5 g, loaded with 51.8 mg test substance from acetone, acetone evaporated at 35 C",
+        "eluent": "double distilled water",
+        "equilibration": "column filled with water, equilibrated 2 hours, stabilised overnight at 12 ml/hour",
+        "sample_volume_ml": "2",
+        "analysis": "500 uL subsample diluted 1:1 (v:v) with acetonitrile; HPLC-UV per validated method of Chapter 7",
+        "calibration": "five concentrations, two responses each, linear least squares, 1/concentration^2 weighting, r > 0.99",
+        "turbidity_check": "eluate turbidity < 0.2 NTU; no undissolved particles detected",
+        "blank_column": "identical procedure on blank carrier material; no test substance detected",
+        "preliminary_test": "494 mg/l nominal, stirred 22 h at 19.8 +/- 0.3 C; dissolved content 2.38 mg/l; water solubility < 10^-2 g/l, so column elution chosen",
+        "flow_rate_ml_per_hour": "12",
+        "ph": "7.7"
+      },
+      "measurements": [
+        {
+          "variable": "eluate_concentration",
+          "value": 9.74,
+          "unit": "mg/L",
+          "uncertainty": null,
+          "uncertainty_kind": "absent",
+          "kind": "measured"
+        }
+      ]
+    },
+    {
+      "run_id": "flow12-sample7",
+      "conditions": {
+        "guideline_ec": "EC no. 440/2008 Part A, Guideline A.6 'Water Solubility', OJEU L142, 31 May 2008",
+        "guideline_oecd": "OECD Guidelines for the Testing of Chemicals no. 105 'Water Solubility', 27 July 1995",
+        "guideline_epa": "OPPTS 830.7840 'Water Solubility: Column Elution Method; Shake Flask Method', March 1998",
+        "technique": "column elution",
+        "temperature_c": "19.8 +/- 0.2",
+        "column": "150 mm x 4.6 mm i.d., 0.5 um frits",
+        "carrier_material": "LiChroprep Si 60 25-40 um (Merck), 5 g, loaded with 51.8 mg test substance from acetone, acetone evaporated at 35 C",
+        "eluent": "double distilled water",
+        "equilibration": "column filled with water, equilibrated 2 hours, stabilised overnight at 12 ml/hour",
+        "sample_volume_ml": "2",
+        "analysis": "500 uL subsample diluted 1:1 (v:v) with acetonitrile; HPLC-UV per validated method of Chapter 7",
+        "calibration": "five concentrations, two responses each, linear least squares, 1/concentration^2 weighting, r > 0.99",
+        "turbidity_check": "eluate turbidity < 0.2 NTU; no undissolved particles detected",
+        "blank_column": "identical procedure on blank carrier material; no test substance detected",
+        "preliminary_test": "494 mg/l nominal, stirred 22 h at 19.8 +/- 0.3 C; dissolved content 2.38 mg/l; water solubility < 10^-2 g/l, so column elution chosen",
+        "flow_rate_ml_per_hour": "12",
+        "ph": "7.7"
+      },
+      "measurements": [
+        {
+          "variable": "eluate_concentration",
+          "value": 9.75,
+          "unit": "mg/L",
+          "uncertainty": null,
+          "uncertainty_kind": "absent",
+          "kind": "measured"
+        }
+      ]
+    },
+    {
+      "run_id": "flow12-sample8",
+      "conditions": {
+        "guideline_ec": "EC no. 440/2008 Part A, Guideline A.6 'Water Solubility', OJEU L142, 31 May 2008",
+        "guideline_oecd": "OECD Guidelines for the Testing of Chemicals no. 105 'Water Solubility', 27 July 1995",
+        "guideline_epa": "OPPTS 830.7840 'Water Solubility: Column Elution Method; Shake Flask Method', March 1998",
+        "technique": "column elution",
+        "temperature_c": "19.8 +/- 0.2",
+        "column": "150 mm x 4.6 mm i.d., 0.5 um frits",
+        "carrier_material": "LiChroprep Si 60 25-40 um (Merck), 5 g, loaded with 51.8 mg test substance from acetone, acetone evaporated at 35 C",
+        "eluent": "double distilled water",
+        "equilibration": "column filled with water, equilibrated 2 hours, stabilised overnight at 12 ml/hour",
+        "sample_volume_ml": "2",
+        "analysis": "500 uL subsample diluted 1:1 (v:v) with acetonitrile; HPLC-UV per validated method of Chapter 7",
+        "calibration": "five concentrations, two responses each, linear least squares, 1/concentration^2 weighting, r > 0.99",
+        "turbidity_check": "eluate turbidity < 0.2 NTU; no undissolved particles detected",
+        "blank_column": "identical procedure on blank carrier material; no test substance detected",
+        "preliminary_test": "494 mg/l nominal, stirred 22 h at 19.8 +/- 0.3 C; dissolved content 2.38 mg/l; water solubility < 10^-2 g/l, so column elution chosen",
+        "flow_rate_ml_per_hour": "12",
+        "ph": "7.7"
+      },
+      "measurements": [
+        {
+          "variable": "eluate_concentration",
+          "value": 9.8,
+          "unit": "mg/L",
+          "uncertainty": null,
+          "uncertainty_kind": "absent",
+          "kind": "measured"
+        }
+      ]
+    },
+    {
+      "run_id": "flow12-sample9",
+      "conditions": {
+        "guideline_ec": "EC no. 440/2008 Part A, Guideline A.6 'Water Solubility', OJEU L142, 31 May 2008",
+        "guideline_oecd": "OECD Guidelines for the Testing of Chemicals no. 105 'Water Solubility', 27 July 1995",
+        "guideline_epa": "OPPTS 830.7840 'Water Solubility: Column Elution Method; Shake Flask Method', March 1998",
+        "technique": "column elution",
+        "temperature_c": "19.8 +/- 0.2",
+        "column": "150 mm x 4.6 mm i.d., 0.5 um frits",
+        "carrier_material": "LiChroprep Si 60 25-40 um (Merck), 5 g, loaded with 51.8 mg test substance from acetone, acetone evaporated at 35 C",
+        "eluent": "double distilled water",
+        "equilibration": "column filled with water, equilibrated 2 hours, stabilised overnight at 12 ml/hour",
+        "sample_volume_ml": "2",
+        "analysis": "500 uL subsample diluted 1:1 (v:v) with acetonitrile; HPLC-UV per validated method of Chapter 7",
+        "calibration": "five concentrations, two responses each, linear least squares, 1/concentration^2 weighting, r > 0.99",
+        "turbidity_check": "eluate turbidity < 0.2 NTU; no undissolved particles detected",
+        "blank_column": "identical procedure on blank carrier material; no test substance detected",
+        "preliminary_test": "494 mg/l nominal, stirred 22 h at 19.8 +/- 0.3 C; dissolved content 2.38 mg/l; water solubility < 10^-2 g/l, so column elution chosen",
+        "flow_rate_ml_per_hour": "12",
+        "ph": "7.7"
+      },
+      "measurements": [
+        {
+          "variable": "eluate_concentration",
+          "value": 9.73,
+          "unit": "mg/L",
+          "uncertainty": null,
+          "uncertainty_kind": "absent",
+          "kind": "measured"
+        }
+      ]
+    },
+    {
+      "run_id": "flow12-sample10",
+      "conditions": {
+        "guideline_ec": "EC no. 440/2008 Part A, Guideline A.6 'Water Solubility', OJEU L142, 31 May 2008",
+        "guideline_oecd": "OECD Guidelines for the Testing of Chemicals no. 105 'Water Solubility', 27 July 1995",
+        "guideline_epa": "OPPTS 830.7840 'Water Solubility: Column Elution Method; Shake Flask Method', March 1998",
+        "technique": "column elution",
+        "temperature_c": "19.8 +/- 0.2",
+        "column": "150 mm x 4.6 mm i.d., 0.5 um frits",
+        "carrier_material": "LiChroprep Si 60 25-40 um (Merck), 5 g, loaded with 51.8 mg test substance from acetone, acetone evaporated at 35 C",
+        "eluent": "double distilled water",
+        "equilibration": "column filled with water, equilibrated 2 hours, stabilised overnight at 12 ml/hour",
+        "sample_volume_ml": "2",
+        "analysis": "500 uL subsample diluted 1:1 (v:v) with acetonitrile; HPLC-UV per validated method of Chapter 7",
+        "calibration": "five concentrations, two responses each, linear least squares, 1/concentration^2 weighting, r > 0.99",
+        "turbidity_check": "eluate turbidity < 0.2 NTU; no undissolved particles detected",
+        "blank_column": "identical procedure on blank carrier material; no test substance detected",
+        "preliminary_test": "494 mg/l nominal, stirred 22 h at 19.8 +/- 0.3 C; dissolved content 2.38 mg/l; water solubility < 10^-2 g/l, so column elution chosen",
+        "flow_rate_ml_per_hour": "12",
+        "ph": "7.7"
+      },
+      "measurements": [
+        {
+          "variable": "eluate_concentration",
+          "value": 9.74,
+          "unit": "mg/L",
+          "uncertainty": null,
+          "uncertainty_kind": "absent",
+          "kind": "measured"
+        }
+      ]
+    }
+  ]
+}
