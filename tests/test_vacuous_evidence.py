@@ -149,6 +149,41 @@ SIBLING = pathlib.Path("/home/user/scientific-compute-layer-scl-")
 VERIFIER = REPO_ROOT / "architecture" / "exchange" / "verify_pair_landed.py"
 
 
+def checkout_currency(repo):
+    """`BEHIND`, `CURRENT`, `AHEAD`, `DIVERGED` or `UNKNOWN` for a
+    checkout against the remote ref it tracks.
+
+    THE SECOND OCCURRENCE OF ONE CONFUSION IS WHY THIS EXISTS. A byte
+    comparison across two repositories reports DIFF for `my copy is old`
+    and for `the two sides disagree`, and this module's own test made
+    that mistake on 2026-08-30 -- it reported a stale local checkout as a
+    divergence in the very file that files the class. Asking git which
+    one it is takes one command and removes the judgement call.
+
+    WHAT IT CANNOT SEE, stated: it compares HEAD to the REMOTE-TRACKING
+    ref, which is only as fresh as the last fetch. A tracking ref that is
+    itself behind reads as CURRENT. Distinguishing that needs the
+    network, and a test must not.
+    """
+    import subprocess
+
+    if not (pathlib.Path(repo) / ".git").exists():
+        return "UNKNOWN"                  # not a checkout root; git would answer the parent's
+
+    def git(*args):
+        result = subprocess.run(["git", "-C", str(repo), *args],
+                                capture_output=True, text=True)
+        return result.stdout.strip() if result.returncode == 0 else None
+
+    counts = git("rev-list", "--left-right", "--count", "@{u}...HEAD")
+    if not counts:
+        return "UNKNOWN"
+    behind, ahead = (int(value) for value in counts.split())
+    if behind and ahead:
+        return "DIVERGED"
+    return "BEHIND" if behind else ("AHEAD" if ahead else "CURRENT")
+
+
 def test_the_malformed_invocation_really_produces_a_zero_that_means_nothing():
     """THE MECHANISM, executed rather than described.
 
@@ -233,6 +268,14 @@ def test_the_stale_mirror_measurement_where_the_sibling_is_present():
     theirs = SIBLING / "architecture" / "exchange" / "invariant_register.yaml"
     if not theirs.exists():
         pytest.skip("the sibling does not hold the register")
+
+    # ASK GIT BEFORE COMPARING BYTES. A checkout that is behind its own
+    # remote cannot testify about divergence, and reading its bytes as
+    # evidence is the confusion this module names.
+    currency = checkout_currency(SIBLING)
+    if currency in ("BEHIND", "DIVERGED", "UNKNOWN"):
+        pytest.skip(f"the sibling checkout is {currency}; its bytes are evidence about this "
+                    "working copy rather than about the pair")
 
     mine = loads((REPO_ROOT / "architecture" / "exchange"
                   / "invariant_register.yaml").read_text())
@@ -369,3 +412,36 @@ def test_the_sixty_one_run_window_is_stated_as_measured_not_as_five():
     assert "SIXTY-ONE consecutive runs" in klass["the_measured_instance"]
     assert "7b7c257" in klass["the_measured_instance"]
     assert "COLLECTION" in klass["the_measured_instance"]
+
+
+def test_the_currency_check_tells_a_stale_checkout_from_a_divergence():
+    """DETECTOR PROOF for the repair, on both repositories.
+
+    It must return a verdict for a real checkout and refuse to guess for
+    something that is not one -- otherwise `CURRENT` would be what it
+    says when it cannot tell."""
+    for repo in (REPO_ROOT, SIBLING):
+        if not (repo / ".git").exists():
+            continue
+        assert checkout_currency(repo) in ("BEHIND", "CURRENT", "AHEAD", "DIVERGED")
+    assert checkout_currency(REPO_ROOT / "docs") == "UNKNOWN", (
+        "a path that is not a checkout must be UNKNOWN, not CURRENT -- a check that answers "
+        "`current` when it cannot tell is the shape being repaired"
+    )
+
+
+def test_the_class_now_names_where_it_recurred_inside_this_module():
+    """It appeared twice: once as the pair verifier reporting DIFF over a
+    stale mirror, and once as this module's own test doing the same. The
+    second is the one worth recording, because it is the instrument
+    making the error it was built to name."""
+    klass = RECORD["a_diff_and_a_stale_mirror_are_the_same_observation_with_different_causes"]
+    assert "the check does not ask it" in klass["what_the_discriminator_actually_was"], (
+        "the class says the discriminator is checkable and unasked; this repair asks it"
+    )
+    import inspect
+    source = inspect.getsource(checkout_currency)
+    assert "this module's own test made" in source
+    assert "only as fresh as the last fetch" in source, (
+        "the repair must state what it still cannot see"
+    )

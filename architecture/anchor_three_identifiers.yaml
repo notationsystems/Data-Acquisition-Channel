@@ -1,0 +1,44 @@
+# THREE IDENTIFIERS, TWO RUNS, AND THE SUBSTRATE HOLDS THE DISAGREEMENT
+# WITHOUT NOTICING IT.
+#
+# DAQ-3, answered against a fixture carrying all three. The fixture
+# format was a decision and it is recorded as one: the three identifiers
+# are separate declared fields and the flattening is a STATED
+# interpretation, the way the blank cell already was. A format carrying
+# cell extent was declined -- it invents representation from one document
+# -- and a new ingest path was declined because it would measure that
+# path rather than the contract under test.
+extends: core@1.0.0
+
+subject: anchor_three_identifiers
+status: measured_the_disagreement_is_carried_and_undetected
+owner: daf
+enforcement: tests/test_anchor_three_identifiers.py
+measured: "2026-08-30"
+
+# ----------------------------------------------------------------------
+the_disagreement_in_the_source:
+  table_two_says: "Mn 26459 is injection 1; Mn 23479 is injection 2."
+  the_instrument_block_says: "the block carrying Mn 26459 reads `Injection #: 2`, acquired 09:51:01. The block carrying Mn 23479 reads `Injection #: 1`, acquired 09:24:17."
+  chronology_settles_it: "09:24:17 precedes 09:51:01, so the instrument's FIRST injection produced Mn 23479 -- the row Table II labels injection 2. The table's labels are reversed relative to the instrument's."
+  all_three_are_in_the_text_layer: "so this is not a case of a machine-unreadable identifier disagreeing with a readable one. All three are equally available and two of them agree with each other."
+
+# ----------------------------------------------------------------------
+what_was_measured:
+  which_identifier_the_extractor_takes: "THE TABLE'S. Record identity is `PA191 (S190109)/1` and `PA191 (S190109)/2`, built from the `Inj` column, which carries Table II's label. The instrument's own number is not consulted."
+  is_that_choice_recorded_or_implicit: "IMPLICIT, and it is not a choice the adapter makes -- it is a consequence of `_IDENTITY_COLUMNS` being the literal ('Sample', 'Inj'). Whichever column happens to be spelled `Inj` becomes the run identity. Nothing in the pool records that a choice was available."
+  does_anything_detect_the_disagreement: "NO, and the sharpest form of it: the contradiction is INSIDE each Record. `PA191 (S190109)/1` carries an observation `InstrumentInjection = 2.0`. The Record's own identity says run 1 and a measurement it holds says the instrument called it 2, and no gate, no extractor clause and no admissibility check compares them."
+  why_they_cannot_be_compared: "because only one of them is an identifier. The other two entered as QUANTITIES -- the only channel available -- so the substrate holds `injection number` as a measured dimensionless value alongside molar masses, and comparing a Record's locator to a measurement it contains is not something anything is built to do."
+
+the_substrate_cannot_hold_a_second_identifier: "that is the finding under the finding. `_IDENTITY_COLUMNS` admits exactly two names, one for the sample and one for the run. A document offering a second run identifier has nowhere to put it that is not a measurement. So the question `which identifier did we take` is not answerable from the pool: the alternatives are present but not marked as alternatives."
+
+# ----------------------------------------------------------------------
+the_fixture_decision:
+  what_was_chosen: "three identifiers as separate declared fields, flattening stated as interpretation."
+  what_was_declined_and_why:
+    a_format_carrying_cell_extent: "it invents a representation from one document. The need is measured -- the merged cell and the aggregate label both live in extent -- and one anchor is not enough to design the answer."
+    a_different_ingest_path_against_the_rendered_document: "it answers DAQ-3 by changing the subject. A new adapter measures the new adapter; the question is what the CONTRACT does with a disagreement."
+  the_three_stated_interpretations: "the merged Sample cell flattened to a repeated value; `Date Acquired` reduced to minutes past midnight, discarding date and zone; and two of the three identifiers declared as QUANTITIES because no other channel exists. All three are in the fixture's provenance sidecar, named as interpretations rather than transcriptions."
+  why_the_third_is_not_a_workaround: "it is the measurement. Declaring the instrument's injection number as a quantity is what the substrate forces, and the fact that it is forced is the answer to DAQ-3."
+
+what_is_not_claimed: "not that the extractor chose wrongly. Table II's label is a defensible identity and the instrument's is another; the report disagrees with itself and DAQ took one consistently. What is measured is that the disagreement survives ingest, sits inside the affected Records, and is compared by nothing -- so a consumer pairing a run against anything outside this table would be wrong, and silently."

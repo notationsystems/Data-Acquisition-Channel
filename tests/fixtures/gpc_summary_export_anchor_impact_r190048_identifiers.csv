@@ -1,0 +1,7 @@
+# GPC Analysis of Urethane and Acrylic Based Polymers
+# Impact Analytical report R190048; Waters Empower 3; report date 2019-02-14
+# Eluent: N, N-dimethylformamide (S190109); Flow Rate: 0.5 mL/min
+# Processing Method: P190044 DMF
+Sample,Inj,InstrumentInjection,AcquiredAtMinutes,Mn,Mw,Mz
+PA191 (S190109),1,2,591,26459,33070,41046
+PA191 (S190109),2,1,564,23479,30985,40436
