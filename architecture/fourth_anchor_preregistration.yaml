@@ -1,0 +1,47 @@
+# WHAT THE PATH WILL DO TO A TABLE THAT MIXES MEASURED AND LITERATURE
+# VALUES, AND CARRIES A DERIVED RESULT BESIDE ITS INPUTS.
+#
+# Section 13 of the SAME report the third anchor came from -- partition
+# coefficient by HPLC under OECD 117. The document has been read; the
+# acquisition has NOT been run. So these are predictions about the PATH,
+# not about the document, and that is the only sense in which they are
+# blind. Stated because the third anchor's predictions were blind in the
+# stronger sense and these are not.
+extends: core@1.0.0
+
+subject: fourth_anchor_preregistration
+status: recorded_after_reading_the_table_and_before_running_the_path
+owner: daf
+enforcement: tests/test_fourth_anchor.py
+recorded: "2026-08-30"
+
+why_this_section_and_not_another: "section 12 could not test three things. Table 9 carries DUPLICATE INJECTIONS per substance (tr,1 and tr,2), so a two-member replicate structure arrives from a real source for the first time. It carries REFERENCE LITERATURE log Pow values for six calibration substances beside MEASURED retention times in the same rows, which is the data_provenance distinction on a real document rather than a fixture. And it carries the test substance's log Pow -- DERIVED from the regression whose inputs are the other rows of the same table. architecture/polymer_acquisition_readiness.yaml names that last shape as the vertical's open question: a row carrying a derived-at-source quantity beside its inputs. Here it is, published, in a GLP report."
+
+predictions:
+
+  p1_the_literature_values_cannot_be_acquired_as_measurements:
+    prediction: "the six reference log Pow values are guideline constants -- the table's own footnote says 'values according to the OECD 117 guideline' -- and are not measurements of this sample by this laboratory. Declaring them `measured` would be false; declaring the whole document `instrument_measurement` makes the retention times honest and the log Pow column not. The path has one data_provenance per REPORT and this table needs two."
+    basis: OPEN
+    what_would_falsify_it: "a per-measurement provenance the path already carries."
+
+  p2_the_derived_result_is_refused_and_that_is_correct:
+    prediction: "log Pow 2.3 for the test substance is computed by substituting its mean log k' into the regression. The extractor refuses a measurement declared with a kind other than `measured`, so the headline result of section 13 cannot travel this path at all -- and the refusal is right, because Observation is classed `measured` by architecture/evidence_class.yaml."
+    basis: MEASURED on anchor 1, where polydispersity was declined for the same reason
+    what_is_new_here: "on anchor 1 the derived quantity was a ratio of two measurements in the same row. Here it is the output of a regression over OTHER ROWS of the same table, which is a longer lineage and the one science/lineage_depth.py exists for. Whether the path can tell those two apart is the question."
+
+  p3_toluene_is_absent_and_no_reason_fits:
+    prediction: "the reference substance list on page 37 names seven substances including toluene (log Pow 2.7). Table 9 reports six, and the regression states n = 12, which is six substances times two injections. Toluene's retention times are not in the report and no reason is given. None of not_measured, below_detection, above_range, withheld or lost_in_acquisition can be declared without inventing one."
+    basis: MEASURED as a fact about the document; OPEN as a claim about the path
+    what_must_not_happen: "a reason must not be chosen to make the row acquirable. If the honest state is unstatable, the row is left out and that is the finding."
+
+  p4_duplicate_injections_are_not_replicate_runs:
+    prediction: "tr,1 and tr,2 are two injections of ONE prepared solution, not two independent determinations. Acquiring them as two runs would overstate the independent replication -- the same error the one-Record-per-run precondition exists to prevent, arriving from the opposite direction. The path cannot tell an injection from a determination, because nothing in the content vocabulary distinguishes them."
+    basis: OPEN
+    why_it_matters: "section 12's twenty samples ARE twenty determinations. Section 13's two injections are one. Both look identical to the substrate."
+
+  p5_the_regression_r_is_stated_here_and_was_withheld_in_section_10:
+    prediction: "section 13 prints r = 0.9998, n = 12. Section 10 says a curve with r > 0.99 could not be obtained and that the results are archived in the raw data. The same laboratory, the same report, the same statistic: released when it supports the conclusion and archived when it does not. Neither is expressible -- a fit quality is a property of a SET of runs and the content vocabulary is per-cell."
+    basis: MEASURED as a fact about the document
+    what_it_joins: "the third anchor's Q2 finding. CV, MD, r and the withheld r are four set-level quantities in one report, and the vocabulary is per-cell in all four cases. The claim is that these are ONE gap, not four."
+
+what_this_document_must_not_become: "a description of what the run produced. Its digest is pinned by its enforcement and the outcome is recorded in architecture/fourth_anchor_result.yaml."
