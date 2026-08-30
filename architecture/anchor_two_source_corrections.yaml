@@ -1,0 +1,52 @@
+# THREE CORRECTIONS FROM THE SOURCE PDFs, VERIFIED HERE RATHER THAN
+# ACCEPTED.
+#
+# Both source files were re-hashed against the copies this repository
+# already held and are byte-identical:
+#   ANCHOR 1  513418e8e93dca01ed057f0e2b03c8409249a13e31f8ec74fb438769ac1b3ab5
+#   ANCHOR 2  d85d72ab4ff3005de1def3c7722642ba8a30993a12c1d98b8621325b3012ec43
+extends: core@1.0.0
+
+subject: anchor_two_source_corrections
+status: two_corrections_confirmed_one_partly_and_the_remainder_stated
+owner: daf
+enforcement: tests/test_anchor_two_source_corrections.py
+measured: "2026-08-30"
+
+# ----------------------------------------------------------------------
+correction_one_the_aggregate_is_computed_from_the_DISPLAYED_values:
+  verdict: CONFIRMED, and by two independent fields
+  what_this_repository_had_recorded: "`the aggregate dispersity is the mean of the two ratios (1.2850), not the ratio of the means (1.2827)`."
+  why_that_was_not_quite_right: "1.2850 is the mean of the ratios AS PRINTED -- 1.25 and 1.32, each already rounded to two decimals. The mean of the FULL-precision ratios is 1.284774, which rounds to 1.28 and does not match the printed 1.29."
+  measured:
+    mean_of_printed_ratios: "1.285000 -> 1.29, MATCHES the report"
+    mean_of_full_precision_ratios: "1.284774 -> 1.28, does not"
+    ratio_of_the_averages: "1.282691 -> 1.28, does not"
+  the_second_field_agrees_independently: "the % RSD row. From the printed ratios: sd 0.04950 -> 0.05 and rsd 3.8519% -> 3.9%, both matching. From full precision: rsd 3.8434% -> 3.8%, which does not. Two fields computed from the same two numbers, one verdict."
+  the_stronger_statement: "the aggregate is derived from a PROJECTION of the measurements rather than from the measurements. Its precision is bounded by the display precision of the rows above it, and no computation from the underlying values reproduces it."
+  what_it_means_for_a_consumer: "one who ingests the injection rows at full precision and recomputes will not reproduce the printed aggregate, CORRECTLY. One who ingests the printed aggregate holds a number whose lineage runs through a rounding step that appears nowhere in the record."
+
+# ----------------------------------------------------------------------
+correction_two_the_sample_cell_is_merged_not_blank:
+  verdict: CONFIRMED, by the rendered geometry rather than by the token counts
+  what_this_repository_had_recorded: "`Table II names the sample once and leaves the cell empty on the second injection row`, and the fixture kept the blank."
+  what_the_text_layer_shows_and_why_it_is_not_enough: "the injection rows tokenise as 9 and 7 fields and the aggregate rows as 7 and 8 -- consistent with a merge and equally consistent with a blank. A text layer records absence; it cannot distinguish absence from span."
+  what_settles_it: "the TEXT BASELINES. `PA191 (S190109)` sits on its own baseline at y=3644, between injection row 1 at y=3416 and injection row 2 at y=3875, in the leftmost column. It is vertically CENTRED across both rows, which is what a two-row merged cell does and what a value belonging to row 1 does not."
+  the_drawn_rules_agree_in_part: "page 3 carries seven horizontal rules and NO vertical rules -- the column structure is not drawn at all. Exactly one rule is short: it spans x 203-752 where every other spans 65-752, so one row boundary is missing across the first column, which is the signature of a merge there."
+  what_is_NOT_established: "WHICH boundary that short rule sits on. The drawn rules and the text baselines are reported in different coordinate spaces and this session did not reconcile them, so the short rule confirms that a merge exists in column one without confirming that it is the injection-row merge. The centred baseline is what carries the finding; the rule is corroboration of the same fact by a route that stops short."
+  what_it_revises: "refusals 2 and 3 in architecture/anchor_two_ingest_result.yaml move from `the document is awkward` to `the transcription lost structure the document had`. There is no blank in the document. A CSV must put `Average` somewhere, and wherever it goes it occupies an identity column and looks like a value."
+  and_it_revises_the_lineage_finding: "recorded as POSITIONAL and therefore discarded. It is TOPOLOGICAL: the relation between the aggregate rows and the injection rows is carried by cell extent, and row order is a shadow of that. The stronger statement is that the relation lives in the table's structure, and CSV has no representation for it."
+
+# ----------------------------------------------------------------------
+correction_three_the_403_was_a_user_agent_block:
+  verdict: ALREADY MEASURED HERE, and the correction arrives after the fact
+  what_happened: "this repository retrieved Anchor 2 directly on 2026-08-28 with a browser User-Agent and a regulations.gov Referer, recorded that the block was on the agent rather than the address, and hashed the result. The counterparty's `curl is 403-blocked, another route required` was carried in the record as a caveat that had already been resolved."
+  the_check_that_closes_it: "both source files re-hashed against the copies held here. Byte-identical. The retrieval was sound and the caveat was stale rather than wrong."
+
+# ----------------------------------------------------------------------
+what_the_fixture_does_about_the_merge:
+  the_decision: "the fixture KEEPS the blank Sample cell and states in its provenance sidecar that the source has a merged cell rather than a blank."
+  why_not_fill_it: "filling it is still an interpretation -- the value is present by geometry and a CSV cannot express geometry. Filling it silently would encode the interpretation as a transcription. What changes is the NAME of the interpretation: not `the document leaves this blank` but `the document merges this cell and CSV cannot carry that`."
+  what_would_actually_carry_it: "a fixture format with cell extent. Not built, and not proposed here: it is a change to what a fixture IS, and this session has measured the need rather than designed the answer."
+
+what_is_not_done: "DAQ-3. The injection reversal is confirmed from the source -- Table II labels Mn 26,459 as injection 1, and the instrument block carrying that value reads `Injection #: 2` acquired at 09:51:01, after 09:24:17. What is NOT measured is which identifier the extractor takes when a fixture carries all three, and whether anything downstream can tell it took the wrong one. That needs a fixture that carries all three, which the merged-cell finding says a CSV cannot faithfully be."

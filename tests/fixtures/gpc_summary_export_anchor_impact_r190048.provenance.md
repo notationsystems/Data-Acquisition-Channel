@@ -15,9 +15,16 @@ block.
   They are caller declarations, supplied at acquisition, and the adapter
   for this shape has a channel for them. Anchor 1's adapter does not,
   which is why Anchor 1 cannot be acquired without fabricating.
-- a value in the Sample cell of the second injection row. The rendered
-  table groups both injections under one sample BY LAYOUT and leaves the
-  cell empty. The blank is kept.
+- a value in the Sample cell of the second injection row. CORRECTED
+  2026-08-30 from the source: the cell is not empty, it is MERGED across
+  both injection rows. Measured from the text baselines --
+  `PA191 (S190109)` sits at y=3644, centred between injection row 1 at
+  y=3416 and row 2 at y=3875 -- and corroborated by the one horizontal
+  rule on the page that is short across the first column. The blank is
+  still kept, because a CSV cannot express cell extent and filling it
+  would encode an interpretation as a transcription. What changed is the
+  name of the interpretation: not "the document leaves this blank" but
+  "the document merges this cell and CSV cannot carry that".
 - an injection number on the Average, Standard Deviation and % RSD rows.
   An average has none.
 - units for any column. The report states none.
