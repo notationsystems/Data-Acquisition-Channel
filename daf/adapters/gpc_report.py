@@ -50,7 +50,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Mapping, Tuple
+from typing import Any, Dict, List, Mapping, Optional, Tuple
 
 from scout.interface import RawDocument
 
@@ -84,13 +84,88 @@ def _require(report: Mapping[str, Any], key: str, path: Path) -> Any:
     return value
 
 
+#: The four fields a GPC report is required to supply and that a real one
+#: does not carry as fields. Measured on ANCHOR 1 (EPA ChemView, TSCA
+#: P-22-0051): removing any one of them from a faithful transcription is
+#: refused individually, so the report cannot be acquired at all without
+#: writing fields into it that it does not contain.
+CALLER_DECLARABLE = ("data_provenance", "sample_id", "sample_kind", "method")
+
+#: The extractor's word for a measured quantity, held here as a LITERAL
+#: rather than imported. An adapter importing an extractor is a coupling
+#: nothing reports -- the same argument that put DATA_PROVENANCE_KINDS in
+#: daf.adapters._provenance -- and it would be a circular import besides.
+#: tests/test_gpc_acquisition.py asserts the two copies agree, so a drift
+#: is a failure rather than a silent divergence.
+MEASURED_KIND = "measured"
+
+
 @dataclass(frozen=True)
 class GpcReportSourceAdapter:
-    """One local GPC report file -> one RawDocument per run in it."""
+    """One local GPC report file -> one RawDocument per run in it.
+
+    THE FOUR DECLARABLE FIELDS ARE HERE BECAUSE A REAL REPORT FORCED
+    THEM. This adapter was written first and required
+    `data_provenance`, `sample_id`, `sample_kind` and `method` IN THE
+    DOCUMENT. `daf/adapters/gpc_summary_export.py`, written second, takes
+    them as caller declarations -- and the second one was right: no
+    chromatography report states whether its own output is fabricated,
+    or what kind of entity a sample is. The contract grew and never
+    propagated back, which was invisible until a faithfully transcribed
+    real report could not be acquired by any route that did not
+    fabricate.
+
+    DECLARING IS NOT DEFAULTING AND IT IS NOT OVERRIDING. A field the
+    document states is taken from the document; a field it omits may be
+    declared here; a field neither supplies is REFUSED. A field supplied
+    by both is refused as a conflict rather than silently resolved --
+    the acquirer must not overwrite what the document says, and if they
+    disagree that is a fact somebody needs to see.
+
+    `conditions` is deliberately NOT declarable. A caller supplying the
+    measurement's own context would be inventing method provenance,
+    which is the fabrication the whole path exists to refuse.
+    """
 
     path: Path
     source_name: str
     retrieved_at: str  # ISO-8601 UTC, caller-supplied -- never wall-clock
+    data_provenance: Optional[str] = None
+    sample_id: Optional[str] = None
+    sample_kind: Optional[str] = None
+    method: Optional[str] = None
+    #: OPT-IN, and off by default. When set, measurements the DOCUMENT
+    #: declares with a kind other than `measured` are declined visibly
+    #: and named in `not_acquired_because_not_measured`, the way
+    #: gpc_summary_export.py declines a column its caller declares
+    #: derived. Off, they are passed through and the extractor refuses
+    #: the whole record -- which is the correct default, because an
+    #: acquirer who has not thought about it should lose the record
+    #: rather than silently drop part of it.
+    decline_non_measured: bool = False
+
+    def _declared(self) -> Tuple[str, ...]:
+        return tuple(name for name in CALLER_DECLARABLE if getattr(self, name))
+
+    def _resolve(self, report: Dict[str, Any]) -> Tuple[str, ...]:
+        """Fill declarable fields the document omits, refuse a conflict,
+        and return exactly which came from the acquirer."""
+        declared: List[str] = []
+        for name in CALLER_DECLARABLE:
+            supplied = getattr(self, name)
+            stated = report.get(name)
+            has_stated = stated is not None and stated != "" and stated != {}
+            if supplied and has_stated:
+                raise GpcReportFetchError(
+                    f"{self.path} states {name!r} and the acquirer also declares it. Refused "
+                    "rather than resolved: the acquirer must not overwrite the document, and a "
+                    "disagreement between them is a fact a consumer needs rather than one this "
+                    "layer settles."
+                )
+            if supplied and not has_stated:
+                report[name] = supplied
+                declared.append(name)
+        return tuple(declared)
 
     def fetch(self) -> Tuple[RawDocument, ...]:
         try:
@@ -106,6 +181,8 @@ class GpcReportSourceAdapter:
             raise GpcReportFetchError(f"{self.path} is not valid JSON: {exc}") from exc
         if not isinstance(report, dict):
             raise GpcReportFetchError(f"{self.path} must contain a JSON object")
+
+        declared = self._resolve(report)
 
         provenance = _require(report, "data_provenance", self.path)
         if provenance not in DATA_PROVENANCE_KINDS:
@@ -148,8 +225,26 @@ class GpcReportSourceAdapter:
             # everything is indistinguishable from an adapter that forgot to
             # report what it declared, which is absence-as-signal and the
             # shape this pair files as a vacuous pass.
-            payload["acquisition_declared"] = ""
-            payload.update({k: v for k, v in run.items() if k != "run_id"})
+            payload["acquisition_declared"] = ",".join(declared)
+            body = {k: v for k, v in run.items() if k != "run_id"}
+            declined: Tuple[str, ...] = ()
+            if self.decline_non_measured and isinstance(body.get("measurements"), list):
+                kept, names = [], []
+                for measurement in body["measurements"]:
+                    if isinstance(measurement, dict) and measurement.get("kind") not in (
+                            None, MEASURED_KIND):
+                        names.append(str(measurement.get("variable")))
+                    else:
+                        kept.append(measurement)
+                if not kept:
+                    raise GpcReportFetchError(
+                        f"{self.path} run {run_id!r} declares every measurement non-measured "
+                        f"({sorted(names)!r}). Refused rather than acquired empty."
+                    )
+                body["measurements"] = kept
+                declined = tuple(sorted(names))
+            payload["not_acquired_because_not_measured"] = ",".join(declined)
+            payload.update(body)
             documents.append(
                 RawDocument(
                     source_name=self.source_name,

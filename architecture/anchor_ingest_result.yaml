@@ -7,7 +7,7 @@
 extends: core@1.0.0
 
 subject: anchor_ingest_result
-status: refused_faithfully_transcribed_no_clause_widened
+status: refused_until_the_declaration_channel_landed_then_ingested_unchanged
 owner: daf
 enforcement: tests/test_anchor_ingest.py
 measured: "2026-08-28"
@@ -25,15 +25,17 @@ the_misread_was_in_the_fixture_and_it_was_mine:
 # ----------------------------------------------------------------------
 the_predictions_scored:
   p1_no_clause_covers_a_slice_table:
-    verdict: HELD
+    verdict: HELD, and the evidence is now stronger than when it was recorded
     measured: "one hundred slice rows in, ZERO observations out. No clause covers a per-slice row and none was added."
-    and_it_is_worse_than_predicted: "the drop is SILENT. `not_acquired_because_not_measured` is None and no refusal is raised -- the hundred rows leave no trace of having been present. The prediction said the extractor would not admit them; it does not record declining them either, so a consumer cannot tell a report that carried a distribution table from one that did not."
+    and_it_is_worse_than_predicted: "the drop is SILENT. Since 2026-08-30 this adapter always EMITS `not_acquired_because_not_measured`, and on the anchor it reads `polydispersity` -- one declined quantity named, while a hundred slice rows vanish unmentioned. Emitted-and-empty-of-them is stronger evidence than the key being absent was: the field exists, a consumer can read it, and it does not know the distribution table was there. No refusal is raised -- the hundred rows leave no trace of having been present. The prediction said the extractor would not admit them; it does not record declining them either, so a consumer cannot tell a report that carried a distribution table from one that did not."
   p2_the_four_caller_declared_fields_are_needed_and_none_is_stated:
     verdict: HELD, and the mechanism is stronger than the prediction
     what_was_predicted: "the four would be needed, unstated by the source, and therefore caller-declared -- appearing in `acquisition_declared`."
     what_was_measured: "daf/adapters/gpc_report.py has NO CALLER-DECLARATION CHANNEL AT ALL. Its constructor is (path, source_name, retrieved_at). All four fields are required IN THE DOCUMENT, and removing any one of them is refused individually: `declares no non-empty 'data_provenance'`, and the same for sample_kind, method and sample_id."
     so_the_consequence_is_not_a_declaration_but_a_wall: "a faithfully transcribed Anchor 1 cannot be acquired by this adapter by any route that does not fabricate. The only path to ingest is to write the four fields into the document, which is exactly the misread above."
     and_the_two_adapters_disagree: "daf/adapters/gpc_summary_export.py, built SECOND, takes all four as caller declarations and emits `acquisition_declared` naming them. The first adapter requires them from the source. Two adapters in one repository, two incompatible answers to `who states what the document cannot`, and the second one is right."
+    closed_by: "2026-08-30. The channel was propagated back to daf/adapters/gpc_report.py -- the four fields are now caller-declarable there too, a field the document states is taken from the document, a field neither supplies is refused, and a field supplied by BOTH is refused as a conflict rather than resolved. `conditions` is deliberately not declarable: an acquirer supplying the measurement's own context would be inventing method provenance. With that, the faithful fixture goes end to end: five observations, `acquisition_declared` reading `data_provenance,sample_id,sample_kind,method`, and the report's derived polydispersity declined visibly under an OPT-IN flag rather than losing the record. The fixture is unchanged and still states nothing the report does not."
+    what_the_closure_does_not_close: "P1 and P4. The slice table still produces nothing, and the two values the report calls invalid are still admitted with no code. Those are properties of the substrate rather than of the declaration gap, and a real report travelling the whole path is what makes them measurements about a working pipeline rather than about a refusal."
   p3_mp_is_admitted_as_a_peer_of_mn_and_mw:
     verdict: HELD
     measured: "on the fabricated-field variant, `peak_molar_mass` 15334 entered beside number_average 3466, weight_average 8360 and z_average 12725, with no field distinguishing a MODE from a MOMENT and no gate reason on any of them."

@@ -55,6 +55,18 @@ def _acquire(document):
         path.unlink(missing_ok=True)
 
 
+def _acquire_declared(decline_non_measured=True):
+    """The FAITHFUL fixture, with the four fields supplied by the
+    acquirer rather than written into the document."""
+    pool = EvidencePool()
+    _, failures = run_scout(GpcReportSourceAdapter(
+        path=ANCHOR, source_name="epa-chemview", retrieved_at="2026-08-30T00:00:00Z",
+        data_provenance="instrument_measurement", sample_id="REDACTED-in-source",
+        sample_kind="sample", method="sec_thf_40c_polystyrene_calibrated_iso2201",
+        decline_non_measured=decline_non_measured), GpcReportExtractor(), pool)
+    return sorted(pool.all_observations(), key=lambda o: o.content["property"]), failures
+
+
 def _with_fields(kind="measured"):
     """The variant that CAN be acquired -- by stating four fields the
     report does not carry. It exists to score P1, P3 and P4 and is the
@@ -102,22 +114,29 @@ def test_each_required_field_is_refused_individually(field):
         _acquire(document)
 
 
-def test_this_adapter_has_no_caller_declaration_channel_and_the_other_one_does():
-    """The two adapters answer `who states what the document cannot` in
-    incompatible ways, and the second one is right."""
+def test_both_adapters_now_answer_who_states_what_the_document_cannot():
+    """P2'S FINDING IS CLOSED, and the test that said so is kept rather
+    than deleted.
+
+    It read: `if the first adapter grows a declaration channel, P2's
+    finding is closed and this record must say so`. It grew one, driven
+    by this anchor. Both adapters now take the four fields from the
+    caller, and the assertion is inverted rather than removed so the
+    closure is visible where the finding was."""
     import inspect
 
     from daf.adapters.gpc_summary_export import GpcSummaryExportSourceAdapter
 
     first = set(inspect.signature(GpcReportSourceAdapter).parameters)
     second = set(inspect.signature(GpcSummaryExportSourceAdapter).parameters)
-    assert first == {"path", "source_name", "retrieved_at"}
     for declaration in ("data_provenance", "sample_kind", "method"):
         assert declaration in second
-        assert declaration not in first, (
-            "if the first adapter grows a declaration channel, P2's finding is closed and this "
-            "record must say so rather than the test being deleted"
-        )
+        assert declaration in first, "the channel must still be here"
+    assert "sample_id" in first, "and the fourth field this adapter needs"
+    assert RESULT["the_predictions_scored"][
+        "p2_the_four_caller_declared_fields_are_needed_and_none_is_stated"]["closed_by"], (
+        "the record must carry the closure, not only the finding"
+    )
 
 
 # =====================================================================
@@ -129,9 +148,10 @@ def test_p1_the_hundred_row_slice_table_produces_nothing_and_says_nothing():
     assert failures == ()
     assert [o for o in observations if "slice" in o.content["property"]] == []
     assert len(observations) == 6, "six moments in, six out, and a hundred slice rows dropped"
-    assert observations[0].content.get("not_acquired_because_not_measured") is None, (
-        "the drop is SILENT -- if a decline is ever recorded, P1's `worse than predicted` half "
-        "is closed and the record must say so"
+    assert observations[0].content["not_acquired_because_not_measured"] == "", (
+        "the key is now always emitted, and it says NOTHING was declined while a hundred rows "
+        "vanished. Emitted-and-empty is stronger evidence for P1 than absent was: the field "
+        "exists, a consumer can read it, and it does not mention the distribution table."
     )
 
 
@@ -216,3 +236,70 @@ def test_no_clause_was_widened():
     assert "polydispersity" not in DERIVED_VARIABLES
     assert set(RESULT["what_no_clause_was_widened_means_here"].split()) >= {"unchanged."}
     assert "REFUSED document" in RESULT["what_no_clause_was_widened_means_here"]
+
+
+
+# =====================================================================
+# The first real report through the whole path
+# =====================================================================
+
+def test_the_faithful_anchor_now_goes_end_to_end_with_nothing_invented():
+    """WHAT THE DECLARATION CHANNEL WAS FOR. The fixture is unchanged --
+    it still states nothing the report does not -- and the four fields it
+    lacks are supplied by the acquirer and NAMED as supplied."""
+    pool_observations, failures = _acquire_declared()
+    assert failures == ()
+    assert len(pool_observations) == 5
+
+    content = pool_observations[0].content
+    assert content["acquisition_declared"] == \
+        "data_provenance,sample_id,sample_kind,method"
+    assert content["not_acquired_because_not_measured"] == "polydispersity", (
+        "the report's derived quantity is declined VISIBLY rather than losing the record"
+    )
+    for observation in pool_observations:
+        for gate in (no_context_free_property, quantity_is_typed,
+                     observation_is_table_alignable):
+            assert not gate(observation.content).reasons
+
+
+def test_the_findings_that_survive_the_channel():
+    """P1 and P4 are properties of the substrate, not of the declaration
+    gap, so closing P2 must not close them."""
+    pool_observations, _ = _acquire_declared()
+    assert [o for o in pool_observations if "slice" in o.content["property"]] == []
+    above = {o.content["property"] for o in pool_observations
+             if o.content["unit"] == "g/mol" and o.content["value"] > LIMIT}
+    assert above == {"peak_molar_mass", "z_plus_one_average_molar_mass"}
+
+
+def test_declining_is_opt_in_and_off_by_default():
+    """An acquirer who has not thought about it must lose the record
+    rather than silently drop part of it."""
+    with pytest.raises(GpcReportExtractionError, match="kind 'derived'"):
+        _acquire_declared(decline_non_measured=False)
+
+
+def test_the_acquirer_may_not_overwrite_what_the_document_states():
+    """Declaring is not overriding. A field supplied by both is a
+    disagreement, and refusing it is what keeps the channel from becoming
+    a way to improve a document."""
+    document = _with_fields()          # states all four
+    path = ANCHOR.with_name("tmp_conflict.json")
+    path.write_text(json.dumps(document))
+    try:
+        with pytest.raises(GpcReportFetchError, match="also declares it"):
+            run_scout(GpcReportSourceAdapter(
+                path=path, source_name="epa", retrieved_at="2026-08-30T00:00:00Z",
+                data_provenance="fabricated_fixture"), GpcReportExtractor(), EvidencePool())
+    finally:
+        path.unlink(missing_ok=True)
+
+
+def test_the_adapters_copy_of_the_measured_kind_agrees_with_the_extractors():
+    """Held as a literal to avoid an adapter importing an extractor, so
+    the agreement is a test rather than an import."""
+    from daf.adapters.gpc_report import MEASURED_KIND as ADAPTER_SIDE
+    from daf.extractors.gpc_report import MEASURED_KIND as EXTRACTOR_SIDE
+
+    assert ADAPTER_SIDE == EXTRACTOR_SIDE
