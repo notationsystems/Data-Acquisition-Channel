@@ -30,8 +30,10 @@ def test_the_record_says_how_blind_it_actually_is():
     """A pre-registration that overstated its own blindness would be
     worth less than one that did not exist."""
     assert PREREG["status"] == "recorded_after_reading_the_table_and_before_running_the_path"
-    assert "not about the document" in PREREG.__str__() or True
-    assert "and these are not" in ARTIFACT.read_text(), (
+    header = ARTIFACT.read_text()
+    assert "The document has been read; the" in header
+    assert "acquisition has NOT been run" in header
+    assert "and that is the only sense in which they are" in header, (
         "the record must state that its predictions are weaker than the third anchor's"
     )
 

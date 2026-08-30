@@ -1,0 +1,54 @@
+# WHAT SECTION 13 DID TO THE PATH.
+#
+# Scored against architecture/fourth_anchor_preregistration.yaml, digest
+# 885cb1680a00af6d881dfea72d6985bf0a7ecaf5af7d794fb5582908aad31364,
+# committed in 75449d1 before the path was run.
+extends: core@1.0.0
+
+subject: fourth_anchor_result
+status: measured
+owner: daf
+enforcement: tests/test_fourth_anchor.py
+recorded: "2026-08-30"
+
+the_source: "section 13, PARTITION COEFFICIENT, of the same 44-page WIL Research Europe report the third anchor came from (project 505902, sha256 4278fff29d1cf6235131d5ce12552434d7286ecfac989f3984f85a5c235775aa). Table 9, page 39: eight substances at two injections each, by reversed-phase UPLC under OECD 117."
+
+predictions_scored:
+
+  p1_the_literature_values_cannot_be_acquired_as_measurements:
+    verdict: CONFIRMED
+    what_was_measured: "one data_provenance per report, carried onto every measurement of every run. The six reference log Pow values are guideline constants -- the table's own footnote says so -- and there is no per-measurement provenance to label them with. The only thing the path can do with them is DECLINE them, which it does: not_acquired_because_not_measured names log_pow on every run that has one."
+    what_it_costs: "the declination is safe and lossy. Those six values are the basis of the calibration the whole determination rests on, and they cannot enter the pool at all -- not as measurements, which would be false, and not as anything else, because there is no anything else."
+
+  p2_the_derived_result_is_refused_and_that_is_correct:
+    verdict: CONFIRMED_AND_SHARPENED
+    what_was_measured: "the extractor refuses both, with the identical message and for the identical reason: `guideline_reference_value` and `derived_from_regression_over_other_rows` are equally not-`measured`. The refusal is correct -- Observation is classed `measured` -- and it is undiscriminating."
+    the_sharpening: "a literature constant for a calibration standard and a regression output over the other rows of the same table are different objects with different lineages, and the path collapses them to one refusal. science/lineage_depth.py exists for exactly that distinction and never sees either, because nothing that is not `measured` reaches it. So the vertical's open question -- a row carrying a derived-at-source quantity beside its inputs -- is not answered by this path; it is declined by it."
+
+  p3_toluene_is_absent_and_no_reason_fits:
+    verdict: CONFIRMED
+    what_was_measured: "toluene is in the reference list on page 37 with log Pow 2.7, is not in Table 9, and the regression states n = 12 -- six substances at two injections. The report gives no reason. The fixture declares none and carries no value_absence row at all; the acquisition has zero absences."
+    what_was_not_done: "no reason was chosen to make the row acquirable. not_measured, below_detection, above_range, withheld and lost_in_acquisition would each have been an invention, and the row is simply not there."
+    what_it_joins: "the third anchor found three absences in this report that no reason fits -- a bound, a set-level withholding, and this. Four now, counting the self-ignition temperature reported as `not required`."
+
+  p4_duplicate_injections_are_not_replicate_runs:
+    verdict: CONFIRMED_WITH_ONE_HALF_FALSIFIED
+    what_was_measured: "eight replicate sets of two, zero refusals, structurally IDENTICAL to section 12's two sets of ten -- the same seven context keys, the same shape, nothing distinguishing them. Section 13's pairs are two injections of one prepared solution; section 12's tens are twenty independent determinations."
+    the_harm_in_numbers: "injection CVs 0.099% to 0.388% against section 12's determination CVs of 0.271% and 0.903%. A consumer computing a dispersion from section 13's sets gets injection repeatability and would be reading it as determination repeatability, understating it by roughly a factor of three -- and nothing in the content says which it is."
+    the_half_that_was_falsified: "`nothing objects` is too strong. sample_covariance returns DEGENERATE_VARIABLE on the test substance's set -- both injections read 1.950 min exactly -- and on formamide. So the substrate DOES object to the extreme case, unplanted, on a real document, and on the one row carrying the report's headline endpoint. It does not object to the other six."
+    what_it_leaves: "a zero-dispersion set is caught. A three-times-understated one is not, and is the more likely error."
+
+  p5_the_regression_r_is_stated_here_and_was_withheld_in_section_10:
+    verdict: CONFIRMED
+    what_was_measured: "r = 0.9998, n = 12 travels as one string inside an eighteen-key conditions mapping, read by nothing. Section 10's r is stated to exist, stated to be archived in the raw data, and not released."
+    the_unification_it_was_written_to_test: "CV, MD, the stated r and the withheld r are four set-level quantities in one report and the content vocabulary is per-cell in all four cases. They are ONE gap. `uncertainty_kind` cannot hold a dispersion across runs, `value_absence` cannot hold a withholding of a fit statistic, and neither failure is about the uncertainty vocabulary or the absence vocabulary specifically -- both are about a per-cell contract meeting a document whose statistics are about sets."
+
+unpredicted:
+
+  the_pairing_module_caught_a_transcription_error_unplanted:
+    what_happened: "the first version of this fixture put `injection` inside `conditions`. Every run then had a unique context, the sixteen runs became sixteen singleton sets, and pair_replicates returned EVERY_RUN_DIFFERS_IN on `conditions`."
+    why_it_matters: "that is the Phase 16 error the module's own docstring documents -- an acquisition locator left in the comparison context -- committed by hand on a real transcription and caught by the detector rather than by review. The injection number was already on run_id, hence on the locator, which is where it belongs. Removing it produced the eight sets of two."
+    the_limit_the_catch_exposes: "the refusal names `conditions`, the container, not `injection`, the culprit. With eighteen keys inside, `conditions differs on every run` does not say which one, and the reader has to find it. Recorded, not repaired."
+
+what_the_two_sections_settle_together: "one report, two sections, and the contract behaves differently on each in ways nothing in the content records. Section 12's replicate sets mean what a consumer would assume; section 13's mean something three times tighter. Both are green, both have zero refusals, and the difference between a determination and an injection is not expressible."
+what_stays_open: "the per-cell versus set-level gap, now named once rather than four times; per-measurement provenance, which would let a guideline constant be carried instead of declined; and the granularity of EVERY_RUN_DIFFERS_IN. None is repaired here."

@@ -1,0 +1,666 @@
+{
+  "report_id": "wil-505902-nkk1304-partition-coefficient",
+  "method": "OECD 117 / EC A.8 / OPPTS 830.7570 HPLC retention-time method at pH 7",
+  "conditions": {
+    "guideline_ec": "EC no. 440/2008 Part A, Guideline A.8 'Partition Coefficient', OJEU L142, 31 May 2008",
+    "guideline_oecd": "OECD Guidelines for the Testing of Chemicals no. 117 'Partition Coefficient (n-octanol/water), HPLC Method', 13 April 2004",
+    "guideline_epa": "OPPTS 830.7570 'Partition Coefficient (n-octanol/water), Estimation by Liquid Chromatography', August 1996",
+    "technique": "reversed-phase UPLC, retention-time method",
+    "instrument": "Acquity UPLC system with Acquity UPLC TUV detector (Waters, Milford, MA, USA)",
+    "column": "Acquity UPLC HSS T3, 100 mm x 2.1 mm i.d., dp = 1.8 um (Waters)",
+    "column_temperature_c": "35 +/- 1",
+    "mobile_phase": "60/40 (v/v) methanol / 0.01 M phosphate buffer pH 7",
+    "flow_ml_per_min": "0.4",
+    "injection_volume_ul": "5",
+    "uv_detection_nm": "210",
+    "unretained_compound": "formamide 99.2% [75-12-7], 5.30 g/l stock in methanol, diluted to 60/40 (v/v) methanol/buffer pH 7",
+    "buffer": "0.01 M potassium di-hydrogenphosphate adjusted to pH 7 with 1 N NaOH, 0.0009% (w/v) sodium azide",
+    "ph_choice_basis": "pKa values calculated by the Perrin method (pKalc 5.0, Pallas 3.0); acidic pKa 8.44 and 13.9, no basic group, so pH 7 gives the non-ionised form",
+    "calibration_regression": "log k' = 0.474 x log Pow - 0.706 (r = 0.9998, n = 12)",
+    "acceptance": "log Pow from duplicate measurements within +/- 0.1 log units",
+    "test_solution": "1120 mg/l stock in methanol, diluted 100-fold with 60/40 (v/v) methanol/buffer pH 7"
+  },
+  "runs": [
+    {
+      "run_id": "formamide_t0-injection1",
+      "conditions": {
+        "guideline_ec": "EC no. 440/2008 Part A, Guideline A.8 'Partition Coefficient', OJEU L142, 31 May 2008",
+        "guideline_oecd": "OECD Guidelines for the Testing of Chemicals no. 117 'Partition Coefficient (n-octanol/water), HPLC Method', 13 April 2004",
+        "guideline_epa": "OPPTS 830.7570 'Partition Coefficient (n-octanol/water), Estimation by Liquid Chromatography', August 1996",
+        "technique": "reversed-phase UPLC, retention-time method",
+        "instrument": "Acquity UPLC system with Acquity UPLC TUV detector (Waters, Milford, MA, USA)",
+        "column": "Acquity UPLC HSS T3, 100 mm x 2.1 mm i.d., dp = 1.8 um (Waters)",
+        "column_temperature_c": "35 +/- 1",
+        "mobile_phase": "60/40 (v/v) methanol / 0.01 M phosphate buffer pH 7",
+        "flow_ml_per_min": "0.4",
+        "injection_volume_ul": "5",
+        "uv_detection_nm": "210",
+        "unretained_compound": "formamide 99.2% [75-12-7], 5.30 g/l stock in methanol, diluted to 60/40 (v/v) methanol/buffer pH 7",
+        "buffer": "0.01 M potassium di-hydrogenphosphate adjusted to pH 7 with 1 N NaOH, 0.0009% (w/v) sodium azide",
+        "ph_choice_basis": "pKa values calculated by the Perrin method (pKalc 5.0, Pallas 3.0); acidic pKa 8.44 and 13.9, no basic group, so pH 7 gives the non-ionised form",
+        "calibration_regression": "log k' = 0.474 x log Pow - 0.706 (r = 0.9998, n = 12)",
+        "acceptance": "log Pow from duplicate measurements within +/- 0.1 log units",
+        "test_solution": "1120 mg/l stock in methanol, diluted 100-fold with 60/40 (v/v) methanol/buffer pH 7",
+        "substance": "formamide_t0"
+      },
+      "measurements": [
+        {
+          "variable": "retention_time",
+          "value": 0.573,
+          "unit": "min",
+          "uncertainty": null,
+          "uncertainty_kind": "absent",
+          "kind": "measured"
+        }
+      ]
+    },
+    {
+      "run_id": "formamide_t0-injection2",
+      "conditions": {
+        "guideline_ec": "EC no. 440/2008 Part A, Guideline A.8 'Partition Coefficient', OJEU L142, 31 May 2008",
+        "guideline_oecd": "OECD Guidelines for the Testing of Chemicals no. 117 'Partition Coefficient (n-octanol/water), HPLC Method', 13 April 2004",
+        "guideline_epa": "OPPTS 830.7570 'Partition Coefficient (n-octanol/water), Estimation by Liquid Chromatography', August 1996",
+        "technique": "reversed-phase UPLC, retention-time method",
+        "instrument": "Acquity UPLC system with Acquity UPLC TUV detector (Waters, Milford, MA, USA)",
+        "column": "Acquity UPLC HSS T3, 100 mm x 2.1 mm i.d., dp = 1.8 um (Waters)",
+        "column_temperature_c": "35 +/- 1",
+        "mobile_phase": "60/40 (v/v) methanol / 0.01 M phosphate buffer pH 7",
+        "flow_ml_per_min": "0.4",
+        "injection_volume_ul": "5",
+        "uv_detection_nm": "210",
+        "unretained_compound": "formamide 99.2% [75-12-7], 5.30 g/l stock in methanol, diluted to 60/40 (v/v) methanol/buffer pH 7",
+        "buffer": "0.01 M potassium di-hydrogenphosphate adjusted to pH 7 with 1 N NaOH, 0.0009% (w/v) sodium azide",
+        "ph_choice_basis": "pKa values calculated by the Perrin method (pKalc 5.0, Pallas 3.0); acidic pKa 8.44 and 13.9, no basic group, so pH 7 gives the non-ionised form",
+        "calibration_regression": "log k' = 0.474 x log Pow - 0.706 (r = 0.9998, n = 12)",
+        "acceptance": "log Pow from duplicate measurements within +/- 0.1 log units",
+        "test_solution": "1120 mg/l stock in methanol, diluted 100-fold with 60/40 (v/v) methanol/buffer pH 7",
+        "substance": "formamide_t0"
+      },
+      "measurements": [
+        {
+          "variable": "retention_time",
+          "value": 0.573,
+          "unit": "min",
+          "uncertainty": null,
+          "uncertainty_kind": "absent",
+          "kind": "measured"
+        }
+      ]
+    },
+    {
+      "run_id": "2-butanone-injection1",
+      "conditions": {
+        "guideline_ec": "EC no. 440/2008 Part A, Guideline A.8 'Partition Coefficient', OJEU L142, 31 May 2008",
+        "guideline_oecd": "OECD Guidelines for the Testing of Chemicals no. 117 'Partition Coefficient (n-octanol/water), HPLC Method', 13 April 2004",
+        "guideline_epa": "OPPTS 830.7570 'Partition Coefficient (n-octanol/water), Estimation by Liquid Chromatography', August 1996",
+        "technique": "reversed-phase UPLC, retention-time method",
+        "instrument": "Acquity UPLC system with Acquity UPLC TUV detector (Waters, Milford, MA, USA)",
+        "column": "Acquity UPLC HSS T3, 100 mm x 2.1 mm i.d., dp = 1.8 um (Waters)",
+        "column_temperature_c": "35 +/- 1",
+        "mobile_phase": "60/40 (v/v) methanol / 0.01 M phosphate buffer pH 7",
+        "flow_ml_per_min": "0.4",
+        "injection_volume_ul": "5",
+        "uv_detection_nm": "210",
+        "unretained_compound": "formamide 99.2% [75-12-7], 5.30 g/l stock in methanol, diluted to 60/40 (v/v) methanol/buffer pH 7",
+        "buffer": "0.01 M potassium di-hydrogenphosphate adjusted to pH 7 with 1 N NaOH, 0.0009% (w/v) sodium azide",
+        "ph_choice_basis": "pKa values calculated by the Perrin method (pKalc 5.0, Pallas 3.0); acidic pKa 8.44 and 13.9, no basic group, so pH 7 gives the non-ionised form",
+        "calibration_regression": "log k' = 0.474 x log Pow - 0.706 (r = 0.9998, n = 12)",
+        "acceptance": "log Pow from duplicate measurements within +/- 0.1 log units",
+        "test_solution": "1120 mg/l stock in methanol, diluted 100-fold with 60/40 (v/v) methanol/buffer pH 7",
+        "substance": "2-butanone"
+      },
+      "measurements": [
+        {
+          "variable": "retention_time",
+          "value": 0.732,
+          "unit": "min",
+          "uncertainty": null,
+          "uncertainty_kind": "absent",
+          "kind": "measured"
+        },
+        {
+          "variable": "log_pow",
+          "value": 0.3,
+          "unit": "dimensionless",
+          "uncertainty": null,
+          "uncertainty_kind": "absent",
+          "kind": "guideline_reference_value"
+        }
+      ]
+    },
+    {
+      "run_id": "2-butanone-injection2",
+      "conditions": {
+        "guideline_ec": "EC no. 440/2008 Part A, Guideline A.8 'Partition Coefficient', OJEU L142, 31 May 2008",
+        "guideline_oecd": "OECD Guidelines for the Testing of Chemicals no. 117 'Partition Coefficient (n-octanol/water), HPLC Method', 13 April 2004",
+        "guideline_epa": "OPPTS 830.7570 'Partition Coefficient (n-octanol/water), Estimation by Liquid Chromatography', August 1996",
+        "technique": "reversed-phase UPLC, retention-time method",
+        "instrument": "Acquity UPLC system with Acquity UPLC TUV detector (Waters, Milford, MA, USA)",
+        "column": "Acquity UPLC HSS T3, 100 mm x 2.1 mm i.d., dp = 1.8 um (Waters)",
+        "column_temperature_c": "35 +/- 1",
+        "mobile_phase": "60/40 (v/v) methanol / 0.01 M phosphate buffer pH 7",
+        "flow_ml_per_min": "0.4",
+        "injection_volume_ul": "5",
+        "uv_detection_nm": "210",
+        "unretained_compound": "formamide 99.2% [75-12-7], 5.30 g/l stock in methanol, diluted to 60/40 (v/v) methanol/buffer pH 7",
+        "buffer": "0.01 M potassium di-hydrogenphosphate adjusted to pH 7 with 1 N NaOH, 0.0009% (w/v) sodium azide",
+        "ph_choice_basis": "pKa values calculated by the Perrin method (pKalc 5.0, Pallas 3.0); acidic pKa 8.44 and 13.9, no basic group, so pH 7 gives the non-ionised form",
+        "calibration_regression": "log k' = 0.474 x log Pow - 0.706 (r = 0.9998, n = 12)",
+        "acceptance": "log Pow from duplicate measurements within +/- 0.1 log units",
+        "test_solution": "1120 mg/l stock in methanol, diluted 100-fold with 60/40 (v/v) methanol/buffer pH 7",
+        "substance": "2-butanone"
+      },
+      "measurements": [
+        {
+          "variable": "retention_time",
+          "value": 0.728,
+          "unit": "min",
+          "uncertainty": null,
+          "uncertainty_kind": "absent",
+          "kind": "measured"
+        },
+        {
+          "variable": "log_pow",
+          "value": 0.3,
+          "unit": "dimensionless",
+          "uncertainty": null,
+          "uncertainty_kind": "absent",
+          "kind": "guideline_reference_value"
+        }
+      ]
+    },
+    {
+      "run_id": "benzylalcohol-injection1",
+      "conditions": {
+        "guideline_ec": "EC no. 440/2008 Part A, Guideline A.8 'Partition Coefficient', OJEU L142, 31 May 2008",
+        "guideline_oecd": "OECD Guidelines for the Testing of Chemicals no. 117 'Partition Coefficient (n-octanol/water), HPLC Method', 13 April 2004",
+        "guideline_epa": "OPPTS 830.7570 'Partition Coefficient (n-octanol/water), Estimation by Liquid Chromatography', August 1996",
+        "technique": "reversed-phase UPLC, retention-time method",
+        "instrument": "Acquity UPLC system with Acquity UPLC TUV detector (Waters, Milford, MA, USA)",
+        "column": "Acquity UPLC HSS T3, 100 mm x 2.1 mm i.d., dp = 1.8 um (Waters)",
+        "column_temperature_c": "35 +/- 1",
+        "mobile_phase": "60/40 (v/v) methanol / 0.01 M phosphate buffer pH 7",
+        "flow_ml_per_min": "0.4",
+        "injection_volume_ul": "5",
+        "uv_detection_nm": "210",
+        "unretained_compound": "formamide 99.2% [75-12-7], 5.30 g/l stock in methanol, diluted to 60/40 (v/v) methanol/buffer pH 7",
+        "buffer": "0.01 M potassium di-hydrogenphosphate adjusted to pH 7 with 1 N NaOH, 0.0009% (w/v) sodium azide",
+        "ph_choice_basis": "pKa values calculated by the Perrin method (pKalc 5.0, Pallas 3.0); acidic pKa 8.44 and 13.9, no basic group, so pH 7 gives the non-ionised form",
+        "calibration_regression": "log k' = 0.474 x log Pow - 0.706 (r = 0.9998, n = 12)",
+        "acceptance": "log Pow from duplicate measurements within +/- 0.1 log units",
+        "test_solution": "1120 mg/l stock in methanol, diluted 100-fold with 60/40 (v/v) methanol/buffer pH 7",
+        "substance": "benzylalcohol"
+      },
+      "measurements": [
+        {
+          "variable": "retention_time",
+          "value": 0.957,
+          "unit": "min",
+          "uncertainty": null,
+          "uncertainty_kind": "absent",
+          "kind": "measured"
+        },
+        {
+          "variable": "log_pow",
+          "value": 1.1,
+          "unit": "dimensionless",
+          "uncertainty": null,
+          "uncertainty_kind": "absent",
+          "kind": "guideline_reference_value"
+        }
+      ]
+    },
+    {
+      "run_id": "benzylalcohol-injection2",
+      "conditions": {
+        "guideline_ec": "EC no. 440/2008 Part A, Guideline A.8 'Partition Coefficient', OJEU L142, 31 May 2008",
+        "guideline_oecd": "OECD Guidelines for the Testing of Chemicals no. 117 'Partition Coefficient (n-octanol/water), HPLC Method', 13 April 2004",
+        "guideline_epa": "OPPTS 830.7570 'Partition Coefficient (n-octanol/water), Estimation by Liquid Chromatography', August 1996",
+        "technique": "reversed-phase UPLC, retention-time method",
+        "instrument": "Acquity UPLC system with Acquity UPLC TUV detector (Waters, Milford, MA, USA)",
+        "column": "Acquity UPLC HSS T3, 100 mm x 2.1 mm i.d., dp = 1.8 um (Waters)",
+        "column_temperature_c": "35 +/- 1",
+        "mobile_phase": "60/40 (v/v) methanol / 0.01 M phosphate buffer pH 7",
+        "flow_ml_per_min": "0.4",
+        "injection_volume_ul": "5",
+        "uv_detection_nm": "210",
+        "unretained_compound": "formamide 99.2% [75-12-7], 5.30 g/l stock in methanol, diluted to 60/40 (v/v) methanol/buffer pH 7",
+        "buffer": "0.01 M potassium di-hydrogenphosphate adjusted to pH 7 with 1 N NaOH, 0.0009% (w/v) sodium azide",
+        "ph_choice_basis": "pKa values calculated by the Perrin method (pKalc 5.0, Pallas 3.0); acidic pKa 8.44 and 13.9, no basic group, so pH 7 gives the non-ionised form",
+        "calibration_regression": "log k' = 0.474 x log Pow - 0.706 (r = 0.9998, n = 12)",
+        "acceptance": "log Pow from duplicate measurements within +/- 0.1 log units",
+        "test_solution": "1120 mg/l stock in methanol, diluted 100-fold with 60/40 (v/v) methanol/buffer pH 7",
+        "substance": "benzylalcohol"
+      },
+      "measurements": [
+        {
+          "variable": "retention_time",
+          "value": 0.959,
+          "unit": "min",
+          "uncertainty": null,
+          "uncertainty_kind": "absent",
+          "kind": "measured"
+        },
+        {
+          "variable": "log_pow",
+          "value": 1.1,
+          "unit": "dimensionless",
+          "uncertainty": null,
+          "uncertainty_kind": "absent",
+          "kind": "guideline_reference_value"
+        }
+      ]
+    },
+    {
+      "run_id": "nitrobenzene-injection1",
+      "conditions": {
+        "guideline_ec": "EC no. 440/2008 Part A, Guideline A.8 'Partition Coefficient', OJEU L142, 31 May 2008",
+        "guideline_oecd": "OECD Guidelines for the Testing of Chemicals no. 117 'Partition Coefficient (n-octanol/water), HPLC Method', 13 April 2004",
+        "guideline_epa": "OPPTS 830.7570 'Partition Coefficient (n-octanol/water), Estimation by Liquid Chromatography', August 1996",
+        "technique": "reversed-phase UPLC, retention-time method",
+        "instrument": "Acquity UPLC system with Acquity UPLC TUV detector (Waters, Milford, MA, USA)",
+        "column": "Acquity UPLC HSS T3, 100 mm x 2.1 mm i.d., dp = 1.8 um (Waters)",
+        "column_temperature_c": "35 +/- 1",
+        "mobile_phase": "60/40 (v/v) methanol / 0.01 M phosphate buffer pH 7",
+        "flow_ml_per_min": "0.4",
+        "injection_volume_ul": "5",
+        "uv_detection_nm": "210",
+        "unretained_compound": "formamide 99.2% [75-12-7], 5.30 g/l stock in methanol, diluted to 60/40 (v/v) methanol/buffer pH 7",
+        "buffer": "0.01 M potassium di-hydrogenphosphate adjusted to pH 7 with 1 N NaOH, 0.0009% (w/v) sodium azide",
+        "ph_choice_basis": "pKa values calculated by the Perrin method (pKalc 5.0, Pallas 3.0); acidic pKa 8.44 and 13.9, no basic group, so pH 7 gives the non-ionised form",
+        "calibration_regression": "log k' = 0.474 x log Pow - 0.706 (r = 0.9998, n = 12)",
+        "acceptance": "log Pow from duplicate measurements within +/- 0.1 log units",
+        "test_solution": "1120 mg/l stock in methanol, diluted 100-fold with 60/40 (v/v) methanol/buffer pH 7",
+        "substance": "nitrobenzene"
+      },
+      "measurements": [
+        {
+          "variable": "retention_time",
+          "value": 1.423,
+          "unit": "min",
+          "uncertainty": null,
+          "uncertainty_kind": "absent",
+          "kind": "measured"
+        },
+        {
+          "variable": "log_pow",
+          "value": 1.9,
+          "unit": "dimensionless",
+          "uncertainty": null,
+          "uncertainty_kind": "absent",
+          "kind": "guideline_reference_value"
+        }
+      ]
+    },
+    {
+      "run_id": "nitrobenzene-injection2",
+      "conditions": {
+        "guideline_ec": "EC no. 440/2008 Part A, Guideline A.8 'Partition Coefficient', OJEU L142, 31 May 2008",
+        "guideline_oecd": "OECD Guidelines for the Testing of Chemicals no. 117 'Partition Coefficient (n-octanol/water), HPLC Method', 13 April 2004",
+        "guideline_epa": "OPPTS 830.7570 'Partition Coefficient (n-octanol/water), Estimation by Liquid Chromatography', August 1996",
+        "technique": "reversed-phase UPLC, retention-time method",
+        "instrument": "Acquity UPLC system with Acquity UPLC TUV detector (Waters, Milford, MA, USA)",
+        "column": "Acquity UPLC HSS T3, 100 mm x 2.1 mm i.d., dp = 1.8 um (Waters)",
+        "column_temperature_c": "35 +/- 1",
+        "mobile_phase": "60/40 (v/v) methanol / 0.01 M phosphate buffer pH 7",
+        "flow_ml_per_min": "0.4",
+        "injection_volume_ul": "5",
+        "uv_detection_nm": "210",
+        "unretained_compound": "formamide 99.2% [75-12-7], 5.30 g/l stock in methanol, diluted to 60/40 (v/v) methanol/buffer pH 7",
+        "buffer": "0.01 M potassium di-hydrogenphosphate adjusted to pH 7 with 1 N NaOH, 0.0009% (w/v) sodium azide",
+        "ph_choice_basis": "pKa values calculated by the Perrin method (pKalc 5.0, Pallas 3.0); acidic pKa 8.44 and 13.9, no basic group, so pH 7 gives the non-ionised form",
+        "calibration_regression": "log k' = 0.474 x log Pow - 0.706 (r = 0.9998, n = 12)",
+        "acceptance": "log Pow from duplicate measurements within +/- 0.1 log units",
+        "test_solution": "1120 mg/l stock in methanol, diluted 100-fold with 60/40 (v/v) methanol/buffer pH 7",
+        "substance": "nitrobenzene"
+      },
+      "measurements": [
+        {
+          "variable": "retention_time",
+          "value": 1.425,
+          "unit": "min",
+          "uncertainty": null,
+          "uncertainty_kind": "absent",
+          "kind": "measured"
+        },
+        {
+          "variable": "log_pow",
+          "value": 1.9,
+          "unit": "dimensionless",
+          "uncertainty": null,
+          "uncertainty_kind": "absent",
+          "kind": "guideline_reference_value"
+        }
+      ]
+    },
+    {
+      "run_id": "bromobenzene-injection1",
+      "conditions": {
+        "guideline_ec": "EC no. 440/2008 Part A, Guideline A.8 'Partition Coefficient', OJEU L142, 31 May 2008",
+        "guideline_oecd": "OECD Guidelines for the Testing of Chemicals no. 117 'Partition Coefficient (n-octanol/water), HPLC Method', 13 April 2004",
+        "guideline_epa": "OPPTS 830.7570 'Partition Coefficient (n-octanol/water), Estimation by Liquid Chromatography', August 1996",
+        "technique": "reversed-phase UPLC, retention-time method",
+        "instrument": "Acquity UPLC system with Acquity UPLC TUV detector (Waters, Milford, MA, USA)",
+        "column": "Acquity UPLC HSS T3, 100 mm x 2.1 mm i.d., dp = 1.8 um (Waters)",
+        "column_temperature_c": "35 +/- 1",
+        "mobile_phase": "60/40 (v/v) methanol / 0.01 M phosphate buffer pH 7",
+        "flow_ml_per_min": "0.4",
+        "injection_volume_ul": "5",
+        "uv_detection_nm": "210",
+        "unretained_compound": "formamide 99.2% [75-12-7], 5.30 g/l stock in methanol, diluted to 60/40 (v/v) methanol/buffer pH 7",
+        "buffer": "0.01 M potassium di-hydrogenphosphate adjusted to pH 7 with 1 N NaOH, 0.0009% (w/v) sodium azide",
+        "ph_choice_basis": "pKa values calculated by the Perrin method (pKalc 5.0, Pallas 3.0); acidic pKa 8.44 and 13.9, no basic group, so pH 7 gives the non-ionised form",
+        "calibration_regression": "log k' = 0.474 x log Pow - 0.706 (r = 0.9998, n = 12)",
+        "acceptance": "log Pow from duplicate measurements within +/- 0.1 log units",
+        "test_solution": "1120 mg/l stock in methanol, diluted 100-fold with 60/40 (v/v) methanol/buffer pH 7",
+        "substance": "bromobenzene"
+      },
+      "measurements": [
+        {
+          "variable": "retention_time",
+          "value": 3.571,
+          "unit": "min",
+          "uncertainty": null,
+          "uncertainty_kind": "absent",
+          "kind": "measured"
+        },
+        {
+          "variable": "log_pow",
+          "value": 3.0,
+          "unit": "dimensionless",
+          "uncertainty": null,
+          "uncertainty_kind": "absent",
+          "kind": "guideline_reference_value"
+        }
+      ]
+    },
+    {
+      "run_id": "bromobenzene-injection2",
+      "conditions": {
+        "guideline_ec": "EC no. 440/2008 Part A, Guideline A.8 'Partition Coefficient', OJEU L142, 31 May 2008",
+        "guideline_oecd": "OECD Guidelines for the Testing of Chemicals no. 117 'Partition Coefficient (n-octanol/water), HPLC Method', 13 April 2004",
+        "guideline_epa": "OPPTS 830.7570 'Partition Coefficient (n-octanol/water), Estimation by Liquid Chromatography', August 1996",
+        "technique": "reversed-phase UPLC, retention-time method",
+        "instrument": "Acquity UPLC system with Acquity UPLC TUV detector (Waters, Milford, MA, USA)",
+        "column": "Acquity UPLC HSS T3, 100 mm x 2.1 mm i.d., dp = 1.8 um (Waters)",
+        "column_temperature_c": "35 +/- 1",
+        "mobile_phase": "60/40 (v/v) methanol / 0.01 M phosphate buffer pH 7",
+        "flow_ml_per_min": "0.4",
+        "injection_volume_ul": "5",
+        "uv_detection_nm": "210",
+        "unretained_compound": "formamide 99.2% [75-12-7], 5.30 g/l stock in methanol, diluted to 60/40 (v/v) methanol/buffer pH 7",
+        "buffer": "0.01 M potassium di-hydrogenphosphate adjusted to pH 7 with 1 N NaOH, 0.0009% (w/v) sodium azide",
+        "ph_choice_basis": "pKa values calculated by the Perrin method (pKalc 5.0, Pallas 3.0); acidic pKa 8.44 and 13.9, no basic group, so pH 7 gives the non-ionised form",
+        "calibration_regression": "log k' = 0.474 x log Pow - 0.706 (r = 0.9998, n = 12)",
+        "acceptance": "log Pow from duplicate measurements within +/- 0.1 log units",
+        "test_solution": "1120 mg/l stock in methanol, diluted 100-fold with 60/40 (v/v) methanol/buffer pH 7",
+        "substance": "bromobenzene"
+      },
+      "measurements": [
+        {
+          "variable": "retention_time",
+          "value": 3.578,
+          "unit": "min",
+          "uncertainty": null,
+          "uncertainty_kind": "absent",
+          "kind": "measured"
+        },
+        {
+          "variable": "log_pow",
+          "value": 3.0,
+          "unit": "dimensionless",
+          "uncertainty": null,
+          "uncertainty_kind": "absent",
+          "kind": "guideline_reference_value"
+        }
+      ]
+    },
+    {
+      "run_id": "1,4-dichlorobenzene-injection1",
+      "conditions": {
+        "guideline_ec": "EC no. 440/2008 Part A, Guideline A.8 'Partition Coefficient', OJEU L142, 31 May 2008",
+        "guideline_oecd": "OECD Guidelines for the Testing of Chemicals no. 117 'Partition Coefficient (n-octanol/water), HPLC Method', 13 April 2004",
+        "guideline_epa": "OPPTS 830.7570 'Partition Coefficient (n-octanol/water), Estimation by Liquid Chromatography', August 1996",
+        "technique": "reversed-phase UPLC, retention-time method",
+        "instrument": "Acquity UPLC system with Acquity UPLC TUV detector (Waters, Milford, MA, USA)",
+        "column": "Acquity UPLC HSS T3, 100 mm x 2.1 mm i.d., dp = 1.8 um (Waters)",
+        "column_temperature_c": "35 +/- 1",
+        "mobile_phase": "60/40 (v/v) methanol / 0.01 M phosphate buffer pH 7",
+        "flow_ml_per_min": "0.4",
+        "injection_volume_ul": "5",
+        "uv_detection_nm": "210",
+        "unretained_compound": "formamide 99.2% [75-12-7], 5.30 g/l stock in methanol, diluted to 60/40 (v/v) methanol/buffer pH 7",
+        "buffer": "0.01 M potassium di-hydrogenphosphate adjusted to pH 7 with 1 N NaOH, 0.0009% (w/v) sodium azide",
+        "ph_choice_basis": "pKa values calculated by the Perrin method (pKalc 5.0, Pallas 3.0); acidic pKa 8.44 and 13.9, no basic group, so pH 7 gives the non-ionised form",
+        "calibration_regression": "log k' = 0.474 x log Pow - 0.706 (r = 0.9998, n = 12)",
+        "acceptance": "log Pow from duplicate measurements within +/- 0.1 log units",
+        "test_solution": "1120 mg/l stock in methanol, diluted 100-fold with 60/40 (v/v) methanol/buffer pH 7",
+        "substance": "1,4-dichlorobenzene"
+      },
+      "measurements": [
+        {
+          "variable": "retention_time",
+          "value": 5.358,
+          "unit": "min",
+          "uncertainty": null,
+          "uncertainty_kind": "absent",
+          "kind": "measured"
+        },
+        {
+          "variable": "log_pow",
+          "value": 3.4,
+          "unit": "dimensionless",
+          "uncertainty": null,
+          "uncertainty_kind": "absent",
+          "kind": "guideline_reference_value"
+        }
+      ]
+    },
+    {
+      "run_id": "1,4-dichlorobenzene-injection2",
+      "conditions": {
+        "guideline_ec": "EC no. 440/2008 Part A, Guideline A.8 'Partition Coefficient', OJEU L142, 31 May 2008",
+        "guideline_oecd": "OECD Guidelines for the Testing of Chemicals no. 117 'Partition Coefficient (n-octanol/water), HPLC Method', 13 April 2004",
+        "guideline_epa": "OPPTS 830.7570 'Partition Coefficient (n-octanol/water), Estimation by Liquid Chromatography', August 1996",
+        "technique": "reversed-phase UPLC, retention-time method",
+        "instrument": "Acquity UPLC system with Acquity UPLC TUV detector (Waters, Milford, MA, USA)",
+        "column": "Acquity UPLC HSS T3, 100 mm x 2.1 mm i.d., dp = 1.8 um (Waters)",
+        "column_temperature_c": "35 +/- 1",
+        "mobile_phase": "60/40 (v/v) methanol / 0.01 M phosphate buffer pH 7",
+        "flow_ml_per_min": "0.4",
+        "injection_volume_ul": "5",
+        "uv_detection_nm": "210",
+        "unretained_compound": "formamide 99.2% [75-12-7], 5.30 g/l stock in methanol, diluted to 60/40 (v/v) methanol/buffer pH 7",
+        "buffer": "0.01 M potassium di-hydrogenphosphate adjusted to pH 7 with 1 N NaOH, 0.0009% (w/v) sodium azide",
+        "ph_choice_basis": "pKa values calculated by the Perrin method (pKalc 5.0, Pallas 3.0); acidic pKa 8.44 and 13.9, no basic group, so pH 7 gives the non-ionised form",
+        "calibration_regression": "log k' = 0.474 x log Pow - 0.706 (r = 0.9998, n = 12)",
+        "acceptance": "log Pow from duplicate measurements within +/- 0.1 log units",
+        "test_solution": "1120 mg/l stock in methanol, diluted 100-fold with 60/40 (v/v) methanol/buffer pH 7",
+        "substance": "1,4-dichlorobenzene"
+      },
+      "measurements": [
+        {
+          "variable": "retention_time",
+          "value": 5.369,
+          "unit": "min",
+          "uncertainty": null,
+          "uncertainty_kind": "absent",
+          "kind": "measured"
+        },
+        {
+          "variable": "log_pow",
+          "value": 3.4,
+          "unit": "dimensionless",
+          "uncertainty": null,
+          "uncertainty_kind": "absent",
+          "kind": "guideline_reference_value"
+        }
+      ]
+    },
+    {
+      "run_id": "biphenyl-injection1",
+      "conditions": {
+        "guideline_ec": "EC no. 440/2008 Part A, Guideline A.8 'Partition Coefficient', OJEU L142, 31 May 2008",
+        "guideline_oecd": "OECD Guidelines for the Testing of Chemicals no. 117 'Partition Coefficient (n-octanol/water), HPLC Method', 13 April 2004",
+        "guideline_epa": "OPPTS 830.7570 'Partition Coefficient (n-octanol/water), Estimation by Liquid Chromatography', August 1996",
+        "technique": "reversed-phase UPLC, retention-time method",
+        "instrument": "Acquity UPLC system with Acquity UPLC TUV detector (Waters, Milford, MA, USA)",
+        "column": "Acquity UPLC HSS T3, 100 mm x 2.1 mm i.d., dp = 1.8 um (Waters)",
+        "column_temperature_c": "35 +/- 1",
+        "mobile_phase": "60/40 (v/v) methanol / 0.01 M phosphate buffer pH 7",
+        "flow_ml_per_min": "0.4",
+        "injection_volume_ul": "5",
+        "uv_detection_nm": "210",
+        "unretained_compound": "formamide 99.2% [75-12-7], 5.30 g/l stock in methanol, diluted to 60/40 (v/v) methanol/buffer pH 7",
+        "buffer": "0.01 M potassium di-hydrogenphosphate adjusted to pH 7 with 1 N NaOH, 0.0009% (w/v) sodium azide",
+        "ph_choice_basis": "pKa values calculated by the Perrin method (pKalc 5.0, Pallas 3.0); acidic pKa 8.44 and 13.9, no basic group, so pH 7 gives the non-ionised form",
+        "calibration_regression": "log k' = 0.474 x log Pow - 0.706 (r = 0.9998, n = 12)",
+        "acceptance": "log Pow from duplicate measurements within +/- 0.1 log units",
+        "test_solution": "1120 mg/l stock in methanol, diluted 100-fold with 60/40 (v/v) methanol/buffer pH 7",
+        "substance": "biphenyl"
+      },
+      "measurements": [
+        {
+          "variable": "retention_time",
+          "value": 9.297,
+          "unit": "min",
+          "uncertainty": null,
+          "uncertainty_kind": "absent",
+          "kind": "measured"
+        },
+        {
+          "variable": "log_pow",
+          "value": 4.0,
+          "unit": "dimensionless",
+          "uncertainty": null,
+          "uncertainty_kind": "absent",
+          "kind": "guideline_reference_value"
+        }
+      ]
+    },
+    {
+      "run_id": "biphenyl-injection2",
+      "conditions": {
+        "guideline_ec": "EC no. 440/2008 Part A, Guideline A.8 'Partition Coefficient', OJEU L142, 31 May 2008",
+        "guideline_oecd": "OECD Guidelines for the Testing of Chemicals no. 117 'Partition Coefficient (n-octanol/water), HPLC Method', 13 April 2004",
+        "guideline_epa": "OPPTS 830.7570 'Partition Coefficient (n-octanol/water), Estimation by Liquid Chromatography', August 1996",
+        "technique": "reversed-phase UPLC, retention-time method",
+        "instrument": "Acquity UPLC system with Acquity UPLC TUV detector (Waters, Milford, MA, USA)",
+        "column": "Acquity UPLC HSS T3, 100 mm x 2.1 mm i.d., dp = 1.8 um (Waters)",
+        "column_temperature_c": "35 +/- 1",
+        "mobile_phase": "60/40 (v/v) methanol / 0.01 M phosphate buffer pH 7",
+        "flow_ml_per_min": "0.4",
+        "injection_volume_ul": "5",
+        "uv_detection_nm": "210",
+        "unretained_compound": "formamide 99.2% [75-12-7], 5.30 g/l stock in methanol, diluted to 60/40 (v/v) methanol/buffer pH 7",
+        "buffer": "0.01 M potassium di-hydrogenphosphate adjusted to pH 7 with 1 N NaOH, 0.0009% (w/v) sodium azide",
+        "ph_choice_basis": "pKa values calculated by the Perrin method (pKalc 5.0, Pallas 3.0); acidic pKa 8.44 and 13.9, no basic group, so pH 7 gives the non-ionised form",
+        "calibration_regression": "log k' = 0.474 x log Pow - 0.706 (r = 0.9998, n = 12)",
+        "acceptance": "log Pow from duplicate measurements within +/- 0.1 log units",
+        "test_solution": "1120 mg/l stock in methanol, diluted 100-fold with 60/40 (v/v) methanol/buffer pH 7",
+        "substance": "biphenyl"
+      },
+      "measurements": [
+        {
+          "variable": "retention_time",
+          "value": 9.314,
+          "unit": "min",
+          "uncertainty": null,
+          "uncertainty_kind": "absent",
+          "kind": "measured"
+        },
+        {
+          "variable": "log_pow",
+          "value": 4.0,
+          "unit": "dimensionless",
+          "uncertainty": null,
+          "uncertainty_kind": "absent",
+          "kind": "guideline_reference_value"
+        }
+      ]
+    },
+    {
+      "run_id": "test_substance-injection1",
+      "conditions": {
+        "guideline_ec": "EC no. 440/2008 Part A, Guideline A.8 'Partition Coefficient', OJEU L142, 31 May 2008",
+        "guideline_oecd": "OECD Guidelines for the Testing of Chemicals no. 117 'Partition Coefficient (n-octanol/water), HPLC Method', 13 April 2004",
+        "guideline_epa": "OPPTS 830.7570 'Partition Coefficient (n-octanol/water), Estimation by Liquid Chromatography', August 1996",
+        "technique": "reversed-phase UPLC, retention-time method",
+        "instrument": "Acquity UPLC system with Acquity UPLC TUV detector (Waters, Milford, MA, USA)",
+        "column": "Acquity UPLC HSS T3, 100 mm x 2.1 mm i.d., dp = 1.8 um (Waters)",
+        "column_temperature_c": "35 +/- 1",
+        "mobile_phase": "60/40 (v/v) methanol / 0.01 M phosphate buffer pH 7",
+        "flow_ml_per_min": "0.4",
+        "injection_volume_ul": "5",
+        "uv_detection_nm": "210",
+        "unretained_compound": "formamide 99.2% [75-12-7], 5.30 g/l stock in methanol, diluted to 60/40 (v/v) methanol/buffer pH 7",
+        "buffer": "0.01 M potassium di-hydrogenphosphate adjusted to pH 7 with 1 N NaOH, 0.0009% (w/v) sodium azide",
+        "ph_choice_basis": "pKa values calculated by the Perrin method (pKalc 5.0, Pallas 3.0); acidic pKa 8.44 and 13.9, no basic group, so pH 7 gives the non-ionised form",
+        "calibration_regression": "log k' = 0.474 x log Pow - 0.706 (r = 0.9998, n = 12)",
+        "acceptance": "log Pow from duplicate measurements within +/- 0.1 log units",
+        "test_solution": "1120 mg/l stock in methanol, diluted 100-fold with 60/40 (v/v) methanol/buffer pH 7",
+        "substance": "test_substance"
+      },
+      "measurements": [
+        {
+          "variable": "retention_time",
+          "value": 1.95,
+          "unit": "min",
+          "uncertainty": null,
+          "uncertainty_kind": "absent",
+          "kind": "measured"
+        },
+        {
+          "variable": "log_pow",
+          "value": 2.3,
+          "unit": "dimensionless",
+          "uncertainty": null,
+          "uncertainty_kind": "absent",
+          "kind": "derived_from_regression_over_other_rows"
+        }
+      ]
+    },
+    {
+      "run_id": "test_substance-injection2",
+      "conditions": {
+        "guideline_ec": "EC no. 440/2008 Part A, Guideline A.8 'Partition Coefficient', OJEU L142, 31 May 2008",
+        "guideline_oecd": "OECD Guidelines for the Testing of Chemicals no. 117 'Partition Coefficient (n-octanol/water), HPLC Method', 13 April 2004",
+        "guideline_epa": "OPPTS 830.7570 'Partition Coefficient (n-octanol/water), Estimation by Liquid Chromatography', August 1996",
+        "technique": "reversed-phase UPLC, retention-time method",
+        "instrument": "Acquity UPLC system with Acquity UPLC TUV detector (Waters, Milford, MA, USA)",
+        "column": "Acquity UPLC HSS T3, 100 mm x 2.1 mm i.d., dp = 1.8 um (Waters)",
+        "column_temperature_c": "35 +/- 1",
+        "mobile_phase": "60/40 (v/v) methanol / 0.01 M phosphate buffer pH 7",
+        "flow_ml_per_min": "0.4",
+        "injection_volume_ul": "5",
+        "uv_detection_nm": "210",
+        "unretained_compound": "formamide 99.2% [75-12-7], 5.30 g/l stock in methanol, diluted to 60/40 (v/v) methanol/buffer pH 7",
+        "buffer": "0.01 M potassium di-hydrogenphosphate adjusted to pH 7 with 1 N NaOH, 0.0009% (w/v) sodium azide",
+        "ph_choice_basis": "pKa values calculated by the Perrin method (pKalc 5.0, Pallas 3.0); acidic pKa 8.44 and 13.9, no basic group, so pH 7 gives the non-ionised form",
+        "calibration_regression": "log k' = 0.474 x log Pow - 0.706 (r = 0.9998, n = 12)",
+        "acceptance": "log Pow from duplicate measurements within +/- 0.1 log units",
+        "test_solution": "1120 mg/l stock in methanol, diluted 100-fold with 60/40 (v/v) methanol/buffer pH 7",
+        "substance": "test_substance"
+      },
+      "measurements": [
+        {
+          "variable": "retention_time",
+          "value": 1.95,
+          "unit": "min",
+          "uncertainty": null,
+          "uncertainty_kind": "absent",
+          "kind": "measured"
+        },
+        {
+          "variable": "log_pow",
+          "value": 2.3,
+          "unit": "dimensionless",
+          "uncertainty": null,
+          "uncertainty_kind": "absent",
+          "kind": "derived_from_regression_over_other_rows"
+        }
+      ]
+    }
+  ],
+  "_absent_from_this_table": "Toluene is listed as a reference substance on page 37 with log Pow 2.7 and does not appear in Table 9. The regression states n = 12, which is the six reference substances at two injections each. The report gives NO reason for its absence, so none is declared here: see architecture/fourth_anchor_preregistration.yaml P3."
+}

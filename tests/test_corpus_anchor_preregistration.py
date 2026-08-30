@@ -75,6 +75,13 @@ A_GPC_ANCHOR = "a_gpc_anchor"
 A_NON_GPC_ANCHOR = "a_non_gpc_anchor"
 #: The first anchor of a different analytical technique, 2026-08-30.
 FOURTH_ANCHOR = "physchem_study_anchor_wil_505902_water_solubility.json"
+#: A second section of the same report, 2026-08-30.
+FIFTH_ANCHOR = "physchem_study_anchor_wil_505902_partition_coefficient.json"
+#: Named once, read in both places. Still an explicit enumeration -- a
+#: new anchor is added here deliberately, which is what the guard is
+#: for -- but it stopped being two enumerations that could disagree.
+LANDED_ANCHORS = sorted([FIRST_ANCHOR, SECOND_ANCHOR, THIRD_ANCHOR,
+                         FOURTH_ANCHOR, FIFTH_ANCHOR])
 ANCHOR_KINDS = (A_GPC_ANCHOR, A_NON_GPC_ANCHOR)
 
 #: Every fixture in the tree, declared. Enumerating all of them rather
@@ -120,6 +127,8 @@ FIXTURE_PROVENANCE = {
     "noaa_window_synthetic_20260101_20260103.json": NOT_A_GPC_ANCHOR,
     "noaa_window_synthetic_20260101_20260103_revised.json": NOT_A_GPC_ANCHOR,
     "noaa_window_synthetic_20260102_20260104.json": NOT_A_GPC_ANCHOR,
+    "physchem_study_anchor_wil_505902_partition_coefficient.json": A_NON_GPC_ANCHOR,
+    "physchem_study_anchor_wil_505902_partition_coefficient.provenance.md": NOT_A_GPC_ANCHOR,
     "physchem_study_anchor_wil_505902_water_solubility.json": A_NON_GPC_ANCHOR,
     "physchem_study_anchor_wil_505902_water_solubility.provenance.md": NOT_A_GPC_ANCHOR,
     "usgs_event_detail_malformed.json": NOT_A_GPC_ANCHOR,
@@ -165,7 +174,7 @@ def test_an_anchor_has_landed_and_this_guard_is_retired():
         f"undeclared fixtures: {undeclared}. Declare each as NOT_A_GPC_ANCHOR or A_GPC_ANCHOR. "
         "An undeclared fixture is how the first form of this guard missed a vendor nobody listed."
     )
-    assert anchors == sorted([FIRST_ANCHOR, SECOND_ANCHOR, THIRD_ANCHOR, FOURTH_ANCHOR]), (
+    assert anchors == LANDED_ANCHORS, (
         f"expected exactly the landed anchors and found {anchors}. A new anchor fixture must be "
         "declared here deliberately; the guard was retired for the first one, not disabled."
     )
@@ -194,8 +203,7 @@ def test_the_guard_fires_on_a_vendor_nobody_listed_and_the_first_form_did_not():
     undeclared, anchors = anchor_guard(present, declared)
     assert undeclared == []
     assert planted in anchors, "a declared anchor must fire it whatever the vendor is called"
-    assert anchors == sorted([planted, FIRST_ANCHOR, SECOND_ANCHOR, THIRD_ANCHOR,
-                              FOURTH_ANCHOR]), (
+    assert anchors == sorted([planted] + LANDED_ANCHORS), (
         "and the landed anchor is still reported alongside it -- the guard was retired for the "
         "first anchor, not switched off"
     )
