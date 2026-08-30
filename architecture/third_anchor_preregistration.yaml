@@ -1,0 +1,57 @@
+# WHAT A DIFFERENT ANALYTICAL METHOD WILL DO TO THIS CONTRACT.
+# RECORDED BEFORE ANY CANDIDATE IS FETCHED.
+#
+# Two anchors have now met the acquisition path and both were GPC/SEC.
+# The contract survived them -- one refused, one ingested end to end --
+# and the untested claim is that it is a contract about MEASUREMENTS
+# rather than a contract about chromatograms. A third GPC report would
+# tighten the comparisons and could not test that claim at all.
+#
+# So: a different technique, deliberately. These predictions are about
+# the CONTRACT and are makeable without seeing the document, which is
+# what makes them stronger objects than the anchor-derived ones in
+# architecture/post_anchor_predictions.yaml.
+extends: core@1.0.0
+
+subject: third_anchor_preregistration
+status: recorded_before_any_candidate_is_fetched
+owner: daf
+enforcement: tests/test_third_anchor_preregistration.py
+recorded: "2026-08-30"
+
+# ----------------------------------------------------------------------
+what_is_being_tested: "whether the acquisition contract is GPC-shaped. Everything it requires -- a data_provenance from a closed vocabulary, a sample identity, a sample kind, a method identifier, per-measurement units, an uncertainty kind, and a declared measured/derived kind -- was written against chromatography reports. A different technique either satisfies it or exposes a clause that was really about GPC."
+
+predictions:
+
+  q1_the_four_declarable_fields_are_still_absent:
+    prediction: "a report of any technique states none of data_provenance, sample_kind, method-as-an-identifier or a machine-readable sample id. They are properties of the ACQUISITION, not of the measurement, so no instrument writes them whatever it measures."
+    basis: MEASURED on two GPC reports, OPEN as a claim about the class
+    what_would_falsify_it: "a report carrying any of the four as a field."
+
+  q2_the_uncertainty_kind_will_not_fit:
+    prediction: "the vocabulary is `stated | estimated | propagated | absent`, and a guideline study reports a MEAN OF REPLICATES with a standard deviation. That is a repeatability statistic across runs, which none of the four names -- already recorded as a category error in corpus_anchor_preregistration.yaml and never yet met on a real document, because neither GPC anchor carried an uncertainty column at all."
+    basis: OPEN, and it is the prediction most likely to expose a real gap
+    why_this_technique_choice_matters: "GPC reports moments without uncertainty. A physical-property study reports a value WITH one. So this is the first anchor that can test the uncertainty clause at all."
+
+  q3_the_derived_measured_distinction_survives_but_the_denylist_does_not:
+    prediction: "the declared-kind requirement holds -- it is about the interface, not about chromatography -- and DERIVED_VARIABLES catches nothing, because it lists five spellings of dispersity and a different technique has different derived quantities entirely."
+    basis: MEASURED -- the denylist already missed the seventh spelling on a GPC report
+    what_it_would_show: "that the protection is the requirement and the list is decoration, on a technique the list was never written for."
+
+  q4_a_single_value_report_has_no_run_identity:
+    prediction: "`_IDENTITY_COLUMNS` and the one-Record-per-run precondition assume a table of runs. A study reporting one value from three replicates has runs that may not be individually reported -- and if only the aggregate is printed, the precondition is satisfied vacuously by a document that has already destroyed what it protects."
+    basis: OPEN
+    why_it_is_the_sharpest: "the precondition exists to stop replicates collapsing. A report that collapses them BEFORE acquisition satisfies it and defeats it at once, and nothing in the substrate can tell that apart from a genuine single measurement."
+
+  q5_the_conditions_mapping_will_carry_the_whole_method:
+    prediction: "as with both GPC anchors, the method statement travels as opaque conditions text and nothing downstream reads it. A guideline study's conditions are richer -- temperature, pH, equilibration time, analytical finish -- so the volume of unreachable context goes up while the reachability stays zero."
+    basis: MEASURED on two anchors
+
+# ----------------------------------------------------------------------
+the_candidate_criteria:
+  must_be: "a real test report, published, from a technique that is NOT size-exclusion chromatography, with at least one quantitative result and a stated method."
+  preferred: "a physical-property or fate study -- water solubility, vapour pressure, partition coefficient, melting point -- because those report a value with replicates and an uncertainty, which GPC does not."
+  disqualifies: "a summary table with no method block; a report of a GPC/SEC measurement under another name; anything not retrievable to a hash."
+
+what_this_document_must_not_become: "a description of the report that was found. Its digest is pinned by its enforcement and the result is recorded elsewhere."
