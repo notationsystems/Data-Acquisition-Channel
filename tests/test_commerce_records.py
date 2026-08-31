@@ -163,3 +163,62 @@ def test_the_award_join_is_recorded_with_the_number_that_looks_wrong():
     assert "38" in award["the_join_was_tested_not_assumed"]
     assert "RIGHT answer" in award["the_join_was_tested_not_assumed"]
     assert award["not_built"].startswith("the award adapter")
+
+
+# =====================================================================
+# architecture/opportunity_engine.yaml, bound to the tree
+# =====================================================================
+
+ENGINE = loads((ARCHITECTURE / "opportunity_engine.yaml").read_text())
+
+
+def test_the_engine_record_names_modules_that_all_exist():
+    for key in ("truck_legal_routing", "facility_resolution", "pc_6_carrier_vetting"):
+        module = ENGINE[key]["module"]
+        assert (REPO_ROOT / module).exists(), f"{key} names {module}, which does not exist"
+    for module in ENGINE["the_manual_adapter"]["modules"]:
+        assert (REPO_ROOT / module).exists()
+
+
+def test_the_measured_route_numbers_match_the_constants_the_code_reasons_from():
+    """The record and the module must not drift. Both carry the same
+    measurement and it is the one the design turns on."""
+    from commerce.mileage import __doc__ as mileage_doc
+    sweep = ENGINE["truck_legal_routing"]["urban_lane_height_sweep"]
+    assert sweep["at_4_11_m"] == "18.261 km / 1102 s"
+    assert sweep["at_4_60_m"] == "18.202 km / 1851 s"
+    assert mileage_doc is not None
+    for figure in ("18.261", "1102", "18.202", "1851", "544.93", "545.96"):
+        assert figure in mileage_doc, f"{figure} is in the record and not in the module"
+
+
+def test_the_record_states_what_the_measurement_corrects_in_the_brief():
+    """Two of the brief's own recommendations were changed by measurement.
+    A record that kept only the conclusion would lose the reason."""
+    corrections = ENGINE["truck_legal_routing"]["what_it_corrects_in_the_brief"]
+    assert "prove nothing" in corrections["on_the_validation_plan"]
+    assert "MILEAGE IS THE QUANTITY THAT BARELY MOVES" in corrections["on_the_pricing_input"]
+
+
+def test_the_facility_floor_in_the_record_matches_the_code():
+    from commerce.facility import CANONICAL_DUPLICATE_SIMILARITY, NEAR_MATCH_FLOOR
+    from commerce.facility import CONSERVATIVE as C, STATISTICAL as S
+    calibration = ENGINE["facility_resolution"]["the_measured_calibration"]
+    assert "0.50" in calibration["what_happened"]
+    assert abs(CANONICAL_DUPLICATE_SIMILARITY - 0.50) < 1e-9
+    assert f"{NEAR_MATCH_FLOOR[C]}" in calibration["the_repair"]
+    assert f"{NEAR_MATCH_FLOOR[S]}" in calibration["the_repair"]
+
+
+def test_nothing_on_the_engine_hold_list_was_built():
+    modules = {path.stem for path in (REPO_ROOT / "commerce").rglob("*.py")}
+    for forbidden in ("vroom", "h3", "tile38", "postgis", "mobilitydb", "auto_sea_way"):
+        assert forbidden not in modules, f"commerce/{forbidden}.py is on the hold list"
+
+
+def test_the_ors_key_decision_is_recorded_rather_than_taken():
+    ors = ENGINE["truck_legal_routing"]["ors_public_api"]
+    assert "401" in ors["measured"]
+    assert "Not signed up for" in ors["consequence"]
+    sources = " ".join(p.read_text() for p in (REPO_ROOT / "commerce").rglob("*.py"))
+    assert "api_key" not in sources.lower(), "no API key may be embedded in this package"

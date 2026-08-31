@@ -1,0 +1,114 @@
+# THE OPPORTUNITY ACQUISITION ENGINE, PC-6, and the two week-one spatial
+# items -- with the measurements that changed two of the briefs' own
+# recommendations.
+extends: core@1.0.0
+
+subject: opportunity_engine
+status: items_1_to_5_built
+owner: daf
+enforcement: tests/test_commerce_gate.py
+
+# ----------------------------------------------------------------------
+# THE MIDDLE LIST IS THE PRODUCT.
+# ----------------------------------------------------------------------
+morning_view:
+  three_lists:
+    - priced
+    - blocked
+    - refused
+  why_blocked_is_the_product: "an opportunity you cannot price is not a low-ranked opportunity, it is an UN-RANKED one with a named gap, and the gap is usually one phone call. An engine that silently drops the unpriceable and shows four clean items has thrown away most of the day's work, and it looks better doing it."
+  conservation: "every opportunity lands in exactly one of the three lists, asserted. Not the count of priced items."
+  the_call_sheet: "Field carries who_knows, and a missing field naming nobody is REFUSED. Without that the blocked list is a backlog rather than a call sheet."
+  three_field_states: "present / missing / unparsed. `nobody told us` and `somebody told us and this reader could not read it` are different situations with different remedies; collapsing them sends an operator to make a call that has already been made."
+  completeness_is_measured_against_pricing: "not against the record's own field count, or adding an optional field makes every opportunity less complete overnight."
+
+the_gate_is_ordered_by_cost:
+  order:
+    - eligibility
+    - compliance
+    - economics
+  why: "each stage is cheaper than the next, so an activity-class refusal at stage one saves an hour of pricing that would have ended in the same refusal."
+  three_outcomes_at_compliance: "refused / conditional / cannot_determine. A boolean collapses the third into whichever way the code fails, which here means either declining good work or moving a load the firm is not authorised to move. Those are not symmetric errors and neither is acceptable as a default."
+  ordering_within_compliance: "a credential the firm KNOWS it lacks refuses; only an unchecked one is undetermined. A definite failure is not made ambiguous by a second credential nobody has looked at."
+  unpriceable_is_a_verdict_not_a_failure: "zero is a value and unknown is not. capital_required and financing_cost are the two most likely to be quietly zeroed and are therefore mandatory inputs, not defaulted ones."
+
+# ----------------------------------------------------------------------
+# PC-6, and the second door the acceptance criterion found.
+# ----------------------------------------------------------------------
+pc_6_carrier_vetting:
+  module: commerce/vetting.py
+  four_states: "cleared / blocked / undetermined at the predicate level, with undetermined never collapsed. Fail-closed makes an unreachable registry look like a fraudulent carrier; fail-open makes it look like a clean one. Both report a fact about the CARRIER when the observable was a fact about the CHECK."
+  the_certificate_is_a_validwhile_predicate: "covers() takes a PERIOD and there is no way to ask it about a single date, so the valid-at-booking-lapsed-before-delivery bug cannot be written by accident. The verdict names WHICH SIDE of the pickup the lapse falls on."
+  refresh_interval_is_itself_a_predicate: "a record older than its interval does not mean the carrier is bad; it means you do not currently know. Third state, not a failure."
+  the_predicate_that_needs_history: "no_recent_reincarnation. A current snapshot reports that authority EXISTS and never reports when it BEGAN, so the predicate returns undetermined from a snapshot rung rather than quietly passing. This is why the ladder's bulk/history rung is the primary rather than the fallback for anything time-based."
+  divergence_not_overwrite: "a carrier-supplied certificate against an insurer confirmation is two claims about one coverage. Overwriting one with the other destroys the only signal a persistently-disagreeing carrier gives off."
+  the_second_door_the_criterion_found:
+    what_happened: "the structural test first scanned for calls to `dispose(` and asserted exactly one caller. It immediately found a second: ReviewQueue.take()."
+    why_the_obvious_fix_was_wrong: "not every commitment is a carrier tender. A quote issued to a shipper has no carrier to vet, and forcing a vetting verdict through that path would either block legitimate work or teach people to pass a dummy verdict."
+    the_actual_fix: "the invariant is carried by a TYPE. CarrierTender is constructed in exactly one function, that function takes a Verdict and gates on it, and book() accepts nothing else. An ordinary commitment stays possible and a carrier tender stays impossible outside the gate."
+    proven_by_a_plant: "the gate was removed from issue_tender and a second CarrierTender construction was added to an agent module. Five tests failed by name."
+
+# ----------------------------------------------------------------------
+# THE SPATIAL MEASUREMENT THAT CORRECTS THE BRIEF. This is the finding of
+# the round.
+# ----------------------------------------------------------------------
+truck_legal_routing:
+  module: commerce/mileage.py
+  measured_against: "a public Valhalla instance, 2026-08-31, two lanes."
+  trunk_haul_toronto_montreal:
+    auto: "544.93 km / 5.49 h"
+    truck: "545.96 km / 5.54 h"
+    apart: "0.19 percent"
+  urban_lane_height_sweep:
+    at_3_00_m: "18.261 km / 1102 s"
+    at_4_11_m: "18.261 km / 1102 s"
+    at_4_60_m: "18.202 km / 1851 s"
+    at_5_20_m: "18.202 km / 1851 s"
+  the_finding: "crossing the restriction threshold moved DISTANCE by -0.3 percent and DURATION by +68 percent. The over-height vehicle is pushed off a fast restricted road onto surface streets: very slightly less far, and half an hour instead of eighteen minutes."
+  what_it_corrects_in_the_brief:
+    on_the_validation_plan: "the brief says validate the profile against a few known lanes. Measured, a 400-series trunk haul moves 0.19 percent between auto and truck costing, so a validation suite built from long highway lanes would report agreement and prove nothing. validation_lane_is_discriminating() rejects such a lane."
+    on_the_pricing_input: "the brief says mileage drives the carrier cost estimate and truck-legal mileage is the number a carrier quotes against. Measured, MILEAGE IS THE QUANTITY THAT BARELY MOVES even when the profile binds. An economics stage comparing distances would see a legal and an illegal route as the same number. The restriction shows up in duration, so a RouteEstimate cannot be built without one."
+  legality_is_a_property_of_the_profile_not_the_endpoint: "Valhalla's truck costing with no binding dimension returned the consumer route unchanged -- 3.00 m and 4.11 m gave identical numbers to the digit. So a route with no vehicle profile is classed `consumer` regardless of which endpoint produced it, and a quote priced off one is refused."
+  ors_public_api:
+    measured: "HTTP 401, `Authorization field missing`"
+    consequence: "the brief's `start with the ORS public API, zero infrastructure` needs a free API key first. Not signed up for: registering is accepting terms on the operator's behalf, which is a credential decision and not an engineering one -- the same shape as the load boards."
+    what_was_used_instead: "the public Valhalla instance, which needs no key. Two lanes, six requests total."
+
+facility_resolution:
+  module: commerce/facility.py
+  why_it_is_the_precondition: "if `123 Industrial Dr` and `123 INDUSTRIAL DRIVE UNIT 4` are two entries, lane statistics never accumulate: every load is a first load and the residual asset never forms."
+  three_states: "resolved / ambiguous / unresolved, and a near match is SURFACED, never merged. An automatic merge on a similarity threshold folds two real facilities into one and every lane statistic downstream inherits it, with nothing recording that a judgement was made. An automatic split is at least visible as duplicates."
+  the_normalizer_is_part_of_the_basis: "a facility resolved under a conservative normalizer and one resolved under a statistical parser are different claims. The normalizer is recorded on every resolution, so installing libpostal later makes prior resolutions re-checkable rather than silently inherited."
+  no_hand_rolled_abbreviation_table: "`Dr` is Drive on a street line and Doctor in a name. A lookup table that guesses produces confident wrong merges, which is worse than the duplicates it set out to fix. The fallback does case-folding, unicode normalization and punctuation only, and says so."
+  the_measured_calibration:
+    what_happened: "the near-match floor was first set to 0.6 as a plausible constant. The canonical true duplicate -- `123 Industrial Dr, Mississauga ON` against `123 Industrial Drive Unit 4, Mississauga ON` -- scores Jaccard 0.50 under the conservative normalizer, because dr/drive differ and unit/4 are extra. A 0.6 floor misses it entirely and the register silently grows the exact duplicate the module exists to prevent."
+    the_repair: "the floor is a FUNCTION OF THE NORMALIZER, not a constant: 0.45 conservative, 0.80 statistical. The weaker normalizer needs the lower floor and produces more candidates, which is the correct trade -- a false candidate costs one glance and a missed one costs a lane statistic split forever."
+    pinned: "the 0.50 measurement is a test constant, so a change to the normalizer that moves it fails loudly."
+  register_health_states_what_it_cannot_do: "a register normalized without a statistical parser WILL carry duplicates it would have caught. Reporting a clean register under a weak normalizer is the confident-green problem."
+
+# ----------------------------------------------------------------------
+# The manual adapter, and the claim it makes checkable.
+# ----------------------------------------------------------------------
+the_manual_adapter:
+  modules:
+    - commerce/events.py
+    - commerce/manual.py
+    - commerce/tms.py
+  the_claim: "a commitment/outcome pair recorded by a person is `curation: independent` by exactly the same construction as one from an API, because the outcome came from the world either way."
+  how_it_was_made_checkable: "commerce/tms.py is a genuinely separate code path over a genuinely different input shape -- nested vendor JSON with its own field names and units. A test asserts the two adapters produce identical canonical tuples. The claim is worth nothing without a second adapter to check it against."
+  what_must_not_match: "the provenance. A phone call and an API differ in exactly how the event was learned, and collapsing that would hide that fifty loads were typed."
+  the_pairing_is_total: "every promise has exactly one settlement, asserted. A promise with no counterpart is a number that can never be scored and would sit in the record looking like data."
+  the_refusal_that_matters_most: "known_at equal to recorded_at is refused. A form that copies the typing time into known_at converts `the dispatcher told me on Tuesday` into `we learned this on Friday`, silently, in the one field an as-known-then question depends on."
+  no_natural_person_data: "recorded_by is an opaque operator id and there is no field for a name, email or phone anywhere. A test checks the ACCEPTED FIELD SET rather than the file text -- an earlier version grepped the source and failed on the word `email` appearing as a METHOD of learning, which was a wrong-attribution refusal inside a test written to guard against exactly that."
+
+# ----------------------------------------------------------------------
+# Held, and why.
+# ----------------------------------------------------------------------
+not_built_and_recorded_as_such:
+  load_boards: "paid subscriptions whose terms commonly restrict automated access. Not probed: probing to find out would be taking the licensing decision by doing it."
+  vroom_consolidation: "month three in the brief's own order, and it needs a distance matrix from an engine not yet self-hosted."
+  h3_lane_aggregation: "week two. It aggregates over a facility register that does not exist yet, and aggregating over a register full of duplicates would produce a lane model of the duplicates."
+  tile38_geofencing: "month two, and it needs a coordinate feed the firm does not yet receive."
+  postgis_mobilitydb_duckdb: "the store. Nothing here persists yet; adding a database before there is one real load to put in it is the shape PC-0 exists to prevent."
+  auto_sea_way: "explicitly deferred by the brief until the ocean leg is real."
+  the_general_rule: "every one of these is buildable and none is blocked on knowledge. They are blocked on there being a first load, which is PC-0."
