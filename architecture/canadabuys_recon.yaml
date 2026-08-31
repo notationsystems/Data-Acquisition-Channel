@@ -1,0 +1,133 @@
+# PC-2 RECON, done before any parser was written.
+#
+# The rule this follows is the one the EDGAR recon established: probe from
+# the sandbox, capture verbatim, record reachability, auth, rate limits,
+# formats and terms, and build only against what is proven parseable.
+# Record what the source CANNOT cover as carefully as what it can. The
+# EDGAR outcome is the model including its ending, where one tier was
+# honestly gated rather than built against imagined tables.
+#
+# Everything below was measured on 2026-08-31 from this container. No
+# figure here is recalled or inferred.
+extends: core@1.0.0
+
+subject: canadabuys_recon
+status: probed_and_parsed
+owner: daf
+enforcement: tests/test_commerce_canadabuys.py
+
+source:
+  name: CanadaBuys tender notices
+  publisher: Public Services and Procurement Canada
+  catalogue: open.canada.ca CKAN package_search
+  licence: ca-ogl-lgo
+  licence_title: Open Government Licence - Canada
+  authentication: none_required
+  rate_limit_headers_returned: none_observed
+
+# THE FIRST RECON FINDING, and it is about method rather than about the
+# source. The endpoint was NOT guessable. A pattern inferred from the
+# working URL produced two 404s; the catalogue produced the real one.
+endpoint_discovery:
+  guessed_and_wrong:
+    - openTenderNotice-avisAppelOffresOuvert.csv
+    - tenderNotice-avisAppelOffres.csv
+  catalogue_supplied_and_correct: openTenderNotice-ouvertAvisAppelOffres.csv
+  the_rule: "the endpoint comes from the registry, not from a pattern the reader completed. Two of the three word orders are wrong and all three look equally plausible; a parser built on the guessed one would have been built against a 404 and reported an empty feed."
+
+reachable:
+  open_tender_notices:
+    url: https://canadabuys.canada.ca/opendata/pub/openTenderNotice-ouvertAvisAppelOffres.csv
+    http: 200
+    bytes: 6936280
+    last_modified: "Sun, 30 Aug 2026 10:20:17 GMT"
+    rows: 979
+    fields: 67
+  new_tender_notices:
+    url: https://canadabuys.canada.ca/opendata/pub/newTenderNotice-nouvelAvisAppelOffres.csv
+    http: 200
+    bytes: 2904
+    last_modified: "Mon, 31 Aug 2026 00:15:07 GMT"
+    rows: 0
+    fields: 67
+
+# THE SECOND FINDING, arriving on the very first successful retrieval:
+# a class-7 case, live, before any code existed to mishandle it.
+the_empty_feed_on_the_first_probe:
+  what_was_retrieved: "a 2904-byte CSV: a well-formed 67-field header and zero data rows, HTTP 200, last-modified fifteen minutes before the probe."
+  why_it_matters: "an adapter that returned an empty list here would be indistinguishable from an adapter that had succeeded and found nothing worth reporting. The bytes say `no notices published in this window`; a bare empty list says `nothing`, and the reader cannot tell that from a broken parser, a 404 swallowed upstream, or a filter that rejected everything."
+  which_nothing_it_actually_was: not_established
+  what_would_establish_it: "the same endpoint sampled across a business day. The probe ran at 00:59 UTC on a Monday, so `no notices yet today` and `the feed is broken` are both consistent with what was seen, and this record does not choose between them."
+  how_the_adapter_treats_it: "FEED_PUBLISHED_NO_ROWS -- a distinct outcome from a transport failure and from a filtered-to-empty result. Named, and NOT resolved into a cause the probe cannot establish."
+
+# THE THIRD FINDING, and the one that decides PC-3's shape. Five of the
+# ten fields the founding order asks a tender extractor to produce have
+# NO COLUMN AT ALL in this source. Not sparsely populated -- absent.
+fields_the_order_asks_for_that_have_no_column:
+  quantity: no_column
+  incoterms: no_column
+  origin: no_column
+  equipment: no_column
+  contract_value_or_currency: no_column
+consequence: "the honest extractor's majority output on this source is refusals. That is the finding, not a shortfall in the extractor: a notice tells a bidder WHO is buying, UNDER WHAT PROCESS, and BY WHEN, and does not tell them HOW MUCH. The quantity lives in an attachment, and only 411 of 979 notices carry one."
+
+# Population measured over all 979 open notices, English columns.
+population_measured:
+  always_present_979_of_979:
+    - title
+    - referenceNumber
+    - solicitationNumber
+    - publicationDate
+    - tenderClosingDate
+    - tenderStatus
+    - procurementCategory
+    - procurementMethod
+    - contractingEntityName
+  partially_present:
+    tenderDescription: 958
+    noticeType: 853
+    regionsOfDelivery: 843
+    unspsc: 826
+    selectionCriteria: 800
+    expectedContractStartDate: 568
+    expectedContractEndDate: 512
+    noticeURL: 438
+    attachment: 411
+    gsin: 43
+
+# THE FOURTH FINDING: a parsing hazard that a statistical-series adapter
+# would never have met, which is what makes this source the falsification
+# test the founding order wanted -- the role aluminium played for copper.
+the_multi_valued_cell:
+  shape: "certain cells hold a NEWLINE-DELIMITED, asterisk-prefixed LIST inside a single quoted CSV field."
+  measured_in:
+    - procurementCategory
+    - regionsOfDelivery
+  example_category_cell: "*GD\\n*SRV"
+  example_regions_distinct_combinations: 200
+  the_defect_it_invites: "read as a scalar, `*GD\\n*SRV` becomes its own category, and a frequency table reports it as a seventh procurement category alongside the six real ones. It is a SET, and a set read as a scalar is the mud-tonnage class in a new costume: the value is not wrong, the basis of the count is."
+  how_the_adapter_treats_it: "parsed into a frozenset. A caller that wants a scalar must reduce it explicitly and say how."
+  the_attachment_cell: "COMMA-separated URLs inside a quoted field, so the cell contains the file format's own delimiter. Any line-splitting reader that does not use a real CSV parser truncates it silently."
+
+# THE FIFTH FINDING, and it is a policy decision rather than a defect.
+natural_person_data_in_the_feed:
+  measured: "13 of the 67 columns are contactInfo* -- name, email, phone, fax and a personal address. contactInfoName is populated on 979 of 979 notices and contactInfoEmail on 958."
+  the_decision: "the adapter NEVER admits a contactInfo column. Not filtered downstream, not redacted at display: the projection has no field for it, so there is no code path by which a person's name reaches a record, a log or a miss-log entry."
+  why_at_this_layer: "this account already carries a person-name policy with a test behind it. A rule applied at the presentation layer is a rule that holds until someone adds a second reader; a projection with no field is a rule that holds structurally."
+  the_fixture_too: "commerce/fixtures/canadabuys_open_sample.csv is four real notices captured verbatim EXCEPT that all 13 contactInfo columns were blanked in the same pass that wrote the file. The person data was never committed. A test asserts the fixture still carries none."
+  what_is_not_claimed: "not that the data is secret -- it is published under an open licence and anyone may fetch it. The claim is narrower: this system has no use for it, and a field with no use and a real cost should not exist."
+
+# THE SIXTH FINDING, and it was produced BY the guard rather than caught
+# by it -- the shape this account has now filed several times, where the
+# check written against a class commits the class.
+the_client_identity_mistaken_for_the_source:
+  what_happened: "the live check fetched the feed with urllib's default User-Agent (`Python-urllib/3.11`), received 403, and skipped reporting `feed unreachable`. curl reached the same URL at HTTP 200 from the same container in the same minute. With a User-Agent set, urllib also got 200."
+  the_class: wrong_attribution_refusal
+  why_it_matters_more_here_than_in_the_reading: "an adapter that records UNREACHABLE on a 403 writes a durable claim about the SOURCE into the record, when the observable was a fact about OUR REQUEST. Repeated over a week that produces a source-health history showing an outage that never happened, and the corpus-health surface would report the source as degraded with full confidence."
+  the_repair: "the live check sets a User-Agent, and distinguishes an HTTPError (the gateway answered, about us) from an OSError (no bytes arrived). Neither is allowed to conclude anything about what the source holds."
+  what_is_not_claimed: "not that 403 always means the client. It means the observable is a gateway response, and a gateway response is not a reading of the feed."
+
+what_this_recon_does_not_cover:
+  award_histories: "a separate CKAN package, not probed. Named here so its absence is a decision rather than an oversight -- award notices are what would let a bid post-mortem compare a bid against the price that actually won, and that is the single highest-value unbuilt input."
+  attachments: "411 of 979 notices link one or more PDFs. Not fetched, not parsed. The quantity a bidder needs is inside them, so this is the boundary between what the feed can answer and what it cannot."
+  archived_and_historical_feeds: "2009-2022 legacy and per-fiscal-year files exist and were listed by the catalogue, not retrieved."
