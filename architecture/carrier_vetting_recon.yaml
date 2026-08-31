@@ -1,0 +1,121 @@
+# PC-6 PART B RECON: the acquisition ladder, probed rather than assumed.
+#
+# Seven sources, each probed and then adversarially re-checked by two
+# independent verifiers on the two claims that decide the design: the
+# evidence behind the design consequence, and whether the source carries
+# HISTORY. Every figure below was fetched on 2026-08-31.
+#
+# The round refuted the founding brief's own premise and two of the
+# things this repository had already built against it.
+extends: core@1.0.0
+
+subject: carrier_vetting_recon
+status: probed_and_two_claims_refuted
+owner: daf
+enforcement: tests/test_commerce_vetting.py
+
+# ----------------------------------------------------------------------
+# THE PREMISE THE BRIEF WAS BUILT ON IS FALSE.
+# ----------------------------------------------------------------------
+qcmobile_is_not_down:
+  what_the_brief_said: "FMCSA's Mobile Developer website and the QCMobile web services are down with no established restoration timeframe."
+  measured: "every endpoint answered. mobile.fmcsa.dot.gov -> 200. The authentication backend is not merely up, it is live and STATEFUL: /qc/services/carriers/ returns `Must provide webKey`, and the same path with ?webKey=test returns a DIFFERENT body, `{\"content\":\"Webkey not found\"}`. It is checking the key against something."
+  no_outage_notice_exists: "six developer pages fetched and grepped for outage|unavailable|discontinued|decommission|sunset|suspended|temporarily down. No match on any of them."
+  the_reclassification: "rung 1 is WRITTEN_AND_DORMANT_PENDING_CREDENTIAL, not written-and-dormant-because-the-source-is-down. The blocker is that the programme holds no webKey."
+  why_this_is_the_wrong_attribution_class_again: "a ladder that records rung 1 as unavailable writes a durable claim about the SOURCE when the observable is a fact about OUR CREDENTIALS. It is the same shape as the 403 the CanadaBuys live check first mis-attributed, one layer up: this time it was a whole rung of the design, and it came from a brief rather than from a client library."
+  what_was_not_established: "the verbatim text of the FMCSA outage notice the brief refers to, and whether that notice is still published and simply stale. Not asserted either way."
+
+# ----------------------------------------------------------------------
+# RUNG 2 SURVIVES, MORE STRONGLY -- AND IT IS FROZEN.
+# ----------------------------------------------------------------------
+bulk_history_is_the_primary_and_the_reason_is_sharper:
+  confirmed: "the legacy Licensing & Insurance datasets carry genuine per-entity history and all three named questions are answerable -- grant date, prior insurance lapse, and whether an out-of-service order was lifted."
+  stronger_than_the_brief_argued: "a legacy AuthHist row is an INTERVAL, not an event: original_action_desc + orig_served_date AND disp_action_desc + disp_served_date on ONE row. A validWhile predicate is constructible directly from a row rather than assembled from a sequence of events."
+  the_freeze:
+    measured: "every legacy L&I dataset description ends `Note: This dataset was last refreshed on 05/14/2026 and will no longer be updated.` The cliff was verified in the rows, not trusted from the description."
+    the_successor_is_not_a_drop_in: "139,580 rows against the legacy 4,941,925 -- 2.8 percent. A carrier with a complete legacy timeline was ABSENT from the successor."
+    why_it_matters_in_one_direction_only: "a frozen dataset does not stop being useful, it stops being CURRENT. It answers `was this carrier authorised in 2024` perfectly. What it cannot support is the NEGATIVE -- `granted long ago and nothing has changed since` -- because a revocation and re-grant after the freeze is invisible in it, and invisible is exactly how a reincarnated carrier appears. The frozen source fails silently in the one direction the predicate exists to catch."
+  what_was_not_established: "the MCMIS Data Dissemination Catalog itself. mcmiscatalog.fmcsa.dot.gov reset the connection for three different clients; nothing is claimed about it in either direction."
+
+# ----------------------------------------------------------------------
+# RUNG 3 WAS WRONG IN BOTH DIRECTIONS, AND THE FIX IS PER-KIND.
+# ----------------------------------------------------------------------
+rung_three_must_be_split:
+  sms_carries_history: "SMS History.aspx returned 708,390 bytes carrying 189 MONTHLY SNAPSHOTS from Nov 2010 to Jul 2026. The brief's `current-snapshot only` is FALSE for SMS."
+  sms_still_has_no_grant_date: "no grant-date column anywhere on any probed snapshot surface."
+  safer_is_weaker_than_the_brief_allows: "no history, no date parameter, no machine-readable output. Demote to a name-and-existence check; it can support no validWhile predicate at all."
+  li_is_recaptcha_gated_server_side: "a POST with an empty g_recaptcha_response is rejected by the server, so the gate is not cosmetic."
+  the_correction_this_forced_in_code: "history was declared as a property of the RUNG. It is a property of (RUNG, OBSERVATION KIND). A single boolean per rung would have granted SMS the authority-grant question it cannot answer -- which is the reincarnation check, the one a chameleon carrier passes when it goes unevaluated."
+
+# ----------------------------------------------------------------------
+# THE CANADIAN GAP: THE HYPOTHESIS WAS WRONG AND THE GAP IS LARGER.
+# ----------------------------------------------------------------------
+ontario_is_not_consent_gated:
+  the_hypothesis: "PC-6 Part F asked whether a CVOR abstract requires the OPERATOR'S WRITTEN AUTHORIZATION, and said that answer materially changes the design."
+  measured_answer: "no. There is no consent artefact anywhere in the CVOR flow. Four unauthenticated services answered 200: carrier search by name, safety rating enquiry by CVOR number, and two order surfaces. The Level 1 CVOR Summary is a PUBLIC abstract."
+  the_trap_that_was_avoided: "the consent-looking machinery on form 023-SR-LC-112 belongs to DRIVER and VEHICLE record products, not to CVOR. Attributing it to CVOR would have produced a confident wrong design."
+  the_real_constraints: "Crown copyright, King's Printer for Ontario -- NOT open data. A stated cap of 21 searches daily, whose enforcement mechanism was not established. Level 2 (full, five-year) is self-only and enforced by DELIVERY ADDRESS rather than by consent."
+  carries_history: "no"
+
+quebec_is_split_and_only_the_useless_half_is_ungated:
+  the_public_lists: "four RPEVL sanction lists at pes.ctq.gouv.qc.ca with no login and no captcha, about 2420 rows."
+  why_they_are_a_negative_screen_only: "CTQ states verbatim that only carriers whose safety rating HAS BEEN MODIFIED appear. It is a censored denominator, not a registry: absence from it means nothing."
+  zero_dates: "the rendered lists were grepped for four date patterns and `mise à jour`. No match. The lists cannot date anything."
+  the_historical_channel_is_open: "the decisions search has NO captcha, is keyed on NIR, and accepts an explicit date range. That is where Quebec history lives."
+  the_per_entity_dossier_is_recaptcha_gated: "and it is the single highest-value unestablished item -- whether it exposes a cote-de-sécurité effective date."
+
+no_federal_canadian_registry_exists:
+  measured: "the complete Transport Canada catalogue on open.canada.ca is 49 datasets and NONE is a carrier registry. q=NSC returns count 0. q=motor+carrier returns 12, every one a Statistics Canada aggregate economic series."
+  the_trap: "`National Safety MARK` is not the `National Safety CODE`. A dataset of companies registered to affix the mark is a vehicle-manufacturing artefact and would have been a plausible wrong answer."
+  the_nsc_number_is_province_issued: "and the national administrator keeps no copy."
+  the_consequence: "the Canadian gap CANNOT be closed with one adapter. There is no federal object to adapt. It is one adapter per province, and TWO of thirteen have been reconned."
+
+# ----------------------------------------------------------------------
+# RUNG 0, and the one place the round stopped on terms.
+# ----------------------------------------------------------------------
+commercial_wrappers:
+  the_canadian_claim_is_now_measurement_not_assertion: "the Truckstop/RMIS Expanded Carrier API -- the only candidate with genuinely public API documentation -- has NO CVOR, NSC or provincial authority field anywhere in its documented result set. It treats Canada purely as an address space. So PC-6 Part H's warning that a commercial service may not cover Canadian domestic carriers is confirmed for the one vendor whose surface could be read."
+  public_pricing_found: "Descartes MyCarrierPortal standard from 515 per month; Carrier Assure publishes an individual tier. Others are gated."
+  where_the_round_stopped: "Carrier411's terms of service prohibit the automated use the probe would have needed. The agent read the terms, stopped probing that host entirely, and reported the restriction as the finding. That is the correct outcome and it is recorded so nobody re-attempts it."
+  reachability_is_a_client_fact: "carrier411.com returned 403 from Cloudflare and rmisonline.com failed CONNECT at the egress proxy. Neither is evidence about the vendor; both are facts about this container."
+
+# ----------------------------------------------------------------------
+# THE VERIFICATION PASS'S OWN FINDING, AND IT IS THE MOST IMPORTANT ONE.
+# Not a loud claim -- the quiet inference every probe made and none
+# measured.
+# ----------------------------------------------------------------------
+the_successor_does_not_close_the_seam:
+  the_shared_inference: "all three probes that met the freeze noticed the successor dataset was thin -- `2.8 percent of rows`, `5 of 6 had zero rows`, `6 of 6 had zero insurance rows` -- and each then wrote a design in which the successor closes the seam anyway. An inference doing load-bearing work while its own supporting measurements point the other way."
+  the_critic_tested_it: "took the twelve most recent out-of-service orders and checked each against the successor tables. Successor authority history: ZERO rows for 12 of 12. Successor insurance history: ZERO rows for 12 of 12. Legacy authority history: non-zero for 11 of 12."
+  what_the_successor_actually_is: "the NEW-REGISTRATION pipeline, not the existing carrier base. Its August traffic is 9,651 `Pending/Initial Status` against 5,312 `Active/Granted`, and it covers 110,752 distinct carriers against the legacy 1,654,227 -- 6.7 percent."
+  the_failure_mode_is_a_false_pass_and_it_reproduces: "one measured carrier's legacy record ends REINSTATED with no disposition. A design that unions legacy with the successor reads `reinstated, in force, last proceeding cured` for a carrier that has been out of service for three days."
+  the_honest_entry: "there is NO measured public channel carrying authority or insurance history for the existing carrier base after 2026-05-15. The successor as a second half of the rung is fiction."
+  what_this_forced_in_code: "NO_SUCCESSOR_ESTABLISHED_AFTER, and a remedy that says explicitly `do not union the successor in`. The predicate returns undetermined and names the exception path rather than falling through to a source that answers confidently and wrongly."
+
+the_linear_ladder_is_the_wrong_shape:
+  why: "rung 2 is unrivalled for a window ENDING ON OR BEFORE the freeze and empty after it; the snapshot rung answers score history and never a grant date; and for a Canadian domestic carrier the bulk rung is empty BY CONSTRUCTION because it indexes on US docket."
+  the_replacement: "a routing table keyed on (predicate, jurisdiction, time window). channel_for(rung, kind, asof) returns a refusal code or None."
+  the_under_weighted_find: "the SMS website's 189 monthly points to 2026-07-31 is the round's most under-weighted result -- and its suspected flaw, that lapsed carriers drop out of the series, was tested at n=2 and should not be relied on."
+  what_is_live_and_interval_shaped_across_the_full_population: "one narrow out-of-service table, which the round treated as a side table. That is an instrument, not a rung."
+
+recall_dressed_as_measurement:
+  why_this_section_exists: "a verification pass that never refutes is a rubber stamp. This one refuted two probe claims outright and demoted several more, and the demotions are recorded so they do not propagate as settled."
+  the_weakest_presentation: "the Ontario field-level claims about a real abstract cite out-of-service rates to two decimals and specific PDF page numbers, while the only PDF in that report's evidence is a BLANK encrypted form. A blank form cannot contain a carrier's rates. Every field-level claim about the Ontario abstract is demoted with it."
+  third_party_proxies_are_not_the_origin: "the two most consequential vendor quotes -- the anti-automation terms that disqualify one vendor, and a freeze notice grounding a finding -- both came through a rewriting proxy after the origins returned 403, and neither reproduced. Both are provisional."
+  an_arithmetic_check_that_failed: "one correction claimed a 100,000-row retrieval at 2,700,001 bytes; that is 27 bytes a row against the same report's measured 242. The call carried a projection. The conclusion happened to be right and the evidence for it was not."
+  two_probes_disagree_on_a_verbatim: "on whether a legend sat inside an HTML comment. One is wrong and nobody resolved it, which lowers confidence in every unreproduced verbatim in the corpus."
+
+hold_until_a_person_clears_it:
+  redistribution_and_caching: "three ways, none resolved. The FMCSA Socrata datasets report a null licence and the Socrata terms were never fetched. Ontario is Crown copyright with no open licence label. Quebec's own terms prohibit `reproduire, telecharger, stocker` without prior authorisation -- and the probe that MEASURED that prohibition then recommended a daily snapshot-and-diff store in the same report."
+  the_rule: "do not build a local mirror of any of these. It is a decision for a person, and the code's remedy text says so rather than describing the mirror."
+  the_biggest_unasked_question: "where does Canadian carrier insurance status live AT ALL. Five sources independently returned `no insurance field`; nobody asked the follow-on. For a Canadian brokerage vetting Canadian carriers that is the most operationally important predicate there is, and the round established only its absence from five places without naming one candidate channel."
+  jurisdictions_unprobed: "nine of thirteen. The stated design consequence is thirteen adapters and two were reconned."
+
+# ----------------------------------------------------------------------
+# What the verifiers did to the probes.
+# ----------------------------------------------------------------------
+adversarial_verification:
+  design: "each probe's design consequence and its history claim were re-checked by two independent agents instructed to REFUTE, and to default to refuted when a claim rested on recall rather than on something fetched."
+  refuted: 2
+  what_the_refutations_caught: "one probe generalised from a single snapshot dataset to a whole source and called history unmeasured when it is published separately; one probe's liveness half reproduced byte-for-byte while its history half was contradicted."
+  what_survived: "the load-bearing claims reproduced byte-for-byte under re-fetch, which is the evidence that they were measured rather than recalled."

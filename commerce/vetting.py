@@ -62,11 +62,7 @@ RUNG_NAMES: Mapping[int, str] = {
     RUNG_COMMITTED_SNAPSHOT: "committed_snapshot",
 }
 
-#: Which rungs can answer a TIME-BASED question -- when authority was
-#: granted, whether insurance has lapsed before, whether an out-of-service
-#: order was lifted. A predicate needing history may not be evaluated from
-#: a rung that cannot answer it; it returns undetermined instead.
-RUNGS_CARRYING_HISTORY: FrozenSet[int] = frozenset({RUNG_BULK_HISTORY})
+
 
 # Source classes. `sourceClass` matters more here than in commodities
 # because the interested party is in the room.
@@ -90,6 +86,101 @@ OBSERVATION_KINDS: FrozenSet[str] = frozenset({
     AUTHORITY_STATUS, SAFETY_RATING, INSURANCE_COVERAGE, OOS_ORDER,
     INSPECTION_RESULT, SMS_PERCENTILE, AUTHORITY_GRANTED_AT,
 })
+
+#: HISTORY IS A PROPERTY OF (RUNG, OBSERVATION KIND), NOT OF THE RUNG.
+#:
+#: The first version of this file declared history as a property of the
+#: rung alone and put only the bulk rung in the set. Recon measured that
+#: wrong in both directions:
+#:
+#:   * The SMS website -- rung 3, "current snapshot only" in the brief --
+#:     serves 189 MONTHLY SNAPSHOTS from Nov 2010 to Jul 2026. It carries
+#:     genuine history for percentile scores.
+#:   * It carries NO grant date. No probed FMCSA surface outside the bulk
+#:     datasets answers "when was authority granted".
+#:
+#: So a rung answers one time-based question and not another, and a
+#: single boolean per rung would have granted SMS the authority-grant
+#: question it cannot answer -- which is the reincarnation check, the one
+#: a chameleon carrier passes when it goes unevaluated.
+HISTORY_BY_RUNG: Mapping[int, FrozenSet[str]] = {
+    RUNG_BULK_HISTORY: frozenset({
+        AUTHORITY_GRANTED_AT, AUTHORITY_STATUS, INSURANCE_COVERAGE, OOS_ORDER,
+    }),
+    RUNG_OFFICIAL_SNAPSHOT: frozenset({SMS_PERCENTILE}),
+}
+
+
+def rung_answers_history_for(rung: int, kind: str) -> bool:
+    return kind in HISTORY_BY_RUNG.get(rung, frozenset())
+
+
+#: WHEN A RUNG'S DATA STOPS. Recon measured that the legacy FMCSA
+#: Licensing & Insurance datasets -- the ones that make rung 2 the primary
+#: -- carry the note "last refreshed on 05/14/2026 and will no longer be
+#: updated", and the cliff was verified in the rows rather than trusted
+#: from the description. The successor is not a drop-in: 139,580 rows
+#: against 4,941,925, and a carrier with a full legacy timeline is absent
+#: from it.
+#:
+#: A frozen dataset does not stop being useful -- it stops being CURRENT,
+#: and those are different. It still answers "was this carrier authorised
+#: in 2024" perfectly. It cannot answer anything after the freeze, and a
+#: predicate that reads it as though it could is answering about a world
+#: that ended in May.
+FROZEN_AT: Mapping[int, str] = {
+    RUNG_BULK_HISTORY: "2026-05-14",
+}
+
+#: AND NOTHING SUCCEEDS IT. This is the correction the verification pass
+#: produced, and it is the one that matters most.
+#:
+#: Every probe in the recon round independently noticed the successor
+#: dataset was thin and then wrote a design in which it closes the seam
+#: anyway -- an inference doing load-bearing work while its own supporting
+#: measurements pointed the other way. The critic tested it: for the
+#: twelve most recent out-of-service orders, the successor authority table
+#: held ZERO rows for 12 of 12 and the successor insurance table ZERO for
+#: 12 of 12, while the legacy table held rows for 11 of 12. The successor
+#: covers 110,752 distinct carriers against the legacy 1,654,227 -- 6.7% --
+#: because it is the NEW-REGISTRATION pipeline, not the existing base.
+#:
+#: THE FAILURE MODE IS A FALSE PASS AND IT REPRODUCES. One measured
+#: carrier's legacy record ends `REINSTATED` with no disposition; a design
+#: that unions legacy with the successor reads "reinstated, in force" for
+#: a carrier that has been out of service for three days.
+#:
+#: So the honest entry is not "use the successor". It is that there is NO
+#: MEASURED PUBLIC CHANNEL carrying authority or insurance history for the
+#: existing carrier base after this date.
+NO_SUCCESSOR_ESTABLISHED_AFTER: Mapping[int, str] = {
+    RUNG_BULK_HISTORY: "2026-05-14",
+}
+
+#: Rungs that cannot cover a carrier without a US docket AT ALL. Not
+#: "unwired" -- absent by construction. For a Canadian domestic carrier
+#: the ladder's primary rung is empty, which a linear ladder cannot say.
+US_DOCKET_ONLY: FrozenSet[int] = frozenset({RUNG_BULK_HISTORY, RUNG_OFFICIAL_API,
+                                            RUNG_OFFICIAL_SNAPSHOT})
+
+SERVED_FROM_A_FROZEN_DATASET = "SERVED_FROM_A_FROZEN_DATASET"
+NO_CHANNEL_ESTABLISHED_FOR_THIS_WINDOW = "NO_CHANNEL_ESTABLISHED_FOR_THIS_WINDOW"
+RUNG_IS_EMPTY_FOR_THIS_JURISDICTION = "RUNG_IS_EMPTY_FOR_THIS_JURISDICTION"
+
+
+def channel_for(rung: int, kind: str, asof: str) -> Optional[str]:
+    """Can this rung answer this kind of question, as at this date?
+
+    Returns a refusal code, or None when it can. This replaces the linear
+    ladder for time-based questions: the evidence supports a routing table
+    keyed on (predicate, jurisdiction, time window), not an ordering.
+    """
+    if not rung_answers_history_for(rung, kind):
+        return HISTORY_NOT_AVAILABLE_AT_THIS_RUNG
+    horizon = NO_SUCCESSOR_ESTABLISHED_AFTER.get(rung)
+    if horizon is not None and asof > horizon:
+        return NO_CHANNEL_ESTABLISHED_FOR_THIS_WINDOW
+    return None
 
 CLEARED = "cleared"
 BLOCKED = "blocked"
@@ -146,9 +237,9 @@ class VettingProvenance:
     def independent(self) -> bool:
         return self.source_class in INDEPENDENT_CLASSES
 
-    @property
-    def carries_history(self) -> bool:
-        return self.rung in RUNGS_CARRYING_HISTORY
+    def answers_history_for(self, kind: str) -> bool:
+        """History is per (rung, kind). See HISTORY_BY_RUNG."""
+        return rung_answers_history_for(self.rung, kind)
 
 
 @dataclass(frozen=True)
@@ -396,16 +487,19 @@ def no_recent_reincarnation(observations: Sequence[VettingObservation], *, asof:
             "serve this predicate from a rung carrying history (the bulk/historical datasets), "
             "or record an explicit exception with a reason.")
 
-    if not granted.provenance.carries_history:
+    if not rung_answers_history_for(granted.provenance.rung, AUTHORITY_GRANTED_AT):
         return PredicateResult(
             "no_recent_reincarnation", UNDETERMINED, HISTORY_NOT_AVAILABLE_AT_THIS_RUNG,
             f"a grant date was supplied from rung {granted.provenance.rung} "
-            f"({RUNG_NAMES.get(granted.provenance.rung, 'unknown')}), which does not carry "
-            "history. A grant date from a snapshot source is the date the snapshot was taken "
-            "wearing the date the authority began.",
+            f"({RUNG_NAMES.get(granted.provenance.rung, 'unknown')}), which does not answer "
+            f"{AUTHORITY_GRANTED_AT}. Measured: the SMS website carries 189 monthly snapshots and "
+            "still has no grant-date column, so carrying history in general is not carrying THIS "
+            "history. A grant date from such a source is the date the record was taken wearing "
+            "the date the authority began.",
             "serve this predicate from the bulk/historical datasets.",
             evidence=(granted.provenance.source_id,),
             served_by_rung=granted.provenance.rung)
+
 
     age = _days_between(str(granted.value), asof)
     if age < minimum_age_days:
@@ -416,6 +510,33 @@ def no_recent_reincarnation(observations: Sequence[VettingObservation], *, asof:
             "the signal that has to be explained before a first load rather than after one.",
             "record an explicit exception with a reason, or wait. Cross-check the equipment count "
             "against the claimed fleet.",
+            evidence=(granted.provenance.source_id,),
+            served_by_rung=granted.provenance.rung)
+
+    # THE FREEZE, checked AFTER recency and deliberately so. A grant date
+    # that IS recent is a positive finding and blocks whatever the source's
+    # currency: the observation is there. What a frozen source cannot
+    # support is the NEGATIVE -- "this carrier was granted long ago and
+    # nothing has changed since" -- because a revocation and re-grant after
+    # the freeze is invisible in it, and invisible is exactly how a
+    # reincarnated carrier appears.
+    frozen = FROZEN_AT.get(granted.provenance.rung)
+    if frozen is not None and asof > frozen:
+        return PredicateResult(
+            "no_recent_reincarnation", UNDETERMINED, NO_CHANNEL_ESTABLISHED_FOR_THIS_WINDOW,
+            f"the grant date came from rung {granted.provenance.rung}, whose datasets were last "
+            f"refreshed {frozen} and will not be updated. Asked as at {asof}, this reads a world "
+            "that stopped in May. A carrier that registered after the freeze is ABSENT from it, "
+            "and absent is exactly how a newly-reincarnated carrier appears -- so the frozen "
+            "source fails silently in the direction that matters. AND NOTHING SUCCEEDS IT: the "
+            "successor holds zero rows for 12 of the 12 most recently out-of-service carriers "
+            "and covers 6.7 percent of the base, because it is the new-registration pipeline "
+            "rather than the existing one.",
+            "there is NO established public channel for this question after the horizon. Do not "
+            "union the successor in: measured, that union reads `reinstated, in force` for a "
+            "carrier that has been out of service for three days. Either obtain a dated "
+            "regulator printout and record an explicit exception, or treat this carrier as "
+            "unvetted for reincarnation.",
             evidence=(granted.provenance.source_id,),
             served_by_rung=granted.provenance.rung)
 
@@ -471,6 +592,28 @@ def jurisdiction_coverage(carrier: Carrier, *, domestic_only: bool,
             "jurisdiction_coverage", CLEARED,
             detail="the carrier holds a USDOT/MC identifier, so the federal US record applies "
                    "regardless of domicile.")
+    if domestic_only and not provincial_source_available:
+        # Stated before the general branch because the reason differs: the
+        # bulk rungs are not merely unwired here, they are EMPTY BY
+        # CONSTRUCTION. L&I covers carriers with a US docket; a Canadian
+        # domestic carrier without one is absent by definition, so the
+        # ladder's own primary rung has nothing in it for the client's
+        # core population. A linear ladder cannot express that.
+        return PredicateResult(
+            "jurisdiction_coverage", UNDETERMINED, RUNG_IS_EMPTY_FOR_THIS_JURISDICTION,
+            "this is a domestic-Canada movement by a carrier with no US docket. The bulk and "
+            "snapshot rungs are not unwired for it -- they are EMPTY BY CONSTRUCTION, because "
+            "they index carriers by US docket and this carrier has none. Measured: NO FEDERAL "
+            "CANADIAN CARRIER REGISTRY EXISTS -- the Transport Canada catalogue holds 49 datasets "
+            "and none is one, and the NSC number is province-issued with no central copy. So the "
+            "gap is one adapter per province, and two of thirteen are reconned.",
+            "Ontario: a free public CVOR abstract exists and is NOT consent-gated -- four "
+            "unauthenticated services answer, under Crown copyright rather than an open licence. "
+            "Quebec: the public lists are a NEGATIVE screen and a censored denominator, but the "
+            "decisions search is open, keyed on NIR, and takes a date range. NOTE BEFORE "
+            "BUILDING EITHER: redistribution and caching rights are unresolved for both, and "
+            "Quebec's terms prohibit storing without prior authorisation -- so a local mirror is "
+            "a decision for a person, not a build step.")
     if not domestic_only:
         return PredicateResult(
             "jurisdiction_coverage", UNDETERMINED, NO_USDOT_RECORD_AND_NO_PROVINCIAL_SOURCE,
@@ -485,9 +628,17 @@ def jurisdiction_coverage(carrier: Carrier, *, domestic_only: bool,
     return PredicateResult(
         "jurisdiction_coverage", UNDETERMINED, NO_USDOT_RECORD_AND_NO_PROVINCIAL_SOURCE,
         "this is a domestic-Canada movement by a carrier with no USDOT record, and no provincial "
-        "source is wired up. The federal US record does not cover it and nothing here does.",
-        "complete the provincial recon (Ontario CVOR under MTO; Quebec's heavy-vehicle registry) "
-        "and wire the resulting adapter. Until then this carrier is undetermined, not cleared.")
+        "source is wired up. Measured: NO FEDERAL CANADIAN CARRIER REGISTRY EXISTS -- the "
+        "Transport Canada open-data catalogue holds 49 datasets and none is a carrier registry, "
+        "and the NSC number is province-issued with no central copy. So this gap is not one "
+        "adapter, it is one per province, and two of thirteen have been reconned.",
+        "Ontario: a free public CVOR abstract exists and is NOT consent-gated (the recon's "
+        "hypothesis was wrong) -- four unauthenticated services answer, under Crown copyright "
+        "rather than an open licence, with a stated 21-searches-a-day cap. Quebec: the public "
+        "lists are a NEGATIVE screen only and a censored denominator -- only carriers whose "
+        "rating was modified appear -- but the decisions search is open, keyed on NIR, and takes "
+        "a date range, so it is the historical channel. Wire whichever province this movement is "
+        "in; until then undetermined, not cleared.")
 
 
 @dataclass(frozen=True)

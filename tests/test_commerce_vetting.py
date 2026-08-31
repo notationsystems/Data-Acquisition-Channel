@@ -34,7 +34,9 @@ from commerce.vetting import (AUTHORITY_GRANTED_AT, AUTHORITY_GRANTED_TOO_RECENT
                               NO_USDOT_RECORD_AND_NO_PROVINCIAL_SOURCE, OOS_ORDER,
                               OBSERVATION_OLDER_THAN_ITS_REFRESH_INTERVAL, REPORTED,
                               RUNG_BULK_HISTORY, RUNG_COMMITTED_SNAPSHOT,
-                              RUNG_OFFICIAL_SNAPSHOT, RUNGS_CARRYING_HISTORY, SELF_REPORTED,
+                              RUNG_OFFICIAL_SNAPSHOT, SELF_REPORTED,
+                              NO_CHANNEL_ESTABLISHED_FOR_THIS_WINDOW,
+                              RUNG_IS_EMPTY_FOR_THIS_JURISDICTION, SMS_PERCENTILE,
                               TENDER_AGAINST_A_CARRIER_THAT_IS_NOT_CLEARED,
                               TENDER_AGAINST_A_STALE_VERDICT, UNDETERMINED, Carrier,
                               TenderRefusal, VettingObservation, VettingProvenance,
@@ -67,9 +69,9 @@ def _authority(**over):
     return VettingObservation(**base)
 
 
-def _granted(when="2020-03-01", rung=RUNG_BULK_HISTORY):
+def _granted(when="2020-03-01", rung=RUNG_BULK_HISTORY, known_at="2026-08-30"):
     return VettingObservation(subject="c-1", kind=AUTHORITY_GRANTED_AT, value=when, unit=None,
-                              period_start=when, period_end=None, known_at="2026-08-30",
+                              period_start=when, period_end=None, known_at=known_at,
                               provenance=_prov(rung=rung))
 
 
@@ -131,7 +133,10 @@ def test_a_cleared_tender_books():
     from commerce.tendering import book
     cleared = decide(CARRIER, [insurance_current([_insurance()], **_movement()),
                                authority_active([_authority()], asof="2026-08-31"),
-                               no_recent_reincarnation([_granted()], asof="2026-08-31")],
+                               no_recent_reincarnation(
+                                   [_granted()], asof="2026-08-31",
+                                   exception_reason="operating since 2020; frozen-source gap "
+                                                    "closed by a dated regulator printout")],
                      asof="2026-08-31")
     assert book(_tender(cleared)).carrier == "c-1"
 
@@ -180,7 +185,10 @@ def test_an_undetermined_carrier_cannot_be_tendered_either():
 def test_a_cleared_carrier_can_be_tendered():
     cleared = decide(CARRIER, [insurance_current([_insurance()], **_movement()),
                                authority_active([_authority()], asof="2026-08-31"),
-                               no_recent_reincarnation([_granted()], asof="2026-08-31")],
+                               no_recent_reincarnation(
+                                   [_granted()], asof="2026-08-31",
+                                   exception_reason="operating since 2020; frozen-source gap "
+                                                    "closed by a dated regulator printout")],
                      asof="2026-08-31")
     assert cleared.status == CLEARED
     assert _tender(cleared).commitment.subject == "tender:L-1"
@@ -327,13 +335,54 @@ def test_a_carrier_supplied_certificate_alone_cannot_clear_insurance():
 # undetermined, with the provincial recon named as the remedy
 # =====================================================================
 
+def test_the_routing_table_answers_per_predicate_and_window_not_per_rung():
+    """The linear ladder was refuted. The evidence supports a routing table
+    keyed on (predicate, jurisdiction, time window): the bulk rung answers
+    a grant date BEFORE the horizon and nothing after it, while the
+    snapshot rung answers score history and never a grant date."""
+    from commerce.vetting import channel_for
+    assert channel_for(RUNG_BULK_HISTORY, AUTHORITY_GRANTED_AT, "2026-04-01") is None
+    assert channel_for(RUNG_BULK_HISTORY, AUTHORITY_GRANTED_AT,
+                       "2026-08-31") == NO_CHANNEL_ESTABLISHED_FOR_THIS_WINDOW
+    assert channel_for(RUNG_OFFICIAL_SNAPSHOT, SMS_PERCENTILE, "2026-08-31") is None
+    assert channel_for(RUNG_OFFICIAL_SNAPSHOT, AUTHORITY_GRANTED_AT,
+                       "2026-08-31") == HISTORY_NOT_AVAILABLE_AT_THIS_RUNG
+
+
+def test_the_primary_rung_is_empty_by_construction_for_a_canadian_domestic_carrier():
+    """Not unwired -- EMPTY. L&I indexes carriers by US docket, so a
+    domestic Canadian carrier without one is absent by definition. A
+    linear ladder cannot say that; it would report a fallback to a lower
+    rung that is equally empty."""
+    result = jurisdiction_coverage(DOMESTIC, domestic_only=True)
+    assert result.code == RUNG_IS_EMPTY_FOR_THIS_JURISDICTION
+    assert "EMPTY BY CONSTRUCTION" in result.detail
+
+
+def test_the_canadian_remedy_flags_the_unresolved_caching_rights():
+    """Quebec's own terms prohibit storing without prior authorisation,
+    and the recon probe that measured that prohibition then recommended a
+    daily snapshot-and-diff store. The remedy must not repeat it."""
+    result = jurisdiction_coverage(DOMESTIC, domestic_only=True)
+    assert result.remedy is not None
+    assert "prohibit storing" in result.remedy
+    assert "a decision for a person, not a build step" in result.remedy
+
+
 def test_a_domestic_only_carrier_with_no_usdot_record_is_undetermined():
+    """CORRECTED BY RECON on two counts. The remedy first said "complete
+    the provincial recon"; it is complete for two provinces and its
+    headline finding was the opposite of the hypothesis -- Ontario's CVOR
+    abstract is NOT consent-gated. And there is no federal Canadian
+    carrier registry at all, so this is not one adapter but one per
+    province, of which two of thirteen are reconned."""
     result = jurisdiction_coverage(DOMESTIC, domestic_only=True)
     assert result.status == UNDETERMINED
-    assert result.code == NO_USDOT_RECORD_AND_NO_PROVINCIAL_SOURCE
     assert result.remedy is not None
-    assert "provincial recon" in result.remedy
-    assert "CVOR" in result.remedy and "Quebec" in result.remedy
+    assert "NOT consent-gated" in result.remedy
+    assert "NEGATIVE screen" in result.remedy
+    assert "NO FEDERAL CANADIAN CARRIER REGISTRY EXISTS" in result.detail
+    assert "one adapter per province" in result.detail
 
 
 def test_a_cross_border_carrier_is_covered_by_the_federal_record_wherever_domiciled():
@@ -411,7 +460,12 @@ def test_reincarnation_with_no_grant_date_at_all_is_undetermined_not_passed():
     assert "unevaluated reincarnation check is exactly how a chameleon carrier passes" in result.detail
 
 
-def test_a_recently_granted_authority_blocks_and_says_it_is_not_itself_wrongdoing():
+def test_a_recently_granted_authority_blocks_even_from_a_frozen_source():
+    """Ordering, and it is deliberate. A grant date that IS recent is a
+    positive finding and blocks whatever the source's currency: the
+    observation is there. What a frozen source cannot support is the
+    NEGATIVE — "granted long ago and nothing since" — because a revocation
+    and re-grant after the freeze is invisible in it."""
     result = no_recent_reincarnation([_granted("2026-07-01")], asof="2026-08-31")
     assert result.status == BLOCKED
     assert result.code == AUTHORITY_GRANTED_TOO_RECENTLY
@@ -424,11 +478,56 @@ def test_an_explicit_exception_with_a_reason_clears_the_reincarnation_predicate(
     assert result.status == CLEARED
 
 
-def test_only_the_history_rung_is_declared_to_carry_history():
-    assert RUNGS_CARRYING_HISTORY == {RUNG_BULK_HISTORY}, (
-        "the ladder's whole ordering argument is that bulk/history is the primary for anything "
-        "time-based; if another rung is declared to carry history, that argument changed"
+def test_history_is_declared_per_rung_and_kind_not_per_rung():
+    """CORRECTED BY RECON. The first version declared history as a property
+    of the rung alone. Measured, the SMS website (rung 3, "current
+    snapshot only" in the brief) serves 189 monthly snapshots from Nov
+    2010 to Jul 2026 -- and still carries no grant date anywhere.
+
+    A single boolean per rung would have granted SMS the authority-grant
+    question it cannot answer, which is the reincarnation check: the one a
+    chameleon carrier passes when it goes unevaluated."""
+    from commerce.vetting import HISTORY_BY_RUNG, rung_answers_history_for
+    assert rung_answers_history_for(RUNG_OFFICIAL_SNAPSHOT, SMS_PERCENTILE), (
+        "SMS carries score history; declaring rung 3 historyless is measurably wrong"
     )
+    assert not rung_answers_history_for(RUNG_OFFICIAL_SNAPSHOT, AUTHORITY_GRANTED_AT), (
+        "no probed snapshot surface carries a grant date; granting it one is the defect"
+    )
+    assert rung_answers_history_for(RUNG_BULK_HISTORY, AUTHORITY_GRANTED_AT)
+    assert AUTHORITY_GRANTED_AT in HISTORY_BY_RUNG[RUNG_BULK_HISTORY]
+
+
+def test_a_grant_date_from_a_frozen_dataset_is_undetermined_after_the_freeze():
+    """MEASURED. The legacy FMCSA Licensing & Insurance datasets state
+    "last refreshed on 05/14/2026 and will no longer be updated", verified
+    in the rows rather than trusted from the description.
+
+    The failure direction is what makes this urgent: a carrier that
+    registered AFTER the freeze is absent from the dataset, and absent is
+    exactly how a newly-reincarnated carrier appears. The frozen source
+    fails silently in the one direction the predicate exists to catch."""
+    result = no_recent_reincarnation([_granted("2020-03-01")], asof="2026-08-31")
+    assert result.status == UNDETERMINED
+    assert result.code == NO_CHANNEL_ESTABLISHED_FOR_THIS_WINDOW
+    assert "fails silently in the direction that matters" in result.detail
+    assert "6.7 percent" in result.detail, (
+        "the successor's coverage must be on the record: every probe in the recon round assumed "
+        "it closed the seam and the verifier measured zero rows for 12 of 12"
+    )
+    assert result.remedy is not None
+    assert "Do not union the successor in" in result.remedy, (
+        "the measured failure mode is a FALSE PASS: the union reads `reinstated, in force` for a "
+        "carrier out of service for three days"
+    )
+
+
+def test_the_same_grant_date_asked_before_the_freeze_still_clears():
+    """Vacuity guard: a frozen dataset does not stop being useful, it stops
+    being CURRENT. It answers 2024 perfectly."""
+    result = no_recent_reincarnation([_granted("2020-03-01", known_at="2026-04-01")],
+                                     asof="2026-05-01")
+    assert result.status == CLEARED
 
 
 # =====================================================================
