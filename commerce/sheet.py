@@ -50,6 +50,11 @@ REQUIRED_COLUMNS: Tuple[str, ...] = ("load", "kind", "value", "unit", "known_at"
                                      "method", "recorded_by")
 OPTIONAL_COLUMNS: Tuple[str, ...] = ("recorded_at", "artifact", "period_start", "period_end",
                                      "supersedes")
+#: Columns describing what a load IS rather than what happened to it.
+#: They are not events -- they do not settle and carry no promise -- so
+#: they are split off here and land in the load register instead.
+REGISTER_COLUMNS: Tuple[str, ...] = ("carrier", "origin", "destination", "month",
+                                     "bill_of_lading_carrier")
 
 
 @dataclass(frozen=True)
@@ -68,6 +73,9 @@ class SheetRead:
     refused: Tuple[RowRefusal, ...]
     rows_in_sheet: int
     empty_because: Optional[str] = None
+    #: The raw rows, so load attributes can be registered without this
+    #: module needing to know what a register is.
+    rows: Tuple[Mapping[str, str], ...] = ()
 
     @property
     def accounted(self) -> int:
@@ -111,17 +119,20 @@ def read_sheet(raw: str) -> SheetRead:
         raise EventRefusal(
             SHEET_LACKS_A_REQUIRED_COLUMN,
             f"the sheet has no {missing} column(s). Known columns: "
-            f"{sorted(set(REQUIRED_COLUMNS) | set(OPTIONAL_COLUMNS))}.")
+            f"{sorted(set(REQUIRED_COLUMNS) | set(OPTIONAL_COLUMNS) | set(REGISTER_COLUMNS))}.")
 
     rows = list(reader)
     events: List[LoadEvent] = []
     refused: List[RowRefusal] = []
+    raw_rows: List[Mapping[str, str]] = []
     for position, row in enumerate(rows, start=2):  # row 1 is the header, as the operator sees it
         cleaned = {(k or "").strip().lstrip("﻿"): (v or "").strip()
                    for k, v in row.items() if k}
         entry = {k: v for k, v in cleaned.items() if v != ""}
         if not entry:
             continue  # a blank spacer row is not a row
+        raw_rows.append(cleaned)
+        entry = {k: v for k, v in entry.items() if k not in REGISTER_COLUMNS}
         try:
             entry["value"] = float(entry["value"])
         except (KeyError, ValueError):
@@ -145,7 +156,7 @@ def read_sheet(raw: str) -> SheetRead:
             empty_because = (f"EVERY_ROW_WAS_REFUSED: {len(refused)} row(s) were typed and none "
                              "could be read. The sheet is being used and this reader cannot read "
                              "it, which is a different problem from an empty one.")
-    return SheetRead(tuple(events), tuple(refused), counted, empty_because)
+    return SheetRead(tuple(events), tuple(refused), counted, empty_because, tuple(raw_rows))
 
 
 def blank_sheet() -> str:
@@ -155,7 +166,7 @@ def blank_sheet() -> str:
     row in it becomes the example, and the first real load gets typed
     underneath a fiction that then reaches the record.
     """
-    return ",".join(REQUIRED_COLUMNS + OPTIONAL_COLUMNS) + "\n"
+    return ",".join(REQUIRED_COLUMNS + OPTIONAL_COLUMNS + REGISTER_COLUMNS) + "\n"
 
 
 def render(read: SheetRead) -> str:

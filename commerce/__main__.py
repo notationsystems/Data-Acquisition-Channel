@@ -49,6 +49,16 @@ USAGE = """usage:
   python3 -m commerce morning <opportunities.json>  the three-list morning view
   python3 -m commerce outbound <drafts.json>        what is waiting for a person
 
+  python3 -m commerce commit <sheet.csv> <auth.json>   append a sheet to the ledger
+  python3 -m commerce book                             replay the ledger
+  python3 -m commerce residuals                        lane memory, from the book
+  python3 -m commerce status                           one screen: book, residuals, gaps
+
+`commit` is the only command that writes. The ledger is append-only: a
+mistake is superseded by a later entry naming what it replaces, and both
+stay, because the asset is the gap between promised and realized and a
+store that allows an edit allows that gap to be closed by editing.
+
 An events file is a JSON object with an `authority` and an `events` array.
 Every promise you record (rate_quoted, pickup_promised, transit_estimated)
 is a COMMITMENT; every world-fact (rate_invoiced, pickup_actual,
@@ -157,7 +167,8 @@ def record(events: Sequence[LoadEvent], authority: Authority) -> Tuple[int, str]
     return 0, "\n".join(lines)
 
 
-COMMANDS = {"form", "sheet", "record", "read", "morning", "outbound"}
+COMMANDS = {"form", "sheet", "record", "read", "morning", "outbound",
+            "commit", "book", "residuals", "status"}
 
 
 def _read_file(path: str) -> Optional[str]:
@@ -221,6 +232,122 @@ def _outbound(raw: str) -> Tuple[int, str]:
     return 0, render_queue(queue)
 
 
+def _commit(sheet_raw: str, authority: Authority, path) -> Tuple[int, str]:
+    from commerce.ledger import append, read
+    from commerce.sheet import read_sheet, render as render_sheet
+    sheet = read_sheet(sheet_raw)
+    lines = [render_sheet(sheet)]
+    if not sheet.events:
+        lines.append("NOTHING APPENDED — no readable row.")
+        return 1, "\n".join(lines)
+    from commerce.register import append as append_register, from_sheet_rows
+    before = len(read(path=path).events)
+    written = append(sheet.events, path=path)
+    after = len(read(path=path).events)
+    registered = append_register(from_sheet_rows(sheet.rows))
+    if registered:
+        lines.append(f"REGISTERED {registered} load description(s)")
+    lines.append(f"APPENDED {written} event(s) to {path}; book went {before} -> {after}")
+    if after - before != written:
+        lines.append("  ! THE BOOK DID NOT GROW BY WHAT WAS WRITTEN")
+        return 1, "\n".join(lines)
+    # GRADE THE BOOK, NOT THE BATCH. A sheet of settlements carries no
+    # promises, so grading the batch alone reported "nothing has been
+    # promised" for a load quoted the day before — which is the whole
+    # reason the book is persisted. Found by running two days rather than
+    # by reading the code.
+    code, graded = record(read(path=path).events, authority)
+    lines.append("")
+    lines.append(graded)
+    if sheet.refused:
+        lines.append("")
+        lines.append(f"NOT THE WHOLE DAY — {len(sheet.refused)} row(s) refused and NOT appended.")
+        return 1, "\n".join(lines)
+    return code, "\n".join(lines)
+
+
+def _book(path) -> Tuple[int, str]:
+    from commerce.ledger import read, render as render_ledger, superseded
+    result = read(path=path)
+    lines = [render_ledger(result)]
+    current, old = superseded(result.events)
+    if old:
+        lines.append(f"  {len(old)} superseded entry(ies) retained, {len(current)} current")
+    return (0 if result.conserves and result.events else 1), "\n".join(lines)
+
+
+def _residuals(path, asof: Optional[str]) -> Tuple[int, str]:
+    from commerce import residuals as R
+    from commerce.ledger import as_known_at, read
+    book = read(path=path)
+    if not book.events:
+        return 1, f"NO RESIDUALS — {book.empty_because}"
+    events = as_known_at(book.events, asof) if asof else book.events
+    if not events:
+        return 1, (f"NO RESIDUALS — the book holds {len(book.events)} event(s) and none was "
+                   f"knowable by {asof}. That is a knowledge-state filter, not an empty book.")
+    from commerce.register import read as read_register
+    loads = sorted({e.load for e in events})
+    register = read_register()
+    from commerce.admissibility import derived_from
+    standing = derived_from(events)
+    lines = [f"LANE MEMORY — {len(events)} event(s) over {len(loads)} load(s)"
+             + (f", as known at {asof}" if asof else ""),
+             f"  {standing.sentence}"]
+    if not register.records:
+        lines.append("")
+        lines.append("NO GROUPING — " + (register.empty_because or ""))
+        lines.append("  Residuals are computed PER CARRIER, PER LANE and PER RECEIVER. Without a "
+                     "register there is no partition to compute them over, and an ungrouped mean "
+                     "over every load in the book is a number about nothing in particular.")
+        lines.append("  Add carrier, origin, destination and month columns to the sheet and "
+                     "re-commit; they are optional columns and land in the register.")
+        return 1, "\n".join(lines)
+
+    described = set(register.records) & set(loads)
+    undescribed = sorted(set(loads) - set(register.records))
+    lines.append(f"  {len(described)} of {len(loads)} load(s) described in the register")
+    if undescribed:
+        lines.append(f"  {len(undescribed)} not described and therefore not grouped: "
+                     f"{undescribed[:8]}")
+    for name, result in (
+            ("carrier", R.by_carrier(events, register.carrier_of)),
+            ("lane", R.by_lane(events, register.lane_of)),
+            ("lane and season", R.by_lane_season(events, register.lane_of, register.month_of)),
+            ("receiver", R.appointment_slippage(events, register.receiver_of))):
+        lines.append("")
+        lines.append(R.render(result))
+    return 0, "\n".join(lines)
+
+
+def _status(path) -> Tuple[int, str]:
+    from commerce.ledger import read
+    from commerce.events import PROMISES, SETTLES
+    result = read(path=path)
+    lines = ["PAYLOAD — status"]
+    lines.append(f"  ledger        {result.path}")
+    lines.append(f"  lines         {result.lines}  (read {len(result.events)}, "
+                 f"unreadable {len(result.bad)})")
+    if result.empty_because:
+        lines.append(f"  (empty)       {result.empty_because}")
+        lines.append("")
+        lines.append("  Next: python3 -m commerce sheet > loads.csv, type into it, then")
+        lines.append("        python3 -m commerce commit loads.csv authority.json")
+        return 1, "\n".join(lines)
+    by_load: Dict[str, set] = {}
+    for event in result.events:
+        by_load.setdefault(event.load, set()).add(event.kind)
+    unsettled = {load: sorted(k for k in kinds if k in PROMISES and SETTLES[k] not in kinds)
+                 for load, kinds in by_load.items()}
+    open_loads = {k: v for k, v in unsettled.items() if v}
+    lines.append(f"  loads         {len(by_load)}  ({len(open_loads)} with an unsettled promise)")
+    for load, kinds in sorted(open_loads.items())[:10]:
+        lines.append(f"    {load:<10} awaiting {[SETTLES[k] for k in kinds]}")
+    if not open_loads:
+        lines.append("    every promise in the book has settled")
+    return 0, "\n".join(lines)
+
+
 def main(argv: Sequence[str]) -> int:
     if not argv or argv[0] not in COMMANDS:
         print(USAGE)
@@ -232,6 +359,20 @@ def main(argv: Sequence[str]) -> int:
         from commerce.sheet import blank_sheet
         print(blank_sheet(), end="")
         return 0
+
+    from commerce.ledger import DEFAULT_PATH
+    if argv[0] == "book":
+        code, text = _book(DEFAULT_PATH)
+        print(text)
+        return code
+    if argv[0] == "residuals":
+        code, text = _residuals(DEFAULT_PATH, argv[1] if len(argv) > 1 else None)
+        print(text)
+        return code
+    if argv[0] == "status":
+        code, text = _status(DEFAULT_PATH)
+        print(text)
+        return code
     if len(argv) < 2:
         print(f"{argv[0]} needs a file: python3 -m commerce {argv[0]} <file>")
         return 2
@@ -239,10 +380,10 @@ def main(argv: Sequence[str]) -> int:
     if raw is None:
         return 2
 
-    if argv[0] == "read":
+    if argv[0] in {"read", "commit"}:
         if len(argv) < 3:
-            print("read needs a sheet and an authority: "
-                  "python3 -m commerce read <sheet.csv> <authority.json>")
+            print(f"{argv[0]} needs a sheet and an authority: "
+                  f"python3 -m commerce {argv[0]} <sheet.csv> <authority.json>")
             return 2
         auth_raw = _read_file(argv[2])
         if auth_raw is None:
@@ -257,7 +398,10 @@ def main(argv: Sequence[str]) -> int:
                   "valid_from and valid_until.")
             return 2
         try:
-            code, text = _sheet_then_grade(raw, authority)
+            if argv[0] == "commit":
+                code, text = _commit(raw, authority, DEFAULT_PATH)
+            else:
+                code, text = _sheet_then_grade(raw, authority)
         except EventRefusal as exc:
             print(f"{exc.code}: {exc.detail}")
             return 2
