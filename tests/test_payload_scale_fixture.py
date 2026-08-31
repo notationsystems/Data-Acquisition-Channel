@@ -91,10 +91,18 @@ def test_the_duplicate_facility_resolves_ambiguous_never_merged():
 
 
 def test_the_double_brokered_load_is_the_only_divergence_in_four_hundred():
-    diverging = [r.load for r in RECORDS if r.double_brokered]
+    """Last entry wins, exactly as the register read applies it: the
+    quote-time entry carries no BOL and the settlement entry does."""
+    latest = {r.load: r for r in RECORDS}
+    diverging = [r.load for r in latest.values() if r.double_brokered]
     assert diverging == [make.PLANT_DOUBLE_BROKERED_LOAD]
-    unknown = [r.load for r in RECORDS if r.double_brokered is None]
-    assert not unknown, "every fixture load carries a bill of lading, so None means a field broke"
+    unknown = sorted(r.load for r in latest.values() if r.double_brokered is None)
+    live = sorted({e.load for e in EVENTS if e.kind == R.RATE_QUOTED}
+                  - {e.load for e in EVENTS if e.kind == R.RATE_INVOICED})
+    assert unknown == live, (
+        "exactly the open loads lack a bill of lading — it arrives with the proof of delivery, "
+        "so a live load's BOL is honestly uncaptured and a settled load's is on file"
+    )
 
 
 def test_open_loads_are_excluded_from_residuals_not_counted_as_zero():

@@ -247,6 +247,8 @@ def generate() -> Tuple[List[LoadEvent], List[LoadRecord]]:
         quoted_at = _date(month_index, 5)
         settled_at = _date(month_index, 24)
         live = rng.chance(1, 12)   # some loads are still open, as a real book is
+        if load == PLANT_DOUBLE_BROKERED_LOAD:
+            live = False    # the divergence is only visible once the BOL arrives
 
         events.append(LoadEvent(load, RATE_QUOTED, quoted, "CAD", _source(quoted_at, "phone")))
         events.append(LoadEvent(load, TRANSIT_ESTIMATED, transit_est, "days",
@@ -261,9 +263,18 @@ def generate() -> Tuple[List[LoadEvent], List[LoadRecord]]:
             events.append(LoadEvent(load, PICKUP_ACTUAL, float(actual_day), "epoch_day",
                                     _source(settled_at, "observed")))
 
+        # The register entry at quote time has NO bill of lading: the BOL
+        # arrives with the proof of delivery. A settled load gets a second
+        # entry carrying it, and the read's last-entry-wins is what makes
+        # that a correction rather than a contradiction. Live loads stay
+        # BOL-less, which is the honest kind of nothing.
         records.append(LoadRecord(load=load, carrier=carrier, origin=origin,
                                   destination=destination, month=calendar_month,
-                                  bill_of_lading_carrier=bol, recorded_at=quoted_at))
+                                  bill_of_lading_carrier=None, recorded_at=quoted_at))
+        if not live:
+            records.append(LoadRecord(load=load, carrier=carrier, origin=origin,
+                                      destination=destination, month=calendar_month,
+                                      bill_of_lading_carrier=bol, recorded_at=settled_at))
     return events, records
 
 

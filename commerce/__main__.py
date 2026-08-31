@@ -55,6 +55,7 @@ USAGE = """usage:
   python3 -m commerce status                           one screen: book, residuals, gaps
   python3 -m commerce vet <carrier> <asof> [booking pickup delivery]
                                                        the three-state verdict, replayable
+  python3 -m commerce exceptions                       loads where two claims disagree
 
 `commit` is the only command that writes. The ledger is append-only: a
 mistake is superseded by a later entry naming what it replaces, and both
@@ -170,7 +171,7 @@ def record(events: Sequence[LoadEvent], authority: Authority) -> Tuple[int, str]
 
 
 COMMANDS = {"form", "sheet", "record", "read", "morning", "outbound",
-            "commit", "book", "residuals", "status", "vet"}
+            "commit", "book", "residuals", "status", "vet", "exceptions"}
 
 
 def _read_file(path: str) -> Optional[str]:
@@ -352,6 +353,45 @@ def _vet(argv: Sequence[str]) -> Tuple[int, str]:
     return (0 if verdict.status == CLEARED else 1 if verdict.status == BLOCKED else 3), text
 
 
+def _exceptions() -> Tuple[int, str]:
+    """The queue of loads where two claims about one movement disagree.
+
+    Exit codes carry the same three states as `vet`: 0 every load
+    consistent and accounted, 1 at least one divergence to work, 3 the
+    question cannot be fully answered (uncaptured bills of lading, bad
+    lines, or no register at all). A queue that exited 0 over uncaptured
+    BOLs would report a book nobody checked as a book with nothing wrong.
+    """
+    from commerce.register import partition, read as read_register
+    register = read_register()
+    split = partition(register)
+    lines = [f"EXCEPTIONS — {split.described} load(s) in the register"]
+    if register.empty_because:
+        lines.append(f"  (nothing to examine) {register.empty_because}")
+        return 3, "\n".join(lines)
+    for number, detail in register.bad:
+        lines.append(f"  LINE {number}: {detail}")
+    for record in split.divergent:
+        lines.append(f"  ! {record.load}: tendered to {record.carrier}, bill of lading names "
+                     f"{record.bill_of_lading_carrier}. Two claims about one movement. A single "
+                     "instance may be a legitimate interline; a persistent directional gap for "
+                     "one carrier is the pattern worth ranking.")
+    if split.unknowable:
+        lines.append(f"  {len(split.unknowable)} load(s) with no bill of lading captured — the "
+                     "carrier that actually moved each is unknown, which is not the same as "
+                     "consistent.")
+    lines.append(f"  {len(split.consistent)} consistent + {len(split.divergent)} divergent + "
+                 f"{len(split.unknowable)} unknowable = {split.described}"
+                 + ("" if split.conserves else "  ! DOES NOT CONSERVE"))
+    if not split.conserves:
+        return 2, "\n".join(lines)
+    if split.divergent:
+        return 1, "\n".join(lines)
+    if split.unknowable or register.bad:
+        return 3, "\n".join(lines)
+    return 0, "\n".join(lines)
+
+
 def _status(path) -> Tuple[int, str]:
     from commerce.ledger import read
     from commerce.events import PROMISES, SETTLES
@@ -407,6 +447,10 @@ def main(argv: Sequence[str]) -> int:
         return code
     if argv[0] == "vet":
         code, text = _vet(argv[1:])
+        print(text)
+        return code
+    if argv[0] == "exceptions":
+        code, text = _exceptions()
         print(text)
         return code
     if len(argv) < 2:

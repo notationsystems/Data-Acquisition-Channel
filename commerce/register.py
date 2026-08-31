@@ -177,6 +177,44 @@ def from_sheet_rows(rows: Sequence[Mapping[str, str]]) -> Tuple[LoadRecord, ...]
     return tuple(out.values())
 
 
+@dataclass(frozen=True)
+class BrokeringPartition:
+    """Every described load lands in exactly one bucket.
+
+    `unknowable` is loads with no bill of lading captured. That is not a
+    fourth flavour of clean: it is one claim about the movement rather
+    than agreement between two, and a queue that hid it would report a
+    book of uncaptured BOLs as a book with no double-brokering.
+    """
+
+    consistent: Tuple[str, ...]
+    divergent: Tuple[LoadRecord, ...]
+    unknowable: Tuple[str, ...]
+    described: int
+
+    @property
+    def conserves(self) -> bool:
+        return (len(self.consistent) + len(self.divergent)
+                + len(self.unknowable) == self.described)
+
+
+def partition(result: RegisterRead) -> BrokeringPartition:
+    consistent: List[str] = []
+    divergent: List[LoadRecord] = []
+    unknowable: List[str] = []
+    for load in sorted(result.records):
+        record = result.records[load]
+        verdict = record.double_brokered
+        if verdict is None:
+            unknowable.append(load)
+        elif verdict:
+            divergent.append(record)
+        else:
+            consistent.append(load)
+    return BrokeringPartition(tuple(consistent), tuple(divergent), tuple(unknowable),
+                              len(result.records))
+
+
 def render(result: RegisterRead) -> str:
     lines = [f"REGISTER {result.path} — {result.lines} line(s); "
              f"{len(result.records)} load(s) described"]
@@ -184,12 +222,11 @@ def render(result: RegisterRead) -> str:
         lines.append(f"  (nothing registered) {result.empty_because}")
     for number, detail in result.bad:
         lines.append(f"  LINE {number}: {detail}")
-    unknown = [r.load for r in result.records.values() if r.double_brokered is None]
-    if unknown:
-        lines.append(f"  {len(unknown)} load(s) with no bill of lading captured — "
+    split = partition(result)
+    if split.unknowable:
+        lines.append(f"  {len(split.unknowable)} load(s) with no bill of lading captured — "
                      "one claim about the movement, not agreement between two")
-    diverging = [r.load for r in result.records.values() if r.double_brokered]
-    if diverging:
-        lines.append(f"  ! {len(diverging)} load(s) moved by a carrier they were not tendered "
-                     f"to: {diverging}")
+    if split.divergent:
+        lines.append(f"  ! {len(split.divergent)} load(s) moved by a carrier they were not "
+                     f"tendered to: {[r.load for r in split.divergent]}")
     return "\n".join(lines)
