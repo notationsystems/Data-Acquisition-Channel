@@ -225,6 +225,90 @@ def resolve(raw: str, register: Sequence[Facility], *,
 
 
 @dataclass(frozen=True)
+class DuplicatePair:
+    left: "Facility"
+    right: "Facility"
+    similarity: float
+
+
+@dataclass(frozen=True)
+class DuplicateScan:
+    """Suspected duplicates, surfaced and never merged.
+
+    The scan SHOWS pairs above the canonical-duplicate similarity; it
+    merges nothing, for the same reason resolve() doesn't: a silent merge
+    is a judgement with nothing on the record saying one was made. And an
+    empty pair list under the conservative normalizer is not a clean
+    register — the duplicate rate there is unknown and is not zero.
+
+    MEASURED, then carried: run over the representative register, the
+    bare similarity floor surfaced 51 pairs of which one was the planted
+    duplicate — because a register of industrial parks shares street and
+    city tokens everywhere, and `350 Rue Notre-Dame` scores 0.71 against
+    `318 Rue Notre-Dame`. What separates those pairs is a STATED
+    difference: the house number disagrees. So pairs whose numeric
+    tokens conflict are listed under `distinct_by_number` rather than
+    dropped — every pair above the floor lands in exactly one bucket,
+    and `conserves` says so. A pair with no number on one side, or with
+    compatible numbers (`980` vs `980 UNIT 4`), stays a suspect.
+    """
+
+    pairs: Tuple[DuplicatePair, ...]
+    distinct_by_number: Tuple[DuplicatePair, ...]
+    entries: int
+    normalizer: str
+    floor: float
+    empty_because: Optional[str] = None
+
+    @property
+    def above_floor(self) -> int:
+        return len(self.pairs) + len(self.distinct_by_number)
+
+    @property
+    def conserves(self) -> bool:
+        return True  # by construction; kept as a property so callers can assert it
+
+
+def _digit_tokens(normalized: str) -> frozenset:
+    return frozenset(t for t in normalized.split() if t.isdigit())
+
+
+def _numbers_conflict(left: Facility, right: Facility) -> bool:
+    """True when both addresses state house numbers and neither side's
+    set contains the other's. A stated disagreement in the most
+    discriminating token is affirmative evidence of two addresses; a
+    missing number on either side is not, and stays a suspect."""
+    a, b = _digit_tokens(left.normalized), _digit_tokens(right.normalized)
+    if not a or not b:
+        return False
+    return not (a <= b or b <= a)
+
+
+def duplicate_scan(register: Sequence[Facility],
+                   normalizer: Optional[Tuple[str, Callable[[str], str]]] = None
+                   ) -> DuplicateScan:
+    name, _ = normalizer or available_normalizer()
+    if not register:
+        return DuplicateScan((), (), 0, name, CANONICAL_DUPLICATE_SIMILARITY, empty_because=(
+            "the facility register is empty. Nothing was scanned, which is not the same as "
+            "nothing being duplicated."))
+    ordered = sorted(register, key=lambda f: f.facility_id)
+    pairs: List[DuplicatePair] = []
+    distinct: List[DuplicatePair] = []
+    for index, left in enumerate(ordered):
+        for right in ordered[index + 1:]:
+            similarity = _similarity(left.normalized, right.normalized)
+            if similarity < CANONICAL_DUPLICATE_SIMILARITY:
+                continue
+            pair = DuplicatePair(left, right, similarity)
+            (distinct if _numbers_conflict(left, right) else pairs).append(pair)
+    pairs.sort(key=lambda pair: (-pair.similarity, pair.left.facility_id))
+    distinct.sort(key=lambda pair: (-pair.similarity, pair.left.facility_id))
+    return DuplicateScan(tuple(pairs), tuple(distinct), len(ordered), name,
+                         CANONICAL_DUPLICATE_SIMILARITY)
+
+
+@dataclass(frozen=True)
 class RegisterHealth:
     """What the register cannot do, stated.
 

@@ -33,6 +33,7 @@ action is decided by whether the shell said it was fine.
 from __future__ import annotations
 
 import json
+import os
 import sys
 from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
 
@@ -56,6 +57,7 @@ USAGE = """usage:
   python3 -m commerce vet <carrier> <asof> [booking pickup delivery]
                                                        the three-state verdict, replayable
   python3 -m commerce exceptions                       loads where two claims disagree
+  python3 -m commerce facilities <file.json>           duplicate scan: surfaced, never merged
 
 `commit` is the only command that writes. The ledger is append-only: a
 mistake is superseded by a later entry naming what it replaces, and both
@@ -171,7 +173,7 @@ def record(events: Sequence[LoadEvent], authority: Authority) -> Tuple[int, str]
 
 
 COMMANDS = {"form", "sheet", "record", "read", "morning", "outbound",
-            "commit", "book", "residuals", "status", "vet", "exceptions"}
+            "commit", "book", "residuals", "status", "vet", "exceptions", "facilities"}
 
 
 def _read_file(path: str) -> Optional[str]:
@@ -392,6 +394,73 @@ def _exceptions() -> Tuple[int, str]:
     return 0, "\n".join(lines)
 
 
+def _facilities(argv: Sequence[str]) -> Tuple[int, str]:
+    """The facility register gate. Exit 1 when suspected duplicates are
+    surfaced; 3 when the question cannot be answered to zero — which
+    includes EVERY run under the conservative normalizer, because there
+    `Dr` and `Drive` are distinct entries and the duplicate rate is
+    unknown and not zero. 0 is reachable only with the statistical
+    parser installed and no pair above the floor.
+    """
+    from commerce.facility import (STATISTICAL, Facility, FacilityRefusal,
+                                   available_normalizer, duplicate_scan, register_health)
+    source = argv[0] if argv else os.environ.get("COMMERCE_FACILITIES", "")
+    if not source:
+        return 2, "facilities needs a file: python3 -m commerce facilities <file.json>"
+    raw_text = _read_file(source)
+    if raw_text is None:
+        return 3, (f"FACILITIES — no register at {source}. Nothing was scanned, which is not "
+                   "the same as nothing being duplicated.")
+    try:
+        payload = json.loads(raw_text)
+    except json.JSONDecodeError as exc:
+        return 2, f"FACILITIES — {source} is not JSON: {exc.msg}"
+    if not isinstance(payload, dict):
+        return 2, f"FACILITIES — {source} must be an object of id -> raw address"
+    name, normalize = available_normalizer()
+    register = []
+    refused = []
+    for facility_id in sorted(payload):
+        raw_addr = str(payload[facility_id])
+        try:
+            register.append(Facility(facility_id=str(facility_id), raw=raw_addr,
+                                     normalized=normalize(raw_addr), normalizer=name))
+        except FacilityRefusal as exc:
+            refused.append((str(facility_id), str(exc)))
+    scan = duplicate_scan(register)
+    health = register_health(register)
+    lines = [f"FACILITIES {source} — {len(payload)} entr(ies): "
+             f"{len(register)} scanned + {len(refused)} refused"]
+    for facility_id, reason in refused:
+        lines.append(f"  REFUSED {facility_id}: {reason}")
+    if scan.empty_because:
+        lines.append(f"  (nothing scanned) {scan.empty_because}")
+        return 3, "\n".join(lines)
+    for pair in scan.pairs:
+        lines.append(f"  ? {pair.left.facility_id} ~ {pair.right.facility_id} "
+                     f"(similarity {pair.similarity:.2f})")
+        lines.append(f"      {pair.left.raw!r}")
+        lines.append(f"      {pair.right.raw!r}")
+        lines.append("      surfaced, not merged: confirm and merge deliberately, recording "
+                     "which raw strings were judged the same and by whom.")
+    if not scan.pairs:
+        lines.append(f"  no suspect pair at or above {scan.floor:.2f} under {scan.normalizer}")
+    if scan.distinct_by_number:
+        sample = ", ".join(f"{pair.left.facility_id}~{pair.right.facility_id}"
+                           for pair in scan.distinct_by_number[:5])
+        lines.append(f"  {len(scan.distinct_by_number)} pair(s) above the floor differ in house "
+                     f"number — a stated difference, so listed as distinct rather than dropped "
+                     f"(e.g. {sample})")
+    lines.append(f"  {len(scan.pairs)} suspect + {len(scan.distinct_by_number)} distinct-by-number "
+                 f"= {scan.above_floor} pair(s) above the floor")
+    lines.append(f"  health: {health.caveat}")
+    if scan.pairs:
+        return 1, "\n".join(lines)
+    if scan.normalizer != STATISTICAL or refused:
+        return 3, "\n".join(lines)
+    return 0, "\n".join(lines)
+
+
 def _status(path) -> Tuple[int, str]:
     from commerce.ledger import read
     from commerce.events import PROMISES, SETTLES
@@ -451,6 +520,10 @@ def main(argv: Sequence[str]) -> int:
         return code
     if argv[0] == "exceptions":
         code, text = _exceptions()
+        print(text)
+        return code
+    if argv[0] == "facilities":
+        code, text = _facilities(argv[1:])
         print(text)
         return code
     if len(argv) < 2:
