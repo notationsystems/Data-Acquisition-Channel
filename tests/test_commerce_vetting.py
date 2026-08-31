@@ -574,3 +574,65 @@ def test_an_unknown_observation_kind_is_refused():
         VettingObservation(subject="c-1", kind="vibes", value=True, unit=None,
                            period_start="2026-08-01", period_end=None, known_at="2026-08-01",
                            provenance=_prov())
+
+
+# =====================================================================
+# The Canadian insurance question, put properly
+# =====================================================================
+
+def test_a_certificate_without_the_cancellation_endorsement_is_blocked():
+    """SOR/2005-180 s.7(3), fetched verbatim. Without the endorsement the
+    firm has no warning channel: coverage can lapse between booking and
+    pickup with nobody obliged to say so."""
+    from commerce.vetting import (CERTIFICATE_CARRIES_NO_CANCELLATION_ENDORSEMENT,
+                                  insurance_endorsement)
+    result = insurance_endorsement(["cargo liability", "primary auto"], extra_provincial=True)
+    assert result.status == BLOCKED
+    assert result.code == CERTIFICATE_CARRIES_NO_CANCELLATION_ENDORSEMENT
+    assert "15 days" in result.detail
+    assert "nobody obliged to say so" in result.detail
+
+
+def test_the_endorsement_check_needs_no_registry_and_no_vendor():
+    """The whole answer to `where does Canadian carrier insurance status
+    live`. It does not live in a registry; it lives in a document, and the
+    regulation says what the document must contain."""
+    from commerce.vetting import insurance_endorsement
+    result = insurance_endorsement(["15-day cancellation notice to the provincial authority"],
+                                   extra_provincial=True)
+    assert result.status == CLEARED
+    assert "SOR/2005-180" in result.detail
+
+
+def test_an_intra_provincial_movement_is_undetermined_rather_than_given_the_federal_minimum():
+    """s.7 binds EXTRA-provincial undertakings. Applying the federal
+    minimum to a domestic move would be inference from a rule that does
+    not reach it."""
+    from commerce.vetting import insurance_endorsement
+    result = insurance_endorsement(["anything"], extra_provincial=False)
+    assert result.status == UNDETERMINED
+    assert "do not assume the federal minimum applies" in (result.remedy or "")
+
+
+def test_an_unread_certificate_is_undetermined_not_failed():
+    from commerce.vetting import insurance_endorsement
+    result = insurance_endorsement(None, extra_provincial=True)
+    assert result.status == UNDETERMINED
+    assert "needs no registry and no vendor" in (result.remedy or "")
+
+
+def test_the_insurance_remedy_says_there_is_no_registry_to_query_instead():
+    """Five sources returned `no insurance field` and every one was right.
+    The remedy must stop a sixth probe rather than invite it."""
+    result = insurance_current([], **_movement())
+    assert result.status == UNDETERMINED
+    assert result.remedy is not None
+    assert "NO registry to query instead and there never was" in result.remedy
+    assert "SOR/2005-180" in result.remedy
+
+
+def test_the_statutory_minimums_are_carried_as_measured():
+    from commerce.vetting import INSURER_NOTICE_DAYS, MINIMUM_COVERAGE_CAD
+    assert MINIMUM_COVERAGE_CAD["general"] == 1_000_000.0
+    assert MINIMUM_COVERAGE_CAD["dangerous_goods"] == 2_000_000.0
+    assert INSURER_NOTICE_DAYS == 15

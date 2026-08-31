@@ -199,6 +199,43 @@ AUTHORITY_GRANTED_TOO_RECENTLY = "AUTHORITY_GRANTED_TOO_RECENTLY"
 HISTORY_NOT_AVAILABLE_AT_THIS_RUNG = "HISTORY_NOT_AVAILABLE_AT_THIS_RUNG"
 NO_USDOT_RECORD_AND_NO_PROVINCIAL_SOURCE = "NO_USDOT_RECORD_AND_NO_PROVINCIAL_SOURCE"
 CARRIER_DOCUMENT_DISAGREES_WITH_THE_INSURER = "CARRIER_DOCUMENT_DISAGREES_WITH_THE_INSURER"
+#: The certificate carries no cancellation-notice endorsement. For an
+#: extra-provincial truck undertaking that endorsement is required by
+#: regulation, so its absence is a compliance finding readable from the
+#: document itself -- no registry query needed.
+CERTIFICATE_CARRIES_NO_CANCELLATION_ENDORSEMENT = (
+    "CERTIFICATE_CARRIES_NO_CANCELLATION_ENDORSEMENT")
+
+#: MEASURED, and it settles the question the recon round never asked.
+#: SOR/2005-180 s.7 (fetched 2026-08-31, laws-lois.justice.gc.ca):
+#:
+#:   7(1)  a provincial authority may not issue a safety fitness
+#:         certificate to an extra-provincial truck undertaking unless it
+#:         has WRITTEN PROOF of the minimum coverage;
+#:   7(2)  $1,000,000 per vehicle; $2,000,000 for dangerous goods;
+#:   7(3)  the policy MUST contain an endorsement under which THE INSURER
+#:         agrees to notify the provincial authority AT LEAST 15 DAYS
+#:         before the policy is cancelled, changed so as to fall below the
+#:         minimum, or lapses.
+#:
+#: So there is no registry to query and there never was: the authoritative
+#: record is the POLICY, held by the insurer, with written proof filed at
+#: the provincial authority and published by nobody. Five sources
+#: returning "no insurance field" were all correct and none was the place
+#: to look.
+#:
+#: What the regulation gives instead is better than a lookup. The insurer
+#: already carries a statutory duty to warn a third party before coverage
+#: drops -- so confirming with the insurer is not a courtesy, it is asking
+#: a party that is already reporting. And the ENDORSEMENT ITSELF is
+#: checkable on the certificate: a certificate without it is
+#: non-compliant for extra-provincial work, and that is readable from the
+#: document with no query at all.
+MINIMUM_COVERAGE_CAD: Mapping[str, float] = {
+    "general": 1_000_000.0,
+    "dangerous_goods": 2_000_000.0,
+}
+INSURER_NOTICE_DAYS = 15
 
 #: Class 7 on the vetting run itself.
 NO_VERDICT_BECAUSE_NO_PREDICATE_WAS_EVALUATED = "NO_VERDICT_BECAUSE_NO_PREDICATE_WAS_EVALUATED"
@@ -320,7 +357,11 @@ def insurance_current(observations: Sequence[VettingObservation], *, required: f
             "insurance_current", UNDETERMINED, NO_OBSERVATION_OF_THIS_KIND,
             "no insurance observation has been recorded for this carrier as at "
             f"{asof}. Nothing is known about coverage; this is not a finding that there is none.",
-            "obtain a certificate and confirm the policy number with the named insurer.")
+            "obtain a certificate and confirm the policy number with the named insurer. There is "
+            "NO registry to query instead and there never was: under SOR/2005-180 s.7 the written "
+            "proof is filed with the provincial authority and published by nobody, so the policy "
+            "held by the insurer is the authoritative record. Probing further sources for an "
+            "insurance field is looking for a thing that is not published anywhere.")
 
     age = latest.age_days(asof)
     if age > refresh_interval_days:
@@ -544,6 +585,52 @@ def no_recent_reincarnation(observations: Sequence[VettingObservation], *, asof:
                            detail=f"authority granted {granted.value}, {age} days ago",
                            evidence=(granted.provenance.source_id,),
                            served_by_rung=granted.provenance.rung)
+
+
+def insurance_endorsement(certificate_endorsements: Optional[Sequence[str]], *,
+                          extra_provincial: bool) -> PredicateResult:
+    """The compliance check that needs no source at all.
+
+    SOR/2005-180 s.7(3) requires the policy of an extra-provincial truck
+    undertaking to carry an endorsement obliging THE INSURER to notify the
+    provincial authority at least 15 days before cancellation, a
+    below-minimum change, or lapse. Its presence is readable from the
+    certificate; its absence is a finding.
+
+    This is the whole answer to "where does Canadian carrier insurance
+    status live". It does not live in a registry. It lives in a document,
+    and the regulation says what the document must contain.
+    """
+    if not extra_provincial:
+        return PredicateResult(
+            "insurance_endorsement", UNDETERMINED, NO_OBSERVATION_OF_THIS_KIND,
+            "s.7 binds EXTRA-PROVINCIAL truck undertakings. For a purely intra-provincial "
+            "movement the requirement is provincial and this predicate does not know it.",
+            "establish the provincial requirement for the jurisdiction of the movement; do not "
+            "assume the federal minimum applies.")
+    if certificate_endorsements is None:
+        return PredicateResult(
+            "insurance_endorsement", UNDETERMINED, NO_OBSERVATION_OF_THIS_KIND,
+            "no certificate has been read, so whether it carries the cancellation-notice "
+            "endorsement is unknown.",
+            "read the certificate. This check needs no registry and no vendor.")
+    if not any("cancel" in e.lower() or "notice" in e.lower()
+               for e in certificate_endorsements):
+        return PredicateResult(
+            "insurance_endorsement", BLOCKED,
+            CERTIFICATE_CARRIES_NO_CANCELLATION_ENDORSEMENT,
+            f"the certificate lists {list(certificate_endorsements)} and none is a cancellation "
+            f"notice endorsement. SOR/2005-180 s.7(3) requires the insurer to undertake "
+            f"{INSURER_NOTICE_DAYS} days' notice to the provincial authority before cancellation, "
+            "a below-minimum change, or lapse. Without it the certificate is non-compliant for "
+            "extra-provincial work AND the firm has no warning channel: coverage can lapse "
+            "between booking and pickup with nobody obliged to say so.",
+            "require the endorsement before tendering. It is the difference between a "
+            "point-in-time certificate and a coverage state with a warning attached.")
+    return PredicateResult(
+        "insurance_endorsement", CLEARED,
+        detail=f"cancellation-notice endorsement present; insurer owes the provincial authority "
+               f"{INSURER_NOTICE_DAYS} days' notice under SOR/2005-180 s.7(3)")
 
 
 def coverage_divergence(observations: Sequence[VettingObservation],

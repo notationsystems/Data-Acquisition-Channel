@@ -1,0 +1,54 @@
+# DEFECT CLASS 8: THE CONSTRAINT THAT WAS MEASURED AND NOT CARRIED.
+#
+# WHERE THIS RECORD LIVES AND WHY. The canonical register of the first
+# seven classes is docs/DEFECT_CLASSES.md in the Sea Dog Terminal tree,
+# which is FROZEN at 5a6def1 pending its researcher session. So the eighth
+# class is named here and cannot be added to the canonical register until
+# that freeze lifts. This file is the record of a class whose home is in
+# another tree -- the same shape already filed for the sea_dog_session
+# instrument, whose doctrine names a source this repository cannot reach.
+extends: core@1.0.0
+
+subject: defect_class_eight
+status: named_and_detected
+owner: daf
+enforcement: tests/test_commerce_recon_lint.py
+
+the_class:
+  name: the constraint that was measured and not carried
+  statement: "a constraint is correctly measured, correctly reported, and then not carried into the design BY THE SAME AGENT THAT MEASURED IT."
+  the_standing_question: "did anything I measured as forbidden appear in what I then proposed?"
+
+the_instance_that_named_it:
+  what_happened: "a recon probe fetched Quebec's terms of use, quoted the prohibition on `reproduire, telecharger, stocker` verbatim in its own terms field, and recommended a daily snapshot-and-diff store in its design_consequence -- in the same report, a few hundred words apart."
+  found_by: "the completeness critic, reading the round's own output rather than the sources."
+
+why_it_is_not_any_of_the_seven:
+  not_silent_filtering: "nothing was dropped. The constraint is in the output, quoted verbatim."
+  not_scoped_check_blindness: "the check was not narrower than its claim; it measured exactly what it said."
+  not_a_vacuous_example: "the measurement was real and reproduced."
+  not_wrong_attribution: "the constraint was attributed correctly, to the right party."
+  not_context_severance: "the context was not severed -- it was on the same page."
+  not_the_literal_that_agrees_with_itself: "no literal was involved."
+  not_class_seven: "nothing came back empty."
+  the_distinction: "every one of the seven describes a fault in the MEASUREMENT. This is a fault in the SEAM between a correct measurement and the design that follows it."
+
+why_it_recurs_in_multi_agent_work:
+  mechanism: "an agent producing a finding and a design in ONE PASS has nothing between them: no reviewer, no interval, and no forcing function that re-reads the constraint section before writing the recommendation. The measurement sits in the context window and is simply not consulted again."
+  the_structural_fix: "split finding from design across agents, so the design reads the constraint as INPUT rather than as something it wrote earlier."
+  the_cheap_fix: "the linter, which is what was built."
+
+the_detector:
+  module: commerce/recon_lint.py
+  how_it_works: "a record declares a machine-readable constraints_measured block naming what each constraint forbids. The linter scans every OTHER text field for proposing sentences that name a forbidden act, excluding sentences that are themselves prohibitions."
+  proven_by_a_plant: "the historical recommendation was reinstated into the record and the detector named it -- constraint, forbidden term, path and sentence. Removed, the record lints clean."
+  what_it_deliberately_does_not_do: "decide. It cannot distinguish a genuinely constrained proposal from a coincidence of words -- `do not build a mirror` and `build a mirror` both contain the word -- so it surfaces CANDIDATES for a reader. A detector that decided would commit this very class one level up: acting confidently on a rule it had measured loosely."
+
+the_finding_the_detector_produced_about_itself:
+  what_happened: "the first run listed `snapshot` as a forbidden term and produced three candidates. Every one was a DESCRIPTION of a source kind -- `snapshot rung`, `snapshot surface`, `current-snapshot only` -- and not a proposal."
+  the_rule_it_yields: "a forbidden term that is also core domain vocabulary makes the detector noisy on correct text, and a detector that cries wolf trains the reader to dismiss it. That is worse than not running it."
+  why_the_narrowing_is_not_a_hole: "`store` still catches the instance that named the class, so dropping the overloaded term cost no coverage on the case that matters."
+
+what_is_not_claimed:
+  not_a_general_solution: "the linter checks a record against constraints THAT RECORD DECLARED. A constraint nobody wrote down is invisible to it, and the round's biggest gaps were questions nobody asked rather than constraints nobody carried."
+  not_that_the_seven_were_wrong: "they were not. This is an eighth, and it was reachable only because a verification pass read the round's own output as a subject."

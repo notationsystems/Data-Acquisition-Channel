@@ -80,6 +80,60 @@ commercial_wrappers:
   reachability_is_a_client_fact: "carrier411.com returned 403 from Cloudflare and rmisonline.com failed CONNECT at the egress proxy. Neither is evidence about the vendor; both are facts about this container."
 
 # ----------------------------------------------------------------------
+# THE QUESTION THE ROUND NEVER ASKED, PUT PROPERLY AND ANSWERED.
+# Not "does source X carry insurance" -- five sources answered that
+# correctly and none was the place to look. The question is what the
+# AUTHORITATIVE record is, and who may query it.
+# ----------------------------------------------------------------------
+canadian_carrier_insurance:
+  measured_from: "SOR/2005-180, Motor Carrier Safety Fitness Certificate Regulations, fetched verbatim from laws-lois.justice.gc.ca on 2026-08-31 (HTTP 200, 29562 bytes)."
+  section_7_1: "a provincial authority may not issue a safety fitness certificate to an extra-provincial truck undertaking unless it has WRITTEN PROOF of the minimum coverage."
+  section_7_2: "1,000,000 CAD per motor vehicle; 2,000,000 CAD for a vehicle carrying dangerous goods requiring an emergency response assistance plan."
+  section_7_3: "the policy MUST contain an endorsement under which THE INSURER agrees to notify the provincial authority AT LEAST 15 DAYS before the policy is cancelled or non-renewed, or changed such that it no longer provides the minimum coverage."
+  the_structural_answer: "there is no registry and there never was. The authoritative record is the POLICY, held by the insurer. Written proof is filed with the PROVINCIAL AUTHORITY and published by nobody -- Ontario's CVOR pages mention insurance twice and both times as an operator OBLIGATION, never as published status. So all five sources that returned `no insurance field` were correct, and probing a sixth for the same field would find the same nothing."
+  why_the_answer_is_better_than_a_lookup:
+    the_insurer_already_reports: "s.7(3) puts a statutory duty on the INSURER to warn a third party before coverage drops. Confirming with the insurer is therefore not a courtesy -- it is asking a party that is already obliged to report."
+    the_endorsement_is_checkable_from_the_document: "its presence or absence is readable on the certificate with no query, no vendor and no registry. A certificate without it is non-compliant for extra-provincial work AND leaves the firm with no warning channel, so coverage can lapse between booking and pickup with nobody obliged to say so."
+  the_scope_boundary: "s.7 binds EXTRA-PROVINCIAL truck undertakings. A purely intra-provincial movement is governed provincially and this regulation does not answer it. The predicate returns undetermined there rather than applying the federal minimum by default."
+  what_this_retires: "nine unprobed jurisdictions is a smaller number than it looked. The answer is structural, so the remaining provinces change the minimums and the filing authority -- not whether a queryable insurance registry exists. It does not."
+
+# ----------------------------------------------------------------------
+# CONSTRAINTS THIS ROUND MEASURED. Declared in a machine-readable block so
+# commerce/recon_lint.py can check the rest of this record against them --
+# see defect class 8, which this round produced its own instance of.
+# ----------------------------------------------------------------------
+constraints_measured:
+  quebec_prohibits_storing:
+    quoted: "quebec.ca/droit-auteur prohibits `reproduire, telecharger, stocker` without prior authorisation"
+    # `snapshot` is deliberately NOT listed. It is core vocabulary in this
+    # corpus -- a `snapshot rung` and a `snapshot source` are source KINDS,
+    # not proposed acts -- so listing it produced three false positives on
+    # the first run, every one a description rather than a proposal. A
+    # forbidden term that is also domain vocabulary trains the reader to
+    # dismiss the check, which is worse than not running it. `store` still
+    # catches the instance that named the class: `a daily snapshot-and-diff
+    # store`.
+    forbids:
+      - stocker
+      - store
+      - mirror
+      - cache
+  ontario_is_crown_copyright:
+    quoted: "King's Printer for Ontario, Crown copyright, with no open-licence label; commercial reuse requires a licence"
+    forbids:
+      - redistribute
+      - republish
+  carrier411_terms_prohibit_automation:
+    quoted: "the vendor's terms of service prohibit the automated use a probe would need"
+    forbids:
+      - scrape
+      - crawl
+  socrata_licence_is_null_and_terms_unfetched:
+    quoted: "the FMCSA Socrata datasets report `license: null` and the Socrata terms of use were never fetched"
+    forbids:
+      - redistribute
+
+# ----------------------------------------------------------------------
 # THE VERIFICATION PASS'S OWN FINDING, AND IT IS THE MOST IMPORTANT ONE.
 # Not a loud claim -- the quiet inference every probe made and none
 # measured.
