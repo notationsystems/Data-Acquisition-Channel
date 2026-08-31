@@ -53,6 +53,8 @@ USAGE = """usage:
   python3 -m commerce book                             replay the ledger
   python3 -m commerce residuals                        lane memory, from the book
   python3 -m commerce status                           one screen: book, residuals, gaps
+  python3 -m commerce vet <carrier> <asof> [booking pickup delivery]
+                                                       the three-state verdict, replayable
 
 `commit` is the only command that writes. The ledger is append-only: a
 mistake is superseded by a later entry naming what it replaces, and both
@@ -168,7 +170,7 @@ def record(events: Sequence[LoadEvent], authority: Authority) -> Tuple[int, str]
 
 
 COMMANDS = {"form", "sheet", "record", "read", "morning", "outbound",
-            "commit", "book", "residuals", "status"}
+            "commit", "book", "residuals", "status", "vet"}
 
 
 def _read_file(path: str) -> Optional[str]:
@@ -320,6 +322,36 @@ def _residuals(path, asof: Optional[str]) -> Tuple[int, str]:
     return 0, "\n".join(lines)
 
 
+def _vet(argv: Sequence[str]) -> Tuple[int, str]:
+    """The verdict as it stood at `asof`, from persisted observations.
+
+    Exit codes carry the three states: 0 cleared, 1 blocked, 3
+    undetermined — because a shell script that treats nonzero as `blocked`
+    would collapse the third state, which is the collapse the gate exists
+    to prevent.
+    """
+    from commerce.vetting import (authority_active, decide, insurance_current,
+                                  no_recent_reincarnation, render as render_verdict, Carrier,
+                                  CLEARED, BLOCKED)
+    from commerce.vetting_store import read as read_vetting
+    if len(argv) < 2:
+        return 2, "vet needs: <carrier> <asof> [booking pickup delivery]"
+    carrier_id, asof = argv[0], argv[1]
+    store = read_vetting()
+    observations = store.for_carrier(carrier_id)
+    predicates = [authority_active(observations, asof=asof),
+                  no_recent_reincarnation(observations, asof=asof)]
+    if len(argv) >= 5:
+        predicates.insert(0, insurance_current(
+            observations, required=100_000.0, currency="CAD",
+            booking_date=argv[2], pickup_date=argv[3], delivery_date=argv[4], asof=asof))
+    verdict = decide(Carrier(carrier_id, carrier_id), predicates, asof=asof)
+    text = render_verdict(verdict)
+    if store.empty_because:
+        text += "\n  " + store.empty_because
+    return (0 if verdict.status == CLEARED else 1 if verdict.status == BLOCKED else 3), text
+
+
 def _status(path) -> Tuple[int, str]:
     from commerce.ledger import read
     from commerce.events import PROMISES, SETTLES
@@ -371,6 +403,10 @@ def main(argv: Sequence[str]) -> int:
         return code
     if argv[0] == "status":
         code, text = _status(DEFAULT_PATH)
+        print(text)
+        return code
+    if argv[0] == "vet":
+        code, text = _vet(argv[1:])
         print(text)
         return code
     if len(argv) < 2:
