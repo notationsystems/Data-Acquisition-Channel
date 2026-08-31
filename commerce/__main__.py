@@ -12,7 +12,17 @@ The first transaction is recorded by a person under time pressure who is
 not going to open an editor. So:
 
     python3 -m commerce form                     print a blank form
+    python3 -m commerce sheet                    print a blank sheet header
     python3 -m commerce record <events.json>     grade one load
+    python3 -m commerce read <sheet.csv>         read a sheet AND grade it
+    python3 -m commerce morning <opps.json>      the three-list morning view
+    python3 -m commerce outbound <drafts.json>   what is waiting for a person
+
+THE THIRD INSTANCE OF THE SAME CLASS. `record` and `form` were added when
+walking a transaction showed step 8 stopping. The morning view, the sheet
+reader and the outbound queue were then built and left reachable only by
+import -- in the same session, by the same author, after naming the
+defect. It is recorded that way rather than presented as a feature.
 
 EXIT CODES ARE THE SIGNAL. 2 for an input this reader cannot use, 1 for a
 record that carries refusals, 0 only when the record can be graded. A
@@ -32,14 +42,22 @@ from commerce.stores import (Authority, Commitment, CommitmentStore, Evidence, O
                              OutcomeStore, Provenance, Quantity, StoreRefusal, diverge, pair)
 
 USAGE = """usage:
-  python3 -m commerce form                    print a blank event form
-  python3 -m commerce record <events.json>    record and grade one load
+  python3 -m commerce form                          print a blank event form
+  python3 -m commerce sheet                         print a blank sheet header
+  python3 -m commerce record <events.json>          record and grade one load
+  python3 -m commerce read <sheet.csv> <auth.json>  read a sheet AND grade it
+  python3 -m commerce morning <opportunities.json>  the three-list morning view
+  python3 -m commerce outbound <drafts.json>        what is waiting for a person
 
-An events file is a JSON array of form entries. Every promise you record
-(rate_quoted, pickup_promised, transit_estimated, ...) is a COMMITMENT;
-every world-fact (rate_invoiced, pickup_actual, transit_realized, ...) is
-an OUTCOME. They are kept apart on purpose: the gap between them is the
-only thing here that compounds."""
+An events file is a JSON object with an `authority` and an `events` array.
+Every promise you record (rate_quoted, pickup_promised, transit_estimated)
+is a COMMITMENT; every world-fact (rate_invoiced, pickup_actual,
+transit_realized) is an OUTCOME. They are kept apart on purpose: the gap
+between them is the only thing here that compounds.
+
+`read` takes the sheet you typed into and the authority you book under,
+because a CSV cannot carry an authority object and a load recorded under
+none is a commitment the record cannot say who was entitled to make."""
 
 #: The authority a manually recorded load is booked under. Passed in
 #: rather than assumed, because an authority resolved by this module would
@@ -139,22 +157,122 @@ def record(events: Sequence[LoadEvent], authority: Authority) -> Tuple[int, str]
     return 0, "\n".join(lines)
 
 
+COMMANDS = {"form", "sheet", "record", "read", "morning", "outbound"}
+
+
+def _read_file(path: str) -> Optional[str]:
+    try:
+        with open(path, "r", encoding="utf-8") as handle:
+            return handle.read()
+    except OSError as exc:
+        print(f"cannot read {path}: {exc}")
+        return None
+
+
+def _sheet_then_grade(raw: str, authority: Authority) -> Tuple[int, str]:
+    """Read a sheet and grade what it yielded, in one pass.
+
+    This is the directive's workflow end to end: type into a sheet, export
+    it, see the residuals. A refused row is printed WITH the grading rather
+    than in a separate step, because an operator who does not see the
+    refusal will read the shorter list as the whole day.
+    """
+    from commerce.sheet import read_sheet, render as render_sheet
+    read = read_sheet(raw)
+    lines = [render_sheet(read)]
+    if not read.events:
+        return 1, "\n".join(lines)
+    code, graded = record(read.events, authority)
+    lines.append("")
+    lines.append(graded)
+    if read.refused:
+        lines.append("")
+        lines.append(f"NOT THE WHOLE DAY — {len(read.refused)} row(s) above were refused and are "
+                     "not in the grading.")
+        return 1, "\n".join(lines)
+    return code, "\n".join(lines)
+
+
+def _morning(raw: str) -> Tuple[int, str]:
+    """The three-list view. The middle list is the product."""
+    from commerce.gate import Authorisations, morning_view, render as render_view
+    from commerce.opportunity_intake import from_manual_form
+    payload = json.loads(raw)
+    authorisations = Authorisations(
+        frozenset(payload.get("activity_classes", [])),
+        payload.get("credentials", {}))
+    opportunities = [from_manual_form(entry) for entry in payload.get("opportunities", [])]
+    view = morning_view(opportunities, authorisations, payload.get("pricing", {}),
+                        asof=str(payload["asof"]))
+    return (0 if view.conserves else 1), render_view(
+        view, sustainable_loads_per_week=payload.get("sustainable_loads_per_week"))
+
+
+def _outbound(raw: str) -> Tuple[int, str]:
+    """What is waiting for a person, and why each item needs their hand."""
+    from commerce.authority import Actor
+    from commerce.outbound import Draft, OutboundQueue, render as render_queue
+    payload = json.loads(raw)
+    queue = OutboundQueue()
+    for entry in payload.get("drafts", []):
+        queue.draft(Draft(kind=str(entry["kind"]), counterparty=str(entry["counterparty"]),
+                          body=str(entry.get("body", "")),
+                          drafted_by=Actor(str(entry.get("drafted_by", "agent")), True)))
+    return 0, render_queue(queue)
+
+
 def main(argv: Sequence[str]) -> int:
-    if not argv or argv[0] not in {"form", "record"}:
+    if not argv or argv[0] not in COMMANDS:
         print(USAGE)
         return 2
     if argv[0] == "form":
         print(json.dumps([blank_form()], indent=2))
         return 0
+    if argv[0] == "sheet":
+        from commerce.sheet import blank_sheet
+        print(blank_sheet(), end="")
+        return 0
     if len(argv) < 2:
-        print("record needs an events file: python3 -m commerce record <events.json>")
+        print(f"{argv[0]} needs a file: python3 -m commerce {argv[0]} <file>")
         return 2
-    try:
-        with open(argv[1], "r", encoding="utf-8") as handle:
-            raw = handle.read()
-    except OSError as exc:
-        print(f"cannot read {argv[1]}: {exc}")
+    raw = _read_file(argv[1])
+    if raw is None:
         return 2
+
+    if argv[0] == "read":
+        if len(argv) < 3:
+            print("read needs a sheet and an authority: "
+                  "python3 -m commerce read <sheet.csv> <authority.json>")
+            return 2
+        auth_raw = _read_file(argv[2])
+        if auth_raw is None:
+            return 2
+        try:
+            authority = _authority(json.loads(auth_raw))
+        except json.JSONDecodeError as exc:
+            print(f"the authority file is not JSON ({exc.msg}).")
+            return 2
+        if not authority.holder or not authority.instrument:
+            print("NO_AUTHORITY_STATED: the authority file must carry holder, instrument, "
+                  "valid_from and valid_until.")
+            return 2
+        try:
+            code, text = _sheet_then_grade(raw, authority)
+        except EventRefusal as exc:
+            print(f"{exc.code}: {exc.detail}")
+            return 2
+        print(text)
+        return code
+
+    if argv[0] in {"morning", "outbound"}:
+        handler = _morning if argv[0] == "morning" else _outbound
+        try:
+            code, text = handler(raw)
+        except (json.JSONDecodeError, KeyError, ValueError) as exc:
+            print(f"{type(exc).__name__}: {exc}")
+            return 2
+        print(text)
+        return code
 
     payload: Mapping[str, Any] = {}
     try:
@@ -165,17 +283,17 @@ def main(argv: Sequence[str]) -> int:
     except json.JSONDecodeError:
         pass
 
-    try:
-        events = load_entries(raw)
-    except EventRefusal as exc:
-        print(f"{exc.code}: {exc.detail}")
-        return 2
-
     authority = _authority(payload)
     if not authority.holder or not authority.instrument:
         print("NO_AUTHORITY_STATED: the file must carry an `authority` object with holder, "
               "instrument, valid_from and valid_until. A load recorded under no authority is a "
               "commitment the record cannot say who was entitled to make.")
+        return 2
+
+    try:
+        events = load_entries(raw)
+    except EventRefusal as exc:
+        print(f"{exc.code}: {exc.detail}")
         return 2
 
     code, text = record(events, authority)

@@ -153,3 +153,113 @@ def test_the_form_output_is_directly_usable_as_input(tmp_path):
     result = _run(tmp_path, {"authority": AUTH, "events": [filled]}, name="filled.json")
     assert result.returncode == 0, result.stdout + result.stderr
     assert "NOT YET SETTLED" in result.stdout
+
+
+# =====================================================================
+# The third instance of the same class
+# =====================================================================
+
+def test_every_operator_surface_is_reachable_without_writing_python():
+    """THE CLASS, THIRD INSTANCE. `record` and `form` were added when
+    walking a transaction showed step 8 stopping. The morning view, the
+    sheet reader and the outbound queue were then built in the same
+    session by the same author and left reachable only by import.
+
+    This test exists so a fourth surface cannot be added the same way."""
+    import commerce.__main__ as cli
+    for command in ("form", "sheet", "record", "read", "morning", "outbound"):
+        assert command in cli.COMMANDS, f"{command} is not reachable from the shell"
+
+
+def test_a_blank_sheet_header_is_printable():
+    result = subprocess.run([sys.executable, "-m", "commerce", "sheet"],
+                            cwd=REPO_ROOT, capture_output=True, text=True)
+    assert result.returncode == 0
+    assert result.stdout.startswith("load,kind,value")
+    assert result.stdout.count("\n") == 1, "a template with an example row becomes the example"
+
+
+def _auth_file(tmp_path):
+    path = tmp_path / "auth.json"
+    path.write_text(json.dumps({"authority": AUTH}))
+    return path
+
+
+def test_read_takes_a_sheet_and_grades_it_in_one_pass(tmp_path):
+    header = subprocess.run([sys.executable, "-m", "commerce", "sheet"],
+                            cwd=REPO_ROOT, capture_output=True, text=True).stdout
+    sheet = tmp_path / "loads.csv"
+    sheet.write_text(header
+                     + "L-1,rate_quoted,2400,CAD,2026-08-25,phone,op-7,2026-08-28,,,,\n"
+                     + "L-1,rate_invoiced,2550,CAD,2026-09-10,document,op-7,,,,,\n")
+    result = subprocess.run([sys.executable, "-m", "commerce", "read", str(sheet),
+                             str(_auth_file(tmp_path))], cwd=REPO_ROOT,
+                            capture_output=True, text=True)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "residual" in result.stdout and "+150.00" in result.stdout
+
+
+def test_a_refused_row_makes_read_exit_nonzero_and_say_it_is_not_the_whole_day(tmp_path):
+    """An operator who does not see the refusal will read the shorter list
+    as the whole day."""
+    header = subprocess.run([sys.executable, "-m", "commerce", "sheet"],
+                            cwd=REPO_ROOT, capture_output=True, text=True).stdout
+    sheet = tmp_path / "loads.csv"
+    sheet.write_text(header
+                     + "L-1,rate_quoted,2400,CAD,2026-08-25,phone,op-7,2026-08-28,,,,\n"
+                     + "L-2,rate_quoted,oops,CAD,2026-08-26,phone,op-7,2026-08-28,,,,\n")
+    result = subprocess.run([sys.executable, "-m", "commerce", "read", str(sheet),
+                             str(_auth_file(tmp_path))], cwd=REPO_ROOT,
+                            capture_output=True, text=True)
+    assert result.returncode == 1
+    assert "NOT THE WHOLE DAY" in result.stdout
+
+
+def test_read_without_an_authority_file_exits_two(tmp_path):
+    sheet = tmp_path / "loads.csv"
+    sheet.write_text("load\n")
+    result = subprocess.run([sys.executable, "-m", "commerce", "read", str(sheet)],
+                            cwd=REPO_ROOT, capture_output=True, text=True)
+    assert result.returncode == 2
+    assert "authority" in result.stdout
+
+
+def test_the_morning_view_prints_three_lists_from_the_shell(tmp_path):
+    path = tmp_path / "opps.json"
+    path.write_text(json.dumps({
+        "asof": "2026-08-31",
+        "activity_classes": ["domestic_brokerage"],
+        "credentials": {"cargo_liability_insurance": "held"},
+        "opportunities": [
+            {"identifier": "O-1", "activity_class": "domestic_brokerage",
+             "received_at": "2026-08-31", "weight": "about 40,000 lbs"},
+        ],
+        "pricing": {}, "sustainable_loads_per_week": 58.3,
+    }))
+    result = subprocess.run([sys.executable, "-m", "commerce", "morning", str(path)],
+                            cwd=REPO_ROOT, capture_output=True, text=True)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "BLOCKED" in result.stdout and "the day's work" in result.stdout
+    assert "insolvency at a profit" in result.stdout
+
+
+def test_the_outbound_queue_prints_what_is_waiting_for_a_person(tmp_path):
+    path = tmp_path / "drafts.json"
+    path.write_text(json.dumps({"drafts": [
+        {"kind": "quote", "counterparty": "Acme",
+         "body": "can you cover Toronto-Detroit Thursday at $2,400"},
+    ]}))
+    result = subprocess.run([sys.executable, "-m", "commerce", "outbound", str(path)],
+                            cwd=REPO_ROOT, capture_output=True, text=True)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "[BINDING]" in result.stdout
+    assert "reads as an offer to the recipient" in result.stdout
+
+
+def test_a_malformed_morning_file_exits_two_without_a_traceback(tmp_path):
+    path = tmp_path / "bad.json"
+    path.write_text("{not json")
+    result = subprocess.run([sys.executable, "-m", "commerce", "morning", str(path)],
+                            cwd=REPO_ROOT, capture_output=True, text=True)
+    assert result.returncode == 2
+    assert "Traceback" not in result.stderr
