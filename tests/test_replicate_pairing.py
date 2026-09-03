@@ -17,6 +17,7 @@ had to be right at acquisition time.
 
 from __future__ import annotations
 
+import ast
 import datetime
 import math
 import pathlib
@@ -38,9 +39,14 @@ from science.replicate_pairing import (AMBIGUOUS_RUN_IDENTITY,  # noqa: E402
                                        CONFLICTING_VALUE_FOR_A_RUN,
                                        DEGENERATE_VARIABLE,
                                        RAGGED_REPLICATE_SET,
+                                       RANK_DEFICIENT_COVARIANCE,
                                        TOO_FEW_RUNS_FOR_A_COVARIANCE,
                                        covariance_of, pair_replicates,
+                                       published_rank_tolerance,
                                        sample_covariance)
+from epistemics import _yaml
+
+REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 WHEN = datetime.datetime(2026, 8, 26, tzinfo=datetime.timezone.utc)
 CONDITIONS = FrozenMapping({"column_calibration": "polystyrene_standards", "solvent": "THF"})
@@ -366,3 +372,140 @@ def test_the_code_does_not_claim_which_of_the_two_it_found():
     assert "NOT REPLICATES" in source and "acquisition locator leaked" in source, (
         "both readings must stay recorded, or the code reads as diagnosing one of them"
     )
+
+
+# ------------------------------------------- the covariance offered onward
+
+def _polymer_observations(runs):
+    """The three quantities a GPC report actually carries, where the third
+    IS a function of the first two. In logs the relation is exact, and the
+    fit is done in logs.
+
+    This is not a contrived case. Any instrument that prints a derived
+    quantity beside its inputs produces it, and this one is the row the
+    polymer vertical is built on."""
+    out = []
+    for index, (mn, mw) in enumerate(runs):
+        out.extend([
+            observation(index, "number_average_molar_mass", math.log(mn)),
+            observation(index, "weight_average_molar_mass", math.log(mw)),
+            observation(index, "dispersity", math.log(mw / mn),
+                        uncertainty=0.01),
+        ])
+    return out
+
+
+def test_the_tolerance_is_read_from_the_counterpartys_artifact_not_typed_here():
+    """The join, asserted as a join. If this module carried its own copy of
+    1e-12, the two would stop agreeing the moment the compute layer moved
+    its default, silently, because nothing compares a number in this file
+    to a number in that header."""
+    published = _yaml.loads(
+        (REPO_ROOT / "architecture" / "exchange" / "scl_requirements.yaml").read_text()
+    )["published_constants"]["least_squares_rank_tolerance_default"]
+    assert published_rank_tolerance() == float(published)
+    # Over the SYNTAX TREE, not the text. The first version of this check
+    # searched the function's source for the literal and fired on its own
+    # DOCSTRING, which names the value while explaining why it must not be
+    # written down -- the proxy-for-target shape recorded in
+    # architecture/proof_integrity.yaml, in a check written to protect a
+    # join. A float in prose is not a float in code, and only one of them
+    # can disagree with the counterparty.
+    tree = ast.parse((REPO_ROOT / "science" / "replicate_pairing.py").read_text())
+    function = next(
+        node for node in ast.walk(tree)
+        if isinstance(node, ast.FunctionDef) and node.name == "published_rank_tolerance"
+    )
+    literals = [
+        node.value for node in ast.walk(function)
+        if isinstance(node, ast.Constant) and isinstance(node.value, float)
+    ]
+    assert not literals, (
+        f"the tolerance is typed into the module that is supposed to read it: {literals}"
+    )
+
+
+def test_a_module_with_no_published_tolerance_refuses_rather_than_defaulting(tmp_path,
+                                                                             monkeypatch):
+    """The absence path, which is the one that would have been a default.
+
+    A cutoff quietly standing in for the counterparty's is the same defect
+    as copying it, with the extra property that nobody could see it had
+    happened -- so the module raises."""
+    import science.replicate_pairing as module
+
+    empty = tmp_path / "architecture" / "exchange"
+    empty.mkdir(parents=True)
+    (empty / "scl_requirements.yaml").write_text('artifact: "scl_requirements"\n')
+    monkeypatch.setattr(module, "_REPO_ROOT", tmp_path)
+    with pytest.raises(LookupError) as caught:
+        module.published_rank_tolerance()
+    assert "does not invent one" in str(caught.value)
+
+
+def test_a_derived_third_variable_is_reported_rank_deficient():
+    """THE ROW THE COMPUTE LAYER ASKED THIS LAYER TO ANSWER.
+
+    Its blocking requirement says a covariance offered for whitening must
+    be positive definite by the operation's own cutoff. This measures that
+    the deficiency is DETECTED and NAMED rather than handed onward, where
+    the compute layer measured what happens to it: over 2000 sets of this
+    situation a plain Cholesky accepted 828 and refused 1172, the outcome
+    decided by rounding."""
+    runs = correlated_runs(6, 0.7)
+    pairing = pair_replicates(_polymer_observations(runs))
+    assert len(pairing.sets) == 1
+    result = sample_covariance(pairing.sets[0])
+    assert result is not None
+    assert len(result.variables) == 3
+    assert result.effective_rank == 2, (
+        f"three variables, one an exact function of the other two, and the "
+        f"covariance is reported at rank {result.effective_rank}"
+    )
+    assert RANK_DEFICIENT_COVARIANCE in result.reasons
+    assert result.rank_tolerance == published_rank_tolerance()
+
+
+def test_the_same_three_variables_measured_independently_are_full_rank():
+    """THE CONTROL. Without it the check would be measuring `three
+    variables from six runs` rather than `a variable that is a function of
+    two others`, and every conclusion would be misattributed.
+
+    The only change is that the third quantity is drawn rather than
+    derived. Nothing else moves."""
+    runs = correlated_runs(6, 0.7)
+    rng = random.Random(4471)
+    out = []
+    for index, (mn, mw) in enumerate(runs):
+        out.extend([
+            observation(index, "number_average_molar_mass", math.log(mn)),
+            observation(index, "weight_average_molar_mass", math.log(mw)),
+            observation(index, "dispersity", rng.gauss(0.9, 0.05), uncertainty=0.01),
+        ])
+    result = sample_covariance(pair_replicates(out).sets[0])
+    assert result is not None
+    assert result.effective_rank == 3
+    assert RANK_DEFICIENT_COVARIANCE not in result.reasons
+
+
+def test_more_runs_do_not_repair_it():
+    """A caller who responds to a deficient covariance by collecting more
+    replicates is treating the wrong cause. The relation is between the
+    VARIABLES; the number of runs has nothing to do with it."""
+    for count in (4, 8, 20):
+        pairing = pair_replicates(_polymer_observations(correlated_runs(count, 0.7)))
+        result = sample_covariance(pairing.sets[0])
+        assert result.effective_rank == 2, f"{count} runs gave rank {result.effective_rank}"
+        assert RANK_DEFICIENT_COVARIANCE in result.reasons
+
+
+def test_the_deficiency_does_not_suppress_the_correlations_that_are_real():
+    """A refusal that threw the whole covariance away would lose the
+    measurement the vertical exists for. rho between Mn and Mw is still
+    recoverable; what is reported is that ONE DIRECTION carries no
+    variance, not that the set is unusable."""
+    runs = correlated_runs(40, 0.9)
+    result = sample_covariance(pair_replicates(_polymer_observations(runs)).sets[0])
+    assert RANK_DEFICIENT_COVARIANCE in result.reasons
+    rho = result.rho("number_average_molar_mass", "weight_average_molar_mass")
+    assert rho is not None and 0.75 < rho < 0.99, rho

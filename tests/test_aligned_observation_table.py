@@ -401,19 +401,42 @@ def test_the_quoted_requirements_are_verbatim_from_the_exchange_artifact():
 
     stated = {row["requirement"]: row["statement"]
               for row in least_squares["blocking_requirements"] if row["owner"] == "daq"}
-    assert set(stated) == {"stable_sample_and_variable_identity", "explicit_missing_value_semantics"}
+    assert len(stated) >= 2, f"expected at least two daq-owned rows, found {sorted(stated)}"
 
-    gate_docstring = (root / "science" / "table.py").read_text()
-    record = (root / "architecture" / "aligned_observation_table.yaml").read_text()
+    # WHERE THE QUOTE MUST LIVE IS DERIVED, NOT LISTED. This block named
+    # science/table.py and architecture/aligned_observation_table.yaml,
+    # which was right while the table gate answered every daq-owned row.
+    # It stopped being right on 2026-09-03, when the compute layer added a
+    # covariance row whose answer is in science/replicate_pairing.py -- the
+    # coverage-by-enumeration shape, in a check whose whole value is that
+    # it compares text verbatim rather than by paraphrase.
+    #
+    # The property is unchanged: every requirement this repository is told
+    # about must be quoted SOMEWHERE in it, word for word, because a
+    # paraphrase is where an alias or a softened obligation gets in. What
+    # is derived is where to look.
+    haystacks = []
+    for directory in ("science", "architecture"):
+        for path in sorted((root / directory).rglob("*")):
+            if path.is_file() and path.suffix in (".py", ".yaml"):
+                haystacks.append((path.relative_to(root), path.read_text()))
+    collapsed = [(name, " ".join(text.split())) for name, text in haystacks]
+
     for requirement, statement in stated.items():
-        # The gate docstring wraps its quote, so compare on collapsed
-        # whitespace; the YAML record carries it on one line.
-        assert " ".join(statement.split()) in " ".join(gate_docstring.split()), requirement
-        assert statement in record, requirement
+        needle = " ".join(statement.split())
+        where = [str(name) for name, text in collapsed if needle in text]
+        assert where, (
+            f"{requirement}: the compute layer's statement is quoted nowhere in "
+            "this repository. A requirement nobody has written down verbatim is "
+            "one nobody can be shown to have answered."
+        )
 
     # The third requirement, which is not in blocking_requirements and was
-    # nearly missed for exactly that reason.
-    assert least_squares["condition_requirements"] in record
+    # nearly missed for exactly that reason. Its home IS the aligned-table
+    # record specifically -- it is a condition on the table, not on a
+    # covariance -- so this one names the file rather than sweeping.
+    aligned_record = (root / "architecture" / "aligned_observation_table.yaml").read_text()
+    assert least_squares["condition_requirements"] in aligned_record
 
 
 def test_the_table_gate_does_not_subsume_the_property_gate():
