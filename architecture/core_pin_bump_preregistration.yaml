@@ -1,0 +1,111 @@
+# WHAT MOVING THE CORE PIN WILL DO, RECORDED BEFORE IT IS MOVED.
+#
+# architecture/ecosystem_register.yaml measured that the vendored core is
+# SIX COMMITS behind its remote branch and that the package version did
+# not change across them. architecture/core.yaml wrote that exact failure
+# mode down before it occurred: "it is a submodule bumped to a commit
+# whose pyproject still says 1.0.0. Patch commits do not bump versions.
+# Every check passes, the recorded commit is silently wrong, and every
+# `extends` still agrees."
+#
+# The pin has NOT moved, so nothing here is currently stale. What follows
+# is therefore a preregistration and not a report: predictions about a
+# bump that has not happened, made while their answers are still unknown,
+# so that whoever performs it can be scored rather than believed.
+#
+# WHY IT IS WORTH DOING AT ALL. Waiting at the head is the artifact this
+# pair asked for and recorded as unanswerable --
+# architecture/exchange/ste_invariant_declaration.yaml, authored by the
+# core as owner. Our own architecture/exchange/ste_invariants.yaml carries
+# `RECONSTRUCTION_NOT_DECLARATION` and a warning never to cite it as the
+# core's own statement. It was right to. The statement now exists.
+extends: core@1.0.0
+
+artifact: core_pin_bump_preregistration
+owner: daf
+status: recorded_before_the_pin_is_moved
+enforcement: tests/test_core_pin_bump_preregistration.py
+recorded: "2026-09-03"
+
+the_measured_starting_state:
+  pinned_here: 5e146d5924675cd7b6e1d1ed44fb39f5da012610
+  remote_branch_head: e02cd6652b9ca3ed0c614c913b0a3a42ea9540c3
+  branch: claude/deterministic-state-architecture-q9kl5c
+  commits_between: 6
+  the_pin_is_an_ancestor_of_the_head: true
+  version_at_both: "1.0.0"
+  files_changed: 30
+  lines_added_removed: "4698 / 293"
+  read_from: "a shallow clone into a scratch directory; the submodule in this tree was not touched."
+
+what_arrives_with_the_bump:
+  the_declaration: "architecture/exchange/ste_invariant_declaration.yaml -- the exact path architecture/exchange/build_ste_invariants.py already names as what would supersede its reconstruction. It answers this repository's three asks in the order they were made."
+  a_second_invariant_file: "architecture/canonical_state_invariants.yaml, declaring the relationship between the numbered set and the registry -- the mapping this repository was warned never to manufacture."
+  a_replicate_join: "materials/replicate_join.py and docs/REPLICATE_PAIRING.md -- a consumer of the same finding science/replicate_pairing.py consumes, on the other substrate."
+  reachability_and_chemistry_work: "scripts/canonical_state_reachability.py, an expanded scripts/chemistry_reachability.py, architecture/verticals/chemistry/vertical.yaml, structures/ingest.py."
+
+# ----------------------------------------------------------------------
+# THE PREDICTIONS. Each is falsifiable by performing the bump and running
+# the suite; none is checkable now, which is what makes them worth
+# recording now.
+# ----------------------------------------------------------------------
+predictions:
+
+  p1_exactly_one_thing_goes_red_and_it_is_the_referent_join:
+    prediction: "tests/test_core_referent.py fails on the join between architecture/core.yaml's `submodule_commit: 5e146d5` and the gitlink, and NOTHING ELSE IN THE SUITE FAILS FOR A VERSION REASON."
+    basis: "MEASURED -- the pyproject at the head still declares 1.0.0, so `extends: core@1.0.0` remains true of every artifact and the census does not move."
+    why_it_is_the_prediction_that_matters: "this is the silent-move condition stated in core.yaml, and the prediction is that the repository is QUIET about it except at the one join built for it. If p1 holds, the referent work did its job. If the suite goes red in several places, the protection was incidental rather than designed."
+    what_would_falsify_it: "any failure attributable to the version label, or a green suite with the pin moved -- the second being far worse, since it would mean the participating referent is joined on nowhere."
+
+  p2_the_ste_invariants_fixed_point_breaks_and_should:
+    prediction: "architecture/exchange/build_ste_invariants.py re-scans the vendored tree on every generation, so at the new pin its reference index changes and the artifact is no longer a fixed point of its generator."
+    basis: "MEASURED, from that generator's own record: it is HALF-FROZEN -- per-invariant verdicts hand-written and frozen, the index re-scanned -- and the divergence between the two halves is pinned as EXPECTED in tests/test_invariant_register.py."
+    the_consequence_that_is_not_a_defect: "the pinned expected divergence is itself a function of the pin. Moving the pin changes what `expected` means, and a pinned expectation that survives a change in its subject would be the shape this pair files as a verdict that did not account for what it quantifies over."
+    what_would_falsify_it: "an identical index at the new pin, which would mean the generator does not read what it says it reads."
+
+  p3_the_reconstruction_is_superseded_rather_than_corrected:
+    prediction: "ste_invariants.yaml is RETIRED in favour of the declaration, not merged with it. Its content is a reconstruction of what documents constrain; the declaration is the owner's statement, and the two are different KINDS of object."
+    basis: "OPEN -- this is a disposition, and it is recorded as a prediction about what the right one is so that choosing differently is a visible choice."
+    the_reason_it_is_not_a_merge: "the reconstruction's value was entirely that it was marked as one. Folding an owner's declaration into it produces a document that is authoritative in some fields and reconstructed in others with nothing marking which -- the half-frozen shape p2 already names as worse than either half."
+    what_would_falsify_it: "the declaration turning out to be incomplete against the reconstruction -- if it leaves any of the three asks unanswered, retirement would drop content nothing replaces, and merging under explicit per-field attribution becomes the right disposition instead. Checked by reading the declaration's three blocks against ste_invariants.yaml's three, not by whether retirement feels tidier."
+
+  p4_the_cardinality_question_is_answered_and_neither_of_our_options_was_right:
+    prediction: "this repository considered eight and ten. The declaration answers NEITHER, and RETRACTS the ten rather than correcting it to eight, on the ground that eight rests on a single citation to a brief that is not in the tree."
+    basis: "MEASURED at the head, in architecture/exchange/ste_invariant_declaration.yaml under `two_resolve_the_cardinality`, against this repository's architecture/exchange/ste_invariants.yaml."
+    why_it_is_recorded_as_a_prediction_anyway: "because what is being predicted is not the answer -- that is read -- but that this repository ACCEPTS it. A retraction that leaves a question open is harder to adopt than a number, and the failure mode is quietly keeping eight."
+    and_the_agreement_is_explicitly_not_treated_as_confirmation: "the declaration says so itself: both readings come from the same documents by the same method, so there is no independence in the agreement. It cites the same rule this repository files under convergence_is_not_evidence, reached from the other side."
+    what_would_falsify_it: "this repository, after the bump, still recording a cardinality of eight or ten anywhere -- or recording the retraction as though it were a decision the two parties negotiated, when it is one party retracting its own unsupported sentence."
+
+  p5_bent_zero_becomes_checkable_against_a_declared_set_for_the_first_time:
+    prediction: "the twelve `Bent: zero` claims recorded in architecture/exchange/invariant_register.yaml stop being claims about a party with no enumeration. At the new pin the core declares its own invariant registry in the tree, so `no core invariant changed` acquires a set to quantify over."
+    basis: "MEASURED -- the core's architecture/invariants.yaml at the head parses to 27 entries, and its architecture/canonical_state_invariants.yaml declares how that registry relates to the numbered set. Compared against this repository's architecture/exchange/invariant_register.yaml, which records the core as the party with no enumeration."
+    what_does_not_follow: "that the twelve verdicts become retroactively better founded. They were made relative to the OLD pin, where no declaration existed, and they rest on byte-identity of the vendored tree -- which is what actually carries them. A declaration arriving later does not reach backwards."
+    what_would_falsify_it: "the declared registry turning out not to be the set `Bent: zero` was ever about -- for instance if architecture/canonical_state_invariants.yaml establishes that the registry and the numbered set do not contain one another, in which case a claim quantifying over one still says nothing about the other, and the register's account would have to say which."
+
+  p6_a_second_replicate_consumer_is_a_counterpart_and_not_a_duplicate:
+    prediction: "materials/replicate_join.py and science/replicate_pairing.py are consumers of one finding on two substrates, and neither should be deleted for the other."
+    basis: "MEASURED from the core module's own statement: it consumes materials.analysis.ComparisonGroup, which is in that tree and not this one, and it credits the acquisition layer with the finding and with stating the remedy."
+    what_it_adds_that_this_repository_did_not_have: "a MECHANISM and a number. The unpairing is not merely absence: group values arrive ordered by content-addressed observation id, so two properties over the same runs give two unrelated permutations. Index pairing therefore does not fail -- it returns rho = +0.38 where the true value is -0.98, wrong in SIGN, stably, reproducibly. That is the answer to the polymer vertical's stated question, arriving from the other side."
+    the_obligation_it_places_on_this_repository: "that module declares a dependency on TWO acquisition-side properties -- one Record per run, and the run identifier out of content -- and states that neither is enforced there. They are this layer's to enforce, and this file records that they are now load-bearing for a consumer in another repository."
+    what_would_falsify_it: "finding that the two modules make incompatible claims about the same pairing, rather than compatible claims about two substrates."
+
+# ----------------------------------------------------------------------
+what_must_be_re_measured_if_the_pin_moves:
+  the_rule_being_followed: "architecture/core.yaml states it -- `bent: []`, `core_invariants_modified: 0` and every `extends:` are assertions about the core AT THE PARTICIPATING REFERENT. If the commit moves, they are claims about a different object and must be re-measured, whatever the label says."
+  the_list_this_produces:
+    - "architecture/core.yaml submodule_commit, and the version parsed from the pyproject at the new commit."
+    - "architecture/exchange/ste_invariants.yaml -- regenerated, or retired per p3."
+    - "architecture/exchange/invariant_register.yaml -- it records the core's enumeration status, and that status changes."
+    - "the twelve `Bent: zero` occurrences -- not rewritten, but the register's account of what they quantify over."
+  and_one_thing_that_does_not_move: "every `extends: core@1.0.0`. The version is unchanged at the head, which is exactly why this bump is the dangerous kind rather than the loud kind."
+
+verified_by_planting_the_defect:
+  the_recorded_pin_abbreviated: "shortened to seven characters. test_the_starting_state_records_both_referents_in_full FAILED -- a preregistration whose subject cannot be fetched back cannot be scored."
+  the_pin_recorded_as_something_else: "replaced with a sha the gitlink does not carry. test_the_pin_has_not_moved_so_this_is_still_a_preregistration FAILED, which is the failure that will occur for real on the day of the bump and is the signal to SCORE this document rather than edit it."
+  an_artifact_named_in_the_re_measurement_list_that_is_not_in_the_tree: "architecture/core.yaml renamed to a path that does not exist. test_the_re_measurement_list_is_not_empty_and_names_artifacts_that_exist FAILED."
+  and_two_of_these_checks_fired_for_real_before_any_plant: "on this document's first run. p4 claimed a MEASURED basis and cited no path, and p3 named nothing that would falsify it. Both were repaired in the ARTIFACT rather than the check -- p4 now cites the declaration by path, p3 now says what would make retirement the wrong disposition. A check whose first act is to find two gaps in the document it was written for is a check that was not written to pass."
+
+what_this_document_is_not:
+  not_a_decision_to_bump: "no pin is moved by this file, and none should be moved on the strength of it. It records what a bump would cost and what it would settle."
+  not_a_reading_of_the_core_taken_on_trust: "everything above was read from a shallow clone at the named commit, not from the core's summary of itself."
+  not_a_claim_that_the_core_is_wrong_about_anything: "one internal staleness was noticed and is recorded neutrally: the declaration's `count: 26` sits beside a file this survey parses to 27 entries. That is the same prose-count defect this repository closed in itself this phase, and it is noted so that whoever bumps does not adopt the 26."

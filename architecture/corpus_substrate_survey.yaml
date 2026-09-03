@@ -1,0 +1,103 @@
+# THE CORPUS SUBSTRATE, READ.
+#
+# architecture/ecosystem_register.yaml classifies exactly one member
+# `unsurveyed`: notationsystems/scientific-corpus-substrate, whose local
+# checkout on this machine is an empty clone and whose remote holds an
+# active branch. The register says what is owed -- `read it` -- and this
+# file is that, done.
+#
+# WHY IT MATTERED MORE THAN THE OTHER FIVE. Its branch is named
+# claude/corpus-graph-polymer-061fbl, and the polymer vertical is what
+# this repository spent two phases building. A second apparatus deriving
+# molar-mass distributions is either duplication, or a counterpart, or a
+# contradiction, and until it was read nobody could say which.
+#
+# THE ANSWER, IN ONE LINE: a counterpart, converging on the same terms by
+# a different route, with ONE divergence that would refuse its output at
+# this repository's own boundary.
+extends: core@1.0.0
+
+artifact: corpus_substrate_survey
+owner: daf
+status: read_2026_09_03
+
+read_at:
+  repository: "https://github.com/notationsystems/scientific-corpus-substrate"
+  commit: cc80f51aeed1ea76b2fd44f5c15d17287d14445b
+  branch: claude/corpus-graph-polymer-061fbl
+  commits_on_the_branch: 8
+  head_subject: "Join the Notation Systems ecosystem as a declared apparatus"
+  how: "shallow clone into a scratch directory outside the ecosystem tree, so reading it did not add a checkout to the machine the register describes."
+
+the_rule_this_file_holds_itself_to: "EVERY CLAIM ABOUT THE OTHER REPOSITORY NAMES THE PATH IT WAS READ FROM. A claim about a sibling has its evidence in another tree, so it cannot be its own witness -- the same argument tests/test_cross_repository_claims.py makes, applied to a repository that is not even in the pair. Claims about THIS repository carry no citation because they are checked directly, in tests/test_corpus_substrate_survey.py."
+
+what_it_is:
+  purpose: "a provenance-tracked graph linking polymer structure and formulation to instrument measurements and to properties derived from them. Read from README.md."
+  formats_read: "JCAMP-DX, Bruker TopSpin, SEC/GPC ASCII exports from five vendors, DSC/TGA ASCII, mzML. Read from README.md."
+  layers: "chemistry, process, measurement, inference -- with PropertyValue always pointing at the Signal it came from. Read from README.md and ncg/schema/nodes.py."
+  property_vocabulary_size: 30
+  where_the_vocabulary_lives: "ncg/schema/vocab.py, PROPERTY_TERMS"
+
+# ----------------------------------------------------------------------
+# THE OVERLAP, TERM BY TERM. Both apparatuses derive molar-mass
+# distribution properties from SEC/GPC. This is the join.
+# ----------------------------------------------------------------------
+where_the_two_agree:
+
+  the_name_of_the_ratio:
+    this_repository: "`dispersity` is the canonical term. daf/extractors/gpc_report.py"
+    the_corpus: "`dispersity` is in PROPERTY_TERMS. ncg/schema/vocab.py"
+    why_it_is_worth_recording_as_agreement: "two apparatuses built independently, neither aware of the other, both landed on the IUPAC term rather than the acronym everyone's instrument software prints. Agreement reached separately is not evidence -- architecture/proof_integrity.yaml says so under convergence_is_not_evidence -- but it is one fewer translation at a boundary, and the boundary is real."
+
+  a_derived_quantity_is_not_a_measurement:
+    this_repository: "dispersity is refused as a measured variable, naming the key. daf/extractors/gpc_report.py"
+    the_corpus: "a derived property is a `claim`, never an `observation`, and the manifest rule states that listing a claim as its own warrant would make every claim self-supporting. README.md and ncg/notation/manifest.py"
+    the_same_rule_from_two_directions: "one refuses it at ingest, the other classifies it at emission. Neither would admit a computed dispersity as evidence for itself."
+
+  knowledge_time_is_separate_from_the_time_described:
+    this_repository: "`known_at` is separated from the period and may not precede it -- EVIDENCE_KNOWN_BEFORE_ITS_PERIOD. commerce/stores.py, tests/test_commerce_stores.py"
+    the_corpus: "`known_at` on every node, stamped from the ingest event and never read out of the payload, `because a source that rewrites its own timestamps would otherwise silently relabel when things were known`. README.md, ncg/schema/nodes.py"
+    and_neither_states_the_rule_the_other_does: "the corpus takes the EARLIEST on merge (ncg/schema/nodes.py, _earliest); this repository has no merge rule for known_at at all, because nothing here merges two readings of one fact. This repository refuses known_at BEFORE its period; the corpus has no such ordering check. Each holds half of a rule, and neither half is wrong."
+
+  a_ceiling_on_what_may_be_claimed:
+    the_corpus: "`Verification never reaches verified` -- the strongest emittable value is partially_verified, and a disagreement makes it challenged. README.md, ncg/notation/manifest.py"
+    this_repository: "the same posture without the vocabulary: anchors are preregistered, predictions scored, and no capability claims more than what a measurement showed."
+    what_the_corpus_has_that_this_does_not: "the ceiling is IN THE EMITTED ARTIFACT, machine-readable, rather than in the discipline of whoever writes the phase report. That is strictly stronger and it is worth taking."
+
+# ----------------------------------------------------------------------
+where_the_two_diverge:
+
+  uncertainty_carries_no_kind_in_the_corpus:
+    this_repository: "science/admissibility.py declares UNCERTAINTY_KINDS as a closed four-member vocabulary -- stated, estimated, propagated, absent -- and refuses MISSING_UNCERTAINTY_KIND rather than defaulting. daf/extractors/noaa_water_level_measurements.py records why: uncertainty_kind changes Observation.content, and therefore the identity of the record."
+    the_corpus: "ncg/units.py Quantity carries `uncertainty: float | None` and nothing else -- a bare standard uncertainty with no statement of where it came from."
+    the_consequence_stated_as_a_prediction: "a molar mass emitted by the corpus, carried into this repository through the ingest boundary, is REFUSED as MISSING_UNCERTAINTY_KIND. Not `might be` -- the refusal is unconditional and the field is absent by construction."
+    which_side_should_move_and_why: "the corpus, and not because this repository was here first. A standard uncertainty that does not say whether the instrument stated it, someone estimated it, or it was propagated through a calculation is not interpretable by any consumer: the three combine differently, and a consumer that cannot tell them apart must either treat them alike, which is wrong, or refuse, which is what this boundary does. The gap is in the corpus's model, and this repository's refusal is the correct response to it rather than a house style."
+    what_this_repository_owes_in_return: "the vocabulary is declared in a Python tuple and in prose. Nothing exports it in a form another apparatus can read. Recorded as owed, not done."
+
+  the_derived_check_is_enumerated_here_and_derived_there:
+    this_repository: "DERIVED_VARIABLES in daf/extractors/gpc_report.py is a tuple of five SPELLINGS -- dispersity, polydispersity_index, pdi, mw_over_mn, molar_mass_dispersity. architecture/third_anchor_result.yaml already records it catching NOTHING on a report from a different technique, exactly as that phase predicted, because a different technique has different derived quantities entirely."
+    the_corpus: "no name list. A PropertyValue is a claim because it points at the Signal it came from through a named, versioned Derivation -- so being derived is a structural property of the node, not a fact about its spelling. ncg/schema/nodes.py, ncg/derive/properties.py"
+    the_finding: "the corpus holds the DERIVED form of a check this repository holds in the ENUMERATED form, and architecture/proof_integrity.yaml's most-instanced class is exactly that difference. This is the first time in this project that another apparatus has been found already holding the repair."
+    why_it_is_not_simply_adopted_here: "the two are answering different questions. The corpus knows a value is derived because IT derived it; this repository is reading a vendor's report and asking whether a COLUMN the vendor printed is derived, with no derivation to inspect. The structural answer is unavailable at that boundary -- which is a real constraint and also exactly the argument that keeps every enumeration alive. Recorded as open, and it is the sharpest open question this survey found."
+
+# ----------------------------------------------------------------------
+a_party_the_corpus_is_bound_to_and_this_survey_cannot_locate:
+  what_the_corpus_says: "ncg/notation/fabric.py describes a CONTROL PLANE that records authority, holds this corpus to every field it declares, and owns a grammar the corpus cross-checks against `canonical-uri.js`. manifests/notations-corpus.fabric-sync.json is addressed to it."
+  what_was_looked_for: "a repository name, a URL, or any identifier for that control plane, anywhere in the corpus tree. There is none -- it is referred to only by role."
+  what_that_makes_it: "the same shape as STE in architecture/exchange/invariant_register.yaml before the core referent was declared: a party with obligations recorded against it and no way to join on it. The corpus mirrors the control plane's accepted vocabularies into ncg/notation/fabric.py so a bad value fails locally, which is a SECOND ENCODING of a vocabulary owned elsewhere -- one meaning, two encodings, with nothing binding them."
+  what_is_owed: "whoever knows what the control plane is should name it. This survey records that it could not be located from the corpus alone, which is a statement about this measurement and not about whether it exists."
+
+# ----------------------------------------------------------------------
+verified_by_planting_the_defect:
+  the_surveyed_commit_abbreviated: "cc80f51aeed1... shortened to seven characters. test_the_survey_records_what_it_read_and_when FAILED -- the same abbreviation trap the ecosystem register sprang twice, closed here before it could spring a third time."
+  a_claim_about_the_corpus_with_no_path: "one `the_corpus` value replaced with a citation-free sentence. test_every_claim_about_the_other_repository_names_where_it_was_read FAILED, naming the path."
+  and_the_first_attempt_at_that_plant_was_defective: "the first version PREPENDED text to the claim instead of replacing it, so the citation was still in the string and the check correctly passed. Recorded because architecture/proof_integrity.yaml already carries this exact operator error under a_mutation_set_is_a_lower_bound_not_a_proof -- a mutation that does not change what the check reads reports SURVIVED and means nothing. A plant that passes is a claim about the plant until the plant is inspected."
+  a_fifth_uncertainty_kind: "INFERRED added to UNCERTAINTY_KINDS. test_this_repositorys_uncertainty_vocabulary_is_what_the_survey_says FAILED -- the survey describes a four-member vocabulary and it is read from the code."
+  the_kind_requirement_removed_from_the_gate: "the MISSING_UNCERTAINTY_KIND branch replaced with a pass. test_a_declared_absence_is_not_the_same_as_a_missing_field FAILED, which is the one that had to: it is the test separating a declared absence from silence, and that separation is the whole argument for which side should move."
+
+# ----------------------------------------------------------------------
+what_this_survey_does_not_do:
+  no_code_taken: "nothing from the corpus is copied into this repository. The uncertainty finding is a prediction about a boundary, and the derived-check finding is recorded as open."
+  no_change_proposed_to_the_corpus_from_here: "the uncertainty gap is stated as measured with the reason it matters. Which side moves is a decision for whoever owns both, and this file is not that decision."
+  no_claim_that_the_two_have_been_run_together: "they have not. Nothing here was executed against the corpus's output, and the refusal prediction is derived from reading both boundaries, not from an ingest that happened."
+  no_second_polymer_vertical: "architecture/polymer_vertical.yaml stands unchanged. This file records that a counterpart exists, which is a fact about the ecosystem rather than a reason to rewrite the vertical."

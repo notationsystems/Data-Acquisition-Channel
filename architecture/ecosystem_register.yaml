@@ -1,0 +1,190 @@
+# THE NOTATION SYSTEMS ECOSYSTEM, MEASURED -- INCLUDING ITS REMOTES.
+#
+# Notation Systems builds and operates provenance-bearing computational
+# corpora. This file asks the question that sentence implies and nobody
+# had asked: WHICH OF OUR REPOSITORIES ACTUALLY BEAR PROVENANCE, and what
+# are the others?
+#
+# It is the same move as architecture/exchange/invariant_register.yaml one
+# level up. That register asked whose invariants, held where, checkable by
+# whom, across three parties inside one pair. This asks it across the
+# company.
+#
+# ----------------------------------------------------------------------
+# HOW THE FIRST DRAFT OF THIS FILE WAS WRONG, AND WHY THAT IS THE HEADLINE.
+#
+# A draft written on 2026-08-29 measured only LOCAL CHECKOUTS and said so
+# honestly, under `what_this_register_cannot_see`. Every one of its three
+# findings was then falsified by measuring the thing it had declined to
+# measure. It reported:
+#
+#   * three core objects sharing no history  -> ONE history, and the
+#       "no shared objects" reading was manufactured by the instrument
+#   * an acquisition layer of two repositories -> ONE repository, three
+#       names
+#   * an empty corpus-substrate member         -> an empty CHECKOUT of a
+#       repository holding an active branch
+#
+# Three for three. A register that names its own blind spot and publishes
+# anyway is not thereby safe: the caveat was accurate and the FINDINGS
+# were still wrong, because each one was a claim about the ecosystem
+# inferred from a sample the caveat had already said was partial. Stating
+# a limit does not license reasoning past it. That is the entry this file
+# earns in architecture/proof_integrity.yaml, and it is worth more than
+# the register.
+# ----------------------------------------------------------------------
+extends: core@1.0.0
+
+artifact: ecosystem_register
+owner: daf
+status: measured_2026_09_03_local_and_remote
+enforcement: tests/test_ecosystem_register.py
+
+method:
+  local: "each checkout's HEAD, branch, and parsed `extends: core@<version>` count, read from the working tree."
+  remote: "`git ls-remote` against each remote, which reads REFS and touches no object store. Refs are what a repository IS at a name; object reachability is not, for the reason recorded under the_instrument_that_manufactured_a_finding."
+  identity_of_a_repository: "TWO NAMES ARE ONE REPOSITORY WHEN THEIR FULL REF SETS ARE IDENTICAL. Chosen over object-sharing deliberately: GitHub serves a fork's whole network from one object store, so `does remote R serve commit C` is true across every fork of anything and identifies nothing. Ref-set identity is the discriminating measurement, and it was the one that separated six repositories from ten names."
+  a_remote_head_is_a_dated_reading_and_the_date_is_in_minutes: "MEASURED, not assumed. The enforcement test was written asserting recorded heads against live ones, and failed on its first run: two remotes had moved in the eleven minutes since the register was written -- the acquisition branch by one commit, the corpus substrate by one. Concurrent sessions are pushing to these branches while this file is being edited, so a register that pins exact head values is stale before it is committed. The disposition is NOT to drop the reading. It is to record it as `remote_head_at_measurement` with the time, and to assert the property that actually matters, below."
+  a_remote_head_is_recorded_UNABBREVIATED_and_that_is_not_a_style_choice: "the enforcement test verifies a recorded referent by fetching it from the remote, and `git fetch <url> <sha>` requires the FULL forty characters -- an abbreviation is resolved against a local object database, and the throwaway repository doing the fetch has none. Recording seven characters made all six members report `no longer served`, six false alarms with one cause. This is the SECOND time in one artifact that an abbreviated sha inverted a result: the first produced the share-no-objects finding recorded below. The rule this file adopts is the pair's own, arrived at again from a new direction -- THE PARTICIPATING REFERENT IS RECORDED IN FULL, and the abbreviation is a reading aid that may appear in prose and may never be the thing a check joins on."
+  the_property_asserted_about_remote_heads: "THE RECORDED HEAD IS STILL SERVED BY THE REMOTE. A branch advancing is ordinary work and must not fail a suite. A recorded commit that the remote no longer serves is a rewrite, a force-push or a collection -- and it silently voids every claim made relative to that referent, which is the failure this pair has a whole vocabulary for. Advance is expected; disappearance is a finding."
+  what_is_still_not_measured: "whether identical ref sets arise from a rename-with-redirect or from a mirror. Both produce exactly this signature and nothing observed here distinguishes them. Recorded as undetermined rather than guessed."
+
+# ----------------------------------------------------------------------
+# THE POSTURE CLASSES. What makes these apparatuses rather than a pile is
+# that each has a DIFFERENT RELATIONSHIP TO PROVENANCE, and the difference
+# is a property of the member rather than of how much work it has had.
+# ----------------------------------------------------------------------
+posture_classes:
+  bearing: "carries the provenance conventions itself -- artifacts declaring `extends: core@<version>`, a class record, and gates that refuse rather than guess. A corpus this member produces is interrogable back to evidence."
+  core: "the substrate the bearing members extend and declare themselves relative to. Vendored, not depended on: `modifiable: false`, used without copying or modifying a line. Its identity is what `bent: zero` is a claim about."
+  vendored_upstream: "third-party scientific software, forked to pin a version rather than to change it. It carries NO provenance conventions and must not be made to -- imposing them would fork the science, not the packaging. What is owed instead is a recorded pin and a statement of what was NOT modified."
+  bearing_under_a_different_contract: "carries provenance conventions of its own -- content-addressed identity, knowledge time, machine-readable warrants -- and declares itself to a DIFFERENT authority than `core@1.0.0`. Not a lesser posture than `bearing` and not a defect: it is the posture that makes the join question real, because two apparatuses can both be rigorous and still not compose. It replaced `unsurveyed`, which held this member until it was read; and `unsurveyed` in turn replaced `declared_empty`, which was wrong because an empty checkout is a fact about this machine, never about the member."
+
+# ----------------------------------------------------------------------
+# SIX REPOSITORIES. Ten names and checkouts resolve onto them.
+# ----------------------------------------------------------------------
+members:
+
+  acquisition_channel:
+    posture: bearing
+    role: "acquisition -- brings the outside world in under a gate, holds the vendored core, and is the only member carrying both the class record and the invariant ledger"
+    names_that_resolve_here:
+      - "https://github.com/notationsystems/Notations-Acquisition-Channel.git"
+      - "https://github.com/notationsystems/notations-acquisition-channel"
+      - "https://github.com/notationsystems/data-acquisition-channel-daq"
+    how_that_was_established: "all three `git ls-remote` to the same single ref -- `refs/heads/claude/daf-state-space-architecture-v8peqd` at 0ead63d, with HEAD equal to it. One branch, one commit, three names."
+    remote_head_at_measurement: 63f4747d6465307ae763a38e3b0a2985f3482a29
+    remote_head_moved_during_this_measurement: "0ead63d -> 63f4747, in eleven minutes. The added commit is `Conform to the corpus contract; measure the absences over the right trees` -- concurrent work, on the same branch this checkout is on."
+    local_checkouts_of_it_on_this_machine:
+      - path: notations-acquisition-channel
+        at: 0ead63d
+        note: "current. Was 21 commits behind when this file was first drafted, and the draft was written from that tree."
+      - path: notationsystems/data-acquisition-channel-daq
+        at: 95c900e
+        note: "STALE, and its staleness is what the first draft read as a separate nineteen-phases-behind member."
+      - path: daf-check
+        at: da0f504
+        note: "a shallow single-commit checkout under the third name."
+
+  compute_layer:
+    posture: bearing
+    remote: "https://github.com/notationsystems/Notations-CUDA-Architecture-"
+    role: "compute -- a fixed registry of operations under an eleven-clause contract, standalone from acquisition by an enforced import boundary"
+    remote_head_at_measurement: ee346ba1de6394c0383248e1bf56521d0ce47f3b
+    local_checkout: "Notations-CUDA-Architecture-, at the remote head"
+    invariant_ledger: absent
+    why_no_ledger: "correct, not a gap. Its invariants ARE the operation contract, held in native/include/scl/operation.hpp and exchanged as scl_contract_clauses.yaml. It carries no status vocabulary deliberately -- see the invariant register."
+
+  deterministic_state_architecture:
+    posture: core
+    role: "the core every bearing member declares `extends: core@1.0.0` against. Vendored into the acquisition layer at vendor/scout-retrieval-agent."
+    names_that_resolve_here:
+      - "https://github.com/notationsystems/scout-retrieval-agent.git"
+      - "https://github.com/notationsystems/scientific-transformer-engine"
+    how_that_was_established: "identical ref sets: HEAD and refs/heads/claude/deterministic-state-architecture-q9kl5c both at e02cd66, plus refs/heads/claude/daf-hardened-architecture-v2-8dpdfy at e7d9e38, on both names."
+    package_identity: "name = deterministic-state-architecture, version = 1.0.0, at both the pin and the remote head"
+    pinned_here_at: 5e146d5
+    remote_head_at_measurement: e02cd6652b9ca3ed0c614c913b0a3a42ea9540c3
+    local_checkouts:
+      - path: notationsystems/scientific-transformer-engine
+        at: dfbdce1
+      - path: ste-clean
+        at: acdde14
+
+  scientific_corpus_substrate:
+    posture: bearing_under_a_different_contract
+    remote: "https://github.com/notationsystems/scientific-corpus-substrate"
+    remote_head_at_measurement: cc80f51aeed1ea76b2fd44f5c15d17287d14445b
+    remote_branch: claude/corpus-graph-polymer-061fbl
+    remote_head_moved_during_this_measurement: "f530834 -> cc80f51, in eleven minutes, by a concurrent session. Recorded because it is the evidence for the minutes-timescale statement in `method`, not as a claim about either commit."
+    local_checkout: "notationsystems/scientific-corpus-substrate -- 0 commits, 0 branches, a .git directory and nothing else"
+    the_correction: "the first draft classified this `declared_empty` on the strength of that local checkout, and called it the sharpest thing in the file: the member whose NAME is the company's own description of what it does, and it is the empty one. It is not empty. It holds a branch whose name -- corpus-graph-polymer -- is the vertical this pair spent two phases building. What was measured was an empty clone."
+    read_on: "2026-09-03, at cc80f51aeed1ea76b2fd44f5c15d17287d14445b. The survey is architecture/corpus_substrate_survey.yaml."
+    what_it_turned_out_to_be: "a counterpart to the polymer vertical, not a duplicate and not a contradiction. It derives Mn, Mw, Mz, Mp and dispersity from SEC/GPC by an independent route, agrees with this repository on the canonical term and on a derived quantity never being its own evidence, and diverges on exactly one thing: its uncertainties carry no kind, so a value it emits is refused at this repository's ingest boundary. That refusal is asserted by a test rather than argued."
+    and_it_names_an_authority_this_register_could_not_locate: "a CONTROL PLANE that it declares participation to and mirrors vocabularies from, referred to only by role -- no repository, no URL, anywhere in its tree. Recorded in the survey. Whether that is a seventh member or an internal component of one of these six is not determined here."
+
+  gromacs_fork:
+    posture: vendored_upstream
+    remote: "https://github.com/notationsystems/gromacs-molecular-simulation"
+    role: "molecular dynamics engine, forked upstream"
+    remote_head_at_measurement: abc2dc98468993fdad6c670a75616c25c9b3e28b
+    unmodified_at_head: true
+    how_that_was_established: "the fork has one branch, `main`, whose head equals the local checkout's head -- and github.com/gromacs/gromacs serves that same commit. So the fork's only ref points at an upstream commit. The first draft recorded this as unmeasured and said `vendored` was a description of intent rather than of state. It is now a description of state, for the refs that exist."
+
+  lammps_fork:
+    posture: vendored_upstream
+    remote: "https://github.com/notationsystems/lammps-md"
+    role: "molecular dynamics engine, forked upstream"
+    remote_head_at_measurement: dd3a636488ed394909b63744918dc13da1f11467
+    unmodified_at_head: true
+    how_that_was_established: "same measurement, same result: one branch `develop`, head equal to the local checkout, and github.com/lammps/lammps serves that commit."
+
+# ----------------------------------------------------------------------
+# THE FINDING THAT SURVIVED, and it is about the core rather than the map.
+# ----------------------------------------------------------------------
+the_core_has_moved_six_commits_and_the_version_did_not:
+  instance_of: the_immutable_referent_was_recorded_and_the_mutable_one_was_joined_on
+  measured:
+    pinned_here: 5e146d5
+    remote_branch_head: e02cd66
+    commits_between: 6
+    is_the_pin_an_ancestor_of_the_head: true
+    version_at_the_pin: "1.0.0"
+    version_at_the_head: "1.0.0"
+  why_this_is_the_predicted_case_and_not_a_new_one: "architecture/core.yaml wrote the failure mode down before it happened, in these words: `THE FAILURE THAT MAKES THIS URGENT is not a version bump, which is loud -- it is a submodule bumped to a commit whose pyproject still says 1.0.0. Patch commits do not bump versions. Every check passes, the recorded commit is silently wrong, and every `extends` still agrees.` Six commits landed and the version did not move. The condition that prediction names is live on the remote."
+  what_is_NOT_wrong_right_now: "the pin has not moved, so nothing here is stale and no claim in this repository is currently relative to the wrong object. The core_referent join holds: core.yaml's submodule_commit equals the gitlink. This is a prediction confirmed about the REMOTE, not a defect found in the tree."
+  and_what_is_waiting_at_the_head: "architecture/exchange/ste_invariant_declaration.yaml, authored by the core as owner. That is the artifact this pair asked for and recorded as unanswerable -- build_ste_invariants.py names that exact path as what would supersede its reconstruction, and ste_invariants.yaml carries `RECONSTRUCTION_NOT_DECLARATION` and a warning never to cite it as the core's own statement. The declaration exists. It answers all three asks in order, and it disagrees with the reconstruction on the cardinality: NEITHER eight nor ten."
+  why_the_pin_is_not_bumped_in_this_commit: "bumping it re-points every `bent: zero`, every `core_invariants_modified: 0` and every `extends:` at a different object, and core.yaml's own rule says those must then be RE-MEASURED rather than carried. That is a phase of work with a preregistration, not a line in a register. What this file owes is the measurement, and here it is."
+
+# ----------------------------------------------------------------------
+the_instrument_that_manufactured_a_finding:
+  what_the_draft_claimed: "the three core commits `share no objects` -- established by running `git cat-file -e <commit>` for each inside ste-clean and observing all of them fail."
+  what_is_actually_true: "all three are one history. acdde14 is an ancestor of 5e146d5, which is an ancestor of the remote head."
+  the_mechanism: "ste-clean is a PARTIAL CLONE (remote.origin.promisor true, partialclonefilter blob:none). In a partial clone, asking whether an object is present is not a read: on a miss, git fetches it from the promisor remote and answers yes. Re-running the same query with the full SHA returned `commit` for all three, and two new promisor packs appeared in .git/objects/pack timestamped inside the same minute -- the objects arrived because they were asked about."
+  why_the_first_run_said_no_and_the_second_said_yes: "the first used ABBREVIATED shas. Abbreviation must be resolved against the local object database before a fetch can be attempted, so a short sha misses locally and never triggers the lazy path. The full sha goes straight to the promisor. The difference between the two runs was seven characters, and it inverted the finding."
+  the_general_form: "a presence check over a partial clone is a WRITE. It belongs to the class already filed as a_verification_with_a_write_side_effect_cannot_witness_what_it_verifies, and it is the sharper instance: there the check dirtied a tree it was not asking about, here the check supplied the very object whose absence was the finding."
+  the_repair: "tests/test_ecosystem_register.py sets GIT_NO_LAZY_FETCH=1 for every git invocation, and ASSERTS that the guard is effective rather than assuming it -- a test that silently lost the guard would go back to fetching its own evidence and reporting green."
+
+# ----------------------------------------------------------------------
+verified_by_planting_the_defect:
+  method: "six defects planted one at a time into the artifact and into the test, each run, each restored. Required by architecture/proof_integrity.yaml before any pass here is worth anything -- a check nobody has watched fail is a check nobody has evidence about."
+  a_recorded_referent_the_remote_does_not_serve: "the core head replaced with a syntactically valid sha no repository holds. test_each_recorded_remote_head_is_still_served_by_its_remote FAILED."
+  an_alias_claim_that_is_false: "the compute layer's remote added to the acquisition layer's alias list. test_names_recorded_as_one_repository_have_identical_ref_sets FAILED, on the ref sets rather than on the name."
+  a_posture_word_that_is_not_declared: "one member changed to `mostly_bearing`. test_every_member_carries_a_declared_posture FAILED."
+  a_posture_class_declared_and_never_used: "an `ornamental` class added. test_no_posture_class_is_declared_and_unused FAILED -- the check that would have caught `declared_empty` being retired without its member."
+  the_guard_removed_from_the_helper: "the GIT_NO_LAZY_FETCH assignment deleted. test_no_git_call_in_this_file_bypasses_the_no_lazy_fetch_helper FAILED."
+  a_git_call_written_around_the_helper: "a bare subprocess.run([`git`, ...]) added to the test file. The same test FAILED -- which is the one that matters, because that is how the guard would actually be lost: not deleted, just not used by the next person."
+  what_was_NOT_planted_and_why: "the lazy fetch itself. Reproducing it needs a partial clone holding an object it has not yet fetched, and running the probe consumes that state -- the objects arrive, and the plant cannot be re-armed without deleting someone's clone. test_a_presence_query_over_a_partial_clone_leaves_the_pack_count_alone measures the SIDE EFFECT instead, which is the part that stays checkable after the fact."
+
+# ----------------------------------------------------------------------
+what_this_register_still_cannot_see:
+  the_contents_of_the_corpus_substrate: "its branch is named and unread. This is the one member classified on refs alone."
+  whether_a_shared_ref_set_is_a_rename_or_a_mirror: "both produce identical refs. Undetermined, and stated as undetermined."
+  private_or_unlinked_repositories: "the six here are the ones some checkout on this machine points at. A repository nothing here references is invisible to this method, and the method cannot tell that case from there being none."
+  branches_other_than_each_remote_head: "ref sets were read in full and are recorded, but only head commits were inspected. A modification living on a branch nobody checked out would show as a ref and not as a finding."
+
+what_this_register_does_not_propose:
+  no_convention_imposed_on_the_forks: "the vendored_upstream posture exists precisely so that carrying no provenance conventions is a recorded classification rather than a gap. Making gromacs declare `extends: core@1.0.0` would be forking the science to fix the packaging."
+  no_repository_renamed_archived_or_deleted: "three names resolving to one repository is measured and stated. Whether that is a rename with redirects or a deliberate mirror is undetermined, and a register is not where that gets decided."
+  no_core_pin_bumped: "recorded above with its reason."
+  no_claim_about_the_corpus_substrate_beyond_its_refs: "it has a branch. That is the whole of what is known."

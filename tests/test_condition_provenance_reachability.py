@@ -402,8 +402,10 @@ def test_no_extractor_declares_a_conditions_key():
     seam. Under the grep that is a violation; under §20 it is the
     intended behaviour. Adding a ninth filename to the allowlist would
     have been the enumerated-coverage repair again --
-    architecture/proof_integrity.yaml records TWENTY-FOUR instances of a
-    check reading a proxy for its target. So the property is derived
+    architecture/proof_integrity.yaml records repeated instances of a
+    check reading a proxy for its target -- the count is derived there
+    rather than restated here, because this docstring said TWENTY-FOUR
+    and the file had moved past it. So the property is derived
     instead: an extractor may CARRY conditions freely and may not
     CONSTRUCT them."""
     for path in sorted((REPO_ROOT / "daf" / "extractors").glob("*.py")):
