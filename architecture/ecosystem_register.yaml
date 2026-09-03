@@ -250,6 +250,7 @@ relationship_to_the_ecosystem_census:
     this_register_owns: "REPOSITORY IDENTITY AND POSTURE. Which names resolve to which repository, established by ref-set equality; what each member is for; and every claim about remote state."
     the_census_owns: "APPARATUS ROLES AND THE BOUND/OBSERVED SPLIT. What each apparatus stands on, which of its claims are derivable from inside this repository, and which were seen once on one machine. Seven apparatuses over six repositories, because one lives inside another with no repository of its own."
     where_they_touch: "the identity of the core. This register measured it against the remotes; the census recorded a sibling checkout and a reason for undeterminability that the measurement disproved. The correction is written in the census, beside the claim it corrects rather than in place of it."
+  and_a_third_record_joined_them_on_2026_09_03: "architecture/ecosystem_branch_scan.yaml. It owns BRANCHES -- this register and the census both measure heads, and on the member carrying twelve branches a head is one twelfth of the subject. It is bound by the same mutual-reference check, which caught it arriving."
   what_is_deliberately_not_done: "no merge of the two files into one. They answer different questions, and folding them would produce a record authoritative about repositories in some fields and about apparatuses in others with nothing marking which -- the half-frozen shape this pair already refuses elsewhere."
 
 # ----------------------------------------------------------------------

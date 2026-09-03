@@ -122,8 +122,10 @@ technologies:
     status: not_adopted
   sp1:
     step: 6
-    status: adopted_in_the_vendored_core_not_here
-    workload_evidence: "not this repository's adoption to justify. zk/sp1-adapter is the core's, at the pinned commit, and this repository neither builds nor calls it. Recorded so the enforcement does not read the vendored tree as an adoption by this layer."
+    status: adopted_elsewhere_in_the_ecosystem_not_here
+    workload_evidence: "not this repository's adoption to justify. This layer neither builds nor calls any prover. Recorded so the enforcement does not read another tree as an adoption by this one."
+    CORRECTED_2026_09_03: "this entry said the vendored core's zk/sp1-adapter was the specification's ONLY implemented item. architecture/ecosystem_branch_scan.yaml measured a SECOND, on notationsystems/Payload-Terminal-V0 at codex/payloados-project-cargo-execution -- zk/payload-event-batch, with a program, a script, fixtures and a committed verification key. It is the more complete of the two: pinned to upstream sp1-sdk, locked at 6.5.0, and bound to a guestSourceSha256."
+    and_the_two_cannot_verify_each_other: "the core resolves SP1 by a path dependency on the notationsystems fork, which declares workspace version 6.4.0 and whose path resolves in no checkout on this machine. Upstream 6.5.0 against a fork at 6.4.0 -- a proof under one verification key is not verifiable under the other. Measured in the scan; whose problem it is, is recorded there."
   kafka:
     step: 0
     status: refused_by_the_specification
