@@ -1,0 +1,60 @@
+# IS THE TWIN COHERENT WITH CODEX'S WORK? MEASURED, AND THE ANSWER IS YES.
+#
+# Two agents build in these repositories and each signs with a BRANCH
+# PREFIX rather than an author field: `claude/...` and `codex/...`. Every
+# commit in every one is authored by the account owner, so a scan of
+# author names finds neither -- which is how this session's first scan
+# concluded there was no Codex work at all.
+extends: core@1.0.0
+
+subject: twin_codex_coherence
+status: measured
+owner: daf
+enforcement: tests/test_twin_codex_coherence.py
+recorded: "2026-09-03"
+
+# ----------------------------------------------------------------------
+how_the_two_agents_are_actually_distinguishable:
+  measured: "`git ls-remote --heads` over every first-party repository. Codex signs `codex/<topic>`; the Claude sessions sign `claude/<topic>-<suffix>`. Author is `ttgftw <giasonpooni@gmail.com>` on every commit of both."
+  the_first_scan_was_looking_in_the_wrong_field_and_the_wrong_place: "it grepped AUTHOR NAMES in the four repositories present on this machine and reported zero Codex commits. Both halves were wrong: the signature is a ref name, not an author, and the work is on remotes this machine had never cloned. Recorded because `zero occurrences` from a local grep is exactly the shape this session has now filed five times."
+  where_codex_works: "eighteen branches across three repositories -- Notations-Ecosystem (control-plane-backend), Payload-Terminal-V0 (ocr-evidence-intake, operations-action-cockpit, payloados-commercial-positions, payloados-procurement-core, payloados-project-cargo-execution) and BIM-State-Transformer-Engine (twelve, including proof-carrying-state, sp1-beam-guest, beam-assurance-chain and real-ifc-validation)."
+
+# ----------------------------------------------------------------------
+the_twin:
+  what_it_is: "`claude/api-ecosystem-digital-twin-st0diu` in `notationsystems/Notations-Ecosystem`, which holds a CONTROL PLANE: profiles (notation-data-fabric, payload-terminal, security-constellation), governance (maturity, result-manifest, payload-methodology), canonical identity, an operational index, security attestation, an OpenAPI surface and a dock."
+  the_coherence_question_answered_by_measurement:
+    codex_head: "256e603e — feat: add inspectable corpus governance contracts"
+    twin_head: "a86697af — feat(dock): every facet of a body, on the sky and in its palette"
+    the_relation: "`git merge-base --is-ancestor` says codex_head IS an ancestor of twin_head. ZERO Codex commits are absent from the twin. The twin is 48 commits ahead."
+    the_commit_that_did_it: "9af5655 — `Merge branch 'codex/control-plane-backend': one control plane, not two`. A prior Claude session already took the coherence decision and executed it."
+  so_the_verdict: "COHERENT, and not by assertion. The twin contains every commit Codex has pushed to that repository and has built substantially past it -- security envelopes, signing, policy, rate limiting, audit, an API of four planes and thirteen families."
+
+# ----------------------------------------------------------------------
+the_divergence_that_does_exist_and_it_is_a_pointer:
+  what_was_measured: "the repository's DEFAULT branch is `codex/control-plane-backend`, which is the 48-commits-behind one. A `git clone` of Notations-Ecosystem lands on it."
+  how_it_was_found: "by doing exactly that. This session cloned the repository, read the control plane, and formed its first impression of the ecosystem's state from the branch that lacks everything the twin added."
+  why_it_is_the_same_class_as_the_rest_of_this_session: "a POINTER to the older work, which a reader takes as authoritative because it is the default. A stale referent. The fourth kind found today, after a stale sibling checkout, a stale mirror history, and a count over a population that was one machine's directory listing."
+  what_is_NOT_claimed: "that the default is wrong to be where it is. There may be a reason -- a release posture, a review gate, a deliberate choice. What is claimed is that it is 48 commits behind the branch carrying the work, that a fresh clone gets the lesser one, and that nothing in either branch says so."
+  it_is_not_this_apparatus_s_to_change: "a default branch is a repository setting and an outward-facing act. Reported, not taken."
+
+# ----------------------------------------------------------------------
+the_vocabulary_the_plane_record_could_not_locate:
+  what_that_record_said: "architecture/api_plane_assignment.yaml opens by noting that its source specification's vocabulary -- VerificationEnvelope, Warrant Graph, Security Constellation, trusted signers, verification router -- `appears in NONE of the checkouts on this machine, nor in the information-systems-archive, nor on Payload Terminal's main branch. Searched, not assumed.`"
+  that_claim_was_true_and_incomplete: "true because it named its scope precisely -- checkouts on this machine plus two named remotes -- and incomplete because Notations-Ecosystem was not among them and was not on this machine."
+  where_the_vocabulary_actually_lives: "control-plane/src/profiles/security-constellation.js declares the Security Constellation as a profile with attested posture nodes; control-plane/src/security/crypto/envelope.js is the envelope; control-plane/src/security/attestation.js, anchor.js, signing.js and policy.js are the signer and router machinery. It is not a specification nobody implemented -- it is implemented, one repository away."
+  what_this_changes_for_the_plane_record: "nothing it asserted. It mapped what is here onto those planes and said what was absent FROM HERE, which remains correct. What changes is the reading a person would take from it: the planes are not aspirational, and the DAQ's four-plane assignment is a mapping onto a system that exists."
+
+# ----------------------------------------------------------------------
+what_the_fabric_profile_claims_about_this_repository:
+  the_profile: "control-plane/src/profiles/notation-data-fabric.js declares seven nodes -- evidence lake, canonical state, identity and ontology, graph plane, analytical lakehouse, retrieval indexes, derived compute -- with capabilities, relations and a dock."
+  where_it_agrees_with_what_is_here: "the relation set is one-directional from canonical state to graph, lakehouse, retrieval and compute. That is the DAQ's own enforced rule -- no serving projection writes canonical truth -- arrived at independently and stated as a data structure rather than as a test. Every capability is `maturity: research` with `methodologyVersion: null`, so the profile does not overclaim what any node can do."
+  where_it_diverges_and_the_divergence_is_concrete: "the profile declares `identity_scheme: notation://{kind}/{authority}/{local-id}`. This repository has NO such scheme: its identities are content hashes, and a notation:// URI appears nowhere in the tree. So the fabric's identity node describes an addressing scheme the fabric's acquisition layer does not implement."
+  what_is_NOT_claimed: "that either is wrong. A content hash and a notation:// URI answer different questions -- one says `are these the same bytes`, the other says `what is this, under whose authority`. Whether the acquisition layer should mint the second is a decision, and it belongs to whoever owns the identity node."
+
+a_repository_name_is_not_a_sentence_and_this_account_proves_it:
+  what_happened: "the ecosystem register's sweep captured `Notations-Ecosystem.` -- with the sentence-ending period -- from a line of this record's prose, and refused it as a repository it had no posture for."
+  the_obvious_fix_is_wrong_here: "stripping a trailing period would be safe in most accounts and is NOT safe in this one. The catalogue contains `AiiDAlab.`, `GROMACS-CI-Scripts.` and `ATLASUniversal-MCP-server-for-logistics.` -- three repositories whose names genuinely end in a period. A stripper would silently rename all three and account for repositories that do not exist while leaving the real ones unaccounted."
+  what_was_done_instead: "the prose was rewritten so the name is delimited rather than followed by punctuation. One character, no change to a shared sweep, and no rule invented that would be wrong for three real members."
+  the_general_form: "before normalising a captured identifier, check whether the thing being stripped can be part of a real one. Here it can, and the account is the evidence."
+
+what_this_record_must_not_become: "a claim about repositories nobody re-measured. Every branch relation above was taken with git ls-remote and a bounded fetch of FULL forty-character shas, on 2026-09-03, and a re-measurement is one command per claim."

@@ -59,11 +59,23 @@ def _joins_over_a_mapping(source: str, path: str) -> List[Tuple[str, int, str]]:
             continue
         mapping_names = _names_used_as_a_mapping(function)
         for node in ast.walk(function):
-            if (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
-                    and node.func.attr == "join" and len(node.args) == 1
-                    and isinstance(node.args[0], ast.Name)
-                    and node.args[0].id in mapping_names):
-                found.append((path, node.lineno, node.args[0].id))
+            if not (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+                    and node.func.attr == "join" and len(node.args) == 1):
+                continue
+            argument = node.args[0]
+            # `join(record)` over a name used as a mapping.
+            if isinstance(argument, ast.Name) and argument.id in mapping_names:
+                found.append((path, node.lineno, argument.id))
+            # `join(record.keys())` -- the SAME defect, and the first form
+            # of this guard missed it because the argument is a Call. It
+            # was written by hand in tests/test_twin_codex_coherence.py
+            # while that guard was green, which is how it was found.
+            elif (isinstance(argument, ast.Call)
+                  and isinstance(argument.func, ast.Attribute)
+                  and argument.func.attr == "keys"):
+                base = argument.func.value
+                found.append((path, node.lineno,
+                              f"{getattr(base, 'id', '<expr>')}.keys()"))
     return found
 
 
@@ -123,6 +135,16 @@ def test_the_check_fires_on_the_construction_it_names():
     assert _joins_over_a_mapping(explicit, "explicit.py") == [], (
         "saying .values() is the repair; flagging it would leave no way to comply"
     )
+
+    # `.keys()` is NOT a repair. Joining keys to search for a substring
+    # asserts that a key NAME contains it, which is the defect however
+    # explicitly the keys are asked for.
+    keys_form = (
+        "def f(record):\n"
+        "    assert 'x' in ' '.join(record.keys())\n"
+    )
+    assert _joins_over_a_mapping(keys_form, "keys.py") == [
+        ("keys.py", 2, "record.keys()")]
 
 
 def test_the_broader_property_was_measured_and_rejected_rather_than_assumed():

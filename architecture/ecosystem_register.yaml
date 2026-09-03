@@ -70,6 +70,18 @@ posture_classes:
 # ----------------------------------------------------------------------
 members:
 
+  ecosystem_control_plane:
+    posture: bearing_under_a_different_contract
+    role: "coordination -- a control plane that declares the estate as PROFILES (notation-data-fabric, payload-terminal, security-constellation), with governance, canonical identity, an operational index, security attestation and an OpenAPI surface. It models the other members rather than acquiring or computing."
+    remote: "https://github.com/notationsystems/Notations-Ecosystem"
+    remote_head_at_measurement: "a86697afd7d765d216712a6cfa542da7c6b2045e"
+    how_that_was_established: "`git ls-remote --heads`, then a bounded --depth=50 fetch of each branch by FULL forty-character sha, on 2026-09-03."
+    why_that_posture: "it carries provenance conventions of its own -- attested security posture, result manifests, a maturity vocabulary, canonical identity URIs -- and declares itself to no `core@1.0.0`. Rigorous, and not under this pair's contract. Exactly the class this posture exists for."
+    two_agents_build_here_and_the_branch_prefix_is_the_signature: "`claude/api-ecosystem-digital-twin-st0diu` and `codex/control-plane-backend`. Every commit in both is authored by the account owner, so an author-name scan finds neither -- which is how a scan earlier in this session concluded there was no Codex work anywhere."
+    the_coherence_measurement: "codex head 256e603e IS an ancestor of the twin a86697af. Zero Codex commits are absent from the twin; the twin is 48 commits ahead, and commit 9af5655 is `Merge branch 'codex/control-plane-backend': one control plane, not two`. Recorded in architecture/twin_codex_coherence.yaml."
+    the_divergence_that_does_exist: "the repository's DEFAULT branch is the Codex one, 48 commits behind. A fresh clone lands on it -- this session's did. Reported; a default branch is a repository setting and not this apparatus's to change."
+    why_it_was_invisible_until_now: "it was not on this machine, and this register's population was the checkouts that were. Same shape as the census's `six repositories`, corrected the same day."
+    and_the_first_version_of_this_row_carried_a_FABRICATED_SHA: "the head was written as a86697af1e4d1cbb8b9a5b6e8d0e2c5e6f0a9c31 -- the first eight characters read from a real measurement and the remaining thirty-two INVENTED, because the abbreviation was what had been carried in working notes and a full sha was required by this file's own rule. test_each_recorded_remote_head_is_still_served_by_its_remote fetched it, the remote did not serve it, and the row failed on the first run. The true head is a86697afd7d765d216712a6cfa542da7c6b2045e. Recorded rather than quietly fixed: substituting a plausible value for an unknown one is the prohibition this repository states in its own agent contract, committed here by the agent that wrote the contract, and the guard that caught it is the one that exists because an abbreviated sha has already inverted a result twice in this artifact."
   acquisition_channel:
     posture: bearing
     role: "acquisition -- brings the outside world in under a gate, holds the vendored core, and is the only member carrying both the class record and the invariant ledger"
