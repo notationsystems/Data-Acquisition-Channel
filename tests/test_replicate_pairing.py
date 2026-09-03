@@ -158,10 +158,34 @@ def test_a_genuine_condition_still_splits_the_set():
 # --------------------------------------------------- the correlation recovered
 
 
+# The seed here was 'hash(str(rho)) % 100000' and that made this test draw a
+# DIFFERENT SAMPLE ON EVERY RUN: PYTHONHASHSEED is randomised per process, so
+# hash(str(0.0)) returned 22807, 37619 and 53489 on three consecutive
+# interpreters. The oracle was a fixed constant and the sample was not, which
+# is how [0.0] failed once in a full-suite run and then passed in isolation and
+# on re-run. That is not a flake -- a flake is a defect you have not located.
+#
+# The seed below is the date this was fixed. It was NOT SHOPPED: the first and
+# only value tried was 20260903, and the deviations it gives are recorded in
+# the assertion message region below. Seed-shopping (best of forty gave
+# |r-rho| ~ 0.0001) would tune the experiment to the answer it is supposed to
+# be testing. The tolerance is UNCHANGED at 0.05.
+CORRELATION_SEED = 20260903
+
+# measured through the real path, correlated_runs -> observations_for ->
+# covariance_of, at CORRELATION_SEED:
+#   rho=-0.6  r=-0.58461  |r-rho|=0.01539
+#   rho= 0.0  r= 0.01615  |r-rho|=0.01615
+#   rho= 0.5  r= 0.50438  |r-rho|=0.00438
+#   rho= 0.9  r= 0.89849  |r-rho|=0.00151
+#   rho=0.99  r= 0.98971  |r-rho|=0.00029
+# worst 0.01615 against the stated 0.05 -- a margin of 3.1x, not a fit.
+
+
 @pytest.mark.parametrize("rho", [-0.6, 0.0, 0.5, 0.9, 0.99])
 def test_the_recovered_correlation_matches_the_one_it_was_drawn_with(rho):
     """The oracle is the generating process, not the module."""
-    runs = correlated_runs(4000, rho, seed=hash(str(rho)) % 100000)
+    runs = correlated_runs(4000, rho, seed=CORRELATION_SEED)
     results = covariance_of(observations_for(runs))
     assert len(results) == 1
     covariance = results[0].covariance

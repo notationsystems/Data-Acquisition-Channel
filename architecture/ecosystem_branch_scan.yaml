@@ -13,6 +13,19 @@
 # branch activity is concentrated in the member this pair had never read,
 # and which epistemics/corpus/contract.json names as a conforming
 # implementation of two of its three axes.
+# CORRECTED BEFORE THIS WAS PUSHED. The count below says thirteen members
+# and there are FOURTEEN. Notations-Ecosystem holds the control plane, its
+# two branches -- one of them Codex's, and the repository's DEFAULT -- are
+# not in the twenty-four, and it was invisible to the member sweep because
+# that sweep reads names THIS TREE mentions. A derivation that replaced an
+# enumeration was still bounded by what this repository happens to name.
+#
+# The Codex coherence question it would have answered is answered in
+# architecture/ecosystem_register.yaml under ecosystem_control_plane, by
+# the session that found it: the Codex head is an ANCESTOR of the twin,
+# zero Codex commits are absent from it, and the divergence that exists is
+# a default branch pointing at the older work.
+
 extends: core@1.0.0
 
 artifact: ecosystem_branch_scan

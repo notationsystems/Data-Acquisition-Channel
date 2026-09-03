@@ -19,6 +19,21 @@
 # a surface that already exists is a migration. Applied before, it is a
 # constraint the surface inherits. This one found a real defect on its
 # first application -- see the_gap_the_invariant_found_immediately.
+# CORRECTED 2026-09-03, AND THE CORRECTION IS THE POINT. The statement
+# above was TRUE OF THE SCOPE IT NAMED and the scope was too small. The
+# vocabulary exists, in notationsystems/Notations-Ecosystem under
+# control-plane/ -- a repository no checkout on this machine held and
+# nothing in this tree named, so the member sweep could not reach it. It
+# is the CONTROL PLANE: the authority
+# architecture/corpus_substrate_survey.yaml recorded the corpus declaring
+# participation to, and being unable to locate.
+#
+# The mapping below stands -- it says what THIS pair can serve, and that
+# is unchanged. What was wrong was the surrounding conclusion, that the
+# specification described a system elsewhere or not yet built. It is
+# elsewhere, it is now located, and it is the register's fourteenth
+# member.
+
 extends: core@1.0.0
 
 artifact: api_plane_assignment
