@@ -1,0 +1,59 @@
+# WHAT THE QUERY SURFACE TURNED OUT TO BE.
+#
+# Scored against architecture/query_surface_preregistration.yaml, digest
+# 63f43b082fe3a31e9115e9f2a147bee7d018085b289a88832ec08677caedd283,
+# committed in 0ecf7ba before daf/query.py existed.
+extends: core@1.0.0
+
+subject: query_surface_result
+status: measured
+owner: daf
+enforcement: tests/test_query_surface.py
+recorded: "2026-09-03"
+
+what_was_built: "daf/query.py -- warrant_for(pool, observation_id), holdings_matching(pool, **filters) and census(pool). Read-only, over an existing pool, adding no adapter, extractor, content key or vocabulary."
+
+predictions_scored:
+
+  p1_the_warrant_can_be_returned_whole:
+    verdict: CONFIRMED
+    what_was_measured: "one call returns the value, property, unit, uncertainty and posture, the source name, the retrieval method, when it was retrieved, the record locator and both identifiers -- for an observation the real pipeline produced over a transcribed anchor. No new storage and no new index."
+    the_shape_the_prediction_did_not_anticipate: "a chain that does not resolve RAISES rather than returning a warrant with a hop missing. Handing back a number with its provenance partially absent is exactly the unwarranted value this layer exists to refuse, and a partial warrant looks more trustworthy than no warrant."
+
+  p2_the_api_cannot_return_a_stable_identifier_for_a_measurement:
+    verdict: CONFIRMED
+    what_was_measured: "the same fixture acquired by a relative and an absolute path yields identical values, identical document ids, and different observation ids. Held as a test that fails in the state where the locator stops carrying the caller's path -- at which point this surface's warning is stale and the test is the thing to retire."
+    the_disposition: "Warrant returns BOTH ids and a run_identity parsed out of the locator, labelled for what each is worth, plus an identifier_is_invocation_dependent property so a caller reading the object sees it rather than reading a docstring. A caller de-duplicating on the wrong one is then making a visible mistake instead of an invisible one."
+    what_was_NOT_done: "repairing it. make_record is in the vendored core; the locator string is DAQ's, so the repair is available here and would move every observation id in every pool. Not a unilateral act."
+
+  p3_a_content_query_is_a_scan_and_must_say_so:
+    verdict: CONFIRMED
+    what_was_measured: "Holdings carries `examined` alongside `matched`, and the function is named holdings_matching rather than anything that reads like an index lookup. Twenty examined, twenty matched, on the anchor."
+    why_the_cost_is_part_of_the_answer: "a caller cannot otherwise tell a cheap answer from an expensive one, and cannot tell an empty result over an empty pool from an empty result over a full one."
+
+  p4_the_empty_result_must_say_which_kind_of_nothing:
+    verdict: CONFIRMED
+    what_was_measured: "three refusal codes, three different facts. POOL_IS_EMPTY is not a statement about whether anything matches. NOTHING_MATCHED carries what it examined. NO_OBSERVATION_CARRIES_THIS_KEY is a CALLER error -- a filter naming a content key nothing in the pool has -- and it returns the keys that are present, so the caller can correct it rather than conclude the pool is empty of the thing they asked for."
+    the_one_worth_naming: "the third. Asking for `wavelength_nm` against a pool of chromatography observations previously returned the same empty tuple as asking for a property genuinely absent, and those are opposite conclusions: one means look elsewhere, the other means you asked the wrong question."
+
+  p5_nothing_in_the_acquisition_path_changes:
+    verdict: CONFIRMED
+    what_was_measured: "asserted by a test reading the module's own source: no put_* call, and no import of science, materials or boundary. The stop condition did not trigger."
+
+# ----------------------------------------------------------------------
+what_this_makes_possible_and_what_it_does_not:
+  now_possible: "an external caller can be handed a value it can interrogate back to a source, a retrieval method and a time, and can see which fields the ACQUIRER supplied rather than the document -- the distinction architecture/daq_agent_instruments.yaml's contracts talk about and nothing previously surfaced."
+  still_not_possible: "asking the surface to acquire anything. It is read-only over a pool somebody else filled, deliberately: the agent contract's `may_not: Issue network requests` stays a property of what the agent is GIVEN rather than a rule it is trusted to follow."
+  the_instrument_contracts_are_still_one_of_nine: "eight adapters have no declared instrument. That is now the next move rather than the first one, because there is a surface for a contract to describe."
+
+a_field_name_that_shadowed_the_decorator_below_it:
+  what_happened: "the Warrant dataclass carried a field named `property`, matching the content key. A dataclass field annotation of that name shadows the builtin for the rest of the class body, so the two @property methods declared after it resolved to a str annotation rather than to the decorator."
+  why_the_tests_did_not_see_it: "a bare annotation binds no name at runtime, so the decorators worked and all eleven tests passed. Only mypy saw it -- four errors, `\"str\" not callable` and `\"None\" not callable`, in a module whose behaviour was correct."
+  when_it_would_have_stopped_being_harmless: "the moment anyone gave the field a default. Then the annotation becomes an assignment, `property` is genuinely bound to a string in the class namespace, and the class fails to construct."
+  the_repair: "the caller-facing field is `measured_property`; the raw key is untouched in `content`, and a test asserts both. Planted the shadowing name back and watched mypy fail again."
+  why_it_is_worth_recording: "a domain term colliding with a language builtin, invisible at runtime, latent until an unrelated edit. It is the same shape as the rest of this session's findings -- a check that passes because the thing it would catch has not been triggered yet -- and the checker was the only witness."
+
+what_is_left_open:
+  no_index_by_content: "every content query is O(pool). Acceptable at this size and stated in every result; it is not a design that survives a large pool, and nothing here pretends otherwise."
+  an_observation_spanning_two_documents_has_no_stable_id_either: "document_id is returned empty in that case rather than picking one of them. Measured to be unreachable through the current adapters -- every observation names exactly one record -- so it is a guard against a shape that does not yet occur."
+  the_surface_is_python_and_not_a_protocol: "there is no server, no MCP transport and no schema for the wire. What exists is the thing a transport would expose, and building the transport before the thing it exposes was the error this pre-registration was written to avoid."
