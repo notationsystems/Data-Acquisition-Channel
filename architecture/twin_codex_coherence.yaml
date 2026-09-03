@@ -8,6 +8,9 @@
 extends: core@1.0.0
 
 subject: twin_codex_coherence
+subject_group: codex_coherence
+records_sharing_this_subject:
+  - architecture/codex_bim_coherence.yaml
 status: measured
 owner: daf
 enforcement: tests/test_twin_codex_coherence.py
@@ -18,6 +21,7 @@ how_the_two_agents_are_actually_distinguishable:
   measured: "`git ls-remote --heads` over every first-party repository. Codex signs `codex/<topic>`; the Claude sessions sign `claude/<topic>-<suffix>`. Author is `ttgftw <giasonpooni@gmail.com>` on every commit of both."
   the_first_scan_was_looking_in_the_wrong_field_and_the_wrong_place: "it grepped AUTHOR NAMES in the four repositories present on this machine and reported zero Codex commits. Both halves were wrong: the signature is a ref name, not an author, and the work is on remotes this machine had never cloned. Recorded because `zero occurrences` from a local grep is exactly the shape this session has now filed five times."
   where_codex_works: "eighteen branches across three repositories -- Notations-Ecosystem (control-plane-backend), Payload-Terminal-V0 (ocr-evidence-intake, operations-action-cockpit, payloados-commercial-positions, payloados-procurement-core, payloados-project-cargo-execution) and BIM-State-Transformer-Engine (twelve, including proof-carrying-state, sp1-beam-guest, beam-assurance-chain and real-ifc-validation)."
+  re_measured_2026_09_03: "CONFIRMED at eighteen, against the account catalogue. Recorded here because the re-measurement built to check this sentence first reported SIX -- it derived its repository set by sweeping this tree, and the tree does not name BIM-State-Transformer-Engine with a URL. The sentence was right and the instrument was bounded by the artifact it was auditing. architecture/codex_bim_coherence.yaml holds that account and reads three of the twelve branches."
 
 # ----------------------------------------------------------------------
 the_twin:

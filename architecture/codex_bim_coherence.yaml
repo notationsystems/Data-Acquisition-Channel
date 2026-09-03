@@ -1,0 +1,63 @@
+# THE LARGEST CODEX SURFACE IN THE ACCOUNT HAD NEVER BEEN OPENED, AND THE
+# INSTRUMENT BUILT TO RE-MEASURE CODEX'S WORK COULD NOT SEE IT.
+#
+# Measured 2026-09-03, over the account catalogue rather than over this tree.
+extends: core@1.0.0
+
+subject: codex_bim_coherence
+subject_group: codex_coherence
+records_sharing_this_subject:
+  - architecture/twin_codex_coherence.yaml
+status: measured
+owner: daf
+enforcement: tests/test_codex_bim_coherence.py
+recorded: "2026-09-03"
+
+# ----------------------------------------------------------------------
+the_instrument_was_bounded_by_the_thing_it_was_auditing:
+  what_was_built: "a re-measurement of Codex's branch surface, because architecture/twin_codex_coherence.yaml ends by saying a re-measurement is one command per claim. It derived the repository set BY SWEEPING THIS TREE -- every github.com URL named anywhere in architecture/ecosystem_register.yaml."
+  what_it_reported: "six Codex branches across two repositories."
+  what_is_actually_there: "EIGHTEEN Codex branches across three repositories. The record being re-measured had said eighteen, and it was right."
+  the_undercount: "two thirds of Codex's work, invisible to an instrument that was derived rather than enumerated."
+  why_it_happened: "a sweep over the tree cannot find a repository the tree does not name with a URL. notationsystems/BIM-State-Transformer-Engine is named in exactly two files, both in PROSE and neither as a URL -- architecture/ecosystem_census.yaml lists it among nine repositories carrying active agent branches, and twin_codex_coherence.yaml names it as the third repository. The register has no member for it."
+  why_this_is_the_same_class_and_not_a_new_one: "architecture/proof_integrity.yaml already carries coverage_specified_by_enumeration and its repair rule, assert the property not the enumeration. This is the sharper version of the same failure: the derivation WAS a property -- every URL in the register -- and the property was still bounded, because its SOURCE was the artifact under audit. Deriving from the tree is not enough when the tree is the thing being checked."
+  the_only_unbounded_source: "the account catalogue, listed from the platform. 101 repositories. Every claim below was measured against that list and not against this tree."
+  and_the_register_still_does_not_hold_it: "four repositories the census names as carrying active agent branches are not register members -- BIM-State-Transformer-Engine, Payload-Render-Engine, Notations-Corpus-Graph, PayLoad-OCR-Agent -- and a fifth, Notations-Control-Centre-, is named nowhere in this tree and was pushed to today. This record does not repair the register. It states the hole with the measurement that found it, so the repair is made against evidence rather than against a list somebody retypes."
+
+# ----------------------------------------------------------------------
+the_measurement:
+  method: "git ls-remote --heads over all 101 catalogue entries, GIT_NO_LAZY_FETCH=1 and GIT_TERMINAL_PROMPT=0 on every call, then a depth-1 fetch of FULL forty-character shas into a throwaway repository for the three branches read. Read-only with respect to every checkout on this machine."
+  codex_surface: "18 branches. Notations-Ecosystem 1 (control-plane-backend), Payload-Terminal-V0 5, BIM-State-Transformer-Engine 12."
+  claude_surface: "13 branches across 9 repositories."
+  the_branches_read: "codex/proof-carrying-state at 1517e0fa902e0920bbdebb104d5f5e823a031bd2, codex/sp1-beam-guest at 606b0e06de3991a96827a4681ce7486c5980ee43, codex/beam-assurance-chain at 0b2b84c6d888e3d017f1fa8f73a9fde6de0bf642."
+  what_was_not_read: "nine of the twelve BIM branches, and every Payload-Terminal-V0 branch beyond the corpus-contract digest already recorded in architecture/ecosystem_branch_scan.yaml. This record's scope is the three branches named above, and it says so here rather than letting a reader infer that twelve were examined."
+
+# ----------------------------------------------------------------------
+where_codex_arrived_independently_at_this_pairs_doctrine:
+  the_caveat_first: "architecture/proof_integrity.yaml carries convergence_is_not_evidence, and it is demoted there to A PROMPT TO RE-MEASURE. Four independent arrivals at the same rule is not four measurements. What follows is stated as agreement in the artifacts, quoted, with no claim that the agreement proves either party right."
+  a_check_that_did_not_run_can_never_report_as_passed: "docs/proof-carrying-state-v1.md: `When no verifier is supplied, the final check is NOT_CHECKED; it can never be reported as passed.` The enum in gat/proof_manifest.py is three-valued -- PASS, FAIL, NOT_CHECKED -- where a two-valued one would have made an unrun check indistinguishable from a passing one. That is this repository's absent-is-not-zero rule reached in a different domain, and its vacuous_pass severity class."
+  a_digest_comparison_is_not_the_property_it_stands_for: "same document: `Merely comparing digests is not cryptographic proof verification.` That is the proxy-for-target class architecture/proof_integrity.yaml exists to hold, stated by Codex as a design constraint before the defect rather than, as here, filed after one. This sentence said how many instances that record holds and the repository's own check refused it -- a count typed into prose is stale the next time the class is instanced, which is exactly the event that stops anyone rereading the sentence."
+  a_label_is_not_a_measurement: "`GAT deliberately does not infer zero knowledge from a label in the manifest.` The deployment must evaluate the proof system's actual privacy properties."
+  asking_a_question_must_not_materialise_its_answer: "`Proof locators are inert metadata. GAT never dereferences them automatically; the host must obtain and supply the exact proof bytes.` This pair reached the same rule from the opposite direction and the hard way -- a presence query over a partial clone FETCHED the object it was asking about and answered yes. Codex made dereferencing explicit by construction; this pair made it explicit after publishing a finding its own instrument had manufactured."
+  a_response_states_its_scope_or_it_is_not_a_response: "the manifest fixes claim_scope at `computational-integrity-only` and a document broadening it FAILS CLOSED. The document then lists what the claim does not answer: whether observations were truthful, calibration representative, the model appropriate, or the building safe. That is the same shape as this pair's API response contract -- every response carries a canonical reference and a proof root, or says explicitly that it is an operational observation with its limitations."
+
+# ----------------------------------------------------------------------
+the_divergence_that_is_concrete_and_measured:
+  what_was_looked_for: "the uncertainty-kind vocabulary this pair treats as core -- stated, estimated, propagated, absent -- with absent never defaulted."
+  what_is_there: "the words appear in the BIM tree only as ordinary English: `propagated, verified state` in a package docstring, `a stated architectural criterion` in gat/engine/decision.py. Grep over the branch tip finds no vocabulary, no enum, no constant."
+  why_that_is_a_real_divergence_and_not_a_gap_in_scope: "the same tree carries covariance. docs/proof-carrying-state-v1.md schedules a fixed-point `Sigma' = J Sigma J^T` experiment with separately reviewed scaling and quantization-error bounds, and tests/test_active_inference.py `predicts the covariance reduction that the normal update achieves`. A system that propagates covariance and has no name for where an uncertainty came from cannot distinguish a stated instrument figure from an estimated one from a propagated one, and that distinction is the whole content of the axis."
+  what_is_NOT_claimed: "that the BIM engine is wrong to lack it. Its claim scope is computational integrity -- did this exact transition compute what it says it computed -- and under that scope the provenance of an input uncertainty is somebody else's question, explicitly so. What is claimed is that the divergence is real, that it is the THIRD system in this account to carry covariance without the axis, and that this is evidence about where the axis belongs."
+  what_it_changes_for_the_open_proposal: "architecture/proposals/2026-09-03-uncertainty-kind-as-a-contract-axis.yaml argues the axis belongs in the shared core rather than in the acquisition layer alone. This is a third data point for that proposal and it is recorded as a data point, not as its resolution. The proposal is not amended here."
+
+# ----------------------------------------------------------------------
+the_sp1_question_this_settles_and_the_one_it_does_not:
+  what_was_open: "architecture/ecosystem_branch_scan.yaml recorded two SP1 implementations that cannot verify each other, and a near-miss: the Payload Terminal manifest declares sp1-sdk 6.0.1 while its verification key says sp1Version 6.5.0. That was nearly filed as a defect and is not one -- the lockfile pins 6.5.0 and a caret range admits it."
+  what_the_third_implementation_shows: "sp1/beam/program/Cargo.toml pins `sp1-zkvm = { version = \"=6.5.0\" }` and the script pins sp1-sdk and sp1-build at `=6.5.0` -- exact, not a range. So the third first-party SP1 implementation pins EXACTLY the version the second one resolves to. Three implementations, one prover version."
+  what_it_does_not_settle: "whether they can verify each other's proofs. A shared prover version is necessary and nowhere near sufficient: the guest programs differ, the verifying keys differ, and the public-values schemas differ -- the BIM manifest commits to a twelve-field statement including ledger head and world digests that no other guest produces. Version agreement is agreement about a dependency, not about a protocol, and reporting it as the latter would be exactly the substitution this pair keeps catching."
+  the_honest_status: "unchanged. Two, now three, SP1 implementations that have not been shown to verify each other, on a common prover version."
+
+# ----------------------------------------------------------------------
+what_this_record_must_not_become:
+  the_risk: "a claim of ecosystem coherence resting on four quoted sentences and a grep."
+  the_scope_restated: "three branches of twelve, in one repository of three carrying Codex work, read once on 2026-09-03 at the shas recorded above. Every alignment above is a quotation from an artifact at a named sha, and every divergence is a measurement that can be re-run."
+  what_would_change_the_verdict: "reading the nine unread BIM branches; any of them may carry an uncertainty vocabulary this one does not, in which case the divergence above is narrower than stated and this record is the thing that gets corrected."
