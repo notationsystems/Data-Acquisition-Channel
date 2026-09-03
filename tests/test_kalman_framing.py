@@ -291,6 +291,18 @@ def test_the_requirements_artifact_has_not_moved_during_the_reissues():
     # a directory is a location, and whatever is at it is somebody's last
     # pull. Third instance of the class in
     # architecture/pair_verification_subject.yaml.
+    # WHAT THIS ASSERTION ACTUALLY NEEDS is the artifact's CURRENT value,
+    # and a mirror is byte-identical in the present -- that is precisely
+    # what verify_pair_landed.py guarantees. So an unreadable owner does
+    # not have to stop this check; it has to stop this check from reading
+    # a STALE owner, which reports the version before last as the current
+    # one. Measured 2026-09-03: that is exactly what happened, and the
+    # record binding the correct value was reported as binding a set that
+    # no longer exists.
+    #
+    # The sibling predecessor check next door needs the owner's CHAIN and
+    # a mirror cannot supply one, so it skips instead. Two checks, two
+    # fallbacks, because they rest on different things.
     if owner is not None:
         import sys as _sys
 
@@ -298,9 +310,8 @@ def test_the_requirements_artifact_has_not_moved_during_the_reissues():
         from _pair import local_sibling_is_current
 
         current, currency = local_sibling_is_current()
-        if current is False:
-            pytest.skip(f"the owner checkout is behind its remote ({currency}); its history "
-                        "is a prefix of the owner's and cannot support this verdict")
+        if current is not True:
+            owner = None  # fall back to the mirror's PRESENT bytes, which are sound
 
     versions = _history(owner) if owner is not None else []
     if not versions:
