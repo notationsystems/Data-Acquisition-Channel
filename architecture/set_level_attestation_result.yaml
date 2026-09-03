@@ -1,0 +1,65 @@
+# WHAT BUILDING IT FOUND.
+#
+# Scored against architecture/set_level_attestation_preregistration.yaml,
+# digest f013ef8973f9510d843d9834d86b8c21751f10f2222255277bc2b8d6a02f3982,
+# committed in dd0ad91 before any code existed for it.
+#
+# The headline is not the capability. It is that the capability's FIRST
+# run against a real document found an inconsistency in that document
+# which two earlier checks had missed -- and one of the two was an
+# enforcement written by this repository to catch exactly that.
+extends: core@1.0.0
+
+subject: set_level_attestation_result
+status: measured
+owner: daf
+enforcement: tests/test_set_attestation.py
+recorded: "2026-09-03"
+
+predictions_scored:
+
+  p1_the_four_instances_share_one_shape:
+    verdict: CONFIRMED
+    what_was_measured: "SetAttestation carries statistic, value, unit, n, variable, population and source, and all four instances fit it -- the two CVs, the MD, and the section 13 regression r. `n` is required and has no default: `CV = 0.91` over ten samples and over two are different claims, and a shape permitting the denominator to be omitted would make them one object."
+    the_one_field_the_prediction_did_not_anticipate: "`population` is FREE TEXT and stays opaque here. Matching a source's description of which runs it computed over to a comparison context is the caller's act; doing it in this layer would be inventing the match."
+
+  p2_two_of_the_four_are_checkable_and_two_are_not:
+    verdict: CONFIRMED
+    what_was_measured: "the two CVs, the MD and the mean of means all have computable counterparts. The section 13 regression r does not -- it is a fit against seven reference substances' guideline log Pow values, an external table this substrate does not hold -- and it is carried with verdict UNCHECKED and reason NO_COUNTERPART_COMPUTABLE."
+    the_three_verdicts_and_why_two_would_not_do: "AGREED, DISAGREED, UNCHECKED. A shape with only agreement and disagreement would report `nothing could be computed` as `fine`, which is this repository's vacuous-evidence shape raised to the level of a whole capability."
+
+  p3_the_disagreement_case_is_the_point:
+    verdict: CONFIRMED_AND_IT_FIRED_ON_THE_FIRST_REAL_DOCUMENT
+    what_was_predicted: "an attestation that disagrees with its computed counterpart is the case the capability exists for, and nothing in the tree could express it."
+    what_actually_happened: "it fired immediately, on the anchor it was built from, and the disagreement is real. See the_finding below."
+
+  p4_the_withheld_statistic_will_not_fit_and_that_is_a_second_gap:
+    verdict: CONFIRMED
+    what_was_measured: "section 10 states that a correlation coefficient WAS obtained and that the results are archived in the raw data. SetAttestation requires a numeric, finite value and refuses anything else, so the claim has no home. It is a set-level ABSENCE with a stated reason, and `value_absence` is per-cell, carries a reason and no number."
+    what_it_means: "`withheld` remains the one absence reason this programme has never exercised, and it remains unexercisable -- now for a precisely stated reason rather than for want of a document. The one real instance ever found is withheld at the wrong level."
+
+  p5_nothing_in_the_per_cell_vocabularies_needs_to_change:
+    verdict: CONFIRMED
+    what_was_measured: "UNCERTAINTY_KINDS and ABSENCE_REASONS are byte-for-byte what they were, asserted by tests/test_set_attestation.py. The stop condition did not trigger."
+    why_it_held: "the level was the whole difference. A statistic about a set is a different object from a figure attached to a cell, and building it as one needed nothing from the per-cell vocabularies at all."
+
+# ----------------------------------------------------------------------
+the_finding:
+  what_it_is: "the maximum difference printed in Table 8 does not follow from the report's own stated formula applied to the report's own values."
+  the_formula_the_report_states: "page 33, verbatim: maximum difference = (highest value - lowest value) / mean value x 100%, where 'mean value' is the mean of the highest and lowest value."
+  the_arithmetic: "the two flow-rate means are 9.661000 and 9.741000. (9.741 - 9.661) / ((9.741 + 9.661) / 2) x 100 = 0.824657, which prints as 0.82. Table 8 prints 0.83."
+  what_was_tested_before_saying_so: "five denominators -- the mean of the extremes (0.824657), the highest mean (0.821271), the lowest mean (0.828072), the reported result 9.70 (0.824742), and the mean of the rounded printed means (0.824742). Four give 0.82. Only the LOWEST reproduces 0.83, and it is not the denominator the report's formula names."
+  what_is_NOT_claimed: "that the laboratory divided by the lowest value. That is one hypothesis; an arithmetic slip is another; a third is a convention applied elsewhere in the laboratory and not written into this report. Nothing here distinguishes them and none is asserted."
+  its_size: "one unit in the second decimal place of a ratio, on a study whose conclusion does not depend on it -- the acceptance criterion is 30% and both readings pass it by a factor of thirty-six. The finding is not that the study is wrong. It is that a document's internal consistency is checkable, and this is the first place this one fails."
+
+it_was_missed_twice_and_both_misses_are_this_repositorys:
+  the_first: "a hand-check in cycle 1 printed the value with three decimals, read `0.825`, and wrote that the printed 0.83 was half-up rounding of a figure sitting exactly on a boundary. 0.824657 is not 0.825 and is not on a boundary. The display format made a discrepancy look like a rounding convention."
+  the_second_and_worse: "the enforcement written to catch exactly this -- tests/test_third_anchor.py's arithmetic check -- asserted `abs(computed - PRINTED_MD) < 0.01`. The discrepancy is 0.0053. The tolerance was wide enough to absorb the difference the check existed to detect, and it passed, green, for the whole of the anchor arc."
+  the_shape: "a tolerance is a claim about how much disagreement is expected. This one was chosen to accommodate the CVs, which differ by rounding of the inputs, and then applied to a quantity whose disagreement is of a different kind. One tolerance over quantities with different error sources cannot separate them."
+  what_was_corrected: "third_anchor_result.yaml's faithfulness section now states the disagreement rather than the rounding story, and the anchor test asserts the exact computed value and that it prints as 0.82 rather than a tolerance around 0.83. Both were re-measured, not reworded."
+  why_it_belongs_here_rather_than_only_in_the_anchor_record: "the capability found it. A hand-check and a hand-written tolerance had both looked at the same figure; a shape that requires the tolerance to be passed explicitly, with no default, and that reports DISAGREED rather than a boolean, found it on its first run."
+
+what_is_left_open:
+  a_set_level_absence: "P4's remainder. A source stating that it holds a statistic and did not release it has no home. Not built, because no design for it has been argued for and one instance is not a shape."
+  the_attestation_does_not_reach_the_evidence_pool: "SetAttestation is a science-layer object. Nothing carries one from an adapter, and no Observation references one. The comparison is available to a caller holding both; it is not yet part of acquisition."
+  the_population_match_is_the_callers: "`population` is opaque text. A caller pairing an attestation with the wrong replicate set gets POPULATION_DISAGREES_WITH_THE_ATTESTED_N only when the sizes differ, and nothing at all when they coincide by accident."

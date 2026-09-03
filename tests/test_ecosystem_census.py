@@ -85,7 +85,19 @@ def test_an_undetermined_role_is_undetermined_and_not_inferred_from_a_name():
         body = APPARATUSES[name]
         assert body["role"] == "UNDETERMINED", f"{name} acquired a role from somewhere"
         assert "ZERO commits" in body["observed"]["state"]
-        assert "not_claimed" in " ".join(body), f"{name} states no limit on its own claim"
+        # `" ".join(body)` joins the KEYS, so this passed by matching a
+        # key NAME and never read a value. Caught by
+        # tests/test_mapping_join_defect.py, which is the class guard for
+        # a construction this programme had caught eight times by hand.
+        limits = [str(value) for key, value in body.items() if "not_claimed" in key]
+        assert limits, f"{name} states no limit on its own claim"
+        for limit in limits:
+            assert len(limit) > 40, f"{name}'s limit is a label rather than a statement"
+            assert "empty" in limit.lower(), (
+                f"{name} is recorded with zero commits present, and the limit must be about "
+                "not concluding emptiness from that -- an empty local clone is evidence "
+                "about this machine and nothing else"
+            )
 
 
 # =====================================================================

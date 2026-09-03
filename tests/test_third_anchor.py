@@ -115,11 +115,20 @@ def test_the_transcription_reproduces_the_report_s_own_arithmetic():
 
     assert round(st.mean(means), 2) == PRINTED_RESULT
     hi, lo = max(means), min(means)
-    # 0.825 exactly, against a printed 0.83: the laboratory rounds half
-    # up where Python rounds half to even. Asserted as a tolerance rather
-    # than an equality, because an equality here would be a claim about
-    # a rounding convention rather than about the transcription.
-    assert abs(100 * (hi - lo) / ((hi + lo) / 2) - PRINTED_MD) < 0.01
+    # CORRECTED 2026-09-03. This read `< 0.01` and passed, and the
+    # comment above it said 0.825 against a printed 0.83 was half-up
+    # rounding of a value on the boundary. Both were wrong. The report's
+    # own formula (page 33: divide by the mean of the highest and lowest)
+    # gives 0.824657, which prints as 0.82, not 0.83 -- it is not on any
+    # boundary, and the tolerance was wide enough to absorb the very
+    # discrepancy it was checking. Recorded in
+    # architecture/third_anchor_result.yaml under faithfulness.
+    by_the_reports_formula = 100 * (hi - lo) / ((hi + lo) / 2)
+    assert abs(by_the_reports_formula - 0.824657251829709) < 1e-12
+    assert round(by_the_reports_formula, 2) == 0.82 != PRINTED_MD, (
+        "the printed MD no longer disagrees with the report's own formula; the finding "
+        "in third_anchor_result.yaml needs re-measuring rather than editing"
+    )
 
 
 def test_the_sidecar_states_what_the_source_lacks():

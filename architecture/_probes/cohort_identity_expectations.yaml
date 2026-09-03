@@ -26,9 +26,15 @@ property_under_test: "a polymer is a POPULATION, not an object. Mn and Mw are mo
 
 refusal_vocabulary_measured_before_stating_expectations:
   method: "collected every module-level refusal code across science/*.py programmatically rather than from memory."
-  total_codes: 46
+  total_codes: 62
   gates: 5
-  codes_naming_a_cohort_concept: 0
+  codes_naming_a_cohort_concept: 2
+  re_taken_2026_09_03:
+    what_it_was: "total_codes 46, codes_naming_a_cohort_concept 0. That zero was the probe's central finding: nothing in this substrate distinguished a measurement OF a population from a measurement of an individual, which is what the property_under_test asks."
+    what_changed_it: "science/set_attestation.py, built the same night, introduced POPULATION_EMPTY and POPULATION_DISAGREES_WITH_THE_ATTESTED_N. They are set-level refusals -- a statistic stated over a population that is empty, or over a population whose size disagrees with what the source attested."
+    it_is_a_real_change_and_not_a_string_collision: "the codes name a cohort concept in the sense the probe meant, not merely in the sense its regex matched. An attested coefficient of variation is a claim about a SET of runs and about no member of it, and refusing one for a population mismatch is the substrate declining to describe a cohort it was handed wrongly. The zero was true when it was measured and is no longer true."
+    what_it_does_NOT_mean: "that the probe's property is now satisfied. Two refusal codes are not a cohort identity. Nothing yet distinguishes an Observation OF a population from one of an individual -- the attestation sits beside the values in science/ and never reaches content, an Observation, or any gate. The probe stays UNTESTED; what moved is the measured basis under one of its expectations, and it is re-stated here rather than left to fail its own guard."
+    how_it_surfaced: "tests/test_cohort_identity_probe.py::test_no_gate_names_a_cohort_concept_at_all fired on the same commit that introduced the codes. The guard re-derives the vocabulary from science/*.py rather than trusting the number, which is why a premise lapsing was a failure rather than a silence."
   searched_for:
     - "COHORT"
     - "POPULATION"

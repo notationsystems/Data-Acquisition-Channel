@@ -300,6 +300,39 @@ def test_the_named_predecessor_is_the_one_git_actually_replaced(record, field):
     previous = record["reissue"].get(f"previous_{field}")
     if previous is None or not previous.startswith("sha256:"):
         pytest.skip(f"{field} records no predecessor digest ({previous!r})")
+
+    # A STALE OWNER CHECKOUT IS NOT THE OWNER'S HISTORY, and reading the
+    # owner rather than this mirror -- the repair above -- moved the
+    # staleness rather than removing it. Measured 2026-09-03: the chain
+    # read from a checkout four commits behind reported the predecessor of
+    # requirements_artifact_hash as 6efb4804, and the record correctly
+    # names 4f673215, a version that checkout has never held. Third
+    # instance of the class in
+    # architecture/pair_verification_subject.yaml.
+    import sys as _sys
+
+    _sys.path.insert(0, str(REPO_ROOT / "tests"))
+    from _pair import local_sibling_is_current
+
+    # BOTH non-True states decline, and an earlier version of this guard
+    # handled only one of them. It skipped when the owner checkout was
+    # BEHIND and let the ABSENT case through -- and absent is the CI case,
+    # where the fallback reads this repository's own history. That is the
+    # mirror, which never held the intermediate reissues the owner
+    # committed, so the chain it yields names a predecessor the owner
+    # never wrote. The result was a false RED on the runner while the tree
+    # was green on a machine that happened to have a sibling directory.
+    #
+    # The verdict rests on the OWNER's chain. Where the owner is not
+    # readable -- absent, or present and behind -- there is no chain to
+    # verify against and the check declines rather than substituting a
+    # different repository's history for it.
+    current, currency = local_sibling_is_current()
+    if current is not True:
+        pytest.skip(f"the owner's chain is not readable here ({currency}); this repository's "
+                    "history is a MIRROR that skips versions the owner committed, so a "
+                    "predecessor derived from it is one the owner never wrote")
+
     history = _hash_history(field)
     if history is None:
         pytest.skip("no git history for the record (shallow clone)")

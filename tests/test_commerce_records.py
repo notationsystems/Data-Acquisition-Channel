@@ -240,8 +240,24 @@ def test_the_recon_records_that_the_briefs_premise_was_refuted():
     finding = LADDER["qcmobile_is_not_down"]
     assert "Webkey not found" in finding["measured"]
     assert "PENDING_CREDENTIAL" in finding["the_reclassification"]
-    assert "wrong_attribution" in " ".join(finding).lower() or \
-        "wrong attribution" in finding["why_this_is_the_wrong_attribution_class_again"].lower()
+    # WAS: `"wrong_attribution" in " ".join(finding).lower() or "wrong
+    # attribution" in finding[...].lower()`. Joining a mapping yields its
+    # KEYS, and the key `why_this_is_the_wrong_attribution_class_again`
+    # satisfied the first disjunct unconditionally, so the `or` short-
+    # circuited and the second was dead code. Removing the join showed the
+    # second was also FALSE: the phrase appears in the key and nowhere in
+    # the value. So the assertion asserted nothing, twice over.
+    #
+    # What the value actually establishes is the misattribution itself,
+    # and that is what is read now -- a stronger check than the one it
+    # replaces. Caught by tests/test_mapping_join_defect.py.
+    why = finding["why_this_is_the_wrong_attribution_class_again"]
+    assert "durable claim about the SOURCE" in why
+    assert "OUR CREDENTIALS" in why
+    assert "same shape as the 403" in why, (
+        "the record must connect this instance to the earlier one, or it is an "
+        "incident rather than a class"
+    )
 
 
 def test_the_freeze_date_in_the_record_matches_the_code():

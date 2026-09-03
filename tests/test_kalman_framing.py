@@ -281,6 +281,38 @@ def test_the_requirements_artifact_has_not_moved_during_the_reissues():
             owner = candidate
             break
 
+    # A STALE OWNER CHECKOUT IS NOT THE OWNER'S HISTORY. Measured
+    # 2026-09-03: this read reported the artifact's newest version as
+    # 6efb4804 while the owner's remote had moved it to 79e76433, and the
+    # record binding the current value was reported as binding "a set that
+    # no longer exists". The record was right; the checkout was four
+    # commits behind. Reading the owner rather than the mirror was the
+    # correct repair and it MOVED the staleness rather than removing it --
+    # a directory is a location, and whatever is at it is somebody's last
+    # pull. Third instance of the class in
+    # architecture/pair_verification_subject.yaml.
+    # WHAT THIS ASSERTION ACTUALLY NEEDS is the artifact's CURRENT value,
+    # and a mirror is byte-identical in the present -- that is precisely
+    # what verify_pair_landed.py guarantees. So an unreadable owner does
+    # not have to stop this check; it has to stop this check from reading
+    # a STALE owner, which reports the version before last as the current
+    # one. Measured 2026-09-03: that is exactly what happened, and the
+    # record binding the correct value was reported as binding a set that
+    # no longer exists.
+    #
+    # The sibling predecessor check next door needs the owner's CHAIN and
+    # a mirror cannot supply one, so it skips instead. Two checks, two
+    # fallbacks, because they rest on different things.
+    if owner is not None:
+        import sys as _sys
+
+        _sys.path.insert(0, str(REPO_ROOT / "tests"))
+        from _pair import local_sibling_is_current
+
+        current, currency = local_sibling_is_current()
+        if current is not True:
+            owner = None  # fall back to the mirror's PRESENT bytes, which are sound
+
     versions = _history(owner) if owner is not None else []
     if not versions:
         versions = _history(REPO_ROOT)

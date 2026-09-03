@@ -1,0 +1,51 @@
+# WHAT A SOURCE-STATED SET-LEVEL STATISTIC WILL DO TO THIS SUBSTRATE.
+#
+# Recorded BEFORE building anything. The gap has been named open in two
+# records -- third_anchor_result.yaml Q2 and fourth_anchor_result.yaml P5
+# -- and both stopped at naming it. This pre-registers what the shape is,
+# and, more usefully, what it will FAIL to hold.
+#
+# THE GAP, RESTATED SO IT IS NOT A SLOGAN. This substrate COMPUTES
+# set-level statistics: science/replicate_pairing.py produces a
+# ReplicateSet with means and a SampleCovariance carrying its own
+# `reasons`. What it cannot do is INGEST one. A laboratory that publishes
+# `CV = 0.91%, n = 10` has stated a fact about a set, and there is no
+# content key, no vocabulary and no gate that will carry it.
+extends: core@1.0.0
+
+subject: set_level_attestation_preregistration
+status: recorded_before_any_code_is_written
+owner: daf
+enforcement: tests/test_set_level_attestation_preregistration.py
+recorded: "2026-09-03"
+
+why_it_is_worth_building_rather_than_only_naming: "the comparison it enables already exists as a hand-written assertion. tests/test_third_anchor.py recomputes the report's means and CVs from the transcribed replicates and checks them against the printed figures -- the third anchor's record calls that `the check the GPC anchors could not offer`, because that report publishes statistics derived from its own values, so a misread becomes arithmetic rather than a matter of opinion. That check is hardcoded in one test module for one document. Nothing makes it a property of the substrate, so the next anchor gets it only if somebody remembers."
+
+predictions:
+
+  p1_the_four_instances_share_one_shape:
+    prediction: "the four set-level quantities in the WIL Research report -- CV per flow rate, MD between two flow-rate means, the regression r for section 13, and the archived r for section 10 -- fit a single shape: a STATISTIC KIND, a VALUE, a UNIT, and an identification of the SET it describes. The set is identified the way replicate_pairing already identifies one: by comparison context plus variable."
+    basis: OPEN
+    what_would_falsify_it: "any of the four needing a field the other three do not, or needing the set identified some other way."
+
+  p2_two_of_the_four_are_checkable_and_two_are_not:
+    prediction: "the substrate can compute a counterpart for the CV and the MD -- both are functions of the values in a replicate set it already builds. It cannot compute one for either r: a regression against SEVEN REFERENCE SUBSTANCES' known log Pow values is a fit against an external table the substrate does not hold, and the section 10 r was never released. So an attestation will be comparable in two cases and uncheckable in two, and the shape must carry that difference rather than implying every attestation can be verified."
+    basis: OPEN
+    why_it_is_the_useful_half: "an attestation nobody can check is still worth carrying -- it is the source's claim, and losing it is losing data -- but a shape that does not distinguish `checked and agreed` from `carried and uncheckable` would report the second as the first."
+
+  p3_the_disagreement_case_is_the_point:
+    prediction: "an attestation that DISAGREES with the computed counterpart is the case the whole thing exists for, and it is the one nothing in the tree can currently express. Today a transcription error either trips a hardcoded assertion in one anchor's test module or passes silently."
+    basis: MEASURED as a fact about the tree
+    what_it_must_not_do: "resolve the disagreement. The report's CV of 0.91 and a computed 0.903 differ because the laboratory computed from concentrations it printed rounded; that is a fact a reader needs, not one this layer settles."
+
+  p4_the_withheld_statistic_will_not_fit_and_that_is_a_second_gap:
+    prediction: "section 10 states that a correlation coefficient WAS obtained and that the results are archived in the raw data. That is a set-level ABSENCE with a stated reason, and an attestation shape built around a VALUE cannot hold it. `value_absence` is per-cell and carries a reason and no number; there is no set-level equivalent. So building the attestation closes part of the gap and leaves a named remainder rather than closing it."
+    basis: OPEN
+    why_it_is_the_sharpest: "it is the one instance of `withheld` this programme has ever found on a real document -- the absence reason that has never been exercised -- and it will still not be exercisable afterwards, because it is withheld at the wrong level."
+
+  p5_nothing_in_the_per_cell_vocabularies_needs_to_change:
+    prediction: "UNCERTAINTY_KINDS and ABSENCE_REASONS stay exactly as they are. A fifth uncertainty kind would put a set-level statistic on every member of the set, which is the shape science/structured_uncertainty.py already refuses for a covariance on a scalar. If building this requires touching either vocabulary, the design is wrong and the right move is to stop."
+    basis: OPEN
+    it_is_a_stop_condition_and_not_a_hope: "recorded as the thing that would show the approach is wrong, not as a boast about restraint."
+
+what_this_document_must_not_become: "a description of what was built. Its digest is pinned by its enforcement and the outcome is recorded in architecture/set_level_attestation_result.yaml."
