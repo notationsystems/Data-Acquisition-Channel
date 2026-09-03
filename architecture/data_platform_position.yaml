@@ -1,0 +1,152 @@
+# THE DATA PLATFORM, MEASURED AGAINST WHAT IS HERE.
+#
+# The specification handed down on 2026-09-03: a provenance-first platform
+# with one canonical state layer and several rebuildable serving layers,
+# built in seven ordered steps, with a deliberately lean first production
+# footprint -- and a closing rule that Iceberg, vector search, graph
+# infrastructure, streaming brokers, GPU workers and Kubernetes are added
+# only when workload evidence demands them.
+#
+# WHAT WAS MEASURED FIRST. None of the named technologies is present. Four
+# greps hit and none was an adoption: `temporal` matched `temporal
+# ordering` and `bitemporal`, `s3` matched a variable in a polymer test,
+# `postgres` matched this pair's own record noting it absent, and `postgis`
+# matched a HOLD LIST with a test enforcing it. Detection by free text is
+# what produced those four; the enforcement below detects by IMPORT and by
+# DECLARED DEPENDENCY instead, because that is what adoption actually is.
+#
+# THE ORDERING READS DIFFERENTLY HERE, and this is the substantive point.
+# This tree is not at step zero. Steps one and two exist as PROPERTIES in a
+# filesystem substrate -- content-addressed immutable evidence with source
+# metadata, and a canonical state layer -- while none of their TECHNOLOGY
+# exists. So steps one and two are a substrate migration of things that
+# currently work, and their risk is regression rather than greenfield.
+extends: core@1.0.0
+
+artifact: data_platform_position
+owner: daf
+status: measured_2026_09_03
+enforcement: tests/test_data_platform_position.py
+
+# ----------------------------------------------------------------------
+# THE CLOSING RULE, MADE ENFORCEABLE. This is the buildable half of the
+# specification and the reason this file exists rather than a document.
+# ----------------------------------------------------------------------
+the_adoption_rule:
+  as_stated: "add Iceberg, vector search, graph infrastructure, streaming brokers, GPU workers and Kubernetes only when workload evidence demands them. Do not begin with Kafka, Neo4j, Spark, a blockchain, or a large Kubernetes estate."
+  what_makes_it_a_check_rather_than_advice: "every technology below carries a status. A technology PRESENT in the tree whose status is not_adopted fails. A technology adopted with no workload_evidence field fails. So adoption becomes an act that has to be justified in the same commit, rather than a dependency that appears and is noticed later."
+  what_counts_as_workload_evidence: "a MEASUREMENT of a load this repository actually carries, with the number and where it was taken. Not a projection, not a plan, and not the observation that a technology would be suitable. The distinction is the one architecture/opportunity_engine.yaml already draws: every held item is buildable and none is blocked on knowledge; they are blocked on there being a first load."
+  how_adoption_is_detected: "by import statement and by declared dependency, parsed. NOT by text search -- text search produced four false positives on the first pass over this very question, including a variable named s3 and the word bitemporal."
+
+# ----------------------------------------------------------------------
+# THE HOLD LIST THIS DOES NOT REPLACE.
+# ----------------------------------------------------------------------
+relationship_to_the_existing_hold_list:
+  where: "architecture/opportunity_engine.yaml, not_built_and_recorded_as_such, enforced by tests/test_commerce_records.py test_nothing_on_the_engine_hold_list_was_built"
+  what_it_holds: "vroom, h3, tile38, postgis, mobilitydb, duckdb, auto_sea_way -- scoped to the commerce package."
+  and_it_already_contradicts_the_specification: "the specification says PostGIS first, at step two and again at step five. The hold list says not yet, and gives the specification's OWN reason: `Nothing here persists yet; adding a database before there is one real load to put in it is the shape PC-0 exists to prevent.` Both cite the same principle and disagree about NOW."
+  the_disposition: "the hold list is NOT overridden and NOT duplicated. It is commerce-scoped and load-shaped; this record is platform-scoped and technology-shaped, and where they overlap the hold list is the narrower and older claim. PostGIS is recorded here as not_adopted with the hold list named as the reason, so there is one reason in one place and this file cites it."
+  what_would_release_it: "a first real load. That is the hold list's own condition and this record does not invent a second one."
+
+# ----------------------------------------------------------------------
+# THE ONE THING THE SPECIFICATION SAYS TWICE, DIFFERENTLY.
+# ----------------------------------------------------------------------
+who_owns_canonical_state:
+  the_conflict: "step two says PostgreSQL `owns entities, aliases, observations, assertions, relationships, bitemporal state, permissions, audit logs, and the transactional outbox`. The module table handed down in the same week says `Journal, closure persistence, PostgreSQL repository -- internal persistence adapters; public API reads only through tenant-bound resolvers`. Owner and adapter are different roles."
+  and_a_third_party_already_claims_it: "the vendored core states, in the words this pair records in architecture/ecosystem_census.yaml: one versioned immutable CanonicalState as sole source of truth, and every downstream view a deterministic projection of a frozen version of it -- never a place state is written back from."
+  resolved_as: PERSISTENCE_ADAPTER
+  who_resolved_it: "DIRECTED, not decided here. The reasoning below was put as an open question with the alternative stated, and the answer came back to resolve it in favour of the module table. Recorded because a layer resolving an ecosystem-wide ownership question on its own authority would be exactly the shape this pair refuses elsewhere -- one party writing both sides."
+  the_reasoning: "three grounds, none of them preference. (1) The module table is the more specific statement and it is the later one. (2) Two canonical state layers is precisely what the specification's own diagram exists to prevent -- one canonical state, several rebuildable serving layers -- and making PostgreSQL an owner creates the second. (3) Every `bent: zero` claim in this repository is an assertion about the core AT ITS PARTICIPATING REFERENT. If PostgreSQL became the owner of observations and assertions, those claims would be about an object that no longer holds them, and the pin would stop meaning anything."
+  what_that_makes_postgresql: "the durable, queryable, row-secured PROJECTION of canonical state, and the place the transactional outbox lives. Authoritative for serving; not authoritative for truth. A rebuild from canonical state must be able to reproduce it, which is the test that distinguishes an adapter from an owner."
+  it_is_revisable_and_here_is_what_would_revise_it: "a decision to retire the vendored core as the canonical layer. That is a legitimate choice and it is a much larger one than a storage decision -- it would retire the core referent, every extends declaration and every bent-zero verdict at once. Recorded so that if it is taken, it is taken deliberately."
+
+# ----------------------------------------------------------------------
+the_ci_conflict:
+  measured: "the word gitlab appears in NEITHER repository of this pair. Both are hosted on GitHub, and CI is .github/workflows/conformance.yml -- a real gate rather than a formality: it regenerates doctrine and compares, so prose that drifts from enforcement fails there."
+  what_step_six_asks_for: "GitLab CI for code, containers, deployment provenance, and Harness runs."
+  the_honest_statement: "deployment provenance is the PROPERTY step six wants; GitLab is one way to get it. Migrating CI to a platform nothing is hosted on is a migration undertaken for a property the existing gate could carry. Recorded as an open decision rather than acted on, because moving CI is not a data-platform step and doing it silently inside one would be the wrong shape."
+  status: OPEN_DECISION
+
+# ----------------------------------------------------------------------
+what_is_already_true_without_the_technology:
+  layer_one_property_without_its_substrate: "content-addressed immutable evidence with source metadata exists -- daf/storage/blob_store.py, artifact_store.py, identity.py -- filesystem-shaped. What does NOT exist is the four-zone split: quarantine exists (daf/execution/quarantine.py), raw, canonical-export and published-build zones do not."
+  layer_five_rule_already_enforced: "no serving projection writes canonical truth. The core states it structurally and this pair records it. It is the one line of the specification already enforced rather than aspired to."
+  layer_six_sp1_is_the_only_item_with_an_implementation: "the vendored core carries zk/sp1-adapter, zk/risc0, guest programs and recipes. It also carries a path dependency on a notationsystems/nexus-zkvm sibling that resolves in NO checkout on this machine -- measured, and recorded in architecture/ecosystem_register.yaml. So the one implemented item of the specification sits in a workspace with an unresolvable dependency."
+
+what_has_no_subject_yet:
+  row_level_security_needs_a_tenant: "step two asks for row-level security for tenant isolation. There is no tenant concept anywhere in either repository -- measured and recorded in architecture/api_plane_assignment.yaml, where three of the four API planes are marked as assuming a tenant that does not exist. RLS would be the enforcement of a distinction nothing carries."
+  and_the_warning_attached_to_it_belongs_to_a_class_already_filed: "the specification notes that privileged roles can bypass row security unless deliberately constrained. That is the shape architecture/proof_integrity.yaml files as verify_certified_the_corruption -- a control correct by its own rules while the thing it guards passes around it. Named now so the failure mode is on the record before the mechanism exists."
+  bitemporal_state_is_in_the_wrong_layer_for_this: "known_at exists only under commerce/. The acquisition path -- the one that would populate a canonical store -- has none. So step two's bitemporal requirement is not merely unimplemented; the layer that would carry it does not model it yet."
+
+# ----------------------------------------------------------------------
+# Every technology the specification names, with what is true of it here.
+# ----------------------------------------------------------------------
+technologies:
+  s3_object_storage:
+    step: 1
+    status: not_adopted
+    property_here_instead: "daf/storage/blob_store.py and artifact_store.py, filesystem-backed, content-addressed."
+  postgresql:
+    step: 2
+    status: not_adopted
+    role_when_adopted: "persistence adapter and outbox host -- see who_owns_canonical_state."
+  postgis:
+    step: 2
+    status: not_adopted
+    held_by: "architecture/opportunity_engine.yaml not_built_and_recorded_as_such, enforced in commerce."
+  transactional_outbox:
+    step: 3
+    status: not_adopted
+    note: "the specification is explicit that this starts in PostgreSQL and not in Kafka. Nothing here has either."
+  temporal_workflows:
+    step: 3
+    status: not_adopted
+  iceberg:
+    step: 4
+    status: not_adopted
+    gated_by: the_adoption_rule
+  parquet:
+    step: 4
+    status: not_adopted
+    gated_by: the_adoption_rule
+  pgvector:
+    step: 5
+    status: not_adopted
+    gated_by: the_adoption_rule
+  qdrant:
+    step: 5
+    status: not_adopted
+    gated_by: the_adoption_rule
+  opentelemetry:
+    step: 6
+    status: not_adopted
+  sp1:
+    step: 6
+    status: adopted_in_the_vendored_core_not_here
+    workload_evidence: "not this repository's adoption to justify. zk/sp1-adapter is the core's, at the pinned commit, and this repository neither builds nor calls it. Recorded so the enforcement does not read the vendored tree as an adoption by this layer."
+  kafka:
+    step: 0
+    status: refused_by_the_specification
+  neo4j:
+    step: 0
+    status: refused_by_the_specification
+  spark:
+    step: 0
+    status: refused_by_the_specification
+  kubernetes:
+    step: 0
+    status: refused_by_the_specification
+
+verified_by_planting_the_defect:
+  a_not_adopted_technology_imported: "a module importing psycopg2 added under daf/. test_nothing_recorded_as_not_adopted_is_imported_anywhere FAILED, naming the module. That is the shape a real adoption arrives in -- one file, one import, no announcement."
+  a_refused_technology_imported: "a module importing kafka added. TWO checks failed -- the general adoption gate and the one that separates refused from merely deferred. Adopting a refused technology has to break the line that says refused, not the line that says not yet."
+  adopted_with_no_workload_evidence: "iceberg flipped to adopted with nothing else changed. test_anything_adopted_carries_workload_evidence FAILED. This is the specification's closing rule biting: infrastructure ahead of the load."
+  the_ownership_resolution_reversed_to_an_undirected_one: "who_resolved_it changed from DIRECTED to decided-here. FAILED -- a layer resolving an ecosystem ownership question on its own authority is one party writing both sides, and the record has to say which happened."
+  postgis_released_from_the_hold_list: "the postgis line removed from architecture/opportunity_engine.yaml. test_the_hold_list_is_cited_and_not_restated FAILED -- this record cites a reason it does not own, so the reason moving must break the citation rather than leave it pointing at nothing."
+  and_the_detection_method_is_itself_the_finding: "a text sweep for these names over this repository returns four hits and none is an adoption. A gate built on that sweep would have reported four adoptions that never happened, in a record whose whole subject is not adopting things prematurely."
+
+what_this_record_does_not_do:
+  no_technology_is_adopted_by_it: "it records positions and makes adoption a checkable act. Nothing is installed, imported or configured."
+  no_hold_list_is_overridden: "PostGIS stays held for the reason already recorded, and this file cites that reason rather than restating it."
+  no_ci_is_migrated: "the GitLab conflict is recorded as an open decision. Moving CI is not a data-platform step."
+  no_second_canonical_layer_is_created: "the ownership question is resolved toward adapter, with what would revise it stated."

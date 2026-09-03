@@ -1,0 +1,365 @@
+# WHICH API PLANE EACH MODULE HERE CAN SERVE, AND WHAT IT MUST RETURN.
+#
+# THE SPECIFICATION THIS ANSWERS was handed down on 2026-09-03: thirteen
+# module families each with an API role, four deliberate planes, and one
+# invariant -- every API response either carries a canonical reference and
+# a proof root, or says explicitly that it is an operational observation
+# with its limitations.
+#
+# THE FIRST THING MEASURED WAS THAT THE SPECIFICATION IS NOT ABOUT THIS
+# TREE. Its vocabulary -- VerificationEnvelope, Warrant Graph, Security
+# Constellation, trusted signers, verification router -- appears in NONE of
+# the checkouts on this machine, nor in the information-systems-archive,
+# nor on Payload Terminal's main branch. Searched, not assumed. So this
+# file does not claim these modules implement that system. It maps what is
+# here onto those planes, says what is absent, and records one amendment
+# the mapping forced.
+#
+# WHY IT IS WORTH DOING BEFORE ANY ENDPOINT EXISTS. An invariant applied to
+# a surface that already exists is a migration. Applied before, it is a
+# constraint the surface inherits. This one found a real defect on its
+# first application -- see the_gap_the_invariant_found_immediately.
+extends: core@1.0.0
+
+artifact: api_plane_assignment
+owner: daf
+status: mapped_2026_09_03
+enforcement: tests/test_api_plane_assignment.py
+
+# ----------------------------------------------------------------------
+# THE AMENDMENT. The invariant as stated is a dichotomy. These modules
+# return three kinds of thing, and the third is the one this project has
+# spent most of its effort earning.
+# ----------------------------------------------------------------------
+response_branches:
+  claim:
+    what_it_is: "an assertion about the world or about a computation, which a consumer may act on."
+    requires: "a canonical reference -- an identity a consumer can navigate back through. Content-addressed here: the id is a function of the content, so a claim cannot be moved away from what it asserts."
+    proof_root_status: "NOT PRESENT ANYWHERE IN THIS TREE, and stated rather than implied. A content commitment over inputs and participating parameters is not a root you can navigate; it answers `are these the same bytes`, not `what supports this`. Adding proof roots needs an accumulator, and nothing here is one. Any endpoint promising a proof root today would be promising a field that does not exist."
+  refusal:
+    what_it_is: "a decision not to admit something, with the reason it was not admitted."
+    requires: "a reason drawn from a DECLARED, CLOSED vocabulary, and reproducibility -- the same input yields the same refusal with the same code."
+    why_it_is_not_an_observation: "an observation is a reading of an operational state and may differ on the next run for reasons nobody controls. A refusal is derived: it is a function of the input and the rule, it can be re-run, and it can be argued with. MISSING_UNCERTAINTY_KIND is not a health metric, it is a verdict. Filing refusals under `operational observation with limitations` discards exactly the property that makes them worth returning."
+    why_it_is_not_a_claim: "it asserts nothing about the world. It asserts something about the BOUNDARY -- that this input does not cross it -- and a consumer cannot act on it as though it were a measurement."
+  observation:
+    what_it_is: "a reading of operational state: lag, counts, rates, positions, health."
+    requires: "its limitations stated in the response rather than in documentation. A rate with no denominator, or a backlog with no unclassified count, is a number a reader will treat as a measurement."
+
+a_response_may_carry_more_than_one_branch:
+  the_case_that_showed_it: "science/replicate_pairing.py SampleCovariance carries a computed covariance and correlation (claim), a reasons tuple from a closed vocabulary (refusal), and n_runs, effective_rank and rank_tolerance (the limitations of the claim). All three, in one return value."
+  the_amendment: "THE BRANCH IS A PROPERTY OF EACH ASSERTION IN A RESPONSE, NOT OF THE RESPONSE ENVELOPE. Forcing one label per response would make this type choose which of its three honest parts to be, and any choice loses the other two."
+  and_that_shape_is_the_target_rather_than_a_problem: "a claim returned WITH the refusals it survived and the limitations it carries is the strongest response shape available. The invariant should require it, not tolerate it."
+
+# ----------------------------------------------------------------------
+the_gap_the_invariant_found_immediately:
+  what: "SampleCovariance carries NO canonical reference of any kind. Not an id, not the run ids, not the observation ids of the cells it was computed from."
+  why_that_is_serious_rather_than_untidy: "it is the object this pair spent a phase making trustworthy, and the one whose output crosses to the compute layer to be whitened. A consumer holding a covariance cannot get back to the runs it came from -- so it cannot check the pairing, cannot re-derive the rank verdict, and cannot tell two covariances over different replicate sets apart. The pairing DOES keep the reference: ReplicateSet.rows carries Cell.observation_id per value. The covariance drops it."
+  what_it_is_an_instance_of: "a claim without a canonical reference, which is precisely what the handed-down invariant exists to forbid. It was invisible until the invariant was applied, and every test over this module passed the whole time -- they check the numbers, and the numbers were right."
+  disposition: "repaired in the same commit that files this record, so the gate below has something true to assert rather than a known exception."
+
+# ----------------------------------------------------------------------
+# THE FOUR PLANES, against what this repository can actually serve.
+# ----------------------------------------------------------------------
+planes:
+  tenant_read:
+    can_serve_today: "partially, and SINGLE-TENANT. There is a catalog, a history, an admission decision and stored artifacts. There is no tenant concept anywhere in this tree -- no tenant id, no binding, no resolver."
+    what_is_absent: "tenancy itself. Adding tenant-bound resolvers is not a filter over these reads; it is an identity dimension none of these types carry."
+  verification:
+    can_serve_today: "partially. Content-addressed identity, admissibility decisions and reproducible refusals exist. There is no envelope, no closure object and no warrant graph."
+    the_failure_mode_to_design_against: "already filed here twice -- an integrity check that verifies its own recomputation rather than an independent one. architecture/proof_integrity.yaml records verify_certified_the_corruption: a stored NaN was read back, its id recomputed, and the check PASSED, correctly by its own rules. A VerificationEnvelope that recomputes what it stored will do the same thing and report green."
+  governance:
+    can_serve_today: "MOST OF IT, and this is the inversion worth stating -- governance is usually the plane built last and it is the one furthest along here."
+    what_exists:
+      coverage: "architecture/doctrine_coverage.yaml, and the derived-coverage discipline in architecture/proof_integrity.yaml"
+      source_policy_windows: "architecture/unverified_window.yaml"
+      retention: "architecture/condition_lifecycle.yaml"
+      preflight: "the preregistrations -- architecture/third_anchor_preregistration.yaml, architecture/core_pin_bump_preregistration.yaml -- with predictions recorded before the event and scored after"
+      replay: "daf/execution/record.py ExecutionRecord, and tests/test_pair_at_remote.py"
+      challenges: "the plant-and-watch-it-fail requirement in architecture/proof_integrity.yaml, which is an adjudication procedure with recorded outcomes"
+    what_is_absent: "readiness as a typed artifact. The corpus substrate has the closest thing anyone in the ecosystem has built -- a maturity ladder where no capability touching a real instrument export is above `research` -- and this repository has no equivalent."
+  internal_ingestion_operator:
+    can_serve_today: "NONE OF IT."
+    what_is_absent: "signed packets, signature verification, trusted signers, operator actions, token auth, an HTTP runtime. Not thin -- absent. Every one of those is a module family with nothing behind it here."
+
+# ----------------------------------------------------------------------
+module_families:
+  kernel_canonical_registry_verification_router:
+    here: "the compute layer's fixed operation registry and its content-addressed request/output/computation identities."
+    status: partial
+    missing: "the verification router. Nothing dispatches a verification request; identity is computed at the call site."
+  journal_closure_persistence_repository:
+    here: "daf/storage -- filesystem and blob stores, a durable pool, an artifact store, catalog history, checkpoints."
+    status: present
+    missing: "PostgreSQL, and any closure object. Persistence is file-shaped."
+  source_policy_acquisition_normalization_capture_archive_retention:
+    here: "daf/adapters, daf/extractors, daf/orchestration, architecture/unverified_window.yaml, architecture/condition_lifecycle.yaml."
+    status: present
+  corpus_build_admission_profiles_identity_diff_release:
+    here: "science/admissibility.py, architecture/evidence_class_at_ingest.yaml, and the corpus graph in the corpus substrate -- SPLIT ACROSS TWO REPOSITORIES that do not join. See architecture/corpus_substrate_survey.yaml."
+    status: partial
+  projections:
+    here: "nothing. Projections are the vendored core's, and this repository consumes rather than builds them."
+    status: absent_by_layer
+  context_packages_agent_execution_authorized_search:
+    here: "architecture/daq_agent_instruments.yaml and architecture/build_agent_contracts.py."
+    status: thin
+    missing: "authorization state of any kind. Nothing returns whether a caller may see what it asked for."
+  methodology_attestation_signers_release_activation:
+    here: "nothing."
+    status: absent
+  release_preflight_and_readiness:
+    here: "the preregistrations, which are preflight in the exact sense the specification means -- typed evidence recorded before the event, with what would falsify it."
+    status: partial
+    missing: "explicit non-authorization. A preregistration says what was predicted; it does not say what a reader is NOT entitled to conclude."
+  projection_workers_checkpoints_telemetry_snapshots:
+    here: "daf/catalog/checkpoint.py, daf/execution/record.py, daf/execution/metrics.py."
+    status: partial
+  ecosystem_apparatus_control_plane_security_constellation:
+    here: "architecture/ecosystem_register.yaml and architecture/ecosystem_census.yaml -- twelve members, identity by ref-set equality, postures, no raw security detail."
+    status: "the strongest family here, and already an architecture API in the sense the specification means."
+    and_it_names_a_party_it_could_not_locate: "the Control Plane. architecture/corpus_substrate_survey.yaml records that the corpus declares participation to it and mirrors its vocabularies, and that no repository, URL or identifier for it exists anywhere in that tree."
+  federation_signatures_replay_audit:
+    here: "replay only -- ExecutionRecord and the pair-at-remote check. No federation, no signatures."
+    status: thin
+  pattern_adjudication_challenges_harness_computation:
+    here: "architecture/proof_integrity.yaml as the adjudication record, the preregistrations as the harness, and the compute layer as computation."
+    status: present
+    missing: "candidates and reviews as first-class objects. The class record is authored, not submitted."
+  object_store_auth_deployment_runtime:
+    here: "daf/storage/blob_store.py and filesystem_store.py."
+    status: thin
+    missing: "token auth, deployment bindings, and any HTTP or MCP runtime."
+
+# ----------------------------------------------------------------------
+# The response set, DERIVED from public return annotations rather than
+# listed, and classified. A type returned by a public entry point and not
+# classified here fails the enforcement.
+# ----------------------------------------------------------------------
+response_types:
+  ExecutionRecord:
+    branch: "claim"
+    plane: "governance"
+    reference_field: "content_digest"
+  QuarantineRecord:
+    branch: "claim"
+    plane: "governance"
+    reference_field: "id"
+    note: "a claim ABOUT a refusal. The refusal is the content; the record of it is content-addressed and navigable."
+  EvidenceClassAssignment:
+    branch: "claim"
+    plane: "verification"
+    reference_field: "id"
+  SampleCovariance:
+    branch: "claim"
+    plane: "tenant_read"
+    reference_field: "source_observation_ids"
+    note: "carries all three branches -- see a_response_may_carry_more_than_one_branch. Its reference was ADDED when this record was written; it had none."
+  PairedResult:
+    branch: "claim"
+    plane: "tenant_read"
+    reference_field: "covariance"
+    note: "the reference is one hop: the covariance it carries now holds the run and observation ids."
+  RecordedExecution:
+    branch: "claim"
+    plane: "governance"
+    reference_field: "execution"
+  Invariant:
+    branch: "claim"
+    plane: "governance"
+    reference_field: "id"
+    note: "a DECLARED id, not a content hash. A different kind of reference, recorded as such rather than counted as the same thing."
+  Doctrine:
+    branch: "claim"
+    plane: "governance"
+    reference_field: "source_digest"
+    note: "a generated projection; the digest is over what it was generated FROM, which is the reference that matters for it."
+  AcquisitionIntent:
+    branch: "claim"
+    plane: "tenant_read"
+    reference_field: "id"
+  Warrant:
+    branch: "claim"
+    plane: "tenant_read"
+    reference_field: "observation_id"
+    note: "the Tenant Read plane's proof-navigation response -- a value with what justifies it. It carries the observation id, the document id and the run identity, which is a claim referencing three levels of lineage rather than one."
+  AttestationCheck:
+    branch: "claim"
+    plane: "verification"
+    reference_field: "attestation"
+    note: "a verdict about an attestation, referencing the attestation it checked. Carries reasons too, so it is a claim with its refusals attached -- the shape a_response_may_carry_more_than_one_branch names as the target."
+  Holdings:
+    branch: "observation"
+    plane: "tenant_read"
+    limitation_field: "examined"
+    note: "what a scan found AND what it cost -- `examined` beside `matched` is the denominator, which is exactly what the observation branch requires and which most scan results omit."
+  Admissibility:
+    branch: "refusal"
+    plane: "verification"
+    reason_field: "reasons"
+  Pairing:
+    branch: "refusal"
+    plane: "tenant_read"
+    reason_field: "refusals"
+  PlanValidationIssue:
+    branch: "refusal"
+    plane: "governance"
+    reason_field: "code"
+  AcquisitionResult:
+    branch: "refusal"
+    plane: "governance"
+    reason_field: "admission_failures"
+    note: "carries artifacts too; classified by the part a consumer must not ignore."
+  InformationGap:
+    branch: "refusal"
+    plane: "governance"
+    reason_field: "reasons"
+    note: "a refusal about what is NOT known, which is the shape a coverage endpoint returns."
+  ForbiddenTransition:
+    branch: "refusal"
+    plane: "governance"
+    reason_field: "reason"
+  IngestRunRejectionMetrics:
+    branch: "observation"
+    plane: "governance"
+    limitation_field: "attempts"
+  UnclassifiedBacklog:
+    branch: "observation"
+    plane: "governance"
+    limitation_field: "unclassified"
+  IngestReport:
+    branch: "observation"
+    plane: "governance"
+    limitation_field: "backlog"
+  AcquisitionCheckpoint:
+    branch: "observation"
+    plane: "governance"
+    limitation_field: "position"
+  AdapterBinding:
+    branch: "observation"
+    plane: "internal_ingestion_operator"
+    limitation_field: "version"
+  AcquisitionPlan:
+    branch: "observation"
+    plane: "governance"
+    limitation_field: "enabled"
+  AcquisitionRequest:
+    branch: "observation"
+    plane: "tenant_read"
+    limitation_field: "requested_at"
+    note: "an echo of what was asked for. Not a claim: it asserts nothing except that a request was formed."
+  SourceDefinition:
+    branch: "observation"
+    plane: "governance"
+    limitation_field: "enabled"
+  DepthAccount:
+    branch: "observation"
+    plane: "governance"
+    limitation_field: "depth"
+  Binding:
+    branch: "observation"
+    plane: "governance"
+    limitation_field: "snapshot"
+  Transition:
+    branch: "observation"
+    plane: "governance"
+    limitation_field: "mandatory"
+
+# ----------------------------------------------------------------------
+# THIRTEEN OF THE FORTY RESPONSE TYPES ARE NOT THIS LAYER'S.
+#
+# They are the vendored core's, re-exported through daf/_vendor.py, and
+# this repository cannot change them. That is a structural fact about the
+# specification rather than a detail: if a response must carry a canonical
+# reference and a proof root, and the type belongs to another party, this
+# layer cannot satisfy the invariant for it unilaterally. Adding a proof
+# root to Observation is the core's act.
+#
+# So these are recorded as an OBSERVATION about another party's types --
+# what they are seen to carry -- and NOT as a declaration of their branch.
+# The same distinction architecture/exchange/ste_invariants.yaml makes
+# about reconstructing an owner's invariants: a reading is not a statement,
+# and citing one as the other is the error that file warns against.
+# ----------------------------------------------------------------------
+vendored_response_types:
+  owner: "the deterministic-state-architecture core, vendored at vendor/scout-retrieval-agent"
+  status: "OBSERVED_NOT_DECLARED"
+  what_would_make_them_declared: "the core stating the branch of each, in its own tree, the way it stated its invariant set in architecture/exchange/ste_invariant_declaration.yaml. Until then this block records what they carry, not what they are."
+  observed:
+    Observation:
+      observed_branch: "claim"
+      carries: "id"
+    Record:
+      observed_branch: "claim"
+      carries: "id"
+    Source:
+      observed_branch: "claim"
+      carries: "id"
+    Document:
+      observed_branch: "claim"
+      carries: "id"
+    Referent:
+      observed_branch: "claim"
+      carries: "id"
+    ClaimedRelationship:
+      observed_branch: "claim"
+      carries: "id"
+    DerivedValue:
+      observed_branch: "claim"
+      carries: "id"
+    DerivedGrounding:
+      observed_branch: "claim"
+      carries: "id"
+    RawDocument:
+      observed_branch: "observation"
+      carries: "retrieved_at"
+    ExtractionCandidate:
+      observed_branch: "observation"
+      carries: "confidence"
+    ScoutFinding:
+      observed_branch: "claim"
+      carries: "observation"
+    ScoutAdmissionFailure:
+      observed_branch: "refusal"
+      carries: "errors"
+
+# ----------------------------------------------------------------------
+# A FOURTH CATEGORY THE ENFORCEMENT FORCED, and it is not a branch.
+#
+# Some public entry points return a STORE rather than a response: a handle
+# a caller then queries. A handle asserts nothing, refuses nothing and
+# reports nothing, so all three branches are wrong for it, and the first
+# draft of this record tried to file one as an observation with an empty
+# limitation field. The gate refused it, which is the gate working: an
+# empty required field is a classification that was not made.
+#
+# This is the specification's own `host-only infrastructure` role arriving
+# from the other direction. A handle is infrastructure; it is named here so
+# that it cannot be quietly classified as a response later.
+# ----------------------------------------------------------------------
+not_a_response:
+  why_the_category_exists: "a store handle is not an assertion. Filing one under any branch would mean either inventing a reference it does not have, a reason it does not give, or a limitation it does not report."
+  what_a_caller_gets: "the handle itself carries no API obligation. Everything it RETURNS does, and those returns are classified above."
+  members:
+    ClassRegister:
+      what_it_is: "an in-memory evidence-id to class index with no reassignment path, populated at ingest and reloaded at restart."
+      returns_responses_of_type: "EvidenceClassAssignment"
+    EvidencePool:
+      what_it_is: "the durable pool. A store, and the boundary every claim in this repository is persisted through."
+      returns_responses_of_type: "Observation, Record, Source, Document, Referent, DerivedValue"
+
+verified_by_planting_the_defect:
+  a_claim_whose_reference_field_does_not_exist_on_the_type: "ExecutionRecord's reference_field renamed to a plausible field it does not have. test_each_branch_carries_the_field_its_requirement_names FAILED -- which is the check that separates a declaration from a label."
+  a_response_type_dropped_from_the_record: "Admissibility deleted. test_every_response_type_the_code_returns_is_classified FAILED, naming it and the file it is returned from. This is the shape a new endpoint would arrive in."
+  a_proof_root_claimed: "a proof_root key added to one entry. test_no_proof_root_is_claimed_anywhere FAILED -- the half of the invariant nothing here satisfies cannot be satisfied by naming a field."
+  a_vendored_type_declared_rather_than_observed: "one observed_branch changed to branch. test_the_vendored_types_are_recorded_as_observed_and_not_declared FAILED. Recording a branch for another party's type as though this layer decided it is the reconstruction-cited-as-declaration error."
+  the_covariance_reference_removed: "source_observation_ids returned empty rather than populated. test_the_covariance_can_be_navigated_back_to_the_runs_it_came_from FAILED -- asserted on a live pairing, so a field that exists and is never filled does not pass."
+  and_the_gate_caught_a_concurrent_session_on_its_first_encounter: "a second session added daf/query.py -- warrant_for, holdings_matching, census -- and science/set_attestation.py while this record was being written. The merge conflicted only on derived artifacts; the three new response types produced no conflict at all, because a new file cannot conflict with a record that has never heard of it. The gate refused them by name. That is the case the derivation exists for: not a type someone forgot to classify, but a type from a session that did not know a classification was required."
+
+  and_two_checks_fired_for_real_before_any_plant: "the derivation found nineteen response types the first draft had not classified, and two classified types that nothing returned -- the second because the walk covered module-level functions only and missed types reaching a caller through a method. The walk was widened; the record was filled. Neither was a plant."
+
+# ----------------------------------------------------------------------
+what_this_record_does_not_do:
+  no_endpoint_is_built: "there is no HTTP surface here and this file does not propose one. It constrains what any surface would be allowed to return."
+  no_tenancy_is_invented: "three of the four planes assume a tenant and this tree has no tenant concept. Recorded as absent rather than approximated with a filter."
+  no_proof_root_is_claimed: "stated once above and repeated here because it is the half of the invariant nothing satisfies. Content commitments are not proof roots and this record does not let them stand in."
+  no_second_classification_system: "the branch of each type is recorded HERE and nowhere else. Stamping an attribute on seventeen classes would put the epistemic claim in two places, and the two would drift."
