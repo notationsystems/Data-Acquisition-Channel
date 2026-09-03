@@ -93,7 +93,8 @@ apparatuses:
     kind: BOUND_AND_OBSERVED
     bound:
       what_this_repository_holds_jointly_with_it: "architecture/proof_integrity.yaml and architecture/kalman_validation_preregistration.yaml, held BYTE-IDENTICALLY by both parties. Editing either is a joint reissue and never one party's act."
-      proof_integrity_sha256: "c9be09961d3440684c781fee7c2ce72be84a9507907240c887390ccf012c5f36"
+      proof_integrity_sha256: "e183cf2e8737a68089d2c186a0548591eae98ceadd9201759b8da4afe6c3c0b9"
+      how_this_value_was_obtained: "re-measured at BOTH REMOTES after the reissue that moved it, not read from this checkout. git ls-remote for each head, a depth-1 fetch of the full forty-character sha into a throwaway repository, git cat-file of the blob. SCL head 39278502f4b550fb71040553ab83a7ea57e0bb38, DAQ head 603fed5095d51058a95d4fd2e024befa839a2617, both blobs e183cf2e8737a68089d2c186a0548591eae98ceadd9201759b8da4afe6c3c0b9. The predecessor value was c9be09961d3440684c781fee7c2ce72be84a9507907240c887390ccf012c5f36."
       kalman_preregistration_sha256: "0eb23c6b0f9dd270a6ae2d53ebb88b60b33118b9f6a9d499be5683648756d00c"
       the_exchange_surface: "architecture/exchange/ -- daq_capabilities.yaml and daq_requirement_response.yaml authored here; scl_requirements.yaml and scl_contract_clauses.yaml received; ste_invariants.yaml and invariant_register.yaml derived across all three. Every one canonicalized by a byte-identical canonical_yaml.py both parties independently produce the same fixture digest from."
     observed:
