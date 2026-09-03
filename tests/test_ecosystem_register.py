@@ -478,3 +478,112 @@ def test_every_ecosystem_record_names_every_other_one():
         "a record of this ecosystem does not know the others exist:\n  "
         + "\n  ".join(unbound)
     )
+
+
+# --------------------------------------------------------------------
+# the candidate names are SWEPT, not listed
+# --------------------------------------------------------------------
+
+#: `notationsystems/<name>`, wherever it appears -- a URL, a markdown link,
+#: a Cargo path, a prose reference. The owner prefix is required so this
+#: cannot match an arbitrary path segment.
+_OWNED_REPOSITORY = re.compile(r"notationsystems/([A-Za-z0-9][A-Za-z0-9._-]*)")
+
+#: File kinds a human writes. A repository name reaches this register by
+#: someone mentioning it, so the sweep covers what people edit.
+_AUTHORED_SUFFIXES = (".yaml", ".yml", ".py", ".md", ".json", ".toml")
+
+
+def _named_repositories(inside_vendor: bool):
+    """Every notationsystems repository this tree names.
+
+    THE SCOPE SPLIT IS LOAD-BEARING. Names under vendor/ are the CORE'S
+    references to its own build environment -- sibling paths in a Cargo
+    manifest, not claims this repository makes about the ecosystem.
+    Sweeping them together would attribute the core's expectations to
+    this layer; sweeping only outside vendor/ would lose two real
+    repositories. So both are swept and they are kept apart."""
+    found = set()
+    for path in sorted(REPO_ROOT.rglob("*")):
+        if not path.is_file() or path.suffix not in _AUTHORED_SUFFIXES:
+            continue
+        relative = path.relative_to(REPO_ROOT)
+        if not relative.parts:
+            continue
+        in_vendor = relative.parts[0] == "vendor"
+        if relative.parts[0] == ".git" or in_vendor != inside_vendor:
+            continue
+        try:
+            text = path.read_text()
+        except (UnicodeDecodeError, OSError):           # pragma: no cover
+            continue
+        for match in _OWNED_REPOSITORY.finditer(text):
+            found.add(match.group(1).removesuffix(".git"))
+    return found
+
+
+def _names_the_register_accounts_for():
+    names = set()
+    for member in REGISTER["members"].values():
+        for url in _remote_urls_of(member):
+            tail = url.rstrip("/").rsplit("/", 1)[-1]
+            names.add(tail.removesuffix(".git"))
+    return names
+
+
+def test_every_repository_this_tree_names_is_accounted_for_in_the_register():
+    """THE DEFECT THIS CLOSES, WHICH BIT THREE TIMES.
+
+    The first two versions of the register derived their candidate names
+    from the REMOTES OF CHECKOUTS ON THIS MACHINE. That source cannot
+    contain a name nothing here points at, so it missed
+    `data-acquisition-fabric` (found by the census), then
+    `Payload-Terminal-V0` and `Scientific-Compute-Layer-SCL-` (named in
+    epistemics/corpus/contract.json, a file this repository CARRIES).
+    Six members became eleven when the names were swept instead.
+
+    Matching is by NAME rather than by ref set, deliberately: this check
+    must run with no network, because its whole job is to fail when
+    somebody writes a repository name nobody has classified -- and that
+    failure must not depend on whether GitHub is reachable.
+
+    A name that resolves nowhere is still accounted for by being recorded
+    with a posture. `unclassified` exists for exactly that, so there is
+    never a reason to leave one out."""
+    named = _named_repositories(inside_vendor=False)
+    accounted = _names_the_register_accounts_for()
+    # A name that is a strict prefix of an accounted one, with no
+    # occurrence of its own, is a match artefact rather than a repository.
+    unaccounted = sorted(
+        name for name in named - accounted
+        if not any(other.startswith(name) and other != name for other in accounted)
+    )
+    assert not unaccounted, (
+        "this repository names notationsystems repositories the ecosystem "
+        f"register does not account for: {unaccounted}\n"
+        "Give each one a posture -- `unclassified` is a posture and means "
+        "it resolves and nobody has read it."
+    )
+
+
+def test_the_vendored_core_names_repositories_this_register_records_separately():
+    """The core's own references, swept apart from this repository's.
+
+    They are not noise: two of them are real repositories the register now
+    carries, marked `found_by` the vendored sweep. What must stay true is
+    that the two scopes are DISTINGUISHED -- a name that reaches the
+    register only through the core is a fact about the core's environment,
+    and recording it as this layer's claim would be false."""
+    from_core = _named_repositories(inside_vendor=True)
+    if not from_core:
+        pytest.skip("the vendored core is not checked out here")
+    accounted = _names_the_register_accounts_for()
+    assert from_core & accounted, (
+        "the vendored core names repositories and the register accounts for "
+        f"none of them: {sorted(from_core)}"
+    )
+    for name, member in REGISTER["members"].items():
+        if "found_by" in member:
+            assert "vendor" in member["found_by"] or "core" in member["found_by"], (
+                f"{name} records a found_by that does not name the scope it came from"
+            )

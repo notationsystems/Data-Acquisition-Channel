@@ -113,8 +113,16 @@ is what it is named after.
 from __future__ import annotations
 
 import math
+import pathlib
 from dataclasses import dataclass
 from typing import Iterable, List, Mapping, Optional, Sequence, Set, Tuple
+
+from epistemics import _yaml
+
+#: This repository's root, from this file's location -- so the published
+#: constant is read from the tree the module is running in rather than
+#: from a configured path.
+_REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 #: An observation that names no single Record has no row to occupy.
 AMBIGUOUS_RUN_IDENTITY = "AMBIGUOUS_RUN_IDENTITY"
@@ -126,6 +134,48 @@ RAGGED_REPLICATE_SET = "RAGGED_REPLICATE_SET"
 TOO_FEW_RUNS_FOR_A_COVARIANCE = "TOO_FEW_RUNS_FOR_A_COVARIANCE"
 #: A variable with zero sample variance: correlations against it are 0/0.
 DEGENERATE_VARIABLE = "DEGENERATE_VARIABLE"
+#: The covariance is SINGULAR -- some direction in variable space carries no
+#: variance at all, because the variables are not independent measurements.
+#:
+#: WHY THIS IS NOT A DETAIL, and why it is reported rather than left to the
+#: consumer to trip over. A covariance is handed onward to be WHITENED: the
+#: compute layer's least_squares takes only a diagonal, so a caller with a
+#: correlated problem factors Sigma = L L^T and fits the whitened system,
+#: which is exactly the generalized least-squares estimate -- for a
+#: POSITIVE DEFINITE Sigma.
+#:
+#: A sample covariance over variables carrying an exact linear relation is
+#: positive SEMI-definite by construction, and the compute layer measured
+#: what happens then: over 2000 five-run replicate sets of one physical
+#: situation, a plain Cholesky accepted 828 and refused 1172. The outcome
+#: is decided by where the last pivot lands relative to zero. Two times in
+#: five it succeeds and the deficient row of the whitened problem is made
+#: entirely of rounding noise, small enough to look harmless because
+#: numerator and denominator vanish together.
+#:
+#: The polymer row is exactly this case and it is not exotic: a GPC report
+#: carries Mn, Mw and a dispersity that IS Mw/Mn, so in logs the third
+#: variable is identically the second minus the first. Any instrument that
+#: reports a derived quantity beside its inputs produces it.
+#:
+#: THE COMPUTE LAYER'S REQUIREMENT, QUOTED VERBATIM from
+#: architecture/exchange/scl_requirements.yaml, workloads.least_squares,
+#: blocking_requirements. Verbatim rather than summarised because a
+#: paraphrase is where a softened obligation gets in, and because
+#: tests/test_aligned_observation_table.py checks that every requirement
+#: this repository is told about is written down here word for word:
+#:
+#:     science/replicate_pairing.py now measures a covariance from paired
+#:     replicate runs, and least_squares takes only a diagonal, so the
+#:     caller whitens with a Cholesky factor. That identity holds for a
+#:     KNOWN Sigma. A SAMPLE covariance over variables carrying an exact
+#:     linear relation is positive SEMI-definite by construction, and the
+#:     Cholesky then has no defined result. The obligation is to
+#:     establish definiteness with the SAME rule the operation applies to
+#:     the design -- a pivot at or below rank_tolerance times the largest
+#:     pivot is zero -- and to drop the deficient direction deliberately
+#:     rather than let it survive.
+RANK_DEFICIENT_COVARIANCE = "RANK_DEFICIENT_COVARIANCE"
 
 #: A replicate set carrying ONE variable. The covariance is a 1x1 matrix
 #: and the correlation is 1.0 -- structurally, not measurably: a variable
@@ -201,6 +251,12 @@ class SampleCovariance:
     covariance: Tuple[Tuple[float, ...], ...]
     correlation: Tuple[Tuple[Optional[float], ...], ...]
     n_runs: int
+    #: Effective rank under the compute layer's published cutoff, and the
+    #: cutoff used. The tolerance travels WITH the rank because a rank is
+    #: meaningless without the threshold that produced it -- the same
+    #: reason a measurement carries its uncertainty kind.
+    effective_rank: int
+    rank_tolerance: float
     reasons: Tuple[str, ...]
 
     def __post_init__(self) -> None:
@@ -339,6 +395,74 @@ def _keys_that_split_every_run(grouped: Mapping) -> Sequence[Tuple[str, str]]:
     return tuple(found)
 
 
+def published_rank_tolerance() -> float:
+    """The compute layer's cutoff, READ FROM ITS PUBLISHED ARTIFACT.
+
+    NOT TYPED HERE. `1e-12` is a value the compute layer owns and can
+    change; a copy of it in this module is a second encoding of one fact,
+    and the two would stop agreeing exactly when the compute layer moved
+    it -- silently, since nothing compares a number in this file to a
+    number in that header.
+
+    architecture/exchange/scl_requirements.yaml carries it under
+    `published_constants`, parsed there from
+    native/include/scl/least_squares.hpp by that repository's generator.
+    So the chain is: header -> generator -> artifact -> here, with a
+    digest at the artifact and a mirror check across the pair. This is a
+    JOIN, and the artifact moving is what makes it visible.
+
+    Raises rather than defaulting. A cutoff quietly standing in for the
+    counterparty's would be the same defect as copying it, with the
+    additional property that nobody could see it had happened.
+    """
+    artifact = (_REPO_ROOT / "architecture" / "exchange" / "scl_requirements.yaml")
+    document = _yaml.loads(artifact.read_text())
+    constants = document.get("published_constants")
+    if not constants or "least_squares_rank_tolerance_default" not in constants:
+        raise LookupError(
+            "scl_requirements.yaml publishes no least_squares rank tolerance; "
+            "the covariance rank cannot be established by the compute layer's "
+            "own rule, and this module does not invent one"
+        )
+    return float(constants["least_squares_rank_tolerance_default"])
+
+
+def covariance_rank(matrix, rank_tolerance: float) -> int:
+    """Effective rank by pivoted Cholesky, under the compute layer's rule.
+
+    `sigma_j <= tol * sigma_max` becomes `pivot <= tol * largest_pivot`.
+    They are the same rule about the same sort of object -- a spectrum of
+    non-negative numbers whose small end is indistinguishable from zero --
+    and using the counterparty's is what makes the two sides agree about
+    which directions exist.
+
+    Written without refusing on a non-positive pivot, deliberately: the
+    whole finding is that refusing there is a coin flip. Every pivot is
+    computed and then classified, so the answer does not depend on the
+    sign a rounding error happened to produce.
+    """
+    size = len(matrix)
+    if size == 0:
+        return 0
+    factor = [[0.0] * size for _ in range(size)]
+    pivots: List[float] = []
+    for i in range(size):
+        for j in range(i + 1):
+            carried = sum(factor[i][k] * factor[j][k] for k in range(j))
+            if i == j:
+                pivot = matrix[i][i] - carried
+                pivots.append(pivot)
+                factor[i][j] = math.sqrt(pivot) if pivot > 0.0 else 0.0
+            else:
+                factor[i][j] = (
+                    (matrix[i][j] - carried) / factor[j][j] if factor[j][j] > 0.0 else 0.0
+                )
+    largest = max(pivots)
+    if largest <= 0.0:
+        return 0
+    return sum(1 for pivot in pivots if pivot > rank_tolerance * largest)
+
+
 def sample_covariance(replicates: ReplicateSet) -> Optional[SampleCovariance]:
     """The covariance the pairing makes computable.
 
@@ -383,12 +507,19 @@ def sample_covariance(replicates: ReplicateSet) -> Optional[SampleCovariance]:
                 correlation_row.append(covariance[i][j] / denominator)
         correlation.append(tuple(correlation_row))
 
+    tolerance = published_rank_tolerance()
+    rank = covariance_rank(covariance, tolerance)
+    if rank < len(variables):
+        reasons.append(RANK_DEFICIENT_COVARIANCE)
+
     return SampleCovariance(
         variables=variables,
         means=means,
         covariance=tuple(covariance),
         correlation=tuple(correlation),
         n_runs=n,
+        effective_rank=rank,
+        rank_tolerance=tolerance,
         reasons=tuple(set(reasons)),
     )
 

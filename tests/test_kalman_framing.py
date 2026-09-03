@@ -245,20 +245,47 @@ def test_the_requirements_artifact_has_not_moved_during_the_reissues():
     import subprocess
 
     relative = "architecture/exchange/scl_requirements.yaml"
-    log = subprocess.run(["git", "log", "--format=%H", "--", relative],
-                         cwd=str(REPO_ROOT), capture_output=True, text=True)
-    if log.returncode != 0 or not log.stdout.strip():
-        pytest.skip("no git history (shallow clone)")
 
-    versions = []
-    for commit in log.stdout.split():
-        blob = subprocess.run(["git", "show", f"{commit}:{relative}"],
-                              cwd=str(REPO_ROOT), capture_output=True)
-        if blob.returncode:
+    # THE OWNER'S HISTORY, NOT THIS MIRROR'S. Measured 2026-09-03: the
+    # compute layer moved this artifact three times inside one session and
+    # this repository mirrored the last, so its local history of the file
+    # skips versions the owner committed. A mirror is byte-identical in the
+    # PRESENT; it was never a claim about matching commit cadence. Reading
+    # the mirror's history here would report a chain the owner did not
+    # write. Falls back to this checkout when the sibling is absent, and
+    # the fallback is what the skip below reports.
+    def _history(root):
+        log = subprocess.run(["git", "log", "--format=%H", "--", relative],
+                             cwd=str(root), capture_output=True, text=True)
+        if log.returncode != 0 or not log.stdout.strip():
+            return []
+        out = []
+        for commit in log.stdout.split():
+            blob = subprocess.run(["git", "show", f"{commit}:{relative}"],
+                                  cwd=str(root), capture_output=True)
+            if blob.returncode:
+                continue
+            digest = "sha256:" + hashlib.sha256(blob.stdout).hexdigest()
+            if not out or out[-1] != digest:
+                out.append(digest)
+        return out
+
+    owner = None
+    for candidate in sorted(REPO_ROOT.parent.iterdir()):
+        if not (candidate / ".git").exists():
             continue
-        digest = "sha256:" + hashlib.sha256(blob.stdout).hexdigest()
-        if not versions or versions[-1] != digest:
-            versions.append(digest)
+        remote = subprocess.run(["git", "config", "--get", "remote.origin.url"],
+                                cwd=str(candidate), capture_output=True, text=True)
+        url = remote.stdout.strip().lower()
+        if "cuda-architecture" in url or "compute-layer" in url:
+            owner = candidate
+            break
+
+    versions = _history(owner) if owner is not None else []
+    if not versions:
+        versions = _history(REPO_ROOT)
+    if not versions:
+        pytest.skip("no git history for the artifact in either checkout")
 
     stability = FRAMING["requirements_artifact_stability"]
 

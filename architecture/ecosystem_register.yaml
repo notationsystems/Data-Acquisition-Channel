@@ -47,6 +47,8 @@ method:
   a_remote_head_is_a_dated_reading_and_the_date_is_in_minutes: "MEASURED, not assumed. The enforcement test was written asserting recorded heads against live ones, and failed on its first run: two remotes had moved in the eleven minutes since the register was written -- the acquisition branch by one commit, the corpus substrate by one. Concurrent sessions are pushing to these branches while this file is being edited, so a register that pins exact head values is stale before it is committed. The disposition is NOT to drop the reading. It is to record it as `remote_head_at_measurement` with the time, and to assert the property that actually matters, below."
   a_remote_head_is_recorded_UNABBREVIATED_and_that_is_not_a_style_choice: "the enforcement test verifies a recorded referent by fetching it from the remote, and `git fetch <url> <sha>` requires the FULL forty characters -- an abbreviation is resolved against a local object database, and the throwaway repository doing the fetch has none. Recording seven characters made all six members report `no longer served`, six false alarms with one cause. This is the SECOND time in one artifact that an abbreviated sha inverted a result: the first produced the share-no-objects finding recorded below. The rule this file adopts is the pair's own, arrived at again from a new direction -- THE PARTICIPATING REFERENT IS RECORDED IN FULL, and the abbreviation is a reading aid that may appear in prose and may never be the thing a check joins on."
   the_property_asserted_about_remote_heads: "THE RECORDED HEAD IS STILL SERVED BY THE REMOTE. A branch advancing is ordinary work and must not fail a suite. A recorded commit that the remote no longer serves is a rewrite, a force-push or a collection -- and it silently voids every claim made relative to that referent, which is the failure this pair has a whole vocabulary for. Advance is expected; disappearance is a finding."
+  HOW_THE_CANDIDATE_NAMES_ARE_FOUND_AND_WHY_THAT_CHANGED: "DERIVED, since 2026-09-03, and the change is the third correction this file has taken for one defect. The first two versions enumerated candidate names from THE REMOTES OF CHECKOUTS ON THIS MACHINE -- a source that cannot contain a name nothing here points at, which is the coverage-by-enumeration shape architecture/proof_integrity.yaml calls its most-instanced class. It missed `data-acquisition-fabric`, found by the census; then it missed `Payload-Terminal-V0` and `Scientific-Compute-Layer-SCL-`, named in epistemics/corpus/contract.json, a file this repository carries. The names are now SWEPT from every hand-authored file in the tree by pattern, and each is resolved. That found eleven repositories where the enumeration found six."
+  the_sweep_excludes_the_vendored_core_and_that_is_load_bearing: "names inside vendor/ are the references OF THE CORE to its own environment, not the claims of this repository about the ecosystem. Swept separately they yield two further real repositories -- SP1-zero-knowledge-virtual-machine and risc0-zero -- and one path that resolves nowhere. Folding the two scopes together would attribute the expectations of the core to this layer."
   what_is_still_not_measured: "whether identical ref sets arise from a rename-with-redirect or from a mirror. Both produce exactly this signature and nothing observed here distinguishes them. Recorded as undetermined rather than guessed."
 
 # ----------------------------------------------------------------------
@@ -58,6 +60,8 @@ posture_classes:
   bearing: "carries the provenance conventions itself -- artifacts declaring `extends: core@<version>`, a class record, and gates that refuse rather than guess. A corpus this member produces is interrogable back to evidence."
   core: "the substrate the bearing members extend and declare themselves relative to. Vendored, not depended on: `modifiable: false`, used without copying or modifying a line. Its identity is what `bent: zero` is a claim about."
   vendored_upstream: "third-party scientific software, forked to pin a version rather than to change it. It carries NO provenance conventions and must not be made to -- imposing them would fork the science, not the packaging. What is owed instead is a recorded pin and a statement of what was NOT modified."
+  declared_empty_on_the_remote: "the remote answers and returns NO REFS. Not unreachable, not private, not slow -- `git ls-remote` exits zero with an empty list, which is what an initialised repository nobody has pushed to looks like. THE FIRST DRAFT OF THIS FILE USED A CLASS BY THIS NAME AND RETIRED IT, because it had been assigned on the strength of an empty local CLONE and the member turned out to hold an active branch. The name comes back with the measurement moved to where it belongs: an empty checkout is a fact about a machine, an empty ref list is a fact about the repository."
+  unclassified: "it resolves, and nothing here has read it. DISTINCT FROM every other class in this list, which are all statements about a member; this one is a statement about this register. It exists so that a repository found by the sweep can be recorded WITHOUT a posture, because the alternative -- leaving it out until someone has time to read it -- is how five members stayed invisible through two versions of this file. A member may sit here indefinitely; what it may not do is be absent."
   bearing_under_a_different_contract: "carries provenance conventions of its own -- content-addressed identity, knowledge time, machine-readable warrants -- and declares itself to a DIFFERENT authority than `core@1.0.0`. Not a lesser posture than `bearing` and not a defect: it is the posture that makes the join question real, because two apparatuses can both be rigorous and still not compose. It replaced `unsurveyed`, which held this member until it was read; and `unsurveyed` in turn replaced `declared_empty`, which was wrong because an empty checkout is a fact about this machine, never about the member."
 
 # ----------------------------------------------------------------------
@@ -73,7 +77,8 @@ members:
       - "https://github.com/notationsystems/notations-acquisition-channel"
       - "https://github.com/notationsystems/data-acquisition-channel-daq"
       - "https://github.com/notationsystems/data-acquisition-fabric"
-    how_that_was_established: "all four `git ls-remote` to the same single ref -- `refs/heads/claude/daf-state-space-architecture-v8peqd`, with HEAD equal to it. One branch, one commit, four names."
+      - "https://github.com/notationsystems/data-acquisition-channel"
+    how_that_was_established: "all five `git ls-remote` to the same single ref -- `refs/heads/claude/daf-state-space-architecture-v8peqd`, with HEAD equal to it. One branch, one commit, four names."
     and_the_fourth_name_came_from_the_other_census: "architecture/ecosystem_census.yaml names `notationsystems/data-acquisition-fabric` as this repository. This register had tested three names and not that one, because it derived its candidate names from the remotes of checkouts present on this machine -- an enumeration, over a source that cannot contain a name nothing here points at. Two records of one subject found one name each that the other missed, which is the argument for keeping both and joining them rather than choosing."
     remote_head_at_measurement: 63f4747d6465307ae763a38e3b0a2985f3482a29
     remote_head_moved_during_this_measurement: "0ead63d -> 63f4747, in eleven minutes. The added commit is `Conform to the corpus contract; measure the absences over the right trees` -- concurrent work, on the same branch this checkout is on."
@@ -92,6 +97,11 @@ members:
     posture: bearing
     remote: "https://github.com/notationsystems/Notations-CUDA-Architecture-"
     role: "compute -- a fixed registry of operations under an eleven-clause contract, standalone from acquisition by an enforced import boundary"
+    names_that_resolve_here:
+      - "https://github.com/notationsystems/Notations-CUDA-Architecture-"
+      - "https://github.com/notationsystems/Scientific-Compute-Layer-SCL-"
+      - "https://github.com/notationsystems/scientific-compute-layer-scl-"
+    how_that_was_established: "identical ref sets. The second and third were never tested until the sweep; the compute layer is referred to by BOTH names inside this repository, in README.md and in the census."
     remote_head_at_measurement: ee346ba1de6394c0383248e1bf56521d0ce47f3b
     local_checkout: "Notations-CUDA-Architecture-, at the remote head"
     invariant_ledger: absent
@@ -103,6 +113,7 @@ members:
     names_that_resolve_here:
       - "https://github.com/notationsystems/scout-retrieval-agent.git"
       - "https://github.com/notationsystems/scientific-transformer-engine"
+      - "https://github.com/notationsystems/Scout-Retrieval-Agent"
     how_that_was_established: "identical ref sets: HEAD and refs/heads/claude/deterministic-state-architecture-q9kl5c both at e02cd66, plus refs/heads/claude/daf-hardened-architecture-v2-8dpdfy at e7d9e38, on both names."
     package_identity: "name = deterministic-state-architecture, version = 1.0.0, at both the pin and the remote head"
     pinned_here_at: 5e146d5
@@ -140,6 +151,47 @@ members:
     remote_head_at_measurement: dd3a636488ed394909b63744918dc13da1f11467
     unmodified_at_head: true
     how_that_was_established: "same measurement, same result: one branch `develop`, head equal to the local checkout, and github.com/lammps/lammps serves that commit."
+
+  payload_terminal:
+    posture: bearing_under_a_different_contract
+    remote: "https://github.com/notationsystems/Payload-Terminal-V0"
+    role: "a provenance-first commerce instrument. epistemics/corpus/contract.json names it as the implementation of the claim_strength and interest axes, which this fabric deliberately does not implement."
+    remote_head_at_measurement: b5c99dd1d40cfb125a322b67904a622c6f6fde74
+    refs_at_measurement: 16
+    how_it_was_missed_for_two_versions_of_this_file: "no checkout of it exists on this machine, so a candidate list derived from local remotes could not contain it. It is named in a file this repository CARRIES -- epistemics/corpus/contract.json, under implementations -- which is why the sweep finds it and the enumeration did not."
+    why_the_posture_is_not_bearing: "it implements two axes of the shared corpus contract and not the third, and this fabric implements the third and not those two. Neither is a subset of the other, and the contract records that as deliberate on this side and an OPEN GAP on that one."
+
+  information_systems_archive:
+    posture: unclassified
+    remote: "https://github.com/notationsystems/information-systems-archive"
+    remote_head_at_measurement: d7f2354431f18e5c04679b0de0568f7c0c42aaae
+    what_is_known: "it resolves, it has two refs, and epistemics/corpus/contract.py refers to `the archive mirror` and to a canonical copy of the corpus contract held there. Nothing else about it has been read."
+    why_it_is_recorded_unclassified_rather_than_guessed: "the contract states that each corpus verifies its own copy against its own pin and that byte identity across corpora is coverage for divergence, not currency. If this repository is the archive the contract means, that limit is about THIS relationship and matters. Assigning a posture without reading it would be the same move that classified the corpus substrate declared_empty."
+
+  morphohdl:
+    posture: unclassified
+    remote: "https://github.com/notationsystems/morphohdl"
+    remote_head_at_measurement: 3ff923f9fafcb5b97ad2ef393795c96710ed00ea
+    what_is_known: "it resolves, and the vendored core carries a `morpho` package that its own invariant declaration cites -- inference is marked downstream in Morpho as is_canonical rather than folded back into canonical state. Whether this repository is that Morpho was NOT established."
+
+  sp1_zero_knowledge_virtual_machine:
+    posture: vendored_upstream
+    remote: "https://github.com/notationsystems/SP1-zero-knowledge-virtual-machine"
+    remote_head_at_measurement: b38b61209e45e969289e70d5cf79dc763460bc41
+    found_by: "the vendored-core sweep, not this repository's own. The core's zk/ workspace names it."
+
+  risc0_zero:
+    posture: vendored_upstream
+    remote: "https://github.com/notationsystems/risc0-zero"
+    remote_head_at_measurement: 3bbcd44d6459b9ef6ac0df3846dc9215514934e8
+    found_by: "the vendored-core sweep. Same workspace, same role."
+
+  network_scout_signal_miner:
+    posture: declared_empty_on_the_remote
+    remote: "https://github.com/notationsystems/network-scout-signal-miner"
+    measured: "`git ls-remote` exits 0 and returns zero refs. No HEAD, no branches, no tags."
+    and_a_checkout_of_it_exists: "architecture/ecosystem_census.yaml records a git directory at /home/user/notationsystems/network-scout-signal-miner with this origin configured and zero commits in its object database. Both ends are empty, which is the one case where the local observation and the remote measurement agree."
+    how_it_reached_this_register: "not by anyone deciding to include it. The sweep found the census naming it, and the accounting check refused to pass while it had no posture -- which is the whole point of sweeping rather than listing."
 
 # ----------------------------------------------------------------------
 # THE FINDING THAT SURVIVED, and it is about the core rather than the map.

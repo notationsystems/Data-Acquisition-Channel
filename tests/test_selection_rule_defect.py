@@ -120,9 +120,19 @@ def test_the_least_squares_and_pca_blocker_sets_are_still_exactly_as_recorded():
     """STALENESS FOUR, measured and NOT stale. The half of the record that
     still holds, asserted so that its holding is a fact rather than an
     assumption carried forward."""
+    # A THIRD ROW ARRIVED 2026-09-03 and this pin caught it, which is what
+    # a pin over a counterparty's artifact is for: the compute layer added
+    # `a_covariance_offered_for_whitening_must_be_positive_definite_by_the_operations_own_cutoff`
+    # after composing two recorded boundaries in least_squares.hpp. It is
+    # ANSWERED here -- science/replicate_pairing.py reports effective rank
+    # under the compute layer's published cutoff and names
+    # RANK_DEFICIENT_COVARIANCE -- so it is pinned SATISFIED, and the
+    # status is asserted rather than the count, so a fourth row fails here
+    # too.
     assert _daq_blockers("least_squares") == {
         "stable_sample_and_variable_identity": "UNSATISFIED",
         "explicit_missing_value_semantics": "UNSATISFIED",
+        "a_covariance_offered_for_whitening_must_be_positive_definite_by_the_operations_own_cutoff": "SATISFIED",
     }
     assert _daq_blockers("pca") == {
         "stable_sample_and_variable_identity": "UNSATISFIED",

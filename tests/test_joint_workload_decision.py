@@ -179,19 +179,15 @@ def _bound_artifact_fields(record):
     )
 
 
-def _hash_history(field):
+def _history_in(root, field):
     """Distinct values of one bound-artifact hash field, newest committed
-    first.
-
-    Returns None when history is unavailable (a shallow clone), so the
-    weaker half of the check still runs rather than the whole thing being
-    silently skipped."""
+    first, from one checkout's history of the record."""
     import subprocess
 
     relative = RECORD.relative_to(REPO_ROOT).as_posix()
     log = subprocess.run(
         ["git", "log", "--format=%H", "--", relative],
-        cwd=str(REPO_ROOT), capture_output=True, text=True,
+        cwd=str(root), capture_output=True, text=True,
     )
     if log.returncode != 0 or not log.stdout.strip():
         return None
@@ -200,14 +196,64 @@ def _hash_history(field):
     for commit in log.stdout.split():
         blob = subprocess.run(
             ["git", "show", f"{commit}:{relative}"],
-            cwd=str(REPO_ROOT), capture_output=True, text=True,
+            cwd=str(root), capture_output=True, text=True,
         )
         if blob.returncode != 0:
             continue
-        value = yaml.safe_load(blob.stdout).get(field)
+        loaded = yaml.safe_load(blob.stdout)
+        value = loaded.get(field) if isinstance(loaded, dict) else None
         if value and (not seen or seen[-1] != value):
             seen.append(value)
     return seen or None
+
+
+def _compute_layer_checkout():
+    """The sibling that AUTHORS this record's reissues, if it is here.
+
+    Located beside this checkout and identified by its remote rather than
+    by a directory name -- the ecosystem register measured five names for
+    that repository, so a name is not an identity."""
+    import subprocess
+
+    for candidate in sorted(REPO_ROOT.parent.iterdir()):
+        if not (candidate / ".git").exists():
+            continue
+        remote = subprocess.run(
+            ["git", "config", "--get", "remote.origin.url"],
+            cwd=str(candidate), capture_output=True, text=True,
+        )
+        url = remote.stdout.strip().lower()
+        if "cuda-architecture" in url or "compute-layer" in url:
+            return candidate
+    return None
+
+
+def _hash_history(field):
+    """The chain as the OWNER of the reissue wrote it.
+
+    WHY THIS READS THE SIBLING'S HISTORY AND NOT THIS ONE'S. Measured
+    2026-09-03. The compute layer reissued the record three times inside
+    one session; this repository mirrored the last of them and never held
+    the intermediates. So this repository's history of the record skips a
+    version, and a predecessor named against the OWNER'S history is a
+    value git-here never saw.
+
+    That is not a broken chain. It is what a mirror IS -- byte-identity of
+    the current version was never a claim about matching commit cadence,
+    and verify_pair_landed.py compares present bytes precisely because it
+    is the only thing both sides can promise.
+
+    So the chain is verified against the authoring repository when it is
+    on this machine, and against this one otherwise -- with the fallback
+    recorded rather than silent, because a mirror verifying its own
+    partial history and reporting green would be the vacuous shape this
+    pair keeps finding."""
+    sibling = _compute_layer_checkout()
+    if sibling is not None:
+        owner_history = _history_in(sibling, field)
+        if owner_history:
+            return owner_history
+    return _history_in(REPO_ROOT, field)
 
 
 def test_every_bound_artifact_hash_is_a_field_this_block_actually_checks(record):

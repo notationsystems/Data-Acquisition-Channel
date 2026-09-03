@@ -1,0 +1,83 @@
+# UNCERTAINTY_KIND IS A FOURTH AXIS OF THE CORPUS CONTRACT, AND THE
+# CONTRACT DOES NOT NAME IT.
+#
+# epistemics/corpus/contract.json is Notation Systems' one declaration of
+# what provenance means across its corpora. It declares three axes --
+# production_class, claim_strength, interest -- and resolves two contested
+# terms by name, because a term on two axes is where a value crossing a
+# corpus boundary is corrupted while every local check passes.
+#
+# THIS IS A PROPOSAL AND NOT AN EDIT. contract.json is digest-pinned and
+# held by more than one corpus. Changing it here would be one party
+# rewriting a shared declaration, which is the defect the pin exists to
+# stop. What is recorded here is a measurement and a recommendation; the
+# change is the contract owner's act.
+#
+# AND THE FIRST ATTEMPT AT THIS FILE WAS WRITTEN THROUGH AN UNQUOTED
+# HEREDOC, so every backticked term in it was executed by the shell and
+# silently deleted from the text. It parsed. The vocabulary being proposed
+# had been removed from the proposal. Recorded here because a document
+# that parses is not thereby the document that was written.
+extends: core@1.0.0
+
+artifact: uncertainty_kind_as_a_contract_axis
+owner: daf
+status: proposed_not_adopted
+enforcement: tests/test_uncertainty_kind_axis.py
+recorded: "2026-09-03"
+
+binds_to:
+  contract: epistemics/corpus/contract.json
+  contract_id: notation-systems.corpus.provenance
+  contract_version: "1.0.0"
+  contract_sha256: "0622f794e1eb08f13eba3eee341043a8a3833aa1449d618954c41963c460bf7d"
+  binding_rule: "this proposal was written against those exact bytes. If the contract is reissued, this is reissued or retired -- never silently rebound, which would make it claim to have measured something it never read."
+
+# ----------------------------------------------------------------------
+what_was_measured:
+  the_three_declared_axes: "production_class (asserted, computed, derived, measured), claim_strength (reported, estimated, representative, derived), interest (disinterested, unknown, self_reported, negotiating_position). Read from contract.json programmatically, not restated from memory."
+  the_vocabulary_that_is_not_on_any_of_them: "science/admissibility.py UNCERTAINTY_KINDS -- stated, estimated, propagated, absent -- refused as MISSING_UNCERTAINTY_KIND when the field is absent, and never defaulted. It is enforced at this fabric's ingest boundary and appears in no axis of the contract."
+  the_collision: "the term `estimated` is a term of claim_strength AND a term of uncertainty_kind. Measured by intersecting the two vocabularies programmatically rather than by reading them."
+  and_the_contract_does_not_name_it: "contested_terms resolves `reported` and `derived`. It does not mention `estimated`, because uncertainty_kind is not an axis it knows about."
+
+# ----------------------------------------------------------------------
+why_it_is_a_fourth_axis_rather_than_part_of_an_existing_one:
+  the_question_each_axis_asks: "production_class asks how the VALUE came to exist. claim_strength asks how hard the evidence for the claim is. interest asks what stake the source had. uncertainty_kind asks HOW THE UNCERTAINTY CAME TO EXIST -- which is the question production_class asks, about a different object."
+  why_that_is_not_the_same_axis: "a value and its uncertainty are produced by different acts and routinely by different parties. An instrument measures a value and a technician estimates its error; a calculation propagates an uncertainty through inputs whose values were measured. Folding them would force one answer where there are two."
+  the_shape_it_follows: "the axis named interest, not the one named production_class. In interest the absence IS a term and is ranked, because an unestablished stake still has to combine. In uncertainty_kind the term absent is likewise a real declarable answer -- the source reported no error -- and is distinct from the field being missing, which has its own refusal code. The contract already contains both patterns, so a fourth axis has to say which it follows, and this one says."
+  it_is_not_ranked: "like production_class and unlike claim_strength. A stated uncertainty is not automatically better than a propagated one: a manufacturer's optimistic tolerance is stated and a careful propagation is not. Anyone ranking these is answering the question of claim_strength with the terms of this axis, which is the error the contract already warns about for production_class."
+
+# ----------------------------------------------------------------------
+the_contested_term_and_its_resolution:
+  term: estimated
+  appears_in:
+    claim_strength: "rank 2 of 4. Second-hardest -- somebody's estimate of the QUANTITY."
+    uncertainty_kind: "somebody estimated the UNCERTAINTY. It says nothing about how the value itself was obtained."
+  proposed_translation: refused
+  refusal_reason: "the two are about different objects, so neither implies the other. A figure a laboratory published with an error bar it estimated has claim_strength reported -- rank 3, the hardest -- and uncertainty_kind estimated. A consumer reading the word off the uncertainty and applying it as claim_strength demotes that value from 3 to 2."
+  the_direction_of_harm_is_the_opposite_of_the_reported_collision: "the term reported corrupts by PROMOTION -- a party's assertion arrives as hardest evidence. The term estimated corrupts by DEMOTION. And demotion is not the safe direction under this contract's own combination rule: weakest_input_wins means one wrongly demoted input drags down every quantity computed from it, silently and permanently, and a value that reads weaker than it is gets discarded rather than questioned."
+  what_a_caller_must_do: "state claim_strength from evidence about the SOURCE, exactly as the contract already requires for the term reported. There is no automatic mapping from uncertainty_kind and this proposal does not provide one."
+
+the_one_sound_implication_and_its_direction:
+  proposed: one_way
+  direction: "uncertainty_kind.propagated -> production_class in (computed, derived)"
+  reason: "propagation is an operation on inputs. An uncertainty is propagated only through a calculation, so a value whose uncertainty was propagated was itself computed or derived -- it cannot have been directly measured, because a direct measurement has nothing to propagate through."
+  the_converse_does_not_hold: "a derived value may carry a stated uncertainty, if the deriving party stated one rather than propagating. Applying the implication backwards would relabel a stated uncertainty as propagated on the strength of how the value was produced, which is a claim about how the error bar was made, and false."
+  same_shape_as_the_contract_already_resolves_for_derived: "sound in exactly one direction, and recorded with the direction rather than as an equivalence."
+
+# ----------------------------------------------------------------------
+what_this_proposal_is_for_and_what_it_is_not:
+  the_case_that_motivated_it: "architecture/corpus_substrate_survey.yaml. The corpus substrate carries a bare scalar uncertainty and no kind, so a molar mass it emits is refused at this fabric's boundary as MISSING_UNCERTAINTY_KIND. That refusal is correct and it is currently a HOUSE RULE -- nothing in the shared contract obliges any corpus to state where an uncertainty came from. Making it an axis is what turns a local refusal into an ecosystem requirement, or else establishes that it should not be one."
+  it_does_not_claim_the_other_corpora_are_wrong: "the corpus substrate implements no axis of this contract and does not claim to. Payload Terminal implements two. Neither is obliged by an axis that does not exist, which is precisely the point."
+  it_proposes_no_change_to_this_fabric: "UNCERTAINTY_KINDS, MISSING_UNCERTAINTY_KIND and the ingest refusal stand unchanged. What is missing is not enforcement here; it is the DECLARATION that other corpora could conform to."
+  no_second_vocabulary_is_created: "science/admissibility.py owns these four terms. This file cites them and does not restate them, for the same reason epistemics/corpus/contract.py does not restate the evidence class."
+
+verified_by_planting_the_defect:
+  the_guard_that_matters: "tests/test_uncertainty_kind_axis.py refuses any literal pairing of a claim_strength term with an uncertainty_kind term. Exercised on both directions and on the shapes a translation is actually written in -- a dict entry and a two-element tuple."
+  and_the_first_version_of_that_guard_read_a_proxy: "it flagged any LINE mentioning a term from each vocabulary, and fired on its first run against a sentence in architecture/exchange/build_daq_capabilities.py that uses `absent-is-not-zero` and `reported` in one paragraph of English. A line containing both words is prose, not a translation. Rewording the prose was available and was NOT taken: the artifact is generated, digest-pinned and shared, so a reissue across the pair to satisfy a lint would have been the tail wagging the dog -- and more to the point the check was wrong, not the sentence. It reads the syntax tree now, where a translation has a shape prose cannot take."
+  why_it_is_recorded: "a guard written to protect a vocabulary boundary contained the proxy-for-target defect on its first run. That is the third instance in this phase of a check being wrong about the thing it was written to check."
+
+what_would_falsify_the_proposal:
+  the_collision_is_not_real: "if the term estimated stopped being a member of both vocabularies there would be nothing to resolve. Asserted by intersection in the enforcement, so this fails rather than going stale."
+  the_contract_already_covers_it: "if a future contract version declares uncertainty_kind or resolves the term estimated, this proposal is superseded rather than pending. Asserted against the contract bytes."
+  the_implication_is_unsound: "a value whose uncertainty was propagated and whose production was measured. That would be a direct measurement with a propagated error bar, and it would retire the one-way direction above."
