@@ -18,6 +18,11 @@
 # substrate.
 extends: core@1.0.0
 
+subject_group: platform
+records_sharing_this_subject:
+  - "architecture/data_platform_position.yaml"
+the_scope_split_between_them: "that record owns the adoption rule as a gate -- a technology present whose record says not_adopted fails, and one adopted with no workload evidence fails -- plus the measured position of each named technology. This one owns the target shape and the store seam. Written concurrently by two sessions answering one specification, and bound after the fact because git auto-merged them without conflict."
+
 subject: platform_target
 status: directive_recorded_position_measured
 owner: daf
