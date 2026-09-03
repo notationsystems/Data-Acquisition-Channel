@@ -1,0 +1,86 @@
+# THE DATA PLATFORM TARGET, AS THE OWNER SET IT, AND WHERE THIS
+# REPOSITORY ACTUALLY STANDS AGAINST IT.
+#
+# The target is a DIRECTIVE and is recorded verbatim in shape. The
+# position under it is MEASURED, taken by interrogating the tree rather
+# than by reading its documentation -- which is the discipline the whole
+# programme runs on and is the only thing that makes a gap analysis worth
+# reading.
+#
+# THE HEADLINE, STATED FIRST BECAUSE IT CHANGES WHAT SHOULD BE BUILT.
+# This repository already holds the architecturally IRREVERSIBLE half of
+# layers 1, 2, 5 and 6 -- content-addressed immutable artifacts, a
+# canonical state model with entities, observations, relationships and an
+# execution audit, a projection layer forbidden by AST from writing
+# canonical truth, and digest-bound manifests. What it holds none of is
+# the INFRASTRUCTURE. That ordering is fortunate: the parts that are
+# expensive to get wrong are done, and the parts that are missing are
+# substrate.
+extends: core@1.0.0
+
+subject: platform_target
+status: directive_recorded_position_measured
+owner: daf
+enforcement: tests/test_platform_target.py
+recorded: "2026-09-03"
+
+# ----------------------------------------------------------------------
+the_directive:
+  shape: "immutable artifacts -> canonical state -> versioned corpus builds -> graph/spatial/semantic/analytical projections -> APIs, agents, products and verification."
+  one_canonical_state_layer_and_several_rebuildable_serving_layers: "explicitly NOT a single data lake, graph database or AI stack."
+  build_order:
+    1_object_storage: "S3-compatible, immutable evidence. Separate raw, quarantined, canonical-export and published-build zones. Every object carries a content hash, rights, retention, access scope and source metadata."
+    2_postgresql_postgis: "canonical operational truth -- entities, aliases, observations, assertions, relationships, bitemporal state, permissions, audit logs and the transactional outbox. Row-level security for tenant isolation, with the caveat that privileged roles bypass it unless deliberately constrained."
+    3_outbox_and_durable_workflows: "a PostgreSQL transactional outbox FIRST, not Kafka. Durable workflows for ingestion, review, compilation, release, challenge and proof jobs."
+    4_lakehouse: "canonical snapshots and large historical facts as Parquet/Iceberg, for reproducible corpus builds and time travel."
+    5_rebuildable_serving_projections: "PostGIS for spatial; PostgreSQL recursive queries and materialized views for graph before any graph database; a versioned vector projection keyed to canonical ids; a separate search index only when lexical retrieval exceeds PostgreSQL. NO SERVING PROJECTION WRITES CANONICAL TRUTH."
+    6_trust_and_assurance: "kernel references and digests throughout, corpus-build and result manifests, CI provenance, SP1 proofs for selected deterministic computations, OpenTelemetry across ingestion, compilation, APIs and agents."
+  the_first_production_footprint: "CI/CD + managed PostgreSQL/PostGIS + S3-compatible object storage + application/API workers + a PostgreSQL outbox + durable workflows + an OpenTelemetry collector."
+  what_is_forbidden_at_the_start: "Kafka, Neo4j, Spark, a blockchain, or a large Kubernetes estate. Iceberg, vector search, graph infrastructure, streaming brokers, GPU workers and Kubernetes are added only when workload evidence demands them."
+  why_that_prohibition_is_the_same_rule_this_repository_already_runs_on: "`add it when the evidence demands it` is the standing plan's tier 7 -- do not invent work -- and the anchor programme's refusal to build ahead of a real document. The directive and the discipline agree, which means the gap analysis below can be read as a work list rather than as an argument."
+
+# ----------------------------------------------------------------------
+position_measured_against_each_layer:
+
+  layer_1_object_storage:
+    have: "content hash on every artifact, a blob store (daf/storage/blob_store.py), immutability by construction -- evidence class is assigned at ingest and reclassification is refused -- and source metadata on every Document. A quarantine zone exists as a first-class object (daf/execution/quarantine.py, QuarantineRecord)."
+    missing: "RIGHTS, RETENTION and ACCESS SCOPE. Measured: zero occurrences of any of the three in daf/storage/. Also missing: the raw / canonical-export / published-build zone distinction, of which only quarantine is modelled."
+    why_the_missing_half_is_DAQ_S_AND_NOT_INFRASTRUCTURE_S: "a field the acquisition path does not carry is a field no object store can invent. Rights and retention are properties of the SOURCE and are known at acquisition; adding them after an object store exists means backfilling every object from sources that may no longer be reachable. This is the one item on the whole list where doing it later is materially more expensive than doing it now."
+
+  layer_2_canonical_state:
+    the_model_is_present: "Referent (entities), Observation, ClaimedRelationship, DerivedValue, DerivedGrounding, and an execution audit (daf/execution/record.py) with two-hash identity. That is the directive's entity/observation/assertion/relationship/audit list, already built and already enforced."
+    the_substrate_is_not: "state lives in files under FilesystemEvidenceStore, not PostgreSQL. No permissions, no tenancy, no row-level security -- measured, zero occurrences."
+    bitemporality_is_half_present: "`retrieved_at` is on every Document and is CALLER-SUPPLIED, never wall-clock, which is the stronger discipline. The other axis exists only inside one extractor's content (`measurement_time`, NOAA) and is not a first-class dimension anything can query. So `what did we know at T` is answerable and `what was true at T` is not."
+    the_seam_that_makes_layer_2_cheap_or_expensive: "DurablePool takes `store: FilesystemEvidenceStore` -- the CONCRETE class, not an interface. It calls eighteen methods on it. daf/catalog/cli.py and daf/catalog/history.py type against the concrete class too. So a PostgresEvidenceStore is a drop-in in SHAPE and not in TYPE, and the difference is three annotations."
+
+  layer_3_outbox_and_workflows:
+    have: "nothing. Measured: zero occurrences of `outbox` in the tree."
+    the_shape_a_workflow_would_drive_exists: "daf/orchestration/ -- orchestrator, request, result, adapter_registry, source_registry. An acquisition is already a described unit of work with a typed request and a typed result, which is what a durable workflow needs to wrap."
+
+  layer_4_lakehouse:
+    have: "nothing, correctly. No workload evidence demands it and the directive forbids it until one does."
+
+  layer_5_serving_projections:
+    the_strongest_position_on_the_list: "`no serving projection writes canonical truth` is not a policy here, it is enforced by parsing imports. materials/ is a projection; the layer rule forbids daf/ from importing it and forbids it from writing evidence, and tests/test_epistemic_boundary.py refuses a control graph in which derived state writes evidence."
+    missing: "spatial, graph and vector projections entirely. None has a workload behind it yet."
+
+  layer_6_trust_and_assurance:
+    have: "kernel digests throughout, an invariant register derived rather than asserted, corpus manifests, canonicalization both parties reproduce byte-identically, GitLab-equivalent CI (a conformance workflow with four gates), and a detector-proof discipline -- 22 planted and fired in one night."
+    missing: "OpenTelemetry (zero occurrences) and SP1 proofs. Distributed tracing has no subject yet, because there is no distributed system."
+
+# ----------------------------------------------------------------------
+the_seam_as_built_and_what_writing_it_revealed:
+  what_was_done: "daf/storage/evidence_store.py declares EvidenceStore and MetadataIndexQueries as Protocols, and DurablePool, ArtifactStore, load_pool, _replay_into and the catalog history functions now type against them. A second implementation -- an in-memory store sharing no code with the filesystem one -- carries a real twenty-observation acquisition, restores through the protocol, and is indistinguishable from the filesystem store from the pool's side."
+  the_structural_fact_writing_it_revealed: "the store is ALREADY split the way the directive splits its first two layers, and this was not known before. FilesystemEvidenceStore composes a BLOB half and a METADATA INDEX, and that index is a real relational store -- SQLite -- answering exactly five catalog queries: all_ids, list_versions, find_by_content_hash, list_source_artifacts, locator_for_document. Those five are what the directive gives to PostgreSQL; the blob half is what it gives to S3. The migration is two substitutions along a seam that exists, not one along a seam that does not."
+  the_first_draft_typed_the_index_as_Any: "which typechecked and hid the most important structural fact in the module. It is now MetadataIndexQueries, enumerated from every store.index.<method> call in daf/ rather than from what MetadataIndex offers -- it also has six record_* writers only the filesystem store calls, and putting those in would make the next implementation carry this one's write path."
+  two_sites_remain_genuinely_filesystem_bound_and_are_baselined: "daf/storage/classified_pool.py needs store.root, because the evidence-class register -- the thing keeping a fabricated fixture and an instrument measurement different objects -- is persisted BESIDE the evidence, keyed by a path, and not in the evidence store at all. daf/execution/metrics.py reads store.categories. Neither was forced onto the protocol: inventing a `root` on an interface built to escape a filesystem is how the escape fails. Both are baselined with the reason at the site, and a third joining them fails."
+  the_class_register_is_the_one_to_watch: "it is state the directive gives to PostgreSQL -- permissions and audit-shaped -- and it is currently filesystem-only and outside the evidence store entirely. It is the single largest obstacle to layer 2 and it was invisible until the seam was typed."
+  a_guard_that_missed_the_coupling_it_was_written_for: "the seam check parsed annotations for ast.Name and walked straight past `store: \"FilesystemEvidenceStore\"` -- a STRING forward reference, which is how a coupling looks when the import sits under TYPE_CHECKING. Found by planting exactly that and watching the guard stay green. Fixing it found a REAL third site: MetadataIndex.rebuild, the catalog half, typed to the blob half. Its body calls only all_* methods, so the coupling was incidental and was removed rather than baselined. The plant found a hole in the guard, and the hole was hiding a defect."
+
+what_is_cheap_now_and_expensive_later:
+  the_two_items: "everything on the directive's list gets cheaper or stays flat if deferred, EXCEPT two. Both belong to this repository rather than to infrastructure, and both are stated here so the ordering is a decision rather than an accident."
+  first_the_store_seam: "three type annotations. Doing it now means a PostgreSQL or S3 store is written against a protocol; doing it after either exists means editing a pool that by then has callers. Cheap either way and cheapest now."
+  second_and_it_is_the_real_one_rights_retention_and_access_scope: "these are known AT ACQUISITION and nowhere else. An object store cannot infer the licence of a document it was handed. Every object written before the fields exist has to be backfilled from a source that may have moved, changed terms, or gone. This is the item where the cost of deferring is not flat."
+  what_is_NOT_claimed: "that either should be built without the owner deciding what the vocabularies contain. Rights and retention are policy, and a closed vocabulary invented by this layer would be exactly the fabrication the acquisition contract refuses everywhere else."
+
+what_this_record_must_not_become: "a roadmap that is read instead of the tree. Every `have` and `missing` above was measured on 2026-09-03 and the enforcement re-measures the load-bearing ones, so a claim that stops being true fails rather than ageing quietly."

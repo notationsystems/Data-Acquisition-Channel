@@ -42,7 +42,7 @@ from evidence.identity import content_hash
 from daf.storage.identity import compute_artifact_id
 
 if TYPE_CHECKING:  # pragma: no cover -- avoids a runtime circular import with filesystem_store
-    from daf.storage.filesystem_store import FilesystemEvidenceStore
+    from daf.storage.evidence_store import EvidenceStore
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS sources (
@@ -196,7 +196,17 @@ class MetadataIndex:
             row = conn.execute("SELECT 1 FROM documents LIMIT 1").fetchone()
         return row is None
 
-    def rebuild(self, store: "FilesystemEvidenceStore") -> None:
+    def rebuild(self, store: "EvidenceStore") -> None:
+        # TYPED TO THE PROTOCOL, not the filesystem store. This read
+        # `"FilesystemEvidenceStore"` -- a STRING forward reference, which
+        # is how a coupling looks when the import sits under
+        # TYPE_CHECKING, and which the first version of the seam guard
+        # walked straight past because it only matched ast.Name. The body
+        # calls all_sources, all_documents, all_records and
+        # all_observations and nothing else, so the coupling was
+        # incidental. It mattered: this index is the half the platform
+        # directive gives to PostgreSQL, and it was typed to the half it
+        # gives to object storage.
         """Repopulates every table from `store`'s own canonical `all_*()`
         methods -- the filesystem remains authoritative; this index is
         always reconstructible from it. Safe to call on a non-empty

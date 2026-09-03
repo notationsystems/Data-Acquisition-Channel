@@ -80,6 +80,16 @@ class SourceClassPolicy:
 class ClassifiedPool(DurablePool):
     def __init__(
         self,
+        # STILL THE CONCRETE STORE, and this is the finding rather
+        # than an oversight. `ClassAssignmentStore(store.root)` needs a
+        # filesystem ROOT: the evidence-class register -- the thing that
+        # keeps a fabricated fixture and an instrument measurement
+        # different objects -- is persisted BESIDE the evidence, keyed by
+        # a path, and not in the evidence store at all. Typing this
+        # against the protocol and inventing a `root` on it would push a
+        # filesystem into the interface built to escape one. Recorded in
+        # architecture/platform_target.yaml as one of two sites that must
+        # move before a non-filesystem store is possible.
         store: FilesystemEvidenceStore,
         policy: SourceClassPolicy,
         *,
