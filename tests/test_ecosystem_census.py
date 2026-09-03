@@ -118,8 +118,19 @@ def test_the_declared_core_count_is_re_derived_rather_than_restated():
         document = loads(path.read_text())
         if isinstance(document, dict) and document.get("extends") == "core@1.0.0":
             declaring += 1
+    # THE SAME SCOPE THE REGISTER SCANS, not a convenient subset. An
+    # earlier version of this counted only architecture/ and compared the
+    # result to a register that walks the whole repository: the relation
+    # held by luck, and one core-declaring YAML under commerce/ would
+    # have broken it while looking like a real disagreement.
+    register_path = REPO_ROOT / "architecture" / "exchange" / "invariant_register.yaml"
     everywhere = 0
-    for path in sorted((REPO_ROOT / "architecture").rglob("*.yaml")):
+    for path in sorted(REPO_ROOT.rglob("*.yaml")):
+        relative = path.relative_to(REPO_ROOT)
+        if relative.parts and relative.parts[0] in ("vendor", ".git"):
+            continue
+        if path == register_path:
+            continue                       # the register excludes itself; so does this
         try:
             document = loads(path.read_text())
         except Exception:  # noqa: BLE001 -- a non-conforming file is not a core declaration
@@ -127,28 +138,41 @@ def test_the_declared_core_count_is_re_derived_rather_than_restated():
         if isinstance(document, dict) and document.get("extends") == "core@1.0.0":
             everywhere += 1
 
-    recorded = APPARATUSES["scout_retrieval_agent"]["bound"]["artifacts_here_declaring_it"]
-    assert f"{declaring} YAML records" in recorded, (
-        f"{declaring} top-level records declare the core; the census says {recorded!r}"
-    )
-    assert f"{everywhere} across architecture/ as a whole" in recorded
+    assert declaring > 0 and everywhere >= declaring
 
-    # The register counts the same tree and reports one fewer, because it
-    # excludes itself. Binding the two numbers here is what stops them
-    # drifting apart into a contradiction nobody notices.
+    recorded = APPARATUSES["scout_retrieval_agent"]["bound"]["artifacts_here_declaring_it"]
+    assert "NOT RECORDED AS A NUMBER" in recorded, (
+        "a tally is back in the census; it will be stale on the next commit that adds a record, "
+        "which is what happened three times before the row was changed to carry relations"
+    )
+
+    # RELATION ONE: the register reports exactly one fewer than a parse of
+    # the same tree, because it excludes itself.
     register = loads((REPO_ROOT / "architecture" / "exchange"
                       / "invariant_register.yaml").read_text())
     declared_there = register["extends_join"]["artifacts_declaring_the_core"]
-    assert declared_there == everywhere - 1, (
-        f"the census parses {everywhere} and the register reports {declared_there}; they agree "
-        "only while the register's single self-exclusion is the whole difference"
+    assert declared_there == everywhere, (
+        f"a parse over the register's own scope finds {everywhere} and the register reports "
+        f"{declared_there}. Both exclude the register itself, so the two are the same count and "
+        "a difference means the register is stale -- re-derive it rather than editing either."
     )
-    assert f"{declared_there} for the same tree" in recorded
+    assert "THE SAME COUNT" in recorded
+
+    # RELATION TWO: a text search undercounts, which is why the count is
+    # a parse. Both halves measured, neither restated.
+    hits = subprocess.run(("grep", "-rl", "--include=*.yaml", "extends: core@", "."),
+                          cwd=REPO_ROOT, capture_output=True, text=True).stdout.split()
+    hits = [h for h in hits if not h.startswith("./vendor/")]
+    assert len(hits) < everywhere, (
+        "the text search no longer undercounts, so the census's account of why it parses is stale"
+    )
+    assert "never by text search" in recorded
 
     # And the reason the count is a parse: the text search misses the
     # canonically-emitted form, which is the exchange artifacts.
-    hits = subprocess.run(("grep", "-rl", "extends: core@", "architecture/"),
+    hits = subprocess.run(("grep", "-rl", "--include=*.yaml", "extends: core@", "."),
                           cwd=REPO_ROOT, capture_output=True, text=True).stdout.split()
+    hits = [h for h in hits if not h.startswith("./vendor/")]
     assert len(hits) < everywhere, (
         "the text search no longer undercounts, so the census's account of why it "
         "parses instead is stale"
@@ -186,10 +210,23 @@ def test_the_shared_pair_is_byte_identical_where_the_counterparty_is_reachable()
             )
 
 
-def test_the_daq_row_counts_what_the_tree_actually_holds():
+def test_the_daq_row_records_no_tally_and_the_tallies_are_measured_here():
+    """The counts are real and they move on every commit, so the record
+    declines to restate them and this measures them instead.
+
+    Fails in the state where a tally comes back into the record -- which
+    is the state that produced three stale rows in one session.
+    """
     bound = APPARATUSES["data_acquisition_fabric"]["bound"]
-    assert len(list((REPO_ROOT / "docs").glob("PHASE_*.md"))) == bound["phase_reports"]
-    assert len(list((REPO_ROOT / "architecture").glob("*.yaml"))) == bound["architecture_records"]
+    for volatile in ("phase_reports", "architecture_records", "tests_collected"):
+        assert volatile not in bound, (
+            f"{volatile} is back in the census as a number; it is stale on the next commit"
+        )
+    assert "a tally is a statement about a moment" in bound["counts_are_not_recorded_here"]
+
+    # Measured, so the claim that they are real is not itself a prose claim.
+    assert len(list((REPO_ROOT / "docs").glob("PHASE_*.md"))) > 25
+    assert len(list((REPO_ROOT / "architecture").glob("*.yaml"))) > 50
 
 
 def test_the_layer_rule_the_census_states_is_the_rule_the_tree_enforces():
