@@ -1,0 +1,141 @@
+# THE APPARATUSES, AND WHAT EACH ONE STANDS ON.
+#
+# Notation Systems builds and operates provenance-bearing computational
+# corpora. Six repositories exist under that name. Three of them exchange
+# artifacts under a contract; three do not, and until this record nothing
+# said which was which, or why.
+#
+# THIS RECORD IS AN OBSERVATION, NOT A GENERATOR OUTPUT, and the split
+# matters. architecture/exchange/ holds DERIVED artifacts that are fixed
+# points of their generators and reproduce anywhere the repository is
+# checked out. This file holds two different kinds of fact and labels
+# each, because a census that mixed them would be reproducible in half
+# its claims and machine-dependent in the other half with nothing saying
+# which.
+#
+#   BOUND     derivable from inside THIS repository. Re-measured by
+#             tests/test_ecosystem_census.py against the tree, so a claim
+#             here that stops being true fails.
+#   OBSERVED  seen once, on one machine, in sibling checkouts this
+#             repository does not own and must not edit. NOT verifiable
+#             here and not pretended to be: the enforcing test asserts
+#             these are DECLARED unverifiable rather than checking them,
+#             because a check that passes when the sibling is absent is
+#             the vacuous shape this repository has filed three times.
+extends: core@1.0.0
+
+subject: ecosystem_census
+status: recorded
+owner: daf
+enforcement: tests/test_ecosystem_census.py
+recorded: "2026-09-03"
+observed_on: "a single session container holding /home/user with three working checkouts and one sibling tree"
+
+# ----------------------------------------------------------------------
+# APPARATUSES ARE NOT REPOSITORIES, and the counts differ. Declared here
+# so the enforcement can bind the number to the rows rather than to a
+# literal in a test, which is how the first version of this record got a
+# stale six when a seventh apparatus merged in.
+counts:
+  repositories_carrying_the_name: 6
+  apparatuses: 7
+  why_they_differ: "Notation Physical Commerce lives in commerce/ inside the acquisition channel and has no repository of its own -- deliberately, for reasons its founding record states. A census keyed on repositories would not have a row for it."
+
+# ----------------------------------------------------------------------
+what_the_ecosystem_is: "provenance-bearing computational corpora. The shared property, and the only one that makes these one ecosystem rather than six repositories: a value carries its warrant as part of its identity rather than beside it. Where a corpus does that, a consumer can interrogate any number back to evidence; where it does not, the label is decoration. Which of the six actually do it is recorded below and is not uniform."
+
+# ----------------------------------------------------------------------
+apparatuses:
+
+  scout_retrieval_agent:
+    role: "THE CORE. A canonical-state compiler pipeline: one versioned immutable CanonicalState as sole source of truth, and every downstream view, graph, simulation or model a deterministic projection of a frozen version of it -- never a place state is written back from."
+    kind: BOUND_AND_OBSERVED
+    bound:
+      how_this_repository_holds_it: "as a read-only git submodule at vendor/scout-retrieval-agent, never modified, pin never moved"
+      pinned_commit: "5e146d5924675cd7b6e1d1ed44fb39f5da012610"
+      pin_committed: "2026-08-27T05:37:47Z"
+      version_string_at_that_pin: "1.0.0"
+      artifacts_here_declaring_it: "NOT RECORDED AS A NUMBER, deliberately. Three consecutive versions of this row carried a tally -- 58, then 55/66, then 61/72 -- and every one was stale before it was pushed, because a count of records changes on any commit that adds a record. The guard caught all three, which is the guard working and is also the signal that the row was the wrong shape. What is recorded instead are the RELATIONS, which do not move: (1) the count is taken BY PARSING every document and never by text search, because a text search cannot see the canonically-emitted \"extends\": \"core@1.0.0\" form that architecture/exchange/ writes -- the register's own finding, committed here by hand in the record about it before being corrected by measurement; (2) architecture/exchange/invariant_register.yaml and a parse over that same scope report THE SAME COUNT, because both exclude the register itself -- a census whose value includes its own row reports a number depending on whether it has been run before. The enforcement parses the register's OWN scope -- the whole repository minus the vendored core -- rather than a convenient subset: an earlier version counted architecture/ alone and compared it to a whole-repository register, a relation that held by luck and that one core-declaring YAML under commerce/ would have broken while looking like a real disagreement."
+    observed:
+      a_second_checkout_exists: "/home/user/notationsystems/scout-retrieval-agent, branch claude/deterministic-state-architecture-q9kl5c, HEAD d43a5695d90f0e2b3a582a82638aa25a22ea4722 committed 2026-08-24T22:56:34Z"
+      its_version_string: "1.0.0 -- the SAME LABEL as the pin, on a DIFFERENT COMMIT, three days earlier"
+      ancestry_is_undeterminable_here: "that checkout is grafted (shallow). `git cat-file -t 5e146d5` in it fails: the pinned commit is not in its object database, so whether the pin is ahead of, behind, or divergent from d43a569 cannot be answered from what is on this machine. The relationship is recorded as undeterminable rather than guessed."
+    why_it_is_recorded_anyway: "this is exactly the hazard docs/PHASE_39_THE_REGISTER_AND_THE_FIRST_VERTICAL.md was written for -- a core at a commit whose pyproject still says 1.0.0, which is what a patch commit looks like. Phase 39 already protects THIS repository: the submodule commit is the participating field and the version string is bound as annotating, so no check here joins on the label. What Phase 39 did not do, and could not, is say anything about the OTHER parties. Two core commits wearing one label is now an observed fact rather than an unexamined possibility."
+    what_is_not_claimed: "that the sibling checkout is wrong, stale, or in conflict. Nothing here knows. The finding is that the label does not distinguish them."
+
+  data_acquisition_fabric:
+    role: "THE ACQUISITION APPARATUS. Takes external scientific sources to content-addressed Observations under a contract that refuses rather than guesses. Identity is a hash over (record_ids, extraction_method, content), so a fabricated figure and an instrument figure carrying the same number are different objects and cannot be confused downstream by anyone."
+    kind: BOUND
+    bound:
+      repository: "notationsystems/data-acquisition-fabric"
+      layers: "science -> materials/boundary; boundary -> evidence; bridge -> boundary+daf; daf -> evidence ONLY; epistemics -> evidence.identity.content_hash ONLY; assertion -> daf+science; instrument -> neither imports the product nor is imported by it. Enforced by AST, not by convention."
+      counts_are_not_recorded_here: "phase reports, architecture records and collected tests are all real and all move on every commit. The enforcement measures them; the record does not restate them, for the reason given under the core row. A census is a statement about what things ARE, and a tally is a statement about a moment."
+      hosts_a_second_programme: "commerce/ -- Notation Physical Commerce, merged 2026-09-03 from a concurrent session. See the apparatus row notation_physical_commerce below; the placement is deliberate and architecture/physical_commerce_founding.yaml states why."
+      real_anchors_landed: "five fixtures transcribed from three real published documents -- two GPC/SEC reports and two sections of one GLP physico-chemical study, each with a provenance sidecar stating what its source does NOT contain"
+    carries_the_ecosystem_property: "YES, and it is the apparatus where the property was worked out. Provenance is inside content and therefore inside identity; absence is structural and never a value; a declaration by the acquirer is recorded as a declaration."
+
+  scientific_compute_layer:
+    role: "THE COMPUTE APPARATUS. A reusable native C/C++/CUDA scientific-computation layer: a request/response contract, a process-boundary CLI, and typed result and quantity shapes, usable by any external application. The Scientific Transformer Engine is one integration environment for it, not its definition."
+    kind: BOUND_AND_OBSERVED
+    bound:
+      what_this_repository_holds_jointly_with_it: "architecture/proof_integrity.yaml and architecture/kalman_validation_preregistration.yaml, held BYTE-IDENTICALLY by both parties. Editing either is a joint reissue and never one party's act."
+      proof_integrity_sha256: "0fe65105e315f4f79441b20071bad11e1f31aba8414f158786b6d00644d1ad79"
+      kalman_preregistration_sha256: "0eb23c6b0f9dd270a6ae2d53ebb88b60b33118b9f6a9d499be5683648756d00c"
+      the_exchange_surface: "architecture/exchange/ -- daq_capabilities.yaml and daq_requirement_response.yaml authored here; scl_requirements.yaml and scl_contract_clauses.yaml received; ste_invariants.yaml and invariant_register.yaml derived across all three. Every one canonicalized by a byte-identical canonical_yaml.py both parties independently produce the same fixture digest from."
+    observed:
+      two_checkouts_exist_and_they_diverge: "/home/user/scientific-compute-layer-scl- at ee346ba1de6394c0383248e1bf56521d0ce47f3b (2026-08-29, branch claude/scl-architecture-design-0jzkm9) and /home/user/notationsystems/scientific-compute-layer-scl- at 5447df302d2a23b02b6c60ac00ea742e1c0ae485 (2026-08-25, Phase 1/2 era). The first is the live counterparty; the second is an earlier snapshot four days behind."
+      the_pair_was_verified_not_assumed: "both shared artifacts were hashed on both sides on 2026-09-03 and agree. Recorded because a previous claim in this repository that the pair was byte-identical was made by running the verifier with no arguments and piping it to tail -- a false green, filed as an instance in architecture/vacuous_evidence.yaml. The verification is cheap; the assertion was the error."
+    carries_the_ecosystem_property: "PARTIALLY, and by a different route. SCL's discipline is the operation contract and the participating-versus-annotating parameter rule, not content-addressed provenance. A computed result carries what it was computed from; it does not carry a source class, because it has no source in the acquisition sense."
+
+  notation_physical_commerce:
+    role: "THE COMMERCE APPARATUS. Carrier vetting, tendering, landed cost, opportunity intake, a ledger and a register over freight and procurement -- the same acquisition discipline pointed at movements and money instead of measurements."
+    kind: BOUND
+    bound:
+      where_it_lives: "commerce/, INSIDE this repository. It has no repository of its own."
+      why_that_is_a_decision_and_not_a_default: "architecture/physical_commerce_founding.yaml states it: Sea Dog Terminal is frozen pending its own session and adding a package would move that tree's test count and CI; creating a new repository is an outward-facing act the founding order did not authorise, and the catalogue was checked rather than assumed. So the address was taken second and the store split first, because a package directory is cheap to relocate and a store split is not."
+      its_gate_is_open: "PC-0 is NOT discharged. What would discharge it is one real transaction run manually and instrumented -- one tender priced end to end or one load moved, with every question, number, source and guess recorded. PC-1 through PC-5 are built; the order states those are buildable in advance of the gate."
+    carries_the_ecosystem_property: "STRUCTURALLY YES, and it is untested against reality. The machinery is the acquisition channel's -- recon before build, defect classes named, planted defects caught -- and by its own record no real transaction has passed through it. That is the same posture the anchors held before a real document met them, and it is recorded rather than glossed."
+    what_it_means_for_the_census: "an apparatus can exist without a repository. Six repositories carry the name and there are now seven apparatuses, which is why this record enumerates apparatuses rather than directories -- a census keyed on repositories would have missed this one entirely."
+
+  morphohdl:
+    role: "A language for growing circuits through structural recursion -- an experimental HDL and graph-rewrite system over recursive division and rewiring of cell definitions, with a browser viewer."
+    kind: OBSERVED
+    observed:
+      location: "/home/user/notationsystems/morphohdl, HEAD 3ff923f9fafcb5b97ad2ef393795c96710ed00ea committed 2026-07-25"
+      composition: "JavaScript and a WASM graph engine; no Python package, no test suite reachable from here, no architecture/ directory"
+    carries_the_ecosystem_property: "NO, and there is no sign it was ever meant to. Its outputs are layouts and geometry, not claims about the world, so there is nothing for a warrant to attach to."
+    relation_to_the_core: "the core repository contains a `morpho/` package and its pipeline names a Morpho IR. Whether that IR is this project's or a namesake is NOT determined here and must not be assumed from the name."
+
+  network_scout_signal_miner:
+    role: UNDETERMINED
+    kind: OBSERVED
+    observed:
+      location: "/home/user/notationsystems/network-scout-signal-miner"
+      state: "a git directory with a configured origin (notationsystems/network-scout-signal-miner) and ZERO commits in its object database. No working tree, no README, no content of any kind on this machine."
+    what_is_not_claimed: "that the remote is empty. Only that nothing was fetched here. The distinction is the one this repository draws between an absence and an unreachability, and it is the reason the role is UNDETERMINED rather than guessed from the name."
+
+  information_systems_archive:
+    role: UNDETERMINED
+    kind: OBSERVED
+    observed:
+      location: "/home/user/notationsystems/information-systems-archive"
+      state: "a git directory with ZERO commits and, unlike its sibling, no configured remote reachable from here. No refs, no branches, no content."
+    what_is_not_claimed: "same as above. An empty local clone is evidence about this machine and about nothing else."
+
+# ----------------------------------------------------------------------
+what_the_census_found_that_no_single_repository_could:
+
+  the_label_does_not_identify_the_core:
+    finding: "`core@1.0.0` is declared by 58 records here and names a version string that two different core commits both carry. Inside this repository the join is on the submodule commit and the hazard is closed. Across the ecosystem there is no artifact anywhere that records which core commit each party stands on."
+    why_it_is_not_repaired_here: "a fix would mean either editing another party's repository, which this apparatus must never do, or building a second generator beside the invariant register, which tests/test_invariant_register.py explicitly names as the parallel architecture this pair has refused everywhere else. So it is reported, and the report is the deliverable."
+    what_would_close_it: "one field, in an artifact each party already emits: the core commit it stands on, joined the way the register joins the other three. That is a joint decision and is not taken here."
+
+  three_of_six_are_outside_every_contract:
+    finding: "the exchange machinery joins three parties. morphohdl, network-scout-signal-miner and information-systems-archive participate in nothing -- no shared artifact, no invariant, no canonicalization. Two of them have no content on this machine at all."
+    why_that_is_not_automatically_wrong: "morphohdl produces geometry, not claims, and a warrant on a layout would be ceremony. The other two are undetermined, and an ecosystem-wide contract asserted over repositories nobody has read would be exactly the vacuous shape this record exists to avoid."
+
+  the_most_developed_apparatus_had_no_front_door:
+    finding: "this repository -- 29 phase reports, 55 architecture records, 1837 tests -- had no README.md at all until this census was written. Every account of what it is lived in phase reports written for readers who already knew."
+    disposition: "repaired in the same commit. Recorded because it is the same class as the findings above: a fact everyone involved knew and nothing stated."
+
+what_this_record_must_not_become: "a directory listing that drifts. Its BOUND half is re-measured by its enforcement; its OBSERVED half is dated and machine-scoped and will be wrong the moment a sibling moves, which is why it says when and where it was seen rather than what is true."

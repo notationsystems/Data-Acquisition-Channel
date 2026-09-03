@@ -34,9 +34,19 @@ DEFERRAL = COVERAGE["the_deferral"]
 # selection_rule_defect.yaml was re-measured and bound
 # (tests/test_selection_rule_defect.py), and leaving it in this baseline
 # would have been the stale allowance the message warns about.
-KNOWN_UNBOUND = frozenset({
-    "kalman_validation_preregistration.yaml",
-})
+# TIGHTENED AGAIN 2026-09-03, by the same trigger firing on the same
+# direction: tests/test_ecosystem_census.py now reads
+# kalman_validation_preregistration.yaml AND asserts a pinned digest of
+# its content, so it is bound rather than merely mentioned -- the
+# distinction this file's own `naming_is_not_reading` note draws.
+#
+# The set is now EMPTY, and two constructs below used to consume it: a
+# `for artifact in KNOWN_UNBOUND` loop and a `KNOWN_UNBOUND <= shared`
+# subset assertion. Both pass trivially over an empty set. Emptying the
+# baseline and leaving them would have manufactured two vacuous
+# assertions in the same edit that closed a real gap, so both were
+# replaced rather than left to read green over nothing.
+KNOWN_UNBOUND = frozenset()
 
 
 def _doctrine_sources() -> set:
@@ -130,9 +140,16 @@ def test_the_deferral_on_the_doctrine_source_list_still_holds():
         "source-list decision has to be taken rather than deferred again. If it SHRANK, bind the "
         "baseline down; a stale allowance is how a gap becomes permanent."
     )
-    for artifact in KNOWN_UNBOUND:
-        assert artifact in COVERAGE["one_artifact_is_not_covered_for_currency"]["measured"], (
+    section = COVERAGE["one_artifact_is_not_covered_for_currency"]
+    for artifact in KNOWN_UNBOUND:                       # empty today; kept for the regrow case
+        assert artifact in section["measured"], (
             f"{artifact} is unbound and the record does not name it"
+        )
+    # The empty case says something the loop cannot, so it is asserted
+    # rather than left as the loop's silence.
+    if not KNOWN_UNBOUND:
+        assert "no artifact in architecture/ is unbound" in section["measured"], (
+            "the baseline is empty and the record still describes an unbound artifact"
         )
 
 
@@ -196,11 +213,17 @@ def test_the_remaining_unbound_artifact_is_shared_and_covered_for_divergence():
     theirs = {p.name for p in (scl / "architecture").glob("*.yaml")}
     shared = ours & theirs
     assert shared, "the intersection is empty; nothing below is a measurement"
-    assert KNOWN_UNBOUND <= shared, (
-        f"the unbound artifact is no longer shared: {sorted(KNOWN_UNBOUND - shared)}. It is then "
-        "covered by neither the projection, nor a test, nor the pair verifier -- and DAQ can bind "
-        "it unilaterally, which the record says it cannot"
+    # The subset assertion this replaced is vacuous now that the baseline
+    # is empty. What it was protecting is still real and is asserted
+    # directly: the two jointly-held artifacts must stay in the
+    # intersection, because an artifact that leaves it becomes one DAQ
+    # could bind unilaterally -- which the record says it cannot.
+    jointly_held = {"kalman_validation_preregistration.yaml", "proof_integrity.yaml"}
+    assert jointly_held <= shared, (
+        f"a jointly-held artifact left the intersection: {sorted(jointly_held - shared)}. "
+        "It is then bindable by one party alone, which the joint-reissue rule forbids."
     )
+    assert KNOWN_UNBOUND <= shared
 
     import hashlib
     for name in sorted(shared):

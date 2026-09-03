@@ -1,0 +1,50 @@
+# THREE THINGS ABOUT commerce/residuals.py, ALL LEANING THE SAME WAY.
+#
+# Measured against the live module, not read off its docstring. None is
+# repaired here: the estimator choice is a design decision belonging to
+# the session that built the module, and this record exists to put a
+# number on it rather than to take it.
+#
+# WHY THE ACQUISITION CHANNEL IS THE ONE RECORDING THIS. The same finding
+# arrived twice this week from opposite ends. Section 13 of the third
+# anchor -- a GLP partition-coefficient study -- reports two HPLC
+# INJECTIONS per substance, and the acquisition path acquired them as a
+# two-member replicate set structurally identical to twenty INDEPENDENT
+# determinations from another section, understating dispersion about
+# threefold with nothing objecting. That is this file's second finding in
+# a different vocabulary. Recorded together because a defect that shows
+# up in chromatography and in freight is a property of the substrate.
+extends: core@1.0.0
+
+subject: lane_residual_dispersion
+status: measured_and_not_repaired
+owner: daf
+enforcement: tests/test_lane_residual_dispersion.py
+recorded: "2026-09-03"
+
+# ----------------------------------------------------------------------
+findings:
+
+  the_module_says_estimate_and_computes_a_description:
+    what_was_measured: "`_summarise` computes spread as sqrt(sum((v-mean)^2)/n) -- the POPULATION standard deviation, divisor n. Verified against the live function: for [1,2,3,4,10] it returns 3.162278, which is the population SD exactly and not the sample SD of 3.535534."
+    why_it_is_a_question_and_not_a_bug: "the population SD is the right and complete answer to `how much did the loads we already ran vary`. It is the biased answer to `how much should we expect the next load to vary`, which is what an estimator is for. The module's own vocabulary is estimation throughout: MIN_TRIALS exists because `a mean over two loads is a number and not an estimate`, and Residual carries a property literally named `estimated`."
+    the_number: "at the floor of n = 5 the population SD is 1 - sqrt(4/5) = 10.56% below the sample SD. The gap closes as n grows and is largest exactly where the floor admits a group."
+    what_is_not_claimed: "that the divisor is wrong. Two defensible readings exist and the module states neither. What IS claimed is that a module using the word `estimate` in four places should say which of the two it computes, because a reader cannot tell and the difference is 10.56% at the floor."
+    the_direction_is_the_point: "every other refusal in this module leans against overconfidence -- the floor, the declared partition, season as a partition rather than a covariate. This one leans the other way, quietly."
+
+  the_floor_counts_loads_and_not_occasions:
+    what_was_measured: "two groups of five settled loads were put through the live `_summarise`. One is five loads tendered in a single week to one carrier (values 2.00, 2.01, 2.00, 2.02, 2.01, spread 0.0075); the other is five loads across five months (1.60, 2.40, 1.90, 2.30, 2.05, spread 0.2864). BOTH cross the floor, BOTH report estimated = True, and their spreads differ by a factor of 38."
+    why_it_matters: "five loads on one lane in one week to one carrier are plausibly one dispatcher decision, one truck and one weather week. They are five records and they are not five independent trials of what that lane does. The floor certifies a count; what it is asked to certify is an estimate."
+    what_the_module_already_has: "`by_lane_season` exists precisely because a lane's annual mean can describe neither of its modes -- the same insight, applied to seasonality. Clustering within a season is the same shape and is not partitioned."
+    what_would_close_it: "nothing here proposes the repair. The observation is that LoadEvent carries `known_at` and the residual grouping reads only `month_of`, so the information needed to tell a cluster from a spread is already in the store and is not consulted."
+    the_cross_domain_instance: "architecture/fourth_anchor_result.yaml, prediction p4: two injections of one prepared solution acquired as a two-member replicate set, indistinguishable by every context key from twenty independent determinations, understating dispersion about threefold. Different corpus, same substrate defect."
+
+  a_branch_that_cannot_be_taken:
+    what_was_measured: "`spread = ... if n > 1 else 0.0`. `_summarise` returns early when n < MIN_TRIALS, MIN_TRIALS is 5, and `_summarise` has exactly one caller. So `n > 1` is true on every path that reaches the expression and the `else 0.0` is unreachable."
+    severity: "cosmetic. Recorded because an unreachable guard reads as a considered edge case and is not one, and because this repository has filed its own dead code before rather than leaving it to be rediscovered."
+    not_repaired_here: "the file is under active development by a concurrent session on this branch. Editing a hot file for a cosmetic gain trades a real merge conflict for nothing."
+
+# ----------------------------------------------------------------------
+what_the_three_have_in_common: "each one makes dispersion look smaller or better-founded than it is: an estimator biased low, a floor that certifies a count while reading as certifying independence, and a guard that suggests a case was considered. Individually each is small. The pattern is the finding, and it is the same pattern the anchor arc found in a chemistry report -- a substrate that carries values well and carries statements ABOUT SETS OF VALUES badly."
+
+what_this_record_does_not_do: "resolve any of it. commerce/ was founded by a concurrent session under an order this session did not receive, its PC-0 gate is open by that session's own record, and an estimator changed from outside by a session that has not read the order is exactly the uncoordinated edit the joint-reissue rule exists to prevent elsewhere. Measured, numbered, and handed over."
