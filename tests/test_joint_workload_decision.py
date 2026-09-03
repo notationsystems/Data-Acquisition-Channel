@@ -300,6 +300,25 @@ def test_the_named_predecessor_is_the_one_git_actually_replaced(record, field):
     previous = record["reissue"].get(f"previous_{field}")
     if previous is None or not previous.startswith("sha256:"):
         pytest.skip(f"{field} records no predecessor digest ({previous!r})")
+
+    # A STALE OWNER CHECKOUT IS NOT THE OWNER'S HISTORY, and reading the
+    # owner rather than this mirror -- the repair above -- moved the
+    # staleness rather than removing it. Measured 2026-09-03: the chain
+    # read from a checkout four commits behind reported the predecessor of
+    # requirements_artifact_hash as 6efb4804, and the record correctly
+    # names 4f673215, a version that checkout has never held. Third
+    # instance of the class in
+    # architecture/pair_verification_subject.yaml.
+    import sys as _sys
+
+    _sys.path.insert(0, str(REPO_ROOT / "tests"))
+    from _pair import local_sibling_is_current
+
+    current, currency = local_sibling_is_current()
+    if current is False:
+        pytest.skip(f"the owner checkout is behind its remote ({currency}); the chain read "
+                    "from it is a prefix of the owner's and cannot support this verdict")
+
     history = _hash_history(field)
     if history is None:
         pytest.skip("no git history for the record (shallow clone)")
