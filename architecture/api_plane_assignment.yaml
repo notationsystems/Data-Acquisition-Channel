@@ -177,6 +177,21 @@ response_types:
     branch: "claim"
     plane: "tenant_read"
     reference_field: "id"
+  Warrant:
+    branch: "claim"
+    plane: "tenant_read"
+    reference_field: "observation_id"
+    note: "the Tenant Read plane's proof-navigation response -- a value with what justifies it. It carries the observation id, the document id and the run identity, which is a claim referencing three levels of lineage rather than one."
+  AttestationCheck:
+    branch: "claim"
+    plane: "verification"
+    reference_field: "attestation"
+    note: "a verdict about an attestation, referencing the attestation it checked. Carries reasons too, so it is a claim with its refusals attached -- the shape a_response_may_carry_more_than_one_branch names as the target."
+  Holdings:
+    branch: "observation"
+    plane: "tenant_read"
+    limitation_field: "examined"
+    note: "what a scan found AND what it cost -- `examined` beside `matched` is the denominator, which is exactly what the observation branch requires and which most scan results omit."
   Admissibility:
     branch: "refusal"
     plane: "verification"
@@ -338,6 +353,8 @@ verified_by_planting_the_defect:
   a_proof_root_claimed: "a proof_root key added to one entry. test_no_proof_root_is_claimed_anywhere FAILED -- the half of the invariant nothing here satisfies cannot be satisfied by naming a field."
   a_vendored_type_declared_rather_than_observed: "one observed_branch changed to branch. test_the_vendored_types_are_recorded_as_observed_and_not_declared FAILED. Recording a branch for another party's type as though this layer decided it is the reconstruction-cited-as-declaration error."
   the_covariance_reference_removed: "source_observation_ids returned empty rather than populated. test_the_covariance_can_be_navigated_back_to_the_runs_it_came_from FAILED -- asserted on a live pairing, so a field that exists and is never filled does not pass."
+  and_the_gate_caught_a_concurrent_session_on_its_first_encounter: "a second session added daf/query.py -- warrant_for, holdings_matching, census -- and science/set_attestation.py while this record was being written. The merge conflicted only on derived artifacts; the three new response types produced no conflict at all, because a new file cannot conflict with a record that has never heard of it. The gate refused them by name. That is the case the derivation exists for: not a type someone forgot to classify, but a type from a session that did not know a classification was required."
+
   and_two_checks_fired_for_real_before_any_plant: "the derivation found nineteen response types the first draft had not classified, and two classified types that nothing returned -- the second because the walk covered module-level functions only and missed types reaching a caller through a method. The walk was widened; the record was filled. Neither was a plant."
 
 # ----------------------------------------------------------------------
