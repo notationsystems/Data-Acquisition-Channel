@@ -53,10 +53,29 @@ def test_every_apparatus_declares_which_kind_of_claim_it_carries():
     reader assumed."""
     # Bound to the record's own declared count, not to a literal here:
     # a literal went stale the first time a seventh apparatus arrived.
-    assert len(APPARATUSES) == CENSUS["counts"]["apparatuses"]
-    assert CENSUS["counts"]["apparatuses"] != CENSUS["counts"]["repositories_carrying_the_name"]
-    assert "no repository of its own" in CENSUS["counts"]["why_they_differ"], (
-        "the counts differ and the record must say why, or the difference reads as an error"
+    counts = CENSUS["counts"]
+    assert len(APPARATUSES) == counts["apparatuses_recorded_below"]
+
+    # THE COUNT THAT WAS WRONG, and the field names now say which
+    # population each number is over. `repositories_carrying_the_name: 6`
+    # was a count of DIRECTORIES ON ONE DISK presented as a fact about the
+    # ecosystem; the account holds a hundred. A count with no population
+    # named is the shape that let it pass.
+    assert counts["repositories_present_on_this_machine"] < counts[
+        "repositories_in_the_account"], (
+        "the machine cannot hold more repositories than the account has"
+    )
+    assert counts["repositories_carrying_ACTIVE_AGENT_WORK"] <= counts[
+        "repositories_in_the_account"]
+    assert "repositories_carrying_the_name" not in counts, (
+        "the unqualified count is back; it names no population and that is how it "
+        "was wrong for a day"
+    )
+    assert "no repository of its own" in counts["why_they_differ"]
+    assert "short in both directions" in counts[
+        "and_the_converse_is_now_measured_too"], (
+        "the record must say it was short BOTH ways -- an apparatus with no "
+        "repository, and repositories with no apparatus row"
     )
     for name, body in APPARATUSES.items():
         assert body["kind"] in KINDS, f"{name} declares kind {body.get('kind')!r}"

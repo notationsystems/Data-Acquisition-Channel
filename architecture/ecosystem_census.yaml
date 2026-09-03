@@ -1,7 +1,10 @@
 # THE APPARATUSES, AND WHAT EACH ONE STANDS ON.
 #
 # Notation Systems builds and operates provenance-bearing computational
-# corpora. Six repositories exist under that name. Three of them exchange
+# corpora. SIX repositories were present on the machine this was written
+# on; the ACCOUNT holds a hundred, nine of them carrying active agent
+# work -- see `counts`, which records the correction. Three of the six
+# exchange
 # artifacts under a contract; three do not, and until this record nothing
 # said which was which, or why.
 #
@@ -37,9 +40,17 @@ observed_on: "a single session container holding /home/user with three working c
 # literal in a test, which is how the first version of this record got a
 # stale six when a seventh apparatus merged in.
 counts:
-  repositories_carrying_the_name: 6
-  apparatuses: 7
+  repositories_present_on_this_machine: 6
+  repositories_in_the_account: 100
+  repositories_carrying_ACTIVE_AGENT_WORK: 9
+  apparatuses_recorded_below: 7
+  corrected_2026_09_03_and_this_is_the_correction_that_matters:
+    what_it_said: "`repositories_carrying_the_name: 6`. Both this record and architecture/ecosystem_register.yaml stated six, and the register even separated `six repositories from ten names` by comparing full ref sets -- a careful method, correctly applied."
+    what_is_true: "the account holds 100 repositories. Measured by listing the catalogue rather than the filesystem. Nine of them carry active agent branches: Notations-Ecosystem, Data-Acquisition-Channel, Payload-Render-Engine, Scientific-Compute-Layer-SCL-, Scientific-Transformer-Engine, Payload-Terminal-V0, Notations-Corpus-Graph, BIM-State-Transformer-Engine and PayLoad-OCR-Agent."
+    why_it_is_the_sharpest_instance_of_this_session_s_class: "the METHOD was not wrong. Ref-set identity is the right way to tell two names from two repositories, and it was applied properly. What was wrong is the POPULATION: six directories that happened to be on one disk, taken as the ecosystem. A rigorous measurement over a population defined by what someone last cloned is the same error as a chain read from a stale checkout, one level up -- and it is the fifth turn of that screw in this session."
+    what_this_record_got_right: "the BOUND/OBSERVED split held. Every per-apparatus row was labelled, the observed rows were dated and machine-scoped, and the two repositories with no local commits were recorded UNDETERMINED rather than named from their directory names. The failure was in a COUNT that was presented as bound when it was observed."
   why_they_differ: "Notation Physical Commerce lives in commerce/ inside the acquisition channel and has no repository of its own -- deliberately, for reasons its founding record states. A census keyed on repositories would not have a row for it."
+  and_the_converse_is_now_measured_too: "there are apparatuses with a repository and no row here, because this census enumerates what was on one machine. Notations-Ecosystem holds a CONTROL PLANE -- profiles, governance, security attestation, an OpenAPI surface -- and was not on this machine when the rows below were written. So the record was short in both directions at once: an apparatus without a repository, and repositories without an apparatus row."
 
 # ----------------------------------------------------------------------
 what_the_ecosystem_is: "provenance-bearing computational corpora. The shared property, and the only one that makes these one ecosystem rather than six repositories: a value carries its warrant as part of its identity rather than beside it. Where a corpus does that, a consumer can interrogate any number back to evidence; where it does not, the label is decoration. Which of the six actually do it is recorded below and is not uniform."
