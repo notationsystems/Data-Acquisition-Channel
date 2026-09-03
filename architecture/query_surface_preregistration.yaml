@@ -1,0 +1,74 @@
+# WHAT AN OUTWARD-FACING QUERY SURFACE WILL AND WILL NOT BE ABLE TO SAY.
+#
+# Recorded before any query module exists. The measured basis below was
+# taken FIRST, by exercising the pool rather than by reading it, because
+# a design over an imagined surface is the shape this repository refuses
+# everywhere else.
+#
+# WHY THIS AND NOT MORE INSTRUMENT CONTRACTS. architecture/
+# daq_agent_instruments.yaml declares ONE instrument for NINE adapters,
+# and the obvious next move is to declare the other eight. It is the
+# wrong move first. A contract says what an agent MAY do; nothing in this
+# repository lets an agent ASK anything, so eight more contracts would
+# describe permissions over a surface that does not exist. The callable
+# thing comes first and the contracts describe it afterwards.
+extends: core@1.0.0
+
+subject: query_surface_preregistration
+status: recorded_before_any_query_module_exists
+owner: daf
+enforcement: tests/test_query_surface_preregistration.py
+recorded: "2026-09-03"
+
+# ----------------------------------------------------------------------
+measured_basis_taken_before_predicting_anything:
+  method: "ran the real acquisition path over the third anchor's fixture and interrogated the resulting pool, rather than reading evidence/pool.py and describing it."
+
+  the_warrant_chain_is_complete_and_this_is_the_load_bearing_fact:
+    measured: "observation -> record_ids -> Record(document_id, locator, raw_content) -> Document(source_id, retrieval_method, retrieved_at, raw_content) -> Source(name). Every hop resolves. A value can be returned with the whole of what justifies it, today, with no new storage."
+    why_it_matters: "the expensive half of a provenance-bearing API is already built and is in the vendored core. What is missing is a caller-facing shape over it, not a capability."
+
+  there_is_no_index_by_content:
+    measured: "the pool offers get/has by id for each type, all_* iterators, and observations_about(referent_id). `referent` is the only content-ish key and it is not `property` or `sample_id`. Answering `what do you hold about eluate_concentration` requires a full scan of all_observations."
+    the_consequence_for_the_api: "a query by content is O(pool). That is a fact about cost and it must be stated in the result rather than hidden behind a method name that reads like an index lookup."
+
+  the_content_vocabulary_already_carries_the_acquirers_hand:
+    measured: "eleven keys, and two of them are `acquisition_declared` and `not_acquired_because_not_measured`. So a caller can already distinguish what the DOCUMENT stated from what the ACQUIRER declared on its behalf, and see what was declined."
+    why_it_is_worth_naming: "that distinction is the thing an external model most needs and most rarely gets. It exists here and nothing surfaces it."
+
+  the_observation_id_depends_on_how_acquisition_was_INVOKED:
+    measured: "the same fixture, byte-identical, acquired twice -- once by a path relative to the repository root and once by the absolute path -- produces the same VALUES and the same DOCUMENT ids, and DIFFERENT Record ids and DIFFERENT Observation ids. Observation be533c20 and db455994 are the same measurement of the same file."
+    the_mechanism: "make_document hashes source, content and method, so the document is stable. make_record hashes the LOCATOR too, and daf/adapters/gpc_report.py builds the locator as f'{self.path}#{report_id}/{run_id}'. The run identity is `report_id/run_id`; the path prefix is an accident of how the caller invoked the adapter."
+    why_the_locator_is_in_the_record_id_ON_PURPOSE: "it is load-bearing and correct. Twelve of the third anchor's twenty replicates share a value with another replicate, and they stay twenty distinct Observations precisely because the locator distinguishes them. Removing the locator from the record id would collapse them. The defect is not that the locator is hashed; it is what the locator CONTAINS."
+    where_it_can_and_cannot_be_repaired: "make_record is in vendor/scout-retrieval-agent/evidence/types.py and is never modified here. But the locator STRING is built in daf/adapters/*.py, which is this repository's. So the choice is DAQ's and the repair is available -- and it would change every Observation id in every pool, which is not a unilateral act and is not taken here."
+    it_is_the_same_class_as_the_rest_of_this_session: "a location standing where an identity belongs. Found three times in checks last night and once here in the identity model itself."
+
+# ----------------------------------------------------------------------
+predictions:
+
+  p1_the_warrant_can_be_returned_whole:
+    prediction: "a single call can return a value together with its property, unit, uncertainty posture, the source name, the retrieval method, when it was retrieved, the extraction method, and what the acquirer declared rather than read. No new storage, no new index."
+    basis: MEASURED for the chain, OPEN for the shape
+    what_would_falsify_it: "any hop that does not resolve for an observation the pipeline itself produced."
+
+  p2_the_api_cannot_return_a_stable_identifier_for_a_measurement:
+    prediction: "asked `do you already hold this`, the surface cannot answer from the observation id, because that id depends on the path spelling used at acquisition. The best available stable answer is the DOCUMENT id plus the run identity inside the locator, and the surface will have to return both and say which is which."
+    basis: MEASURED
+    why_it_is_the_sharpest: "an agent surface exists so a caller can cite and de-duplicate. An identifier that changes with an irrelevant detail of invocation defeats both, and it defeats them silently -- the same measurement enters the pool twice and nothing objects."
+
+  p3_a_content_query_is_a_scan_and_must_say_so:
+    prediction: "there is no index by property or sample, so any content query walks the whole pool. The result will carry the number of observations examined, not only the number matched, because a caller cannot otherwise tell a cheap answer from an expensive one or an empty result from an empty pool."
+    basis: MEASURED
+    what_it_must_not_do: "be named or shaped like an index lookup."
+
+  p4_the_empty_result_must_say_which_kind_of_nothing:
+    prediction: "three different nothings are reachable -- the pool is empty, the pool is non-empty and nothing matched, and the filter named a content key no observation carries. The third is a caller error and the first two are not, and a shape returning an empty tuple for all three reports a question as an answer."
+    basis: OPEN
+    it_is_this_repositorys_own_rule: "an empty collection is a claim and needs a warrant."
+
+  p5_nothing_in_the_acquisition_path_changes:
+    prediction: "the surface is READ-ONLY over an existing pool and adds no adapter, no extractor, no content key and no vocabulary. If building it requires changing what acquisition writes, the design is wrong."
+    basis: OPEN
+    it_is_a_stop_condition: "recorded as the thing that would show the approach is wrong, not as a boast about restraint."
+
+what_this_document_must_not_become: "a description of what was built. Its digest is pinned by its enforcement and the outcome is recorded in architecture/query_surface_result.yaml."
