@@ -65,4 +65,4 @@ jobs:
         # `session/` joins the typed scope with the instrument it holds.
         # A module the gate does not check is a module whose green says
         # nothing about it.
-        run: python -m mypy daf/ science/ boundary/ bridge/ epistemics/ session/
+        run: python -m mypy daf/ science/ boundary/ bridge/ epistemics/ session/ commerce/ tools/

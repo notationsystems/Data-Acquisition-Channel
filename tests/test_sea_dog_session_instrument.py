@@ -15,6 +15,7 @@ the record is corrected rather than quietly rotting into a false claim.
 
 from __future__ import annotations
 
+import os
 import pathlib
 import sys
 
@@ -30,22 +31,59 @@ from session import work_order  # noqa: E402
 
 RECORD = loads((REPO_ROOT / "architecture" / "sea_dog_session_instrument.yaml").read_text())
 
-#: Trees the absence claims were measured over. The instrument the session
-#: STUDIES is a sibling checkout and may not be present; a claim about a
-#: missing repository is the vacuous pass this program has filed before,
-#: so those paths are skipped rather than counted as evidence.
-_SEARCH_ROOTS = (
+#: Trees the absence claims are measured over, split by WHOSE they are.
+#:
+#: The split is the point. The previous version listed all four together
+#: and guarded with `len(roots) >= 2`, which the two LOCAL roots satisfy on
+#: their own -- so an absence claim naming the instrument repository could
+#: pass with that repository nowhere in the search. A search that looked
+#: only here proving something about over there is the vacuous pass this
+#: docstring already warned about, passing the guard written to catch it.
+_LOCAL_ROOTS = (
     REPO_ROOT,
     REPO_ROOT / "vendor" / "scout-retrieval-agent",
-    pathlib.Path("/home/user/Notations-OSIRIS-Overwatch-Engine"),
-    pathlib.Path("/home/user/information-systems-archive"),
 )
+
+#: Sibling corpora, resolved rather than hardcoded. The previous version
+#: named `/home/user/...` absolutely, so the claims silently weakened to
+#: local-only in any checkout that was not that one -- and said nothing
+#: about having done so.
+_CORPORA_ROOT = pathlib.Path(
+    os.environ.get("NOTATION_CORPORA_ROOT", str(REPO_ROOT.parent))
+).resolve()
+
+_SIBLING_ROOTS = (
+    _CORPORA_ROOT / "Notations-OSIRIS-Overwatch-Engine",
+    _CORPORA_ROOT / "Payload-Terminal-V0",
+    _CORPORA_ROOT / "information-systems-archive",
+)
+
+_SEARCH_ROOTS = _LOCAL_ROOTS + _SIBLING_ROOTS
 
 _SKIP_DIRS = {".git", "__pycache__", "node_modules", ".next"}
 
 
 def _reachable_roots():
     return [root for root in _SEARCH_ROOTS if root.is_dir()]
+
+
+def _reachable_siblings():
+    """The sibling corpora actually present. Empty is a real answer."""
+    return [root for root in _SIBLING_ROOTS if root.is_dir()]
+
+
+def _require_a_sibling(claim: str):
+    """Skip, never pass, an absence claim about a corpus we cannot see.
+
+    A skip is visibly not a pass. Returning early with the assertion
+    unrun would leave a green test asserting something it never looked
+    for, which is the shape this file exists to refuse.
+    """
+    if not _reachable_siblings():
+        pytest.skip(
+            f"UNVERIFIED, not confirmed: {claim} names a sibling corpus and none is "
+            f"reachable under {_CORPORA_ROOT}. Set NOTATION_CORPORA_ROOT to measure it."
+        )
 
 
 def _grep(needles, *, exclude_paths=()):
@@ -91,6 +129,7 @@ def test_the_three_invariants_and_three_validations_are_all_covered():
 def test_the_research_finding_schema_is_STILL_absent():
     """RE-SEARCHED, not restated. If someone writes the schema the
     doctrine names, this fails and the record is corrected."""
+    _require_a_sibling("the research finding schema")
     assert RECORD["research_finding_schema"]["measured"] == "absent"
     hits = _grep(
         ("research_finding", "research finding schema", "RESEARCH_FINDING", "finding_schema"),
@@ -111,6 +150,7 @@ def test_the_instrument_registry_is_STILL_absent_and_was_not_reconstructed():
     """The doctrine is a generated file whose source is not here. Two
     things are asserted: the source is still missing, and nobody wrote a
     plausible one to make the header true."""
+    _require_a_sibling("the instrument registry and the doctrine digest")
     assert RECORD["instrument_registry"]["measured"] == "absent_from_every_reachable_tree"
     assert not (REPO_ROOT / "architecture" / "instruments.yaml").exists(), (
         "architecture/instruments.yaml now exists here. If it was ADDED to satisfy the "
@@ -136,6 +176,21 @@ def test_the_absence_search_is_not_vacuous():
     assert len(roots) >= 2, f"only {len(roots)} search root(s) reachable; the absences are weak"
     control = _grep(("EVERY_RUN_DIFFERS_IN",))
     assert control, "the search machinery finds nothing at all -- the absence claims are vacuous"
+
+    # And the half the old guard could not see: WHICH roots. Two local roots
+    # satisfy the count above while proving nothing about a sibling corpus.
+    siblings = _reachable_siblings()
+    print(f"absence coverage: {len(_LOCAL_ROOTS)} local, {len(siblings)} sibling "
+          f"({', '.join(p.name for p in siblings) or 'none'}) under {_CORPORA_ROOT}")
+    if not siblings:
+        pytest.skip(
+            "no sibling corpus reachable -- the sibling-dependent absence claims "
+            "in this file are SKIPPED rather than passing on a search that never "
+            "looked at them."
+        )
+    # The control string must be findable in a SIBLING too, or the machinery
+    # is only proven against the tree it lives in.
+    assert _grep(("provenance",), ), "the search finds nothing in the reachable siblings"
 
 
 def test_the_preconditions_are_recorded_unmet_and_the_module_cannot_fake_them():

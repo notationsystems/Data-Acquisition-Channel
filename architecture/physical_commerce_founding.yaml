@@ -1,0 +1,149 @@
+# NOTATION PHYSICAL COMMERCE -- the founding order, executed.
+#
+# PC-0 is the gate and it is NOT discharged by anything below. Nothing
+# here is an operations core, a route engine or a bid engine. What is
+# built is PC-1 through PC-5, which the order states are buildable without
+# PC-0's record, plus the three additions that arrived mid-round.
+extends: core@1.0.0
+
+subject: physical_commerce_founding
+status: pc1_to_pc5_built_pc0_open
+owner: daf
+enforcement: tests/test_commerce_stores.py
+
+# ----------------------------------------------------------------------
+# WHERE THIS LIVES, and why that is a decision rather than a default.
+# ----------------------------------------------------------------------
+placement:
+  chosen: commerce/ inside the acquisition channel
+  why_not_sea_dog: "frozen at 5a6def1 pending its researcher session. The founding order says nothing in it touches Sea Dog, and adding a package would change that tree's test count and CI."
+  why_not_a_new_repository: "creating one is an outward-facing act the order did not authorise. No repository named for this programme exists; the catalogue was checked rather than assumed."
+  why_here: "PC-2 is a recon-and-ingest item, which is this repository's own discipline, and the EDGAR recon the order names as the model belongs to this lineage."
+  the_cost_accepted: "this repository now hosts two programmes. A package directory is cheap to relocate and the PC-1 store split is not, so the split was taken first and the address second."
+
+# ----------------------------------------------------------------------
+# PC-0. Held open. This is the most important line in the file.
+# ----------------------------------------------------------------------
+pc_0_the_gate:
+  status: not_discharged
+  what_would_discharge_it: "one real transaction run manually and instrumented -- one tender priced end to end or one load moved, with every question, number, source and guess recorded."
+  what_was_built_without_it: "PC-1 through PC-5 only, which the order states are buildable in advance."
+  what_was_deliberately_not_built:
+    - operations core
+    - route engine
+    - digital twin and spatial levels 3 to 5
+    - trading or position-taking layer
+    - bid engine
+  non_engineering_blocks_restated: "broker authority, surety bonding, cargo and liability insurance, customs brokerage licensing, and working capital for any position-taking. These gate operating far more tightly than any software here and are questions for counsel and a broker."
+
+# ----------------------------------------------------------------------
+# What was built, per item.
+# ----------------------------------------------------------------------
+pc_1_three_stores:
+  module: commerce/stores.py
+  the_irreversible_decision: "a commitment is an act upon the world and has no source, because nothing observed it -- the firm produced it. The stores reject each other BY TYPE rather than by field inspection, since a field-inspecting store would unwrap an Outcome and admit its Evidence."
+  what_commitments_need_that_evidence_never_did:
+    - an issuer
+    - an authority, recorded ON the commitment rather than resolved later
+    - an idempotency key, so a retried send does not bind twice
+    - a revocation path
+  the_reuse: "diverge() pairs a commitment with its outcome. Quoted versus invoiced, promised transit versus actual, bid landed cost versus realized. It needed no new analytics -- only the basis guard."
+  the_guard_freight_needs_more_than_commodities_did: "DIVERGENCE_ACROSS_UNLIKE_BASIS. Chargeable weight minus gross weight is a number with no referent that looks exactly like a finding. An unknown basis agrees with nothing, including itself spelled differently."
+  row_accounting: "every issued commitment lands in exactly one of settled / unsettled / revoked / basis-refused, and the four conserve, asserted. Four distinct warrants for an empty pairing."
+
+pc_2_canadabuys:
+  module: commerce/canadabuys.py
+  recon_record: architecture/canadabuys_recon.yaml
+  measured_before_any_parser_existed: "979 open notices, 67 fields, 6936280 bytes, licence ca-ogl-lgo, no authentication, no rate-limit headers observed."
+  the_ladder: "LIVE / PUBLISHED_NO_ROWS / UNPARSEABLE / UNREACHABLE, carried on the result. Three of the four can produce zero notices and a caller must never infer success from list length."
+  row_accounting: "every row is admitted, rejected with a reason, or filtered with the predicate NAMED. A filter that cannot name its predicate is refused at the call site."
+  person_data: "13 of 67 columns are contactInfo. The projection has no field for any of them -- not a filter on the way out, the absence of a place to put the value."
+
+pc_3_tender_extraction:
+  module: commerce/tender.py
+  graded_against: "the founding order's list of ten fields, not the extractor's own output. An extractor graded on what it chose to produce always scores full marks."
+  the_finding: "five of the ten have NO COLUMN in the source -- quantity, incoterms, origin, equipment, contract value. Absent, not sparse. A notice tells a bidder who is buying, under what process and by when. It does not tell them how much."
+  three_kinds_of_absence: "NO_COLUMN_IN_THIS_SOURCE and EMPTY_IN_THIS_NOTICE are distinguished, because the difference decides whether reading more notices would help."
+
+pc_4_landed_cost:
+  module: commerce/landed_cost.py
+  the_two_discriminating_cases_are_live_not_invented:
+    amount_without_currency: "196 of 3056 award notices carry contractAmount 0.00 with a blank currency. Those are undisclosed values, not values of zero. Summing the column understates the market and reports no error."
+    two_money_columns_on_different_bases: "1008 of 3056 carry a contractAmount that differs from totalContractValue. Both are money; adding them is not addition."
+  the_rule: "every component carries basis, currency AND the date the currency was priced at, plus a completeness. An unknown component yields a range or a refusal, never a zero."
+  why_a_range_and_not_a_midpoint: "a midpoint invents precision the missing classification has not earned, and downstream it is indistinguishable from a measured number."
+  the_undeclared_component: "a sheet that never mentions brokerage reads as a sheet with no brokerage cost. Undeclared components are printed as such."
+
+pc_5_authority:
+  module: commerce/authority.py
+  the_teeth: "INV-4 was written for a system where a wrong proposal wasted a reader's time. Here it creates a liability, so the barrier is a source scan over commerce/agents/ rather than a docstring -- the same shape as test_no_interpretive_layer_can_write_evidence."
+  proven_by_a_plant: "a Commitment construction was added to commerce/agents/tender_scout.py and the scan failed by name. Restored from a file copy."
+  agent_status_is_carried_not_inferred: "is_agent lives on the identity. A model named ops_desk would pass a name check."
+  the_validator_is_built_first: "validate() refuses when the validating instance is the proposing instance, checked by identifier. The separation is between INSTANCES, not between humans and models: a validating agent is legitimate and a self-validating one is not."
+
+# ----------------------------------------------------------------------
+# The three additions that arrived mid-round.
+# ----------------------------------------------------------------------
+addition_1_two_halves_of_the_opportunity_engine:
+  status: recorded_not_built
+  the_split: "government and institutional tenders are public feeds and recon-able. Spot freight lives on load boards that are paid subscriptions whose terms commonly restrict automated access."
+  what_was_done: "the tender half was built (PC-2, PC-3). The load-board half was NOT probed."
+  why_not_probed: "terms of service are a licensing decision, not an engineering one, and probing to find out would be taking the decision by doing it. This is the same shape as the AIS and LME feeds at the head of the source registry's blocked list."
+  the_honest_first_version: "tenders ingested, freight typed in by hand. The first fifty loads are a person's typing, and that record is what PC-0 and the truth set both depend on."
+
+addition_2_cash_conversion:
+  module: commerce/cash.py
+  the_correction_to_the_schema: "capital_required and cycle are PRECONDITIONS, not fields. A field that may be omitted is a field that will be, and a capital requirement defaulted to zero makes every opportunity look fundable and the portfolio look solvent while summing perfectly."
+  factoring: "converts a capital constraint into a rate, so the rate enters the contribution from load one rather than arriving later as a financing line."
+  growth_is_computed_not_targeted: "sustainable_rate() returns the maximum loads per week a facility can carry. Exceeding it is insolvency at a profit. The brief's own illustration reproduces: 50 loads a week at 2000 carrier cost on a 30-day gap needs about 428571 outstanding, inside the 400-600k estimated."
+  an_unstated_facility_is_not_a_facility_of_zero: "zero means the sustainable rate is zero, which is a finding. Unstated means there is no finding at all."
+
+addition_3_carrier_vetting:
+  module: commerce/carrier.py
+  four_outcomes_not_a_boolean: "ELIGIBLE, NOT_ELIGIBLE, ELIGIBLE_PENDING, CANNOT_DETERMINE. A boolean gate collapses the last into whichever neighbour it fails towards: fail-closed and an unreachable registry looks like a fraudulent carrier, fail-open and it looks like a clean one. Both report a fact about the CARRIER when the observable was a fact about the CHECK."
+  the_certificate_is_a_validwhile_predicate: "covers() takes a PERIOD and there is no way to ask it about a single date, so the valid-at-booking-lapsed-before-delivery bug cannot be written by accident."
+  attestation_route_carries_the_class: "regulator-published and insurer-confirmed are independent; a broker note and a carrier's self-assertion are not. A carrier's word about its own insurance is evidence of what the carrier says -- and a cloned identity forwards a real document."
+  double_brokering_is_a_divergence: "tendered-to versus named-on-the-bill-of-lading are two claims about one movement. An uncaptured bill of lading is ONE claim, not agreement between two."
+  ordering_is_deliberate: "a real failure outranks an undetermined check. A carrier the register says is revoked is not made ambiguous by a second check that could not run."
+
+# ----------------------------------------------------------------------
+# Self-corrections. Both were produced by measurement contradicting what
+# had already been written and tested.
+# ----------------------------------------------------------------------
+self_correction_the_fields_i_wrongly_called_prose:
+  what_was_asserted: "compliance and evaluation_criteria were refused as PROSE_NOT_A_VALUE, on the assumption that evaluation rules arrive as paragraphs. A test asserted it."
+  what_was_measured: "over the 979 open notices selectionCriteria takes SEVEN distinct values -- Lowest Price 373, Highest Combined Rating 144, Not applicable 135, Variations 122, Lowest Cost-per-Point 12 -- and tradeAgreements resolves to SEVENTEEN atoms in the same multi-valued cell shape as the delivery regions. Both are closed vocabularies."
+  why_it_mattered: "this is the MIRROR of the defect the module guards against. Refusing a readable field under-reports what the source can answer, and a reader would have concluded the feed cannot say how bids are evaluated when it says so on 800 of 979 notices."
+  the_second_consequence: "with both call sites corrected, no field could emit PROSE_NOT_A_VALUE. A refusal nothing can reach is a branch that passes every test by never running, so the code was REMOVED rather than left standing, and a test asserts every declared code is emitted over the fixture."
+
+self_correction_the_lazy_warrant:
+  what_happened: "unreachable() passed the transport's own words through as the entire warrant, so an operator read `connection reset` as the reason the list was empty."
+  caught_by: "the vacuity guard in this module's own test file, on its first run."
+  the_repair: "the fragment is composed INTO a sentence naming the source and stating that nothing is known about what it holds -- which is not evidence that it published nothing."
+
+the_wrong_attribution_the_guard_committed:
+  what_happened: "the live check fetched with urllib's default User-Agent, received 403, and skipped reporting `feed unreachable`. curl reached the same URL at 200 from the same container in the same minute."
+  why_it_matters_more_here: "an adapter recording UNREACHABLE on a 403 writes a durable claim about the SOURCE when the observable was a fact about OUR REQUEST. Repeated over a week that is a source-health history showing an outage that never happened."
+  filed_in: architecture/canadabuys_recon.yaml
+
+# ----------------------------------------------------------------------
+# The two smaller notes, one of which turned out to be measurable.
+# ----------------------------------------------------------------------
+past_performance_as_the_binding_constraint:
+  the_claim: "many solicitations require demonstrated prior contracts of similar scope, which is circular for a new supplier."
+  measured: "only 9 of 979 open notices mention past performance, previous experience, prior contracts or similar scope anywhere in their selection criteria or description text."
+  what_that_does_and_does_not_show: "it does NOT refute the claim. It shows the requirement is not in the FEED: like quantity, it lives in the solicitation document, and 411 of 979 notices link one. So the constraint is real and this source cannot see it, which is a coverage finding rather than a contradiction."
+  consequence: "confirm per solicitation, as the note says. A tender-ranking agent built on feed text alone would rank an unwinnable solicitation highly and never learn why it lost."
+
+priority_11_is_a_category_change:
+  recorded: "procurement arbitrage means taking title and inventory risk with the firm's own capital, which moves the firm from agent to principal -- different insurance, tax treatment, balance sheet and failure mode."
+  consequence_for_this_tree: "it is labelled a change of business rather than a further step in brokerage, and it stays on the hold list with the trading layer."
+
+# ----------------------------------------------------------------------
+# The highest-value input found and not built.
+# ----------------------------------------------------------------------
+the_award_feed_is_the_outcome_store:
+  measured: "the 2026-2027 award notices file carries 3056 rows and 80 fields, including contractAmount, totalContractValue, contractCurrency and supplierLegalName, and shares solicitationNumber with the tender feed."
+  why_it_matters: "that is a free, automatic, independently-produced outcome for a bid. Nobody chose it after seeing what a model predicted, which is `curation: independent` BY CONSTRUCTION -- the thing forty-five phases of instrument-building could not produce for itself."
+  the_join_was_tested_not_assumed: "966 distinct solicitations in the open-tender feed against 2118 in the 2026-27 awards; the intersection is 38. That is the RIGHT answer and not a broken join: an open tender is by definition mostly not yet awarded. The ground truth arrives with a lag, which is exactly PC-1's `no outcome has arrived yet` bucket."
+  not_built: "the award adapter. Named here so its absence is a decision rather than an oversight."
