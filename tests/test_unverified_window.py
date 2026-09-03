@@ -25,8 +25,8 @@ VERDICTS_PATH = REPO_ROOT / "architecture" / "_probes" / "window_verdicts.txt"
 
 #: The three modules that read the sibling checkout. A verdict any of
 #: them gives at a historical commit is about today's sibling.
-SIBLING_COUPLED = ("test_doctrine_coverage", "test_kalman_preregistration_currency",
-                   "test_vacuous_evidence")
+SIBLING_COUPLED = ("test_doctrine_coverage", "test_ecosystem_census",
+                   "test_kalman_preregistration_currency", "test_vacuous_evidence")
 
 
 def verdicts():
