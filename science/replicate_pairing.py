@@ -257,6 +257,26 @@ class SampleCovariance:
     #: reason a measurement carries its uncertainty kind.
     effective_rank: int
     rank_tolerance: float
+    #: WHERE THIS CAME FROM. The Record ids of the runs, and the
+    #: Observation id of every cell that entered the sums, keyed by
+    #: (run_id, variable).
+    #:
+    #: ADDED 2026-09-03, and it was absent. A covariance is a CLAIM, and a
+    #: claim with no canonical reference is a number a consumer cannot get
+    #: back from: it could not check the pairing, could not re-derive the
+    #: rank verdict, and could not tell two covariances over different
+    #: replicate sets apart. The pairing had never lost the reference --
+    #: ReplicateSet.rows carries Cell.observation_id per value -- and this
+    #: projection dropped it, which is the same unpairing this module was
+    #: written to repair, one layer further on.
+    #:
+    #: Nothing found it. Every test here checked the numbers and the
+    #: numbers were right. It became visible when an API invariant was
+    #: applied that requires every claim to carry a reference, which is
+    #: why the invariant is worth having before an endpoint exists rather
+    #: than after.
+    source_run_ids: Tuple[str, ...]
+    source_observation_ids: Tuple[Tuple[Tuple[str, str], str], ...]
     reasons: Tuple[str, ...]
 
     def __post_init__(self) -> None:
@@ -512,6 +532,17 @@ def sample_covariance(replicates: ReplicateSet) -> Optional[SampleCovariance]:
     if rank < len(variables):
         reasons.append(RANK_DEFICIENT_COVARIANCE)
 
+    # The reference, taken from the cells that actually entered the sums
+    # rather than from the set's declared variables -- so a cell missing
+    # from a run cannot be referenced as though it had contributed.
+    # Rows are positional and aligned to `variables`, so the key is built
+    # from that alignment rather than from a mapping the row does not have.
+    observation_ids = tuple(sorted(
+        ((run_id, variables[index]), cell.observation_id)
+        for run_id, row in zip(replicates.run_ids, replicates.rows)
+        for index, cell in enumerate(row)
+    ))
+
     return SampleCovariance(
         variables=variables,
         means=means,
@@ -520,6 +551,8 @@ def sample_covariance(replicates: ReplicateSet) -> Optional[SampleCovariance]:
         n_runs=n,
         effective_rank=rank,
         rank_tolerance=tolerance,
+        source_run_ids=tuple(replicates.run_ids),
+        source_observation_ids=observation_ids,
         reasons=tuple(set(reasons)),
     )
 
