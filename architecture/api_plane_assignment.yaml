@@ -346,6 +346,13 @@ not_a_response:
     EvidencePool:
       what_it_is: "the durable pool. A store, and the boundary every claim in this repository is persisted through."
       returns_responses_of_type: "Observation, Record, Source, Document, Referent, DerivedValue"
+    MetadataIndexQueries:
+      what_it_is: "a Protocol -- the catalog half of an evidence store, reached through EvidenceStore.index. It is an INTERFACE and not a value, so it is a store handle in exactly the sense this category was written for, one level further in."
+      returns_responses_of_type: "Observation, Document, Record, Source"
+      what_it_actually_hands_back_is_IDS_of_those: "not the objects. all_ids, list_versions, find_by_content_hash and list_source_artifacts return tuples of ids; locator_for_document returns the locator that already lives on a Record. An index returns REFERENCES, and this field names what they are references TO -- which is where the API obligation lands, exactly as this category intends. A first version of this entry described the return shape in prose instead, and the check refused it: naming `tuples of ids` classifies nothing, and a handle whose returns nothing classifies is a handle whose obligation has been lost."
+      how_it_reached_the_gate: "it is returned by a PROPERTY, `EvidenceStore.index`, and the derivation walks return types. So a gate written for response values caught an interface -- correctly, since the caller does receive it, and the disposition is that it carries no API obligation rather than that it should not have been found."
+      why_the_three_branches_do_not_apply: "it asserts nothing about the world, refuses nothing, and reads no operational state. Forcing a branch would mean inventing a reference it does not have -- the reason given at the head of this category."
+      added_by: "the session that added daf/storage/evidence_store.py, after this gate refused it by name. Recorded here rather than by widening the walk to skip Protocols, which would have made the next interface invisible."
 
 verified_by_planting_the_defect:
   a_claim_whose_reference_field_does_not_exist_on_the_type: "ExecutionRecord's reference_field renamed to a plausible field it does not have. test_each_branch_carries_the_field_its_requirement_names FAILED -- which is the check that separates a declaration from a label."

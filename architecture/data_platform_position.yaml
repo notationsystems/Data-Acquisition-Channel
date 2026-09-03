@@ -23,6 +23,14 @@
 # currently work, and their risk is regression rather than greenfield.
 extends: core@1.0.0
 
+# BOUND to architecture/platform_target.yaml, which records the same
+# directive, was written the same day by a concurrent session, and knew
+# nothing of this file until the merge. They agree on the substance and
+# neither is a subset of the other: this record owns adoption detection --
+# by import and declared dependency rather than free text -- and the hold
+# list; that one owns the layer-by-layer position and the store seam it
+# built. Kept and bound rather than merged, per the rule
+# proof_integrity.yaml adopts for two records of one subject.
 artifact: data_platform_position
 owner: daf
 status: measured_2026_09_03

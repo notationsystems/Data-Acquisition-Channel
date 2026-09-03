@@ -139,3 +139,28 @@ def test_the_two_items_that_get_more_expensive_are_named_with_why():
         "the record must say the vocabularies are the owner's to set, or this layer "
         "invents them"
     )
+
+
+def test_the_two_platform_records_are_bound_and_neither_is_a_subset():
+    """Two records of one subject, written the same day by two sessions.
+    proof_integrity.yaml's rule is to keep both, bind them, and give each
+    a scope the other names -- not to choose.
+
+    Fails in the state where one stops naming the other, which is how a
+    pair of overlapping records drifts into two accounts of one thing.
+    """
+    other = REPO_ROOT / "architecture" / "data_platform_position.yaml"
+    assert other.exists()
+    assert "platform_target.yaml" in other.read_text(), (
+        "the sibling record does not name this one"
+    )
+
+    bond = TARGET["relationship_to_data_platform_position"]
+    assert "data_platform_position.yaml" in bond["the_fact"]
+    assert "neither knew of the other until the merge" in bond["the_fact"]
+    assert "Neither is a subset of the other" in bond[
+        "the_disposition_is_the_one_this_pair_already_adopted"]
+    # And each must be credited with what the other lacks.
+    has = bond["what_each_has_that_the_other_does_not"]
+    assert "IMPORT and DECLARED DEPENDENCY" in has
+    assert "two substitutions and not one" in has
