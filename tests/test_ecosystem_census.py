@@ -22,6 +22,7 @@ import subprocess
 import sys
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(REPO_ROOT / "tests"))
 sys.path.insert(0, str(REPO_ROOT / "vendor" / "scout-retrieval-agent"))
 
 import daf  # noqa: F401,E402
@@ -179,13 +180,12 @@ def test_the_declared_core_count_is_re_derived_rather_than_restated():
     )
 
 
-def test_the_shared_pair_is_byte_identical_where_the_counterparty_is_reachable():
-    """The verification a previous claim in this repository skipped.
+def test_the_daq_side_of_the_pair_matches_what_the_census_recorded():
+    """This side, re-measured. The PAIR verdict is not taken here.
 
-    The pair is held byte-identically by both parties and editing either
-    is a joint reissue. Here the DAQ-side digests are re-measured; the
-    SCL side is checked only when a checkout is actually present, and the
-    test says which of the two it did rather than passing either way.
+    An earlier version of this test compared against a sibling directory
+    and reported a divergence that did not exist. The counterparty is a
+    remote; tests/test_pair_at_remote.py asks it.
     """
     bound = APPARATUSES["scientific_compute_layer"]["bound"]
     pair = {
@@ -199,15 +199,21 @@ def test_the_shared_pair_is_byte_identical_where_the_counterparty_is_reachable()
             "here is a joint reissue, never this repository's alone."
         )
 
-    counterparty = pathlib.Path("/home/user/scientific-compute-layer-scl-/architecture")
-    if not counterparty.is_dir():
-        return  # not reachable on this machine; the DAQ half above still ran
-    for name, expected in pair.items():
-        theirs = counterparty / name
-        if theirs.exists():
-            assert hashlib.sha256(theirs.read_bytes()).hexdigest() == expected, (
-                f"{name} has DIVERGED between the two parties"
-            )
+    # THE COUNTERPARTY IS A REMOTE, NOT A DIRECTORY. This block used to
+    # compare against /home/user/scientific-compute-layer-scl-, and on
+    # 2026-09-03 that reported a DIVERGENCE for a pair that was
+    # byte-identical at both parties' heads: the sibling checkout was four
+    # commits behind its own remote. A local directory is versioned with
+    # nothing, so the verdict was about a checkout and read as a verdict
+    # about the pair. tests/test_pair_at_remote.py now owns the real
+    # comparison; what is left here is this side, which is what a census
+    # of THIS repository can honestly bind.
+    from _pair import local_sibling_is_current
+    current, reason = local_sibling_is_current()
+    if current is False:
+        # Named rather than passed over: the machine holds a stale mirror,
+        # and any byte comparison against it would be a verdict about that.
+        assert "vs remote" in reason
 
 
 def test_the_daq_row_records_no_tally_and_the_tallies_are_measured_here():

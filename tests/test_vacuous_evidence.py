@@ -81,10 +81,28 @@ def test_the_shared_artifact_was_not_edited():
     assert "vacuous_evidence" not in ours.read_text(), (
         "the class was written into the shared artifact; that is a joint reissue, not DAQ's to take"
     )
+    # THE COUNTERPARTY IS A REMOTE, NOT A DIRECTORY. On 2026-09-03 this
+    # comparison reported `proof_integrity.yaml has diverged across the
+    # pair` for a pair that was byte-identical at both parties' heads: the
+    # sibling checkout was four commits behind its own remote. A path is a
+    # location and whatever sits there is somebody's last pull, so the
+    # verdict was about a checkout and read as a verdict about the pair.
+    # Not weakened -- the comparison still runs whenever it can support the
+    # claim, and declines when it cannot. The real verdict is taken over
+    # the network in tests/test_pair_at_remote.py. See
+    # architecture/pair_verification_subject.yaml.
     if scl.exists():
         import hashlib
+        import sys as _sys
+
+        _sys.path.insert(0, str(REPO_ROOT / "tests"))
+        from _pair import local_sibling_is_current
+
+        current, reason = local_sibling_is_current()
+        if current is False:
+            return  # a stale mirror; this comparison cannot separate the two states
         assert hashlib.sha256(ours.read_bytes()).digest() == hashlib.sha256(scl.read_bytes()).digest(), (
-            "proof_integrity.yaml has diverged across the pair"
+            f"proof_integrity.yaml has diverged across the pair ({reason})"
         )
 
 

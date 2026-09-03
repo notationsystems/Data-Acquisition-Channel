@@ -225,13 +225,29 @@ def test_the_remaining_unbound_artifact_is_shared_and_covered_for_divergence():
     )
     assert KNOWN_UNBOUND <= shared
 
+    # A STALE MIRROR IS NOT A DIVERGENCE, and this comparison cannot tell
+    # them apart -- measured 2026-09-03, when it reported one for a pair
+    # that agreed at both parties' heads. The verdict is taken against the
+    # counterparty's remote in tests/test_pair_at_remote.py; here it is
+    # declined when the sibling is behind. See
+    # architecture/pair_verification_subject.yaml.
     import hashlib
+    import sys as _sys
+
+    _sys.path.insert(0, str(REPO_ROOT / "tests"))
+    from _pair import local_sibling_is_current
+
+    current, currency_reason = local_sibling_is_current()
+    if current is False:
+        return
+
     for name in sorted(shared):
         ours_bytes = (ARCHITECTURE / name).read_bytes()
         theirs_bytes = (scl / "architecture" / name).read_bytes()
         assert hashlib.sha256(ours_bytes).digest() == hashlib.sha256(theirs_bytes).digest(), (
-            f"architecture/{name} has DIVERGED across the pair. A shared artifact edited on one "
-            "side is exactly the rule the two sides can come to disagree about."
+            f"architecture/{name} has DIVERGED across the pair ({currency_reason}). A shared "
+            "artifact edited on one side is exactly the rule the two sides can come to "
+            "disagree about."
         )
 
     section = COVERAGE["one_artifact_is_not_covered_for_currency"]
