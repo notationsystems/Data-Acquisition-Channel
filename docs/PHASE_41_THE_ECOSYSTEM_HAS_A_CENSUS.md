@@ -22,9 +22,23 @@ README at all.
 | scout-retrieval-agent | the core — a canonical-state compiler pipeline | it *is* the determinism the rest rests on |
 | **data-acquisition-fabric** | acquisition; provenance inside identity | yes, and it is where the property was worked out |
 | scientific-compute-layer | the compute contract | partially, by a different route |
+| notation-physical-commerce | freight and procurement — **no repository of its own** | structurally, and untested against reality |
 | morphohdl | growing circuits by structural recursion | no, and no sign it was meant to |
 | network-scout-signal-miner | **undetermined** | zero commits present |
 | information-systems-archive | **undetermined** | zero commits, no remote reachable |
+
+**Seven apparatuses, six repositories.** Notation Physical Commerce
+merged into `commerce/` inside this repository while this phase was being
+written — a concurrent session's programme, placed here deliberately
+rather than in a repository of its own, for reasons
+`architecture/physical_commerce_founding.yaml` states. It is why the
+census enumerates *apparatuses* rather than directories: a census keyed
+on repositories would have no row for it at all.
+
+Its gate is open and says so. PC-0 is not discharged, and what would
+discharge it is one real transaction run manually and instrumented. That
+is the same posture the anchors held before a real document met them, and
+it is recorded rather than glossed.
 
 Two roles are `UNDETERMINED` rather than inferred from their directory
 names. An empty local clone is evidence about this machine and nothing
@@ -159,11 +173,27 @@ widened. The two `UNDETERMINED` roles stay undetermined.
 
 | check | result |
 |---|---|
-| `python3 -m pytest tests/ -q` | **1848 passed, 1 skipped**, exit code read directly |
+| `python3 -m pytest tests/ -q` | **2335 collected** after the merge; exit code read directly |
 | `mypy daf/ science/ boundary/ bridge/ epistemics/ assertion/ session/` | Success, **91 source files** |
 | submodule `vendor/scout-retrieval-agent` | clean, pinned at `5e146d5` |
-| `build_invariant_register.py` | regenerated; 65 `extends` agreeing, 0 disagreeing |
-| detector proofs | 8 planted, 8 fired, all restored to green |
+| `build_invariant_register.py` | re-derived; 71 `extends` agreeing, 0 disagreeing |
+| detector proofs | 10 planted, 10 fired, all restored to green |
+
+## A note on the merge
+
+The register conflicted, and its generator **refused to run** while
+`MERGE_HEAD` existed: it reads `git ls-tree HEAD` for the gitlink, and
+during an unresolved merge HEAD is the pre-merge commit, so the artifact
+would have recorded a gitlink the pin does not name beside a pin that
+does. Resolved by committing the merge first and re-deriving after — the
+generator was right and the shortcut it refused was the one I was about
+to take.
+
+Every count in the census then moved, and each moved by re-measurement
+rather than by editing. The apparatus count was the exception worth
+fixing structurally: the test had a literal `6` in it, which went stale
+the moment a seventh arrived, so the count is now declared in the record
+and bound to the rows.
 
 **Bent: zero.** No core invariant changed. The vendored submodule is
 byte-identical.

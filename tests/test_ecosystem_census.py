@@ -50,7 +50,13 @@ def _git(*args: str) -> str:
 def test_every_apparatus_declares_which_kind_of_claim_it_carries():
     """A row that did not say would be checked to whichever standard the
     reader assumed."""
-    assert len(APPARATUSES) == 6
+    # Bound to the record's own declared count, not to a literal here:
+    # a literal went stale the first time a seventh apparatus arrived.
+    assert len(APPARATUSES) == CENSUS["counts"]["apparatuses"]
+    assert CENSUS["counts"]["apparatuses"] != CENSUS["counts"]["repositories_carrying_the_name"]
+    assert "no repository of its own" in CENSUS["counts"]["why_they_differ"], (
+        "the counts differ and the record must say why, or the difference reads as an error"
+    )
     for name, body in APPARATUSES.items():
         assert body["kind"] in KINDS, f"{name} declares kind {body.get('kind')!r}"
         assert "role" in body
