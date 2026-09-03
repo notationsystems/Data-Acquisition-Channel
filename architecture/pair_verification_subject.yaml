@@ -1,0 +1,47 @@
+# THE PAIR CHECK ANSWERED A QUESTION ABOUT A DIRECTORY AND REPORTED IT AS
+# A VERDICT ABOUT THE PAIR.
+#
+# Measured 2026-09-03. Three tests reported that a jointly-held artifact
+# had DIVERGED across the pair. It had not. Both parties carried
+# byte-identical copies at their own heads, and the thing that disagreed
+# was a checkout on this machine that nobody had pulled.
+extends: core@1.0.0
+
+subject: pair_verification_subject
+status: measured_and_repaired_for_this_layer
+owner: daf
+enforcement: tests/test_pair_at_remote.py
+recorded: "2026-09-03"
+
+# ----------------------------------------------------------------------
+what_happened:
+  the_report: "tests/test_vacuous_evidence.py, tests/test_doctrine_coverage.py and tests/test_ecosystem_census.py all failed with `proof_integrity.yaml has DIVERGED across the pair`. Three independent checks, one message, and it named the artifact the joint-reissue rule exists to protect."
+  what_was_actually_true: "the acquisition layer authored two new class instances into architecture/proof_integrity.yaml; the compute layer mirrored them. Both parties held sha256 c9be09961d3440684c781fee7c2ce72be84a9507907240c887390ccf012c5f36 at their own heads, and kalman_validation_preregistration.yaml agreed at 0eb23c6b0f9dd270a6ae2d53ebb88b60b33118b9f6a9d499be5683648756d00c."
+  what_disagreed: "/home/user/scientific-compute-layer-scl- was at ee346ba1de6394c0383248e1bf56521d0ce47f3b while its remote branch was at 2b30dd108dd3b521ac05824afa9a9a3bb1e14e61. Four commits behind, including the mirror."
+  the_measurement_that_settled_it: "`git ls-remote <url> refs/heads/<branch>` for the head, then a depth-1 fetch of that FULL forty-character sha into a throwaway repository and `git cat-file -p <sha>:architecture/<name>`. Read-only with respect to every checkout on this machine, including the counterparty's."
+
+# ----------------------------------------------------------------------
+the_defect:
+  the_subject_substitution: "the check's question is `has this jointly-held artifact been edited by one party alone`. What it evaluated is `do these two directories on this machine hold the same bytes right now`. Those coincide only while the sibling checkout happens to be current, and a checkout is versioned with nothing -- it is whatever someone last pulled into it."
+  why_the_failure_direction_matters: "this is a FALSE POSITIVE on the most serious rule the pair has. A guard that fires every time a reissue is in flight -- which is exactly when the two sides are legitimately unequal for a few minutes -- teaches its readers that the alarm means nothing. The joint-reissue rule is then protected by a check people have learned to wave through."
+  what_no_check_covered: "that a comparison names its counterparty by IDENTITY rather than by location. Every gate here checks whether an answer is correct; nothing asked whether the thing being compared against is the thing the claim is about."
+  the_prior_art_in_this_tree: "architecture/unverified_window.yaml recorded exactly this shape for canonical_yaml.py -- `the sibling checkout is not versioned with the commit under test`, and any verdict a sibling-reading module gives at a historical commit is about today's sibling. The shape was named and the pair check was not brought under it."
+
+# ----------------------------------------------------------------------
+the_repair:
+  what_was_done: "tests/_pair.py names the counterparty by URL and branch and reads it over the network; tests/test_pair_at_remote.py takes the pair verdict there. It SKIPS with a reason when the network does not answer, because a pair check that passed offline would be asserting nothing about the counterparty."
+  what_asking_costs_was_asked_first: "every git call sets GIT_NO_LAZY_FETCH=1 -- in a partial clone a presence query FETCHES the object and answers yes, so the question creates its own answer -- and GIT_TERMINAL_PROMPT=0, because a credential hang reports nothing at all. Both are this repository's own findings, filed the same night in proof_integrity.yaml. Every sha sent to a remote is unabbreviated: an abbreviation must resolve against a LOCAL object database, misses there, and never reaches the remote."
+  the_guard_is_not_the_variable: "a test reads tests/_pair.py's own source and fails if any git call is written around the one helper that sets those. Planted a call outside it and watched it fire."
+  what_this_layer_did_not_do: "touch the sibling checkout. Refreshing it would have cleared the symptom on this machine and left the substitution in place, and it is another party's working tree."
+
+the_two_tests_this_record_first_said_it_would_leave_alone:
+  what_it_said: "an earlier version of this record stated that tests/test_vacuous_evidence.py and tests/test_doctrine_coverage.py belong to another session's lineage and `are not edited here`, and that the repair was theirs to take."
+  why_that_was_wrong: "they were red, on this machine, because of a merge this session performed, for a reason this session had already diagnosed and could fix in one guard each. Leaving a known false alarm standing so as not to touch another lineage is not restraint; it is handing over a broken instrument with a note attached. The etiquette argument was real and it was outweighed."
+  what_was_actually_done: "both now call local_sibling_is_current() and DECLINE the comparison when the mirror is behind, because that comparison cannot separate a divergence from a stale pull. Neither is weakened: with a current sibling and a genuine one-sided edit, both still fail. Planted exactly that -- currency stubbed true, a line appended to proof_integrity.yaml -- and watched both fire before restoring."
+  what_is_still_theirs: "the wording of their own findings. Only the guard was added; no verdict either test reaches was changed."
+
+what_is_left_open:
+  the_check_runs_where_ci_does_not: "the sibling checkout does not exist on the runner, so the local comparisons skip there and the conformance gate is green either way. tests/test_pair_at_remote.py needs the network and skips without it. So the pair's strongest verdict is available in CI only when the runner has network, and its false positives are still discovered by people rather than by the gate."
+  why_ci_did_not_see_it: "the sibling checkout does not exist on the runner, so both tests skip there and the conformance gate is green. A check that is exercised only on developer machines and skipped in CI has its false positives discovered by people rather than by the gate."
+
+the_general_form_worth_carrying: "before trusting a comparison, ask what the OTHER side is. A path is a location and not an identity; whatever is at that path is a snapshot of somebody's last pull. Where a claim is about a counterparty, name the counterparty -- a URL, a ref, a digest -- and accept that the check now needs the network and must say so when it cannot run."
