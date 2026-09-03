@@ -47,7 +47,7 @@ from typing import Optional, Tuple
 from evidence.identity import content_hash
 from evidence.types import Document, Record
 
-from daf.storage.filesystem_store import FilesystemEvidenceStore
+from daf.storage.evidence_store import EvidenceStore
 from daf.storage.identity import compute_artifact_id
 
 
@@ -58,7 +58,7 @@ class ArtifactNotFoundError(KeyError):
 
 
 class ArtifactStore:
-    def __init__(self, store: FilesystemEvidenceStore) -> None:
+    def __init__(self, store: EvidenceStore) -> None:
         self._store = store
 
     def put(self, document: Document, record: Record) -> str:

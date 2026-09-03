@@ -196,6 +196,7 @@ def rejection_metrics(
 
 
 def unclassified_backlog(
+    # Concrete: reads `store.categories`, a filesystem-store attribute.
     store: FilesystemEvidenceStore, register: ClassRegister
 ) -> UnclassifiedBacklog:
     """How much of the durable corpus carries no evidence class.

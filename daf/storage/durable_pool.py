@@ -86,7 +86,7 @@ from evidence.types import (
     Source,
 )
 
-from daf.storage.filesystem_store import FilesystemEvidenceStore
+from daf.storage.evidence_store import EvidenceStore
 
 _INDEXED_FINGERPRINT_CATEGORIES = ("sources", "documents", "records", "observations")
 _SCANNED_FINGERPRINT_CATEGORIES = (
@@ -98,7 +98,7 @@ _SCANNED_FINGERPRINT_CATEGORIES = (
 
 
 class DurablePool(EvidencePool):
-    def __init__(self, store: FilesystemEvidenceStore) -> None:
+    def __init__(self, store: EvidenceStore) -> None:
         super().__init__()
         self.store = store
         self._hydrated = False
@@ -276,7 +276,7 @@ class DurablePool(EvidencePool):
             self._hydrated = True
 
     @classmethod
-    def restore(cls, store: FilesystemEvidenceStore) -> "DurablePool":
+    def restore(cls, store: EvidenceStore) -> "DurablePool":
         """The "process restart" step: reconstructs a DurablePool that
         answers exactly as if the entire durable corpus had been loaded
         -- but, since Phase K, does not actually pay that cost until a
@@ -298,7 +298,7 @@ class DurablePool(EvidencePool):
         self._ensure_hydrated()
 
 
-def load_pool(store: FilesystemEvidenceStore) -> EvidencePool:
+def load_pool(store: EvidenceStore) -> EvidencePool:
     """Like `DurablePool.restore`, but returns a plain, non-durable
     `EvidencePool` -- for a read-only "retrieve after restart" use case
     that has no need to keep writing back to `store`. Unlike
@@ -312,7 +312,7 @@ def load_pool(store: FilesystemEvidenceStore) -> EvidencePool:
     return pool
 
 
-def _replay_into(pool: EvidencePool, store: FilesystemEvidenceStore) -> None:
+def _replay_into(pool: EvidencePool, store: EvidenceStore) -> None:
     """Loads every persisted object into `pool` in dependency order,
     calling the base `EvidencePool.put_*` methods explicitly (not
     `pool.put_*`, which would re-persist already-persisted objects if

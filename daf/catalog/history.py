@@ -23,15 +23,15 @@ from __future__ import annotations
 from typing import Tuple
 
 from daf.storage.artifact_store import ArtifactStore
-from daf.storage.filesystem_store import FilesystemEvidenceStore
+from daf.storage.evidence_store import EvidenceStore
 
 
-def known_versions(store: FilesystemEvidenceStore, artifact_id: str) -> Tuple[str, ...]:
+def known_versions(store: EvidenceStore, artifact_id: str) -> Tuple[str, ...]:
     """All version_ids known for `artifact_id`, chronological -- a thin
     pass-through to ArtifactStore.list_versions, exposed at the catalog
     layer so callers don't need to reach into daf.storage directly."""
     return ArtifactStore(store).list_versions(artifact_id)
 
 
-def has_ever_been_acquired(store: FilesystemEvidenceStore, artifact_id: str) -> bool:
+def has_ever_been_acquired(store: EvidenceStore, artifact_id: str) -> bool:
     return len(known_versions(store, artifact_id)) > 0
