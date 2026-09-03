@@ -260,6 +260,20 @@ def test_each_recorded_local_checkout_is_at_the_recorded_commit():
             path = _checkout(entry["path"])
             if path is None:
                 continue
+            if entry["at"] == "THIS_CHECKOUT":
+                # A REGISTER CANNOT RECORD ITS OWN REPOSITORY'S POSITION.
+                # Any commit written into this row names the state BEFORE
+                # the commit that writes it, so it is stale the instant it
+                # lands -- measured on the first suite run after this file
+                # was committed, which is when this branch was added. What
+                # IS checkable is that the row names THIS checkout, so a
+                # rename or a move fails here rather than passing quietly.
+                assert path.resolve() == REPO_ROOT.resolve(), (
+                    f"{name}: {entry['path']} is marked THIS_CHECKOUT and "
+                    f"resolves to {path}, not {REPO_ROOT}"
+                )
+                checked += 1
+                continue
             result = _git("rev-parse", "HEAD", cwd=path)
             assert result.returncode == 0, f"{entry['path']} has no HEAD"
             head = result.stdout.strip()
@@ -424,3 +438,43 @@ def test_the_forks_recorded_as_unmodified_still_point_at_one_branch():
         checked += 1
     if checked == 0:
         pytest.skip("no fork remote answered on this run")
+
+
+# --------------------------------------------------------------------
+# two records of one subject, bound to each other
+# --------------------------------------------------------------------
+
+
+def test_every_ecosystem_record_names_every_other_one():
+    """Two records of this ecosystem exist because two sessions wrote one
+    each and the merge could not conflict on it -- filed in
+    architecture/proof_integrity.yaml as
+    a_clean_merge_is_not_evidence_that_two_changes_are_compatible.
+
+    Keeping both is the decision. What must not recur is keeping both
+    WITHOUT EITHER KNOWING, so the property asserted is mutual reference
+    over the DERIVED set: every architecture artifact whose own declared
+    name says it is about the ecosystem must name each of the others by
+    path. A third one written by a third session fails here on the day it
+    lands, rather than sitting green beside the other two."""
+    architecture = REPO_ROOT / "architecture"
+    records = {}
+    for path in sorted(architecture.glob("*.yaml")):
+        document = loads(path.read_text())
+        if not isinstance(document, dict):
+            continue
+        declared = str(document.get("artifact") or document.get("subject") or "")
+        if "ecosystem" in declared:
+            records[f"architecture/{path.name}"] = path.read_text()
+    assert len(records) >= 2, (
+        f"expected the census and the register, found {sorted(records)}"
+    )
+    unbound = []
+    for name, text in records.items():
+        for other in records:
+            if other != name and other not in text:
+                unbound.append(f"{name} does not name {other}")
+    assert not unbound, (
+        "a record of this ecosystem does not know the others exist:\n  "
+        + "\n  ".join(unbound)
+    )

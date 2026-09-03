@@ -59,7 +59,10 @@ apparatuses:
     observed:
       a_second_checkout_exists: "/home/user/notationsystems/scout-retrieval-agent, branch claude/deterministic-state-architecture-q9kl5c, HEAD d43a5695d90f0e2b3a582a82638aa25a22ea4722 committed 2026-08-24T22:56:34Z"
       its_version_string: "1.0.0 -- the SAME LABEL as the pin, on a DIFFERENT COMMIT, three days earlier"
-      ancestry_is_undeterminable_here: "that checkout is grafted (shallow). `git cat-file -t 5e146d5` in it fails: the pinned commit is not in its object database, so whether the pin is ahead of, behind, or divergent from d43a569 cannot be answered from what is on this machine. The relationship is recorded as undeterminable rather than guessed."
+      ancestry_is_PARTLY_determinable_and_the_stated_reason_was_wrong: "CORRECTED 2026-09-03, and the correction matters more than the row. The reason given here was that `git cat-file -t 5e146d5` fails in that checkout, so the pinned commit is not in its object database. That is an artefact of the instrument. The sibling trees are PARTIAL CLONES (remote.origin.promisor true, partialclonefilter blob:none), where a presence query is not a read: on a miss git fetches from the promisor and answers yes -- and an ABBREVIATED sha misses locally and never reaches that path, while the full forty characters resolve. Re-run with full shas and GIT_NO_LAZY_FETCH=1, every one of these commits is present. See architecture/proof_integrity.yaml, the_presence_check_fetched_the_object_whose_absence_was_the_finding."
+      what_is_determinable_measured_with_the_guard_on: "d43a569 IS AN ANCESTOR of dfbdce1, and acdde14 is an ancestor of 5e146d5, which is an ancestor of the remote head e02cd66. So four of these five commits sit on one line and the sibling checkout is behind the pin rather than beside it."
+      what_remains_undeterminable_and_for_the_RIGHT_reason: "the relation between d43a569/dfbdce1 and acdde14/5e146d5. Not because objects are missing -- they are all present -- but because the clone is GRAFTED, boundary at ee585ae, and merge-base cannot see past a graft. The conclusion `undeterminable` was correct for those pairs and wrong for one, and it was reached by a reason that did not hold for any of them."
+      why_this_correction_is_kept_beside_the_claim_rather_than_replacing_it: "a wrong reason behind a partly-right conclusion is exactly the shape this pair files under a real property defended by a false reason, and deleting the reason would remove the evidence that it happened."
     why_it_is_recorded_anyway: "this is exactly the hazard docs/PHASE_39_THE_REGISTER_AND_THE_FIRST_VERTICAL.md was written for -- a core at a commit whose pyproject still says 1.0.0, which is what a patch commit looks like. Phase 39 already protects THIS repository: the submodule commit is the participating field and the version string is bound as annotating, so no check here joins on the label. What Phase 39 did not do, and could not, is say anything about the OTHER parties. Two core commits wearing one label is now an observed fact rather than an unexamined possibility."
     what_is_not_claimed: "that the sibling checkout is wrong, stale, or in conflict. Nothing here knows. The finding is that the label does not distinguish them."
 
@@ -79,7 +82,7 @@ apparatuses:
     kind: BOUND_AND_OBSERVED
     bound:
       what_this_repository_holds_jointly_with_it: "architecture/proof_integrity.yaml and architecture/kalman_validation_preregistration.yaml, held BYTE-IDENTICALLY by both parties. Editing either is a joint reissue and never one party's act."
-      proof_integrity_sha256: "0fe65105e315f4f79441b20071bad11e1f31aba8414f158786b6d00644d1ad79"
+      proof_integrity_sha256: "c9be09961d3440684c781fee7c2ce72be84a9507907240c887390ccf012c5f36"
       kalman_preregistration_sha256: "0eb23c6b0f9dd270a6ae2d53ebb88b60b33118b9f6a9d499be5683648756d00c"
       the_exchange_surface: "architecture/exchange/ -- daq_capabilities.yaml and daq_requirement_response.yaml authored here; scl_requirements.yaml and scl_contract_clauses.yaml received; ste_invariants.yaml and invariant_register.yaml derived across all three. Every one canonicalized by a byte-identical canonical_yaml.py both parties independently produce the same fixture digest from."
     observed:
@@ -139,3 +142,11 @@ what_the_census_found_that_no_single_repository_could:
     disposition: "repaired in the same commit. Recorded because it is the same class as the findings above: a fact everyone involved knew and nothing stated."
 
 what_this_record_must_not_become: "a directory listing that drifts. Its BOUND half is re-measured by its enforcement; its OBSERVED half is dated and machine-scoped and will be wrong the moment a sibling moves, which is why it says when and where it was seen rather than what is true."
+
+# ----------------------------------------------------------------------
+relationship_to_the_ecosystem_register:
+  the_fact: "architecture/ecosystem_register.yaml records the same ecosystem, written the same night by a concurrent session from the same instruction. Neither knew of the other until the merge, which reported conflicts only in derived artifacts."
+  what_the_register_has_that_this_record_declared_unverifiable: "REMOTE STATE. It reads refs with `git ls-remote`, so the identity of a repository is established by ref-set equality rather than by which checkouts sit on a machine. That is how four names were shown to resolve to this repository, and how both vendored forks were shown unmodified at head against their true upstreams -- claims this census correctly refused to make from local checkouts alone."
+  what_this_record_has_that_the_register_missed: "the name `notationsystems/data-acquisition-fabric`, and the whole apparatus-versus-repository distinction. The register enumerated candidate names from the remotes of checkouts present on the machine, which cannot produce a name nothing there points at."
+  the_one_place_they_disagreed: "the ancestry of the core. Corrected above, in the row that held it, with the wrong reason kept beside the correction rather than deleted."
+  the_scope_this_record_keeps: "apparatus roles, and the BOUND versus OBSERVED split. Repository identity and remote state belong to the register."

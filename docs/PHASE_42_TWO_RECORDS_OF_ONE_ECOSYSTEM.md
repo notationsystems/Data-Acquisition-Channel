@@ -1,4 +1,4 @@
-# Phase 41 — The Ecosystem Measures Itself, and the Instrument Was Wrong Twice
+# Phase 42 — Two Records of One Ecosystem, and the Instrument Was Wrong Three Times
 
 ## What this phase was
 
@@ -250,24 +250,104 @@ falsify it. Both were repaired in the artifact, not the check.
 
 ## A count typed into prose, three times
 
-`architecture/proof_integrity.yaml` said "the 26 instances below".
-`tests/test_condition_provenance_reachability.py` said "records TWENTY-FOUR
-instances". Both were right when written, both stale, stale by *different*
-amounts — so the repository was simultaneously asserting two different sizes for
-one list sitting in the tree.
+`architecture/proof_integrity.yaml` gave a digit count of its own instance list.
+`tests/test_condition_provenance_reachability.py` gave a spelled-out one. Both
+were right when written, both stale, stale by *different* amounts — so the
+repository was simultaneously asserting two different sizes for one list sitting
+in the tree.
 
 Bumping them to today's number guarantees a fourth. So the count is not written
 down at all any more, and `tests/test_no_prose_states_the_instance_count.py`
-asserts that. It found a **third** on its first run —
-`architecture/vacuous_evidence.yaml`, `24 instances` — plus one genuine false
+asserts that. It found a **third** on its first run, in
+`architecture/vacuous_evidence.yaml` — plus one genuine false
 positive in the same file, counting occurrences of a different class. The prose
 was reworded and the check left alone, following the disposition
 `test_cross_repository_claims.py` already argues at length: an exception is a
 permanent hole in a check whose entire value is that it has none, and it gets
 added by whoever is annoyed rather than by whoever measured.
 
+And it caught this document. The paragraph above originally *quoted* the three
+stale figures, which is still three counts of that list written into a file a
+reader could take as current — so the check fired on the phase report describing
+the check. The quotations are gone and the shapes are named instead. The rule is
+not "do not assert the count"; it is that the count is not written down.
+
 This is the same repair `core.yaml` already made for the `extends` census. It is
 now made for the other census the repository keeps.
+
+---
+
+---
+
+## Two sessions wrote this phase, and the merge could not tell
+
+`architecture/ecosystem_census.yaml` and `docs/PHASE_41_THE_ECOSYSTEM_HAS_A_CENSUS.md`
+landed from a concurrent session while this work was in flight: same instruction,
+same night, same subject, different method. Neither knew of the other.
+
+The merge reported conflicts in **exactly two files**, both derived artifacts
+regenerated seconds later. The genuine duplication — two records of one subject,
+two enforcement tests, two accounts of the core's identity, one of which
+contradicted the other — produced no conflict at all, because the files have
+different names.
+
+That is the twenty-eighth entry in the class record. **A clean merge is evidence
+about text and about nothing else.** The diagnostic that generalises: name the
+state in which this merge would have gone red; if a genuine incompatibility is
+not in that state, the green says nothing about it. Every gate here is scoped to
+one artifact — does it parse, match its digest, declare its core, remain a fixed
+point — and two artifacts each passing all of theirs is exactly the state that
+arises.
+
+**Neither was a subset of the other**, which is why both are kept:
+
+- The census named `notationsystems/data-acquisition-fabric` — a **fourth** name
+  for this repository. The register never tested it, because it derived candidate
+  names from the remotes of checkouts present on the machine: an enumeration over
+  a source that cannot contain a name nothing there points at.
+- The register held remote measurements the census correctly declared
+  unverifiable from local checkouts, and one of them **disproved a reason the
+  census had recorded**.
+
+They now carry explicit, non-overlapping scopes and name each other by path. The
+register owns repository identity and remote state; the census owns apparatus
+roles and the BOUND/OBSERVED split — seven apparatuses over six repositories,
+because one lives inside another with no repository of its own. A test asserts
+mutual reference over the **derived** set of ecosystem records, so a third one
+written by a third session fails on the day it lands rather than sitting green
+beside the other two. Planted and confirmed.
+
+## The correction to the census, kept beside the claim
+
+The census recorded the core's ancestry as undeterminable because
+`git cat-file -t 5e146d5` fails in the sibling checkout — "the pinned commit is
+not in its object database."
+
+That is the same artefact this phase spent its first half diagnosing. Measured
+with `GIT_NO_LAZY_FETCH=1` and full shas: every commit is present, and one
+relation the row called undeterminable — `d43a569` → `dfbdce1` — **is
+determinable and holds**. Four of the five commits sit on one line, and the
+sibling checkout is *behind* the pin rather than beside it.
+
+The limit is real for a different reason: the clone is **grafted**, boundary at
+`ee585ae`, and `merge-base` cannot see past a graft. So the conclusion was right
+for two pairs, wrong for one, and reached by a reason that held for none.
+
+The wrong reason is kept beside the correction rather than deleted — a real
+property defended by a false reason is a shape this record already carries, and
+removing the reason removes the evidence that it happened.
+
+## A register cannot record its own position
+
+The first suite run after this register was committed failed on its own row: it
+recorded `notations-acquisition-channel` at `0ead63d` and the tree was at
+`514ac5a`. Any commit written into that row names the state *before* the commit
+that writes it, so it is stale the instant it lands.
+
+The row now reads `THIS_CHECKOUT`, and the enforcement resolves that against the
+repository root instead — so a rename or a move still fails, and a position that
+cannot be truthfully recorded is not recorded. Caught one commit after the check
+was written, by the check.
 
 ---
 
@@ -286,6 +366,12 @@ now made for the other census the repository keeps.
    third STE object. It is the gitlink for `vendor/scout-retrieval-agent`, and
    `scientific-transformer-engine` is a different name for the same project —
    which is how the acronym produced the error in the first place.
+4. **The register recorded its own repository's HEAD**, above.
+5. **This phase report quoted the three stale counts** it was reporting on, and
+   `test_no_prose_states_the_instance_count.py` fired on it. Three counts of that
+   list, written into a file a reader could take as current, in the document
+   explaining why they must not be. The quotations are gone and the shapes are
+   named instead.
 
 ---
 

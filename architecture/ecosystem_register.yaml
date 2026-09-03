@@ -72,13 +72,15 @@ members:
       - "https://github.com/notationsystems/Notations-Acquisition-Channel.git"
       - "https://github.com/notationsystems/notations-acquisition-channel"
       - "https://github.com/notationsystems/data-acquisition-channel-daq"
-    how_that_was_established: "all three `git ls-remote` to the same single ref -- `refs/heads/claude/daf-state-space-architecture-v8peqd` at 0ead63d, with HEAD equal to it. One branch, one commit, three names."
+      - "https://github.com/notationsystems/data-acquisition-fabric"
+    how_that_was_established: "all four `git ls-remote` to the same single ref -- `refs/heads/claude/daf-state-space-architecture-v8peqd`, with HEAD equal to it. One branch, one commit, four names."
+    and_the_fourth_name_came_from_the_other_census: "architecture/ecosystem_census.yaml names `notationsystems/data-acquisition-fabric` as this repository. This register had tested three names and not that one, because it derived its candidate names from the remotes of checkouts present on this machine -- an enumeration, over a source that cannot contain a name nothing here points at. Two records of one subject found one name each that the other missed, which is the argument for keeping both and joining them rather than choosing."
     remote_head_at_measurement: 63f4747d6465307ae763a38e3b0a2985f3482a29
     remote_head_moved_during_this_measurement: "0ead63d -> 63f4747, in eleven minutes. The added commit is `Conform to the corpus contract; measure the absences over the right trees` -- concurrent work, on the same branch this checkout is on."
     local_checkouts_of_it_on_this_machine:
       - path: notations-acquisition-channel
-        at: 0ead63d
-        note: "current. Was 21 commits behind when this file was first drafted, and the draft was written from that tree."
+        at: THIS_CHECKOUT
+        note: "the checkout this file lives in. NO COMMIT IS RECORDED, and the reason is the whole of why this row is shaped differently from the two below it. A commit written here names the state BEFORE the commit that writes it, so it is stale the instant it lands -- measured, on the first suite run after this register was committed: the row said 0ead63d and the tree was at 514ac5a, and the enforcement caught it one commit after being written. An artifact cannot witness its own position; what it can do is say which checkout it is, which is what THIS_CHECKOUT means and what the enforcement resolves it against."
       - path: notationsystems/data-acquisition-channel-daq
         at: 95c900e
         note: "STALE, and its staleness is what the first draft read as a separate nineteen-phases-behind member."
@@ -175,6 +177,19 @@ verified_by_planting_the_defect:
   the_guard_removed_from_the_helper: "the GIT_NO_LAZY_FETCH assignment deleted. test_no_git_call_in_this_file_bypasses_the_no_lazy_fetch_helper FAILED."
   a_git_call_written_around_the_helper: "a bare subprocess.run([`git`, ...]) added to the test file. The same test FAILED -- which is the one that matters, because that is how the guard would actually be lost: not deleted, just not used by the next person."
   what_was_NOT_planted_and_why: "the lazy fetch itself. Reproducing it needs a partial clone holding an object it has not yet fetched, and running the probe consumes that state -- the objects arrive, and the plant cannot be re-armed without deleting someone's clone. test_a_presence_query_over_a_partial_clone_leaves_the_pack_count_alone measures the SIDE EFFECT instead, which is the part that stays checkable after the fact."
+
+# ----------------------------------------------------------------------
+# THE OTHER RECORD OF THIS SUBJECT, AND WHY BOTH ARE KEPT.
+# ----------------------------------------------------------------------
+relationship_to_the_ecosystem_census:
+  the_fact: "architecture/ecosystem_census.yaml records the same ecosystem. It was written the same night, by a concurrent session, from the same instruction, and neither knew of the other until the merge."
+  the_merge_reported_two_conflicts_and_neither_was_this: "both conflicts were DERIVED artifacts regenerated seconds later. Two records of one subject, two enforcement tests and two accounts of the identity of the core produced no conflict at all, because they have different filenames. Filed as a_clean_merge_is_not_evidence_that_two_changes_are_compatible."
+  why_neither_is_deleted: "neither is a subset of the other, and each found something the other could not. The census named a fourth remote for this repository -- data-acquisition-fabric -- which this register never tested, because it derived its candidate names from the remotes of checkouts on this machine, an enumeration over a source that cannot hold a name nothing points at. This register held the remote measurements the census declares unverifiable, and one of them disproved a reason the census had recorded."
+  the_scopes_that_now_divide_them:
+    this_register_owns: "REPOSITORY IDENTITY AND POSTURE. Which names resolve to which repository, established by ref-set equality; what each member is for; and every claim about remote state."
+    the_census_owns: "APPARATUS ROLES AND THE BOUND/OBSERVED SPLIT. What each apparatus stands on, which of its claims are derivable from inside this repository, and which were seen once on one machine. Seven apparatuses over six repositories, because one lives inside another with no repository of its own."
+    where_they_touch: "the identity of the core. This register measured it against the remotes; the census recorded a sibling checkout and a reason for undeterminability that the measurement disproved. The correction is written in the census, beside the claim it corrects rather than in place of it."
+  what_is_deliberately_not_done: "no merge of the two files into one. They answer different questions, and folding them would produce a record authoritative about repositories in some fields and about apparatuses in others with nothing marking which -- the half-frozen shape this pair already refuses elsewhere."
 
 # ----------------------------------------------------------------------
 what_this_register_still_cannot_see:

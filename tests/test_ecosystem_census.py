@@ -260,15 +260,32 @@ def test_the_core_label_finding_states_why_it_is_not_fixed_here():
     assert "joint decision and is not taken here" in finding["what_would_close_it"]
 
 
-def test_the_ancestry_is_recorded_as_undeterminable_rather_than_guessed():
-    """The sibling core checkout is grafted, so the pinned commit is not
-    in its object database and the relationship cannot be computed. That
-    is a fact about what is knowable, and it is recorded as one.
-    """
+def test_the_ancestry_row_separates_what_was_measured_from_what_is_unknowable():
+    """CORRECTED. This test previously asserted that the row said
+    `undeterminable` and gave `grafted` as the reason -- which pinned a
+    claim that was, in part, an artefact of its instrument.
+
+    The sibling trees are PARTIAL CLONES. A presence query there is not a
+    read: on a miss git fetches from the promisor and answers yes, and an
+    abbreviated sha misses locally and never reaches that path. So `the
+    pinned commit is not in its object database` was never true; it was
+    what a short sha looks like. Measured with the guard on, every commit
+    is present, and one relation the row called undeterminable --
+    d43a569 to dfbdce1 -- is determinable and holds.
+
+    What survives is a real limit for a DIFFERENT reason: the clone is
+    grafted, and merge-base cannot see past a graft. So the row must now
+    carry three separable things, and this test asserts all three are
+    there rather than that a conclusion is stated."""
     observed = APPARATUSES["scout_retrieval_agent"]["observed"]
-    assert "grafted" in observed["ancestry_is_undeterminable_here"]
-    assert "recorded as undeterminable rather than guessed" in (
-        observed["ancestry_is_undeterminable_here"])
+    corrected = observed["ancestry_is_PARTLY_determinable_and_the_stated_reason_was_wrong"]
+    assert "artefact of the instrument" in corrected
+    assert "partialclonefilter" in corrected.lower() or "PARTIAL CLONE" in corrected
+    determined = observed["what_is_determinable_measured_with_the_guard_on"]
+    assert "ANCESTOR" in determined.upper()
+    remaining = observed["what_remains_undeterminable_and_for_the_RIGHT_reason"]
+    assert "graft" in remaining.lower()
+    assert "not because objects are missing" in remaining.lower()
     assert "SAME LABEL" in observed["its_version_string"]
 
 
