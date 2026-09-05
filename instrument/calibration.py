@@ -89,13 +89,30 @@ class Calibration:
         return all(self.d_log10_mass_d_volume(low + index * step) < 0.0
                    for index in range(samples))
 
-    def volume_for_mass(self, mass: float, tolerance: float = 1e-12) -> float:
+    def volume_for_mass(self, mass: float) -> float:
         """Invert by bisection over the calibrated range.
 
         Bisection rather than a root formula because the range is bounded
         and monotonic there, and because a closed-form cubic root would
         return branches outside the calibration that this object has no
         business claiming.
+
+        NO TOLERANCE PARAMETER, deliberately, and it once had one. A
+        caller-supplied convergence tolerance is a threshold that can be
+        handed a value making the answer independent of the input:
+        measured at 1e6 and at infinity, this returned 9.0 for a mass whose
+        true volume is 11.0 -- the loop broke after a single bisection and
+        the midpoint of the whole calibrated range was returned as an
+        inversion, silently. No caller in the tree ever supplied it, and
+        running the bisection to its own limit is also STRICTLY more
+        accurate: the default 1e-12 returned 10.999999999999886 where the
+        unbroken loop returns exactly 11.0.
+
+        The distinction against the other thresholds in this repository is
+        the point. `tolerance` in science/set_attestation.py encodes a
+        reader's judgement about how a source rounded, so it stays and is
+        given a stated domain. This one encoded nothing; a parameter that
+        cannot be supplied wrongly is better than one that is checked.
         """
         if not self.is_monotonic_over_range():
             raise CalibrationError(
@@ -109,14 +126,18 @@ class Calibration:
                 f"mass {mass!r} lies outside calibration {self.identifier!r}'s range "
                 f"[{self.mass(high):.4g}, {self.mass(low):.4g}]"
             )
+        # 200 halvings of a bounded bracket reach the representable limit
+        # long before they run out; the loop stops when the bracket can no
+        # longer be halved, which is a property of the floats rather than a
+        # number anyone chose.
         for _ in range(200):
             middle = 0.5 * (low + high)
+            if middle <= low or middle >= high:
+                break
             if self.log10_mass(middle) > target:
                 low = middle
             else:
                 high = middle
-            if high - low < tolerance:
-                break
         return 0.5 * (low + high)
 
 

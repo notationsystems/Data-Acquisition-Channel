@@ -200,6 +200,16 @@ def check_attestation(attestation: SetAttestation, values: Sequence[float],
     layer deciding how close counts as agreement, which is a judgement
     about the source's rounding and belongs to whoever read the document.
     """
+    if not math.isfinite(tolerance):
+        # MEASURED, not supposed. An infinite tolerance reports AGREED for
+        # an attestation off by a factor of 1.7 million; a NaN one reports
+        # DISAGREED for an attestation that reconciles exactly. Both are
+        # verdicts about the threshold rather than about the source.
+        raise SetAttestationError(
+            f"a tolerance of {tolerance!r} is not a tolerance: the verdict it "
+            "produces is the same for every input, so it says nothing about "
+            "the attestation it was asked about"
+        )
     if tolerance < 0:
         raise SetAttestationError("a negative tolerance is not a tolerance")
 

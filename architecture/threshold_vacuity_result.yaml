@@ -1,0 +1,75 @@
+# A CHECK WHOSE SENSITIVITY IS AN ARGUMENT -- measured, repaired, bound.
+#
+# Answers architecture/threshold_vacuity_preregistration.yaml, digest
+# 37ce06e67da34a477e37614d8b88a5c1619d342e0c5b84b2da521e8ee231075c.
+# No line of that file was edited after these measurements were taken.
+extends: core@1.0.0
+
+subject: threshold_vacuity
+status: measured
+owner: daf
+enforcement: tests/test_threshold_vacuity.py
+
+# ----------------------------------------------------------------------
+the_population: "FOUR suspect parameters in daf science boundary bridge epistemics session commerce tools assertion instrument, found by AST over fourteen name fragments. All four are instances. P1 holds."
+
+# ----------------------------------------------------------------------
+the_four_measured_at_their_edges:
+
+  science_set_attestation_check_attestation:
+    parameter: tolerance
+    what_a_degenerate_value_does: "at INFINITY an attestation of 999999 against a computed 0.5762 reports AGREED. At NaN an attestation that reconciles exactly reports DISAGREED, because every comparison with NaN is false. Both verdicts are about the threshold."
+    disposition: guarded
+    why_not_removed: "it encodes a reader's judgement about how the source rounded its inputs, and a library that picked one would be answering a question it cannot see the evidence for. The domain is finite and non-negative; 0.0 stays legal and means exact."
+    how_it_was_found: "not in this repository. Writing the standalone package's README meant explaining `tolerance` to a stranger, and the sentence about why it has no default invited the next question."
+
+  science_replicate_pairing_covariance_rank:
+    parameter: rank_tolerance
+    what_a_degenerate_value_does: "MEASURED on a rank-3 matrix and a rank-1 matrix. At 1.0 and above both report rank 0 -- no pivot can exceed rank_tolerance x largest, not even the largest itself. Below 0.0 both report full rank. At infinity and NaN both report 0. In every case the answer stops depending on the matrix."
+    disposition: guarded
+    the_domain: "[0.0, 1.0). 0.0 is INSIDE it and is not degenerate: it keeps every strictly positive pivot, which is the exact-rank answer. Measured rather than assumed, which is why the interval is half-open."
+    why_this_guard_matters_more_than_the_others: "it sits on a JOIN. rank_tolerance normally arrives from published_rank_tolerance(), which reads the compute layer's own published constant out of architecture/exchange/scl_requirements.yaml. A degenerate value published there would otherwise change every rank in this repository in silence. The guard makes the counterparty's artifact loud instead."
+    what_was_not_touched: "the rule itself. `pivot > tol * largest` is the compute layer's, and using theirs is what makes the two sides agree about which directions exist. For every tolerance inside the domain the answer is bit-identical to before."
+
+  commerce_mileage_validation_lane_is_discriminating:
+    parameter: minimum_duration_delta_pct
+    what_a_degenerate_value_does: "at 0.0 and below it accepts the Toronto-Montreal trunk haul that moved 0.19% between auto and truck costing -- the exact lane the predicate was written to exclude. At infinity and NaN it rejects a lane that moved 17%."
+    disposition: guarded
+    why_it_is_the_sharpest_of_the_four: "the others compute a wrong answer. This one SELECTS THE VALIDATION SUITE. A threshold of zero does not merely mislead a reader; it fills the suite with lanes that agree by construction, and every downstream result is then evidence about nothing."
+    new_refusal_code: A_SELECTION_THRESHOLD_THAT_SELECTS_EVERYTHING
+
+  instrument_calibration_volume_for_mass:
+    parameter: tolerance
+    what_a_degenerate_value_does: "at 1e6 and at infinity it returned 9.0 for a mass whose true volume is 11.0 -- the bisection loop broke after a single halving and the midpoint of the calibrated range was returned as an inversion, with no signal. An error of 2.0 volume units, silently."
+    disposition: REMOVED, not guarded
+    why_removed: "it encoded no judgement and no caller in the tree ever supplied it. P2's prediction: a parameter that cannot be supplied wrongly is better than one that is checked."
+    what_removing_it_also_bought: "accuracy. The old default of 1e-12 returned 10.999999999999886; running the bisection to the bracket's own representable limit returns 11.0 EXACTLY, at 6.5, 11.0 and 17.5 across the calibrated range. The guard-versus-remove choice was not a wash."
+
+# ----------------------------------------------------------------------
+the_predictions:
+  P1_all_four_are_instances: HELD
+  P2_two_dispositions: "HELD. Three guarded, one removed, and the removal measured strictly more accurate rather than merely safer."
+  P3_no_shared_helper: "HELD. The four domains are finite-and-non-negative, finite-and-in-[0,1), finite-and-strictly-positive, and none-at-all. No two are the same, so a shared validator would take the domain as an argument and be the defect's own shape."
+  P4_derived_not_enumerated: "HELD. tests/test_threshold_vacuity.py re-runs the AST sweep at test time. Detector-proofed: adding an unguarded `max_drift` parameter to commerce/mileage.py fires it. NO EXCLUSION LIST -- the module states that if it ever needs one the rule is wrong."
+  P5_detector_proofed: "HELD, per guard rather than in aggregate. Five defects planted, five detected: the attestation guard removed; the rank_tolerance guard removed; the lane minimum guard removed; the inversion's tolerance parameter restored; a new unguarded threshold added to the product."
+  P6_nothing_valid_moves: "HELD. No existing test expectation was widened. covariance_rank at 1e-12 still gives 3 and 1; the published cutoff 1e-12 is inside the stated domain; the lane predicate at 5.0 still rejects 0.19% and accepts 17%; every anchor assertion on check_attestation is unchanged."
+
+the_stop_condition_was_not_reached: "science/admissibility.py, both per-cell vocabularies, the vendored core and both jointly-held artifacts are untouched by this repair."
+
+# ----------------------------------------------------------------------
+# A SIBLING CLASS, ARRIVING FROM THE OTHER DIRECTION IN THE SAME HOUR.
+# ----------------------------------------------------------------------
+what_the_pair_check_found_while_this_was_being_measured:
+  the_observation: "tests/test_pair_at_remote.py reported architecture/proof_integrity.yaml DIVERGED at the counterparty's head ecc6169563fb75b5bbbcea37d31c342589949b89. It was already red before this session's first edit."
+  which_side_moved: "the counterparty's. Measured by diff: TWELVE lines added on their side and ZERO removed on ours, 78399 bytes against 81739. kalman_validation_preregistration.yaml is byte-identical. So this is the staleness case, not the divergence case -- the distinction architecture/vacuous_evidence.yaml files as `a_diff_and_a_stale_mirror_are_the_same_observation_with_different_causes`, here resolved by asking which side could have produced its own copy."
+  what_they_added: "a class instance, `a_fixed_oracle_read_against_a_sample_that_moves`: a test that compares a measurement to a fixed bound while the SAMPLE moves between processes. It names tests/test_replicate_pairing.py drawing 4000 runs with `seed=hash(str(rho)) % 100000`."
+  the_defect_was_live_in_THIS_tree: "yes, at tests/test_replicate_pairing.py:164, unrepaired. Four consecutive interpreters here gave hash(str(0.0)) % 100000 = 67649, 38988, 88201, 36619 while the bound abs=0.05 did not move."
+  the_record_was_verified_before_it_was_acted_on: "the pinned seed 20260903 gives deviations 0.015385, 0.016152, 0.004384, 0.001511, 0.000288 across the five parametrisations -- worst 0.016152, margin 3.10x. The counterparty's record states `worst 0.01615 ... a margin of 3.1x`. Reproduced to five significant figures without having read that line first, which is what establishes that the record is about this code and not about a copy of it."
+  the_seed_was_not_shopped: "20260903 is the value their record prescribes and the first one tried here. Best-of-N selection would tune the experiment to its own answer. The tolerance was not touched."
+  the_binding_check: "tests/test_no_test_draws_from_a_process_varying_seed.py, by sweep over every module under tests/. A hash() may be ASKED ABOUT -- read by an assert or standing alone -- and may not be CARRIED FORWARD into data. Measured on this tree: 62 legitimate hashability probes allowed, ONE site flagged, no exception list. Detector-proofed by replanting the original line."
+  why_the_two_classes_are_siblings: "both leave the mechanism intact and destroy the discrimination from outside it. Theirs moves the SAMPLE under a fixed bound; this one moves the BOUND under a fixed sample. Neither is findable by confirming the check ran, and both produce a well-formed verdict the whole time."
+
+  WHAT_THIS_SESSION_DID_NOT_DO:
+    the_shared_artifact_was_not_carried: "architecture/proof_integrity.yaml is still at c9be09961d3440684c781fee7c2ce72be84a9507907240c887390ccf012c5f36 here, twelve lines behind the counterparty. Carrying their bytes would be a pure fast-forward and the content is verified true of this tree -- and it is still a write to the artifact whose whole rule is that neither side writes it alone. It is left for the owner."
+    the_consequence_stated_plainly: "two tests in tests/test_pair_at_remote.py remain RED, for a true reason, which is what they exist for. This session's suite is therefore NOT green, and no claim here should be read as saying otherwise."
+    what_the_owner_has_to_decide: "whether landing the counterparty's twelve lines is a reissue DAQ may perform unilaterally when it is verifiably a fast-forward, or whether it requires the counterparty's acknowledgement. That is the joint-reissue rule's own question and this layer does not answer it."

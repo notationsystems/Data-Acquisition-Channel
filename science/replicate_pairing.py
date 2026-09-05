@@ -461,6 +461,23 @@ def covariance_rank(matrix, rank_tolerance: float) -> int:
     computed and then classified, so the answer does not depend on the
     sign a rounding error happened to produce.
     """
+    if not math.isfinite(rank_tolerance) or not 0.0 <= rank_tolerance < 1.0:
+        # The domain, MEASURED at its edges rather than assumed. At or above
+        # 1.0 no pivot can exceed rank_tolerance * largest -- not even the
+        # largest itself -- so the rank is 0 for every matrix. Below 0.0
+        # every pivot exceeds it, so the rank is full for every matrix.
+        # Non-finite gives 0 for every matrix. In all three the answer stops
+        # depending on the matrix, which is a rank about the cutoff.
+        #
+        # This also guards the JOIN: rank_tolerance normally arrives from
+        # published_rank_tolerance(), which reads the compute layer's own
+        # published constant. A degenerate value published there would
+        # otherwise change every rank in this repository in silence.
+        raise ValueError(
+            f"rank_tolerance={rank_tolerance!r} is outside [0.0, 1.0): the rank it "
+            "yields is the same for every matrix, so it is a statement about the "
+            "cutoff and not about the covariance"
+        )
     size = len(matrix)
     if size == 0:
         return 0

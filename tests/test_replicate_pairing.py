@@ -161,7 +161,22 @@ def test_a_genuine_condition_still_splits_the_set():
 @pytest.mark.parametrize("rho", [-0.6, 0.0, 0.5, 0.9, 0.99])
 def test_the_recovered_correlation_matches_the_one_it_was_drawn_with(rho):
     """The oracle is the generating process, not the module."""
-    runs = correlated_runs(4000, rho, seed=hash(str(rho)) % 100000)
+    # THE SEED IS PINNED, AND IT WAS NOT SHOPPED. It was
+    # `hash(str(rho)) % 100000`, and Python randomises the hash of a str per
+    # interpreter, so the sample was a different one in every process while
+    # the bound it was compared against did not move -- measured, four
+    # consecutive runs of `hash(str(0.0)) % 100000` gave 67649, 38988, 88201
+    # and 36619. The green had been saying `the estimator recovered rho on
+    # one sample nobody chose and nobody recorded`.
+    #
+    # 20260903 is the value architecture/proof_integrity.yaml prescribes and
+    # the first one tried here. Best-of-N selection would flatter the
+    # estimator by tuning the experiment to its own answer. The deviations
+    # this seed actually gives, measured across the five parametrisations:
+    # 0.015385, 0.016152, 0.004384, 0.001511, 0.000288 -- worst 0.016152
+    # against a tolerance of 0.05, a margin of 3.1x. The tolerance was not
+    # touched.
+    runs = correlated_runs(4000, rho, seed=20260903)
     results = covariance_of(observations_for(runs))
     assert len(results) == 1
     covariance = results[0].covariance

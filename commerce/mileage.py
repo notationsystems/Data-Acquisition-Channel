@@ -39,6 +39,7 @@ Two consequences, both structural below:
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from typing import Optional, Tuple
 
@@ -54,6 +55,7 @@ ROUTE_CARRIES_NO_DURATION = "ROUTE_CARRIES_NO_DURATION"
 CANNOT_PRICE_ON_AN_UNKNOWN_LEGALITY = "CANNOT_PRICE_ON_AN_UNKNOWN_LEGALITY"
 CANNOT_PRICE_ON_A_CONSUMER_ROUTE = "CANNOT_PRICE_ON_A_CONSUMER_ROUTE"
 COMPARISON_ACROSS_UNLIKE_LEGALITY = "COMPARISON_ACROSS_UNLIKE_LEGALITY"
+A_SELECTION_THRESHOLD_THAT_SELECTS_EVERYTHING = "A_SELECTION_THRESHOLD_THAT_SELECTS_EVERYTHING"
 
 #: The dimensions that must be supplied for a route to be truck-legal.
 #: Absent any one of them the engine has nothing to bind on.
@@ -197,6 +199,18 @@ def validation_lane_is_discriminating(comparison: RouteComparison,
     lanes would report agreement and prove nothing. A lane earns its place
     in the suite by making the profile MOVE.
     """
+    if not math.isfinite(minimum_duration_delta_pct) or minimum_duration_delta_pct <= 0.0:
+        # The whole purpose of this predicate is to EXCLUDE lanes that prove
+        # nothing. Measured: at 0.0 or below it accepts the Toronto-Montreal
+        # trunk haul that moved 0.19%, which is the lane it was written to
+        # reject; at infinity or NaN it rejects every lane including one that
+        # moved 17%. A suite selected by either is not a suite.
+        raise RouteRefusal(
+            A_SELECTION_THRESHOLD_THAT_SELECTS_EVERYTHING,
+            f"minimum_duration_delta_pct={minimum_duration_delta_pct!r} makes this "
+            "predicate return the same answer for every lane, including the trunk "
+            "haul it exists to exclude.",
+        )
     return abs(comparison.duration_delta_pct) >= minimum_duration_delta_pct
 
 

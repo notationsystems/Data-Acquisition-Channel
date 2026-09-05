@@ -1,0 +1,58 @@
+# A CHECK WHOSE SENSITIVITY IS AN ARGUMENT.
+#
+# Written BEFORE the repair and after the sweep. What is already measured
+# is stated as measured; what the repair must do is stated as a
+# prediction, and no line of it is edited afterwards to match a result.
+extends: core@1.0.0
+
+subject: threshold_vacuity
+status: preregistered
+owner: daf
+enforcement: tests/test_threshold_vacuity.py
+
+# ----------------------------------------------------------------------
+how_it_was_found: "not in this repository. Extracting science/set_attestation.py as a standalone package meant writing down what `tolerance` means for a stranger, and the sentence `a default would be this layer deciding how close counts as agreement` invited the next question -- what does a caller-supplied tolerance of infinity decide? Measured: every attestation AGREED, including one off by a factor of 1.7 million."
+
+the_class: "a check takes its sensitivity as a parameter. For some values of that parameter the check returns the same verdict for every input, so it reports a well-formed answer that carries no information about the artifact. It is the vacuous-evidence class with the mechanism intact and the DOMAIN removed: nothing is broken, nothing errors, and the check has stopped being a check."
+
+why_it_is_not_the_fifth_class_already_filed: "`a_verdict_about_the_checker_rather_than_about_the_artifact` names a checker that never REACHED the artifact. Here the checker reaches it, reads it, and computes correctly. The invariance comes from the threshold, not from the plumbing, and no amount of confirming that the check ran would find it."
+
+what_makes_it_findable: "the invariance is measurable directly. Run the check on an artifact that must pass and one that must fail; if the verdict is the same, the threshold has removed the domain. That is a two-line probe and it needs no knowledge of the check's internals."
+
+# ----------------------------------------------------------------------
+the_sweep_already_executed:
+  method: "AST over daf science boundary bridge epistemics session commerce tools assertion instrument. Every function parameter whose name contains tolerance, threshold, epsilon, eps, atol, rtol, delta, margin, cutoff, limit, max_, min_, _tol or slack, with the validations of that parameter appearing anywhere in the function body. Derived from the tree, not enumerated from memory."
+  population: "FOUR parameters in the whole product. All four measured at their edges; the measurements are in architecture/threshold_vacuity_result.yaml and were taken before this file was written."
+  what_the_sweep_does_not_cover: "thresholds that are module constants rather than parameters, thresholds inside the vendored core, and any parameter whose name does not contain one of the fourteen substrings. The name list is a heuristic and is recorded as one."
+
+# ----------------------------------------------------------------------
+# PREDICTIONS. Each names the state in which it is WRONG.
+# ----------------------------------------------------------------------
+P1_all_four_are_instances:
+  prediction: "each of the four has at least one finite or non-finite value of its threshold for which it returns the same answer for an artifact that must pass and one that must fail."
+  wrong_if: "any of the four is discriminating across its whole numeric domain, in which case it is not an instance and must be removed from the record rather than guarded."
+
+P2_the_repair_differs_by_whether_the_threshold_carries_a_judgement:
+  prediction: "two dispositions, not one. A threshold that encodes a reader's judgement about a source stays and is given a stated domain; a threshold that is a numerical convenience with no epistemic content and no caller is REMOVED, because a parameter that cannot be supplied wrongly is better than one that is checked. check_attestation and covariance_rank and validation_lane_is_discriminating take the first disposition; volume_for_mass takes the second."
+  wrong_if: "removing volume_for_mass's tolerance changes any value it returns by more than the difference between an early break and the bisection limit, or if any caller in the tree supplies it."
+
+P3_no_shared_helper:
+  prediction: "the four domains differ -- finite and non-negative, finite and in [0, 1), finite and strictly positive, and none at all -- so a shared validator would have to take the domain as an argument and would be the same shape as the defect. Each site states its own domain locally."
+  wrong_if: "three or more of the domains turn out identical, in which case the abstraction is real and refusing it is dogma."
+
+P4_the_enforcement_is_derived_and_not_enumerated:
+  prediction: "the test module re-runs the AST sweep against the tree at test time and fails if a suspect parameter exists that neither refuses a degenerate value nor is proven discriminating across its domain. A hand-written list of four would go stale the first time a fifth is added."
+  wrong_if: "the sweep cannot be run at test time without importing something science/ may not import, or if it reports a false positive that has to be silenced by name -- an exclusion list is the enumeration this predicts against."
+
+P5_the_guards_are_detector_proofed:
+  prediction: "removing each guard makes a named test fail. Reported per guard, not in aggregate."
+  wrong_if: "any guard can be deleted with the suite still green."
+
+P6_nothing_valid_moves:
+  prediction: "for every threshold value inside its stated domain, every one of the four returns exactly what it returned before the repair. Specifically: covariance_rank at 1e-12 gives 3 for the full-rank matrix and 1 for the singular one; validation_lane_is_discriminating at 5.0 rejects the 0.19% trunk haul and accepts the 17% lane; check_attestation at 0.01 is unchanged on every existing anchor assertion."
+  wrong_if: "any existing test's expectation has to be widened. A repair that needs an anchor's number to move is not this repair."
+
+# ----------------------------------------------------------------------
+the_stop_condition: "if fixing this requires touching science/admissibility.py, either per-cell vocabulary, the vendored core, or either artifact held byte-identically with the counterparty, the design is wrong and the work stops. A threshold guard is a local statement about one function's domain and needs none of those."
+
+disposition_of_the_class_itself: "DAQ-local and PROPOSED for the next joint reissue of architecture/proof_integrity.yaml, in the same manner as the five classes in architecture/vacuous_evidence.yaml. It is not written into the shared artifact by one side."
