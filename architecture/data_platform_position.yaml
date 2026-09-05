@@ -40,6 +40,13 @@ enforcement: tests/test_data_platform_position.py
 # THE CLOSING RULE, MADE ENFORCEABLE. This is the buildable half of the
 # specification and the reason this file exists rather than a document.
 # ----------------------------------------------------------------------
+subject_group: platform
+records_sharing_this_subject:
+  - "architecture/platform_target.yaml"
+the_two_platform_records_were_written_concurrently: "two sessions answered one handed-down specification the same day and git auto-merged the results -- different regions, no textual conflict. That is the third occurrence in one repository in one night of a_clean_merge_is_not_evidence_that_two_changes_are_compatible, and the second where the records were of one subject. The mutual-reference check that caught the previous pair did NOT catch this one: its coverage was records whose declared name contains `ecosystem`, which is a substring, in a check written to close a coverage failure."
+the_scope_split_between_them: "this record owns the ADOPTION RULE as a gate and the measured position of each named technology. architecture/platform_target.yaml owns the target shape and the store seam. Where they touch -- what exists today against what is aimed at -- this one is the measurement and that one is the aim."
+why_the_grouping_is_DECLARED_rather_than_inferred_from_the_name: "measured before choosing. Grouping by shared name token was the obvious generalisation and it does not work: across the 75 architecture artifacts, 35 token pairs are shared and most are legitimate -- third_anchor_preregistration and third_anchor_result are a deliberate pair, not a duplication, and `anchor` alone is shared by thirteen. A check on that signal would fire on the pairs the repository is built out of. So a record OPTS IN by declaring subject_group, the enforcement requires every member of a declared group to name the others, and the known hole is stated: a record that should join a group and does not declare one is not caught. That hole is smaller than a check nobody can keep green."
+
 the_adoption_rule:
   as_stated: "add Iceberg, vector search, graph infrastructure, streaming brokers, GPU workers and Kubernetes only when workload evidence demands them. Do not begin with Kafka, Neo4j, Spark, a blockchain, or a large Kubernetes estate."
   what_makes_it_a_check_rather_than_advice: "every technology below carries a status. A technology PRESENT in the tree whose status is not_adopted fails. A technology adopted with no workload_evidence field fails. So adoption becomes an act that has to be justified in the same commit, rather than a dependency that appears and is noticed later."
@@ -130,8 +137,10 @@ technologies:
     status: not_adopted
   sp1:
     step: 6
-    status: adopted_in_the_vendored_core_not_here
-    workload_evidence: "not this repository's adoption to justify. zk/sp1-adapter is the core's, at the pinned commit, and this repository neither builds nor calls it. Recorded so the enforcement does not read the vendored tree as an adoption by this layer."
+    status: adopted_elsewhere_in_the_ecosystem_not_here
+    workload_evidence: "not this repository's adoption to justify. This layer neither builds nor calls any prover. Recorded so the enforcement does not read another tree as an adoption by this one."
+    CORRECTED_2026_09_03: "this entry said the vendored core's zk/sp1-adapter was the specification's ONLY implemented item. architecture/ecosystem_branch_scan.yaml measured a SECOND, on notationsystems/Payload-Terminal-V0 at codex/payloados-project-cargo-execution -- zk/payload-event-batch, with a program, a script, fixtures and a committed verification key. It is the more complete of the two: pinned to upstream sp1-sdk, locked at 6.5.0, and bound to a guestSourceSha256."
+    and_the_two_cannot_verify_each_other: "the core resolves SP1 by a path dependency on the notationsystems fork, which declares workspace version 6.4.0 and whose path resolves in no checkout on this machine. Upstream 6.5.0 against a fork at 6.4.0 -- a proof under one verification key is not verifiable under the other. Measured in the scan; whose problem it is, is recorded there."
   kafka:
     step: 0
     status: refused_by_the_specification
@@ -144,6 +153,12 @@ technologies:
   kubernetes:
     step: 0
     status: refused_by_the_specification
+
+the_grouping_check_had_a_hole_and_a_plant_found_it:
+  what_passed_that_should_not_have: "a member LEAVING a group by renaming its own subject_group. The check skipped groups with fewer than two members, so the departure left a singleton, the skip fired, and the remaining record went on naming a record that had left -- with nothing to catch it."
+  why_that_is_the_exact_failure_the_check_exists_for: "the two platform records drifted apart once already, by being written concurrently. The way they would drift again is one of them quietly ceasing to declare the group, and that is precisely what passed."
+  the_repair: "the mutual-naming half still needs two members; the CLAIMED-MEMBERSHIP half does not, and runs first. A record naming a departed member now fails whatever the group size."
+  and_it_was_found_by_planting_rather_than_by_reading: "the check was written, read over, and looked right. The plant is what separated a check that holds from a check that looks like it holds."
 
 verified_by_planting_the_defect:
   a_not_adopted_technology_imported: "a module importing psycopg2 added under daf/. test_nothing_recorded_as_not_adopted_is_imported_anywhere FAILED, naming the module. That is the shape a real adoption arrives in -- one file, one import, no announcement."

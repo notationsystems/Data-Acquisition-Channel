@@ -1,0 +1,84 @@
+# ATTESTATION CLASS IS A FIFTH AXIS, AND THREE OF ITS TERMS ARE ALREADY
+# ON CONTRACT AXES.
+#
+# epistemics/corpus/contract.json declares three axes and resolves two
+# contested terms by name, because a term on two axes is where a value is
+# corrupted crossing a boundary while every local check passes. It names
+# Payload Terminal as the implementation of two of those axes.
+#
+# A scan of that repository's branches found a FOURTH vocabulary in the
+# same codebase -- AttestationClass in src/lib/economy/carrierTrust.ts --
+# which is a fifth axis by the contract's own definition, and which shares
+# three terms with two of the declared axes. The measurement is in
+# architecture/ecosystem_branch_scan.yaml.
+#
+# THIS IS A PROPOSAL AND NOT AN EDIT, for the same reason as the
+# uncertainty_kind proposal beside it: contract.json is digest-pinned and
+# held by more than one corpus, and one party rewriting a shared
+# declaration is the defect the pin exists to stop.
+#
+# AND IT IS NOT A CRITICISM OF THE CODE IT FOUND. AttestationClass is
+# correct for its subject, ordered correctly, refuses on an empty basis
+# with its reason stated, and annotates its absence term `NOT a low
+# value`. Every one of those is a discipline this pair arrived at
+# separately. The incoherence is at the boundary, which belongs to nobody
+# and therefore to whoever notices.
+extends: core@1.0.0
+
+artifact: attestation_class_as_a_contract_axis
+owner: daf
+status: proposed_not_adopted
+enforcement: tests/test_ecosystem_branch_scan.py
+recorded: "2026-09-03"
+
+binds_to:
+  contract: epistemics/corpus/contract.json
+  contract_id: notation-systems.corpus.provenance
+  contract_version: "1.0.0"
+  contract_sha256: "0622f794e1eb08f13eba3eee341043a8a3833aa1449d618954c41963c460bf7d"
+  and_the_observed_vocabulary: "src/lib/economy/carrierTrust.ts at notationsystems/Payload-Terminal-V0, present identically on the Codex branches read. Recorded as OBSERVED: it is another party's type in another repository, and this proposal states what it carries, not what it is."
+
+what_the_axis_asks: "who attested this, and how independent are they of the subject? None of the three declared axes asks it. production_class asks how the value came to exist, claim_strength how hard the evidence is, interest what stake the source had -- and a regulator, an insurer, the carrier itself and our own observation record are four different ANSWERERS, not four strengths and not four stakes."
+
+why_it_is_not_the_interest_axis:
+  the_temptation: "interest already ranks self_reported below disinterested, and AttestationClass ranks self_reported near the bottom. They look like the same scale."
+  why_they_are_not: "interest asks about MOTIVE -- what stake did whoever stated this have. Attestation asks about SOURCE -- who stands behind it. A regulator with no stake and an insurer with a large one can both be more independent OF THE CARRIER than the carrier is, and interest cannot express that because it is not about the carrier at all."
+  the_measurable_difference: "the two scales have different lengths -- four positions against six -- so a value at rank 1 on one is not at the same distance from the top as rank 1 on the other. Any mapping that treated them as one axis would silently rescale."
+
+the_three_contested_terms:
+  self_reported:
+    appears_in:
+      interest: "rank 1 of 4 -- the source has a stake in stating it this way."
+      attestation_class: "rank 1 of 6 -- the carrier's own claim, annotated in the source as a claim and not a fact."
+    proposed_translation: refused
+    refusal_reason: "the meanings are adjacent and the SCALES ARE NOT. Four positions against six, so equal ranks are not equal distances from the top. This is the more dangerous shape than the contract's existing reported collision, because that one points in obviously opposite directions and this one looks like agreement."
+    what_a_caller_must_do: "state each axis from its own evidence. A value that is self_reported on one axis is not thereby self_reported on the other, and the word carrying across is the whole risk."
+  computed:
+    appears_in:
+      production_class: "a value computed from other evidence. The axis is ordered false, and the contract states that anyone who ranks these is answering a different axis's question with this axis's terms."
+      attestation_class: "rank 2 of 6, ORDERED."
+    proposed_translation: refused
+    refusal_reason: "not because either is wrong. AttestationClass is right to rank its own terms and production_class is right to refuse ranking. The hazard is that the SAME WORD is unordered on one axis and ranked on the other, so a consumer that carries it across acquires an ordering that the source axis explicitly denies having."
+  absent:
+    appears_in:
+      attestation_class: "ranked weakest, annotated NOT a low value."
+      uncertainty_kind: "a real declarable answer in this fabric -- the source reported no error -- distinct from the field being missing, which has its own refusal code."
+      production_class_absence: "the contract's absence for that axis is `unclassified`, declared NOT a term and inadmissible for canonical assertion."
+    proposed_translation: refused
+    refusal_reason: "three vocabularies, three treatments, no two the same. One ranks it, one declares it a real answer, one declares it not a term at all. All three are defensible for their own axis and no value should carry the word across any of these boundaries."
+    and_this_is_the_third_absence_disagreement_the_pair_has_found: "the contract already carries two absence shapes -- production_class where absence is not a term, and interest where it is a ranked term. This is a third, and the pattern is now worth stating on its own: EVERY AXIS MUST DECLARE WHAT ABSENCE IS ON IT, because the answer differs per axis and the word does not."
+
+what_this_proposal_asks_for:
+  declare_the_axis: "attestation_class, ordered, six terms, implemented_by payload-terminal, with weakest_input_wins in combination -- which that implementation already applies."
+  resolve_the_three_terms: "in contested_terms, all three as refused, with the scale-length argument recorded for self_reported because it is the one a reasonable person would map."
+  and_re_read_the_open_gap: "the contract records Payload Terminal's production_class as an OPEN GAP -- cannot say whether a figure was measured or asserted upstream. AttestationClass distinguishes four answerers. That is not production_class and it is not nothing. Whether it partly closes the gap or is orthogonal is the contract owner's call, and the gap description is at minimum incomplete."
+
+what_this_proposal_does_not_do:
+  no_contract_is_edited: "digest-pinned and shared."
+  no_change_is_asked_of_payload_terminal: "the vocabulary is correct for its subject. What is missing is a declaration, and declaring another party's axis on their behalf is the reconstruction-cited-as-declaration error."
+  no_mapping_is_provided: "all three terms are proposed refused. A translation table is what this proposal exists to prevent."
+
+what_would_falsify_it:
+  the_collision_is_not_real: "if AttestationClass stopped containing self_reported, computed or absent, or if the contract's axes stopped containing them. Asserted by intersection in the enforcement rather than restated."
+  the_contract_already_covers_it: "if a later contract version declares attestation_class or resolves any of the three terms, this proposal is superseded rather than pending."
+  the_axis_is_not_distinct: "a demonstration that attestation_class is expressible as a function of interest and claim_strength together. The scale-length argument above is the current evidence that it is not."

@@ -93,7 +93,8 @@ apparatuses:
     kind: BOUND_AND_OBSERVED
     bound:
       what_this_repository_holds_jointly_with_it: "architecture/proof_integrity.yaml and architecture/kalman_validation_preregistration.yaml, held BYTE-IDENTICALLY by both parties. Editing either is a joint reissue and never one party's act."
-      proof_integrity_sha256: "c9be09961d3440684c781fee7c2ce72be84a9507907240c887390ccf012c5f36"
+      proof_integrity_sha256: "e183cf2e8737a68089d2c186a0548591eae98ceadd9201759b8da4afe6c3c0b9"
+      how_this_value_was_obtained: "re-measured at BOTH REMOTES after the reissue that moved it, not read from this checkout. git ls-remote for each head, a depth-1 fetch of the full forty-character sha into a throwaway repository, git cat-file of the blob. SCL head 39278502f4b550fb71040553ab83a7ea57e0bb38, DAQ head 603fed5095d51058a95d4fd2e024befa839a2617, both blobs e183cf2e8737a68089d2c186a0548591eae98ceadd9201759b8da4afe6c3c0b9. The predecessor value was c9be09961d3440684c781fee7c2ce72be84a9507907240c887390ccf012c5f36."
       kalman_preregistration_sha256: "0eb23c6b0f9dd270a6ae2d53ebb88b60b33118b9f6a9d499be5683648756d00c"
       the_exchange_surface: "architecture/exchange/ -- daq_capabilities.yaml and daq_requirement_response.yaml authored here; scl_requirements.yaml and scl_contract_clauses.yaml received; ste_invariants.yaml and invariant_register.yaml derived across all three. Every one canonicalized by a byte-identical canonical_yaml.py both parties independently produce the same fixture digest from."
     observed:
@@ -160,4 +161,5 @@ relationship_to_the_ecosystem_register:
   what_the_register_has_that_this_record_declared_unverifiable: "REMOTE STATE. It reads refs with `git ls-remote`, so the identity of a repository is established by ref-set equality rather than by which checkouts sit on a machine. That is how four names were shown to resolve to this repository, and how both vendored forks were shown unmodified at head against their true upstreams -- claims this census correctly refused to make from local checkouts alone."
   what_this_record_has_that_the_register_missed: "the name `notationsystems/data-acquisition-fabric`, and the whole apparatus-versus-repository distinction. The register enumerated candidate names from the remotes of checkouts present on the machine, which cannot produce a name nothing there points at."
   the_one_place_they_disagreed: "the ancestry of the core. Corrected above, in the row that held it, with the wrong reason kept beside the correction rather than deleted."
+  and_the_third_record: "architecture/ecosystem_branch_scan.yaml owns branches and their contents. This census and architecture/ecosystem_register.yaml both stop at heads; the scan is what reads past them, and it is where the coherence findings about other parties' work are recorded."
   the_scope_this_record_keeps: "apparatus roles, and the BOUND versus OBSERVED split. Repository identity and remote state belong to the register."

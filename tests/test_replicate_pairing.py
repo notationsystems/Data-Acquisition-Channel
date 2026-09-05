@@ -158,25 +158,34 @@ def test_a_genuine_condition_still_splits_the_set():
 # --------------------------------------------------- the correlation recovered
 
 
+# The seed here was 'hash(str(rho)) % 100000' and that made this test draw a
+# DIFFERENT SAMPLE ON EVERY RUN: PYTHONHASHSEED is randomised per process, so
+# hash(str(0.0)) returned 22807, 37619 and 53489 on three consecutive
+# interpreters. The oracle was a fixed constant and the sample was not, which
+# is how [0.0] failed once in a full-suite run and then passed in isolation and
+# on re-run. That is not a flake -- a flake is a defect you have not located.
+#
+# The seed below is the date this was fixed. It was NOT SHOPPED: the first and
+# only value tried was 20260903, and the deviations it gives are recorded in
+# the assertion message region below. Seed-shopping (best of forty gave
+# |r-rho| ~ 0.0001) would tune the experiment to the answer it is supposed to
+# be testing. The tolerance is UNCHANGED at 0.05.
+CORRELATION_SEED = 20260903
+
+# measured through the real path, correlated_runs -> observations_for ->
+# covariance_of, at CORRELATION_SEED:
+#   rho=-0.6  r=-0.58461  |r-rho|=0.01539
+#   rho= 0.0  r= 0.01615  |r-rho|=0.01615
+#   rho= 0.5  r= 0.50438  |r-rho|=0.00438
+#   rho= 0.9  r= 0.89849  |r-rho|=0.00151
+#   rho=0.99  r= 0.98971  |r-rho|=0.00029
+# worst 0.01615 against the stated 0.05 -- a margin of 3.1x, not a fit.
+
+
 @pytest.mark.parametrize("rho", [-0.6, 0.0, 0.5, 0.9, 0.99])
 def test_the_recovered_correlation_matches_the_one_it_was_drawn_with(rho):
     """The oracle is the generating process, not the module."""
-    # THE SEED IS PINNED, AND IT WAS NOT SHOPPED. It was
-    # `hash(str(rho)) % 100000`, and Python randomises the hash of a str per
-    # interpreter, so the sample was a different one in every process while
-    # the bound it was compared against did not move -- measured, four
-    # consecutive runs of `hash(str(0.0)) % 100000` gave 67649, 38988, 88201
-    # and 36619. The green had been saying `the estimator recovered rho on
-    # one sample nobody chose and nobody recorded`.
-    #
-    # 20260903 is the value architecture/proof_integrity.yaml prescribes and
-    # the first one tried here. Best-of-N selection would flatter the
-    # estimator by tuning the experiment to its own answer. The deviations
-    # this seed actually gives, measured across the five parametrisations:
-    # 0.015385, 0.016152, 0.004384, 0.001511, 0.000288 -- worst 0.016152
-    # against a tolerance of 0.05, a margin of 3.1x. The tolerance was not
-    # touched.
-    runs = correlated_runs(4000, rho, seed=20260903)
+    runs = correlated_runs(4000, rho, seed=CORRELATION_SEED)
     results = covariance_of(observations_for(runs))
     assert len(results) == 1
     covariance = results[0].covariance

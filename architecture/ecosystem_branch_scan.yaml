@@ -1,0 +1,111 @@
+# EVERY MEMBER, EVERY BRANCH, AND WHETHER THIS PAIR IS COHERENT WITH THEM.
+#
+# The ecosystem register measures members by their REF SETS and their
+# HEADS. That was enough to establish identity -- six repositories under
+# ten names, then thirteen members -- and it is not enough to answer
+# whether this pair agrees with the work going on inside them. A head is
+# one branch; the work is on the others.
+#
+# MEASURED 2026-09-03 across all thirteen members: twenty-four branches,
+# of which TWELVE are on one member. Payload Terminal carries five Codex
+# branches, three Claude branches, main, a release branch, a CI branch and
+# a UX branch. Every other member has one or two. So the ecosystem's
+# branch activity is concentrated in the member this pair had never read,
+# and which epistemics/corpus/contract.json names as a conforming
+# implementation of two of its three axes.
+# CORRECTED BEFORE THIS WAS PUSHED. The count below says thirteen members
+# and there are FOURTEEN. Notations-Ecosystem holds the control plane, its
+# two branches -- one of them Codex's, and the repository's DEFAULT -- are
+# not in the twenty-four, and it was invisible to the member sweep because
+# that sweep reads names THIS TREE mentions. A derivation that replaced an
+# enumeration was still bounded by what this repository happens to name.
+#
+# The Codex coherence question it would have answered is answered in
+# architecture/ecosystem_register.yaml under ecosystem_control_plane, by
+# the session that found it: the Codex head is an ANCESTOR of the twin,
+# zero Codex commits are absent from it, and the divergence that exists is
+# a default branch pointing at the older work.
+
+extends: core@1.0.0
+
+artifact: ecosystem_branch_scan
+owner: daf
+status: measured_2026_09_03
+enforcement: tests/test_ecosystem_branch_scan.py
+
+method:
+  branches: "git ls-remote --heads against every member the ecosystem register accounts for."
+  contents: "shallow fetch of each branch of interest into a scratch clone outside the ecosystem tree, then compare TREES and FILE DIGESTS rather than commit ids -- distinct commits with identical trees are the same content, and the scan found one."
+  what_was_not_done: "the branches were read, not reviewed. This records agreement and collision between VOCABULARIES and DEPENDENCY REFERENTS. It is not a judgement on anyone's code."
+
+# ----------------------------------------------------------------------
+# THE FIRST RESULT IS AGREEMENT, AND IT IS MEASURED RATHER THAN ASSUMED.
+# ----------------------------------------------------------------------
+the_contract_holds_on_every_payload_terminal_branch:
+  what_was_checked: "epistemics/corpus/contract.json declares Payload Terminal implements claim_strength (reported, estimated, representative, derived) and interest (disinterested, unknown, self_reported, negotiating_position), in src/lib/economy/attestation.ts."
+  measured: "that file is BYTE-IDENTICAL across all seven branches read -- main, three Claude branches and all five Codex branches. One digest, 02b81001a10b. Both vocabularies exactly as the contract pins them, on every branch."
+  what_that_settles: "Codex has not touched the module the contract names, and the contract's claims about that repository are true on every branch rather than only on main. A conformance claim checked against one branch would have been a claim about one branch."
+
+# ----------------------------------------------------------------------
+# THE SECOND RESULT IS A COLLISION, AND IT IS THIS PAIR'S TO ABSORB.
+# ----------------------------------------------------------------------
+a_fifth_axis_nobody_declared:
+  where: "src/lib/economy/carrierTrust.ts on the Codex branches, AttestationClass."
+  what_it_is: "an ORDERED vocabulary answering a question none of the contract's three axes asks -- WHO ATTESTED THIS, AND HOW INDEPENDENT ARE THEY OF THE SUBJECT. Six terms weakest-first: absent, self_reported, computed, our_observation, insurer_confirmed, regulator_reported."
+  and_it_independently_reached_this_pairs_own_disciplines: "weakestClass implements weakest-input-wins, which is the combination rule epistemics/corpus/contract.json declares for its two ordered axes. It REFUSES on an empty basis rather than returning a default, with the reason stated in the error -- `A verdict resting on nothing is not a strong verdict, and returning the strongest class for it would say the opposite.` And its absence term carries the comment `no data. NOT a low value.` That is absent-is-not-zero, arrived at independently, in TypeScript, by a different agent."
+  why_it_is_recorded_as_a_collision_rather_than_a_defect: "the vocabulary is correct for carrier trust. Nothing about it is wrong. What is missing is that the contract does not know it exists, so three of its terms sit on contract axes with different meanings and nothing joins them."
+
+the_three_terms_that_collide:
+  self_reported:
+    on_the_contract_axis: "interest, rank 1 of 4 -- what stake did the source have in stating it this way."
+    on_the_attestation_axis: "rank 1 of 6 -- the carrier's own claim, annotated in the source as `a claim, not a fact`."
+    why_it_is_the_dangerous_one: "the two meanings are CLOSE, and both are RANKED. A join would look right. It would be wrong on the ordering, because one scale has four positions and the other six, so rank 1 does not mean the same distance from the top."
+  computed:
+    on_the_contract_axis: "production_class, and that axis is `ordered: false`. The contract states the rule explicitly: anyone who ranks these is answering a different axis's question with this axis's terms."
+    on_the_attestation_axis: "rank 2 of 6, ORDERED."
+    what_that_means: "not that Codex broke the rule -- AttestationClass is a different vocabulary answering a different question, and ranking its own terms is correct. It means the contract's warning fires on a term it cannot see, in the repository it names."
+  absent:
+    three_treatments_across_three_vocabularies: "AttestationClass ranks it weakest and says NOT a low value. This fabric's uncertainty_kind carries it as a real declarable answer, distinct from the field being missing. The contract's production_class absence is `unclassified`, declared NOT a term and inadmissible for canonical assertion."
+    the_observation: "all three are defensible and no two agree. A value crossing two of these boundaries carrying the word `absent` means something different at each."
+
+and_the_contract_s_open_gap_needs_re_reading:
+  what_it_says: "Payload Terminal axes_absent includes production_class, absence_is_deliberate false, an OPEN GAP -- `Payload Terminal cannot today say whether a figure was measured or asserted upstream.`"
+  what_was_measured: "AttestationClass distinguishes self_reported from our_observation from regulator_reported from computed. That is not production_class, and it is not nothing either: it answers a neighbouring question about the same value."
+  the_honest_statement: "the gap description is at minimum incomplete. Whether AttestationClass partly closes it, or is orthogonal to it, is a question for the contract's owner and this scan does not answer it."
+
+# ----------------------------------------------------------------------
+# THE THIRD RESULT IS A DEPENDENCY DIVERGENCE, AND IT IS OURS.
+# ----------------------------------------------------------------------
+two_sp1_implementations_that_cannot_verify_each_other:
+  codex_side:
+    where: "zk/payload-event-batch on codex/payloados-project-cargo-execution -- program, script, lib, fixtures and a committed verification key."
+    resolves_sp1_by: "an upstream crates.io requirement, sp1-sdk 6.0.1, which the committed Cargo.lock resolves to 6.5.0."
+    and_it_is_internally_coherent: "MEASURED, and a near-miss worth recording. The manifest says 6.0.1 and the verification key says sp1Version 6.5.0, which reads as a contradiction and is not one -- a caret requirement admits 6.5.0 and the LOCKFILE pins exactly that. The lockfile is the participating referent; the manifest is a range. Checking the lockfile before reporting is the only reason this is recorded as coherent rather than as a defect."
+    and_it_binds_the_referent_this_pair_spent_phases_arriving_at: "the verification key carries guestSourceSha256 -- a content hash of the guest program that produced it, committed beside the key. A verification key without one is a key for a program nobody can identify."
+  core_side:
+    where: "vendor/scout-retrieval-agent/zk/sp1-adapter, at the pinned core commit."
+    resolves_sp1_by: "a PATH dependency -- ../../../notationsystems/SP1-zero-knowledge-virtual-machine/crates/sdk."
+    that_path_resolves_in_no_checkout_on_this_machine: "measured from all three core checkouts and recorded in architecture/ecosystem_register.yaml under nexus_zkvm and in architecture/data_platform_position.yaml."
+    and_the_fork_is_a_different_version: "notationsystems/SP1-zero-knowledge-virtual-machine declares workspace version 6.4.0. Codex resolves 6.5.0."
+  the_finding: "the ecosystem has two SP1 pipelines one minor version apart -- one pinned to a fork that does not resolve here, one pinned to upstream and working. A proof produced under one verification key is not verifiable under the other, and step six of the data platform specification names SP1 proofs as a trust primitive."
+  whose_problem_it_is: "not Codex's. Its pipeline is complete, versioned, locked and bound to its guest source. What is unresolved is the FORK -- why it exists, whether anything depends on its divergence from upstream, and whether the core's adapter should follow Codex to upstream."
+
+# ----------------------------------------------------------------------
+verified_by_planting_the_defect:
+  the_agreement_claimed_without_its_digest: "the byte-identity digest removed from the agreement finding. FAILED -- an agreement asserted without the measurement that establishes it is the shape this record exists to avoid, and it is the FIRST finding here, so it is the one most tempting to state loosely."
+  the_sp1_near_miss_written_up_as_a_straight_finding: "the internally-coherent block replaced with `the manifest and the key agree`. FAILED. The record has to carry WHY it is not a defect -- a caret range, a lockfile, a participating referent -- because a conclusion without its reasoning teaches the wrong lesson to whoever reads it next and skips the lockfile."
+  the_divergence_blamed_on_the_other_party: "whose_problem_it_is changed from `not Codex's` to a complaint. FAILED. The working pipeline is theirs; the one pinned to a fork that does not resolve is ours."
+  a_translation_between_the_axes_written_into_the_tree: "a module mapping regulator_reported onto disinterested. FAILED -- that is exactly how the collision stops being theoretical, and it would look like a helpful bridge."
+  the_platform_records_sp1_correction_reverted: "the CORRECTED block removed. FAILED. A record this pair published hours earlier said SP1 had one implementation; the scan measured two, and the correction has to hold or the earlier claim stands stale."
+  and_one_check_fired_for_real_before_any_plant: "the enforcement was written before the platform record was corrected, and refused to pass until it was. The record saying SP1 was the specification's only implemented item was published the same day and was already false."
+
+relationship_to_the_other_two_ecosystem_records:
+  the_third_record_of_this_subject: "architecture/ecosystem_register.yaml owns repository identity and remote state; architecture/ecosystem_census.yaml owns apparatus roles and the BOUND versus OBSERVED split. This one owns BRANCHES and what is inside them, which neither reads -- both measure heads, and a head is one branch of twelve on the member where the work is."
+  and_the_mutual_reference_check_caught_it_arriving: "tests/test_ecosystem_register.py asserts that every architecture artifact whose declared name says it is about the ecosystem names each of the others by path. This file failed it on its first full run -- which is the case that check was written for, after two records of one subject were found sitting green beside each other."
+  why_three_and_not_one: "they answer different questions and the enforcement makes each say so. Folding them would produce a record authoritative about identity in some fields, apparatus roles in others and branch contents in a third, with nothing marking which."
+
+what_this_scan_does_not_do:
+  no_branch_is_merged_or_modified: "everything here was read from shallow fetches into a scratch clone outside the ecosystem tree."
+  no_judgement_on_anyone_s_code: "AttestationClass is correct for its subject and the SP1 pipeline is the better of the two. The findings are about boundaries, which belong to nobody in particular and therefore to whoever notices."
+  no_contract_is_edited: "epistemics/corpus/contract.json is digest-pinned and shared. The fifth axis is proposed in architecture/proposals/, not written into it."
+  no_claim_that_the_branches_were_reviewed: "they were read for vocabulary and dependency referents. Nothing here says the code is correct."

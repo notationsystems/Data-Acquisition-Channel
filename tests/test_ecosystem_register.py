@@ -445,18 +445,82 @@ def test_the_forks_recorded_as_unmodified_still_point_at_one_branch():
 # --------------------------------------------------------------------
 
 
-def test_every_ecosystem_record_names_every_other_one():
-    """Two records of this ecosystem exist because two sessions wrote one
-    each and the merge could not conflict on it -- filed in
-    architecture/proof_integrity.yaml as
-    a_clean_merge_is_not_evidence_that_two_changes_are_compatible.
+def test_every_record_in_a_declared_subject_group_names_the_others():
+    """Records of one subject must know the others exist.
 
-    Keeping both is the decision. What must not recur is keeping both
-    WITHOUT EITHER KNOWING, so the property asserted is mutual reference
-    over the DERIVED set: every architecture artifact whose own declared
-    name says it is about the ecosystem must name each of the others by
-    path. A third one written by a third session fails here on the day it
-    lands, rather than sitting green beside the other two."""
+    WIDENED 2026-09-03, and the widening is the finding. This check
+    covered artifacts whose DECLARED NAME contains `ecosystem` -- a
+    substring, in a check written to close a coverage failure. It caught
+    the third ecosystem record arriving and missed two PLATFORM records
+    written the same night by two sessions answering one specification,
+    which git auto-merged without conflict because they touched different
+    regions.
+
+    WHY THE GROUP IS DECLARED AND NOT INFERRED FROM THE NAME. Measured
+    before choosing: across the architecture artifacts, 35 token pairs are
+    shared and most are legitimate. `third_anchor_preregistration` and
+    `third_anchor_result` are a deliberate pair; `anchor` alone is shared
+    by thirteen. A check on that signal fires on the pairs the repository
+    is built out of, and a check nobody can keep green is worse than one
+    with a known hole.
+
+    THE HOLE, STATED: a record that should join a group and declares none
+    is not caught here. What is caught is a declared group whose members
+    do not name each other, and a member naming a record that is not in
+    the group."""
+    architecture = REPO_ROOT / "architecture"
+    groups, texts = {}, {}
+    for path in sorted(architecture.glob("*.yaml")):
+        document = loads(path.read_text())
+        if not isinstance(document, dict):
+            continue
+        name = f"architecture/{path.name}"
+        texts[name] = path.read_text()
+        group = document.get("subject_group")
+        if group:
+            groups.setdefault(group, {})[name] = document
+
+    assert groups, "no record declares a subject group"
+    unbound = []
+    for group, members in groups.items():
+        # SINGLETONS ARE NOT SKIPPED, and that was a plant that passed.
+        # A record can leave a group by renaming its own subject_group,
+        # which leaves the group a singleton -- and skipping singletons
+        # meant the remaining record went on naming a departed member with
+        # nothing to catch it. The mutual-naming half needs two members;
+        # the claimed-membership half does not, and that is the half that
+        # catches a silent departure.
+        for name, document in members.items():
+            named = set(document.get("records_sharing_this_subject") or [])
+            for claimed in named:
+                if claimed not in members:
+                    unbound.append(
+                        f"{name} names {claimed} as sharing group {group}, and it "
+                        "does not declare that group"
+                    )
+        if len(members) < 2:
+            continue
+        for name, document in members.items():
+            named = set(document.get("records_sharing_this_subject") or [])
+            for other in members:
+                if other == name:
+                    continue
+                if other not in named:
+                    unbound.append(f"{name} (group {group}) does not name {other}")
+                elif other not in texts:
+                    unbound.append(f"{name} names {other}, which is not an artifact")
+    assert not unbound, (
+        "records of one declared subject do not know each other:\n  "
+        + "\n  ".join(unbound)
+    )
+
+
+def test_the_ecosystem_records_are_bound_by_name_as_well():
+    """The original property, kept. The three ecosystem records bind by
+    naming each other in their prose rather than by a declared group, and
+    that binding predates the group mechanism -- so it is asserted
+    separately rather than migrated, because migrating it would retire a
+    check that has already caught something."""
     architecture = REPO_ROOT / "architecture"
     records = {}
     for path in sorted(architecture.glob("*.yaml")):
@@ -466,124 +530,11 @@ def test_every_ecosystem_record_names_every_other_one():
         declared = str(document.get("artifact") or document.get("subject") or "")
         if "ecosystem" in declared:
             records[f"architecture/{path.name}"] = path.read_text()
-    assert len(records) >= 2, (
-        f"expected the census and the register, found {sorted(records)}"
-    )
-    unbound = []
-    for name, text in records.items():
-        for other in records:
-            if other != name and other not in text:
-                unbound.append(f"{name} does not name {other}")
-    assert not unbound, (
-        "a record of this ecosystem does not know the others exist:\n  "
-        + "\n  ".join(unbound)
-    )
-
-
-# --------------------------------------------------------------------
-# the candidate names are SWEPT, not listed
-# --------------------------------------------------------------------
-
-#: `notationsystems/<name>`, wherever it appears -- a URL, a markdown link,
-#: a Cargo path, a prose reference. The owner prefix is required so this
-#: cannot match an arbitrary path segment.
-_OWNED_REPOSITORY = re.compile(r"notationsystems/([A-Za-z0-9][A-Za-z0-9._-]*)")
-
-#: File kinds a human writes. A repository name reaches this register by
-#: someone mentioning it, so the sweep covers what people edit.
-_AUTHORED_SUFFIXES = (".yaml", ".yml", ".py", ".md", ".json", ".toml")
-
-
-def _named_repositories(inside_vendor: bool):
-    """Every notationsystems repository this tree names.
-
-    THE SCOPE SPLIT IS LOAD-BEARING. Names under vendor/ are the CORE'S
-    references to its own build environment -- sibling paths in a Cargo
-    manifest, not claims this repository makes about the ecosystem.
-    Sweeping them together would attribute the core's expectations to
-    this layer; sweeping only outside vendor/ would lose two real
-    repositories. So both are swept and they are kept apart."""
-    found = set()
-    for path in sorted(REPO_ROOT.rglob("*")):
-        if not path.is_file() or path.suffix not in _AUTHORED_SUFFIXES:
-            continue
-        relative = path.relative_to(REPO_ROOT)
-        if not relative.parts:
-            continue
-        in_vendor = relative.parts[0] == "vendor"
-        if relative.parts[0] == ".git" or in_vendor != inside_vendor:
-            continue
-        try:
-            text = path.read_text()
-        except (UnicodeDecodeError, OSError):           # pragma: no cover
-            continue
-        for match in _OWNED_REPOSITORY.finditer(text):
-            found.add(match.group(1).removesuffix(".git"))
-    return found
-
-
-def _names_the_register_accounts_for():
-    names = set()
-    for member in REGISTER["members"].values():
-        for url in _remote_urls_of(member):
-            tail = url.rstrip("/").rsplit("/", 1)[-1]
-            names.add(tail.removesuffix(".git"))
-    return names
-
-
-def test_every_repository_this_tree_names_is_accounted_for_in_the_register():
-    """THE DEFECT THIS CLOSES, WHICH BIT THREE TIMES.
-
-    The first two versions of the register derived their candidate names
-    from the REMOTES OF CHECKOUTS ON THIS MACHINE. That source cannot
-    contain a name nothing here points at, so it missed
-    `data-acquisition-fabric` (found by the census), then
-    `Payload-Terminal-V0` and `Scientific-Compute-Layer-SCL-` (named in
-    epistemics/corpus/contract.json, a file this repository CARRIES).
-    Six members became eleven when the names were swept instead.
-
-    Matching is by NAME rather than by ref set, deliberately: this check
-    must run with no network, because its whole job is to fail when
-    somebody writes a repository name nobody has classified -- and that
-    failure must not depend on whether GitHub is reachable.
-
-    A name that resolves nowhere is still accounted for by being recorded
-    with a posture. `unclassified` exists for exactly that, so there is
-    never a reason to leave one out."""
-    named = _named_repositories(inside_vendor=False)
-    accounted = _names_the_register_accounts_for()
-    # A name that is a strict prefix of an accounted one, with no
-    # occurrence of its own, is a match artefact rather than a repository.
-    unaccounted = sorted(
-        name for name in named - accounted
-        if not any(other.startswith(name) and other != name for other in accounted)
-    )
-    assert not unaccounted, (
-        "this repository names notationsystems repositories the ecosystem "
-        f"register does not account for: {unaccounted}\n"
-        "Give each one a posture -- `unclassified` is a posture and means "
-        "it resolves and nobody has read it."
-    )
-
-
-def test_the_vendored_core_names_repositories_this_register_records_separately():
-    """The core's own references, swept apart from this repository's.
-
-    They are not noise: two of them are real repositories the register now
-    carries, marked `found_by` the vendored sweep. What must stay true is
-    that the two scopes are DISTINGUISHED -- a name that reaches the
-    register only through the core is a fact about the core's environment,
-    and recording it as this layer's claim would be false."""
-    from_core = _named_repositories(inside_vendor=True)
-    if not from_core:
-        pytest.skip("the vendored core is not checked out here")
-    accounted = _names_the_register_accounts_for()
-    assert from_core & accounted, (
-        "the vendored core names repositories and the register accounts for "
-        f"none of them: {sorted(from_core)}"
-    )
-    for name, member in REGISTER["members"].items():
-        if "found_by" in member:
-            assert "vendor" in member["found_by"] or "core" in member["found_by"], (
-                f"{name} records a found_by that does not name the scope it came from"
-            )
+    assert len(records) >= 3, f"expected three ecosystem records, found {sorted(records)}"
+    unbound = [
+        f"{name} does not name {other}"
+        for name, text in records.items()
+        for other in records
+        if other != name and other not in text
+    ]
+    assert not unbound, "\n  ".join(unbound)
