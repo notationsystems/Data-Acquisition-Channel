@@ -113,6 +113,29 @@ saying it is. Whether a verifiable fast-forward is a reissue DAQ may
 perform alone is the joint-reissue rule's own question, and it belongs to
 the owner.
 
+### And then the branch had moved
+
+The two paragraphs above were true when written, and are kept rather than
+deleted. On the push, the branch had advanced: a **concurrent session had
+already carried the counterparty's bytes** (`proof_integrity.yaml` is now
+`e183cf2e`) and had **already pinned the seed** at 20260903, in `603fed5`.
+The pair check passes after the merge. This session did neither of those
+things first.
+
+The two sessions had not coordinated. Both read the same class instance in
+the shared register, and both produced the same repair, the same seed, and
+a test module with the **same filename** — an add/add conflict on
+`tests/test_no_test_draws_from_a_process_varying_seed.py`. Theirs landed
+first and is the base kept; three properties from this one merged into it:
+a sweep for `random.Random()` seeded from the OS, a measurement that the
+coarse rule still disagrees with the narrow one on this tree, and a
+reproducibility check on the pinned generator.
+
+What this session contributes to that half is an **independent
+reproduction**: 0.016152 and a 3.10× margin, measured here before their
+commit was visible, against a record stating 0.01615 and 3.1×. Two
+derivations of one figure, and the second did not read the first.
+
 ## Detector proofs
 
 Five defects planted, five detected, reported per guard rather than in

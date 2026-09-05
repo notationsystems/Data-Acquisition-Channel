@@ -343,12 +343,20 @@ def test_the_result_record_does_not_claim_a_green_suite():
     assert "NOT green" in not_done["the_consequence_stated_plainly"]
     assert "c9be09961d3440684c781fee7c2ce72be84a9507907240c887390ccf012c5f36" in (
         not_done["the_shared_artifact_was_not_carried"]), (
-        "the record must name the digest it is behind, so a reader can check it"
+        "the record must name the digest it was behind, so a reader can check it"
     )
+
+    # The record was superseded on the merge: a concurrent session had already
+    # carried the artifact. The record keeps its original paragraphs AND must
+    # name the digest the tree actually holds now, so that a reader is never
+    # left with only the stale one. This is the check that noticed.
     import hashlib
-    ours = (REPO_ROOT / "architecture" / "proof_integrity.yaml").read_bytes()
-    assert hashlib.sha256(ours).hexdigest() in (
-        not_done["the_shared_artifact_was_not_carried"]), (
-        "the shared artifact moved since this record was written; re-measure the "
-        "pair rather than leaving a stale digest in a record about staleness"
+    found = record["what_the_pair_check_found_while_this_was_being_measured"]
+    superseded = found["SUPERSEDED_ON_THE_MERGE_AND_NOT_BY_THIS_SESSION"]
+    ours = hashlib.sha256(
+        (REPO_ROOT / "architecture" / "proof_integrity.yaml").read_bytes()).hexdigest()
+    assert ours in superseded["what_happened"], (
+        f"the shared artifact is at {ours} and the record names a different one; "
+        "re-measure the pair rather than leaving a stale digest in a record about "
+        "staleness"
     )
