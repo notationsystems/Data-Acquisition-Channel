@@ -61,7 +61,9 @@ AGREED = "AGREED"
 DISAGREED = "DISAGREED"
 UNCHECKED = "UNCHECKED"
 
-UNKNOWN_STATISTIC_KIND = "UNKNOWN_STATISTIC_KIND"
+#: Every verdict check_attestation can return. Declared so a caller can
+#: assert it has handled all three rather than enumerating them by hand.
+VERDICTS = (AGREED, DISAGREED, UNCHECKED)
 NO_COUNTERPART_COMPUTABLE = "NO_COUNTERPART_COMPUTABLE"
 POPULATION_EMPTY = "POPULATION_EMPTY"
 POPULATION_DISAGREES_WITH_THE_ATTESTED_N = "POPULATION_DISAGREES_WITH_THE_ATTESTED_N"
@@ -200,6 +202,8 @@ def check_attestation(attestation: SetAttestation, values: Sequence[float],
     layer deciding how close counts as agreement, which is a judgement
     about the source's rounding and belongs to whoever read the document.
     """
+    if tolerance < 0:
+        raise SetAttestationError("a negative tolerance is not a tolerance")
     if not math.isfinite(tolerance):
         # MEASURED, not supposed. An infinite tolerance reports AGREED for
         # an attestation off by a factor of 1.7 million; a NaN one reports
@@ -210,8 +214,6 @@ def check_attestation(attestation: SetAttestation, values: Sequence[float],
             "produces is the same for every input, so it says nothing about "
             "the attestation it was asked about"
         )
-    if tolerance < 0:
-        raise SetAttestationError("a negative tolerance is not a tolerance")
 
     reasons = []
     if not values:

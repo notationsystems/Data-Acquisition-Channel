@@ -1,0 +1,47 @@
+# A SWEEP OF THIS REPOSITORY'S OWN OPEN ITEMS, AND WHAT IT COST TO NOT FINISH.
+#
+# The method and its coverage are recorded here. The 508 swept items are NOT,
+# and that is deliberate: 486 of them were never examined, and a register of
+# unexamined items filed as a register is the defect this repository tracks.
+extends: core@1.0.0
+
+subject: gap_sweep
+status: partial_and_recorded_as_partial
+owner: daf
+enforcement: tests/test_register_drift.py
+
+# ----------------------------------------------------------------------
+the_method: "six agents swept the same surface six independent ways, each blind to the others so none narrowed on the assumption of coverage: by open-shaped KEY NAME derived from the tree; by reading the architecture files whole, to catch items phrased in prose that no key sweep reaches; by the TEST corpus's own skips, inversions and gap-locking characterisation tests; by the product packages' refusal prose; by the phase reports newest-first; and by the invariant, exchange, decision and proposal registers. Then every distinct item was to be MEASURED against the tree rather than restated, and every actionable claim put to three refuters with distinct lenses -- staleness, layer-and-constraint violation, and vacuity -- each told to default to refuted."
+
+what_each_modality_established_about_its_own_domain:
+  by_open_key: "93 architecture YAML files enumerated; 2827 distinct key names extracted and filtered by shape, then widened three times to catch prose-shaped keys; 62 of 93 files carry at least one. 211 items. Three key-name matches were inspected and EXCLUDED as not open items, which is the sweep declining a false positive rather than padding its count."
+  by_file_read: "115 files found, 111 read, 4 unread and named as __pycache__ bytecode. Six files too large for one read were covered by sectioned reads plus targeted greps, and the agent said so rather than claiming a full read. 104 items."
+  by_test: "2533 tests collected, 2524 passed and 9 skipped on a full run. XFAIL POPULATION IS ZERO AND MEASURED -- grep exits 1 -- so this corpus uses the inversion idiom instead. 46 skip call sites across 21 of 170 files. The counterparty IS on disk, so its pair-check skips did NOT fire and those greens are real measurements rather than vacuous passes. 50 items."
+  by_product_code: "134 source files across the ten product packages, counted per package. Only 5 TODO/FIXME-shaped markers exist repo-wide and all 5 proved closed or benign, so the recording convention here is prose; ~60 softer phrases were swept instead. 29 items."
+  by_phase_doc: "43 items, newest phase first."
+  by_invariant_and_exchange: "89 items from invariants.yaml, exchange/, decisions/ and proposals/ -- the items most likely to be owed by someone other than this repository."
+
+the_arithmetic: "526 raw findings -> 508 distinct after dedup. 578 agents were required to diagnose and refute them. 28 finished. 550 were killed by a session limit mid-run."
+
+# ----------------------------------------------------------------------
+WHAT_IS_ACTUALLY_ESTABLISHED:
+  the_six_sweeps_completed: "all six returned, with their coverage stated. The census of WHAT IS RECORDED AS OPEN is real."
+  twenty_two_items_were_diagnosed: "each self-reported `measured`. NONE was refuted, because every refuter died. A diagnosis that survived no adversary is a claim, not a finding, and none of the twenty-two is treated here as more than that."
+  four_hundred_and_eighty_six_items_were_never_examined: "486 of the 508, stated as a number rather than left to be inferred from the absence of entries. 22 were diagnosed; 22 + 486 = 508."
+  five_were_verified_by_hand_afterwards: "the five open_semantic_questions in architecture/nonscalar_quantity.yaml, re-run directly rather than trusted. Two are answered in code; three are genuinely open. That is the finding below."
+
+# ----------------------------------------------------------------------
+the_finding_the_partial_sweep_still_produced:
+  what: "architecture/nonscalar_quantity.yaml lists five open_semantic_questions. TWO OF THEM WERE ANSWERED IN CODE AND THE RECORD NEVER NOTICED."
+  unit_of_a_vector: "the entry reads `Today unit is one string for one scalar`. Measured: a 2-vector with ['m','m/s'] is admissible, one string 'm' is refused UNITS_DO_NOT_MATCH_COMPONENTS, three units for two components the same, and ['m','  '] is refused UNTYPED_COMPONENT_UNIT. Commensurability was DECLINED rather than required -- ['m','kelvin'] is admissible -- so both branches of the question have an answer."
+  uncertainty_shape_agreement: "the entry reads `Nothing currently relates the two`. Measured: three codes relate them -- UNCERTAINTY_SHAPE_DOES_NOT_MATCH_VALUE for a 2-vector with a 3x3, STRUCTURED_UNCERTAINTY_ON_A_SCALAR_VALUE for a scalar with a 2x2, SCALAR_UNCERTAINTY_ON_A_MULTIVARIATE_VALUE for a vector with a scalar."
+  the_three_that_are_genuinely_open: "re-measured rather than assumed from the fact that they are written down. All four uncertainty kinds are admissible on a covariance and nothing distinguishes them. Neither `component_names` nor `variable_identity` appears anywhere in science/structured_uncertainty.py and a vector with no component identity is admissible. [1.0, None] is refused CELL_TYPE_IS_NOT_A_QUANTITY and [1.0, nan] SENTINEL_ENCODED_ABSENCE, so partial absence is representable for neither shape, exactly as the entry says."
+  why_it_is_the_worst_place_for_a_stale_entry: "this repository's dominant defect class is reasoning from a stale artifact to a claim about the world, and the registers are what it reasons FROM. A stale line in a gap register is that class aimed at the instrument built to track the class. It costs real work: an agent reading `Today unit is one string for one scalar` would set out to build a thing that has existed since the covariance extension landed."
+  the_repair: "annotated in place, never deleted, following this repository's practice of recording a correction beside the claim it corrects. Bound by tests/test_register_drift.py, which requires the record and the code to agree IN BOTH DIRECTIONS -- an answered question must really be answered, an open one must really be open. Detector-proofed four ways: deleting an annotation fires it, quietly closing a question in code fires it, adding a new unexamined question fires it, deleting an original question fires it."
+
+# ----------------------------------------------------------------------
+WHAT_THIS_RECORD_DOES_NOT_CLAIM:
+  not_a_gap_register: "486 items are unexamined and this file does not list them as though they were findings. The raw sweep output lives in the workflow transcript, not in architecture/."
+  the_name_heuristics_are_heuristics: "the key-name fragments and the threshold-name fragments are both recorded as heuristics rather than partitions. A gap phrased in words none of them contain is invisible to this method and no count here should be read as a total."
+  the_completeness_critic_never_ran: "the agent whose whole job was to ask what the six modalities MISSED was among the 550 killed. So the most valuable question this sweep was designed to ask -- is there a real hole with no entry in any register -- has not been asked."
+  what_finishing_it_needs: "a re-run against the same run id. Diagnoses that completed replay from cache; only the killed agents re-execute."
