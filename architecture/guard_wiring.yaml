@@ -1,0 +1,40 @@
+# A GUARD THAT CAN BE UNWIRED WITH THE SUITE STILL GREEN.
+extends: core@1.0.0
+
+subject: guard_wiring
+status: measured_and_closed
+owner: daf
+enforcement: tests/test_identity_verification_is_wired.py
+tool: tools/wiring_probe.py
+
+# ----------------------------------------------------------------------
+the_class: "a validator is written, and a test is written for it, and the test calls the validator DIRECTLY. The CALL SITE inside the function the validator protects is then untested: delete that one line and every test still passes. The guard exists, is correct, and no longer runs."
+why_it_is_not_the_vacuous_evidence_class_already_filed: "that one names a check that could not have detected its claim's falsity. This one names a check that is NOT REACHED. Coverage reports it as covered, because the guard IS covered -- what is uncovered is its wiring. The two are found by different questions: `could this check have failed?` versus `does anything notice if this check never runs?`"
+where_it_was_found: "not in this repository. Retrofitting a disposition-band guard into a separate BIM project, six planted defects were detected and a SEVENTH was not: removing the validator's call left that project's suite green, because every test called the validator by name. The repair there was a test through the public entry point. This tool is that repair generalised -- the hand method was to plant one defect and look, so the tool plants all of them and looks."
+
+# ----------------------------------------------------------------------
+the_method:
+  what_a_guard_is: "a function that returns no value and can raise. It exists to refuse. Derived from the tree by AST, not listed."
+  what_a_call_site_is: "a bare expression statement calling one. The value is unused, so the line can be deleted with no other change -- which is exactly why its absence is invisible."
+  the_exclusion_that_is_structural_not_a_list: "statements inside `if __name__ == \"__main__\"` are skipped. A module entry point matches the guard shape -- it raises and returns nothing -- and is not a guard. Excluded by the BLOCK it sits in rather than by naming `_main`, because an exclusion list is how this kind of sweep goes quiet."
+  targeted_then_full: "the test modules naming the guard's module are run first, and a site that SURVIVES that pass is re-run against the entire suite before being reported. So a survivor is always confirmed against everything and a detection is never claimed on a partial run."
+  what_it_does_not_establish: "that a detected site is WELL tested -- only that removing it is noticed. And it cannot see a guard whose call site is not a bare statement: an inline `if not valid(x): raise` is a different shape and is invisible to this method."
+
+# ----------------------------------------------------------------------
+the_measurement:
+  population: "15 guard call sites across the ten product packages, after excluding 3 module entry points."
+  first_run: "11 detected, 4 SURVIVED -- daf/storage/serialization.py at lines 129, 169, 192 and 202."
+  what_the_survivors_were: "`_verify`, whose own docstring calls it the corruption/tamper detector. It establishes that a persisted artifact still matches its content-addressed identity. serialization.py has EIGHT such sites, one per persisted artifact type, and exactly ONE was noticed -- document_from_dict. Source, Record, Observation, Referent, ClaimedRelationship, DerivedValue and DerivedGrounding could each have had their identity check deleted with 2535 tests green."
+  the_reason_it_happened_is_worth_stating: "tests/test_storage_serialization.py had exactly one tamper test, for Document. Writing one per type reads as repetition, so one gets written and the rest FEEL covered. The probe is what makes the difference between covered and feeling covered measurable."
+  after_the_repair: "15 detected, 0 SURVIVED, on a still tree."
+
+# ----------------------------------------------------------------------
+# THE MISS THIS SESSION MADE WHILE FIXING THE ONE ABOVE, RECORDED RATHER
+# THAN QUIETLY CORRECTED.
+# ----------------------------------------------------------------------
+a_derived_check_is_only_as_good_as_the_snapshot_it_derives_from:
+  what_happened: "the repair's own coverage check -- which re-derives the `_verify` type names from serialization.py and asserts the test module covers all of them -- REPORTED GREEN while omitting Referent. It was run while the probe had referent_from_dict's `_verify` line replaced by `pass`. It counted seven sites and agreed with seven cases."
+  the_check_was_not_wrong: "it derived correctly from the file in front of it. The file was mid-mutation, because this session started a long-running probe that rewrites source files and then edited the tree while it ran."
+  why_it_is_the_same_class_one_level_up: "the whole repository already tracks `a path is a location, not an identity -- whatever sits there is a snapshot of somebody's last pull`. This is that, at a timescale of seconds, inside the instrument built to catch the neighbouring class. The first run's own final report is what disagreed with it."
+  the_general_rule_it_yields: "a sweep that MUTATES the tree and a check that DERIVES from the tree may not run concurrently. The probe restores every file it touches, which makes it safe to interrupt and unsafe to overlap."
+  the_repair: "Referent added to the covered set, the miss recorded in the test module's own docstring, and the probe re-run on a still tree -- which is the run this record reports."
